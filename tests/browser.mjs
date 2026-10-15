@@ -22,7 +22,7 @@ const env = {...process.env,RER_SERVER_JOURNEY:'1',WRANGLER_SEND_METRICS:'false'
 // The parent verify token owns its checkout's lock. This independent checkout
 // must acquire its own; retain process custody and queue policy for its children.
 delete env.RER_LOCAL_OPERATION
-let browser,server,serverOutput='',errors=[]
+let browser,server,currentPage,lastCapture='',serverOutput='',errors=[]
 async function safeLog(text) {
  for(const name of ['.dev.vars','.rer/local/dev-key.env']) {
   try {for(const line of (await readFile(join(scratch,name),'utf8')).split('\n')) {const value=line.slice(line.indexOf('=')+1).replace(/^['"]|['"]$/g,'');if(value.length>5)text=text.split(value).join('[redacted]')}} catch {}
@@ -39,6 +39,7 @@ const run = async(args) => {
 const wait = ms => new Promise(resolve=>setTimeout(resolve,ms))
 const measurements=[]
 async function capture(page,name) {
+ lastCapture=name
  await page.evaluate(()=>document.fonts.ready)
  const measure=await page.evaluate(()=>({badgeOverlapsMain:(()=>{const badge=document.querySelector('#rer-dev-badge')?.getBoundingClientRect(),main=document.querySelector('main')?.getBoundingClientRect();return !!(badge&&main&&badge.top<main.bottom&&badge.bottom>main.top)})(),width:innerWidth,scrollWidth:document.documentElement.scrollWidth,overflow:[...document.querySelectorAll('main *')].filter(el=>{const b=el.getBoundingClientRect();return b.width>0&&(b.left<0||b.right>innerWidth+1)}).map(el=>el.tagName)}))
  measurements.push({name,...measure});assert.equal(measure.badgeOverlapsMain,false,name+' dev badge covers content');assert.ok(measure.scrollWidth<=measure.width,name+' has horizontal overflow');assert.deepEqual(measure.overflow,[],name+' has clipped elements')
@@ -68,13 +69,18 @@ try {
  browser=await chromium.launch({headless:true})
  for(const width of [1440,390]) {
   const context=await browser.newContext({viewport:{width,height:1000}})
-  const page=await context.newPage()
+  let page=await context.newPage();currentPage=page
   page.on('pageerror',error=>errors.push(error.message))
   page.on('console',message=>{if(message.type()==='error')errors.push(message.text())})
   assert.equal((await page.goto(origin+'/')).status(),200)
   await capture(page,`${width}-lobby`)
   await page.goto(origin+'/signin')
   await capture(page,`${width}-signin`)
+  // Open the printed private link in its own tab, as the CLI asks the owner.
+  // Sign-in now redirects to Base's key page before a key is present.
+  await page.close();page=await context.newPage();currentPage=page
+  page.on('pageerror',error=>errors.push(error.message))
+  page.on('console',message=>{if(message.type()==='error')errors.push(message.text())})
   await page.goto(open)
   await page.waitForURL(url=>url.pathname==='/setup'||url.pathname==='/app')
   if(new URL(page.url()).pathname==='/setup'){
@@ -137,6 +143,8 @@ try {
  // Navigation failures can include the credential-bearing printed URL.
  const sanitized=await safeLog(error.message)
  await writeFile(join(output,'failure.txt'),sanitized)
+ console.error('Last completed capture: '+lastCapture+'; current page: '+await safeLog(currentPage?new URL(currentPage.url()).pathname:'none'))
+ if(currentPage)await currentPage.screenshot({path:join(output,'failure.png'),fullPage:true,mask:[currentPage.locator('[data-secret], input[readonly]')]}).catch(()=>{})
  console.error('Browser failure: '+sanitized.split('\n').filter(line=>/failed|error|exit|refus|missing|Error|Unexpected/i.test(line)).join('\n'))
  throw new Error(sanitized)
 } finally {
