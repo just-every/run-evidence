@@ -14,7 +14,13 @@ cd run-evidence
 rer dev
 ```
 
-`rer dev` installs the pinned dependencies, selects Node 22.20.0, applies the D1 migrations, prepares a local owner and starts the app. Open its private `RER_OPEN` link on this computer, then confirm first-run setup. The desk is `/app`. Keep that link private. Local email sign-in uses the development outbox and sends no email; no Cloudflare or model account is needed. To use your own mailbox locally, run `rer setup --owner-email you@example.com` before the first launch. Stop with `rer dev --stop`.
+`rer dev` installs the pinned dependencies, selects Node 22.20.0, applies the D1 migrations, prepares a local owner and starts the app. Open its private `RER_OPEN` link on this computer, then confirm first-run setup. The installed `/` is the Lobby; the desk is `/app`. The printed `RER_SITE` address opens the run site and on-site guides. Keep that link private. Local email sign-in uses the development outbox and sends no email; no Cloudflare or model account is needed. To use your own mailbox locally, run `rer setup --owner-email you@example.com` before the first launch. Stop with `rer dev --stop`.
+
+## Run site and guides
+
+`rer build --site` builds the marketing homepage, `/run`, and `/docs` from this README and `docs/*.md`. The site is independent of your private installation and contains no business records. `rer dev` prints its local `RER_SITE` address. The main “Run Evidence” action opens the installation instructions at `/run`.
+
+The [getting started guide](docs/GETTING-STARTED.md) introduces the owner journey; the other on-site guides cover controls and proof, review folders, moving in, archive backup and restore, and agent preparation. Site deployment is deliberately disabled until the run-site gate enables it.
 
 ## Use the desk
 

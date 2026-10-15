@@ -71,21 +71,32 @@ try {
   const page=await context.newPage()
   page.on('pageerror',error=>errors.push(error.message))
   page.on('console',message=>{if(message.type()==='error')errors.push(message.text())})
+  assert.equal((await page.goto(origin+'/')).status(),200)
+  await capture(page,`${width}-lobby`)
   await page.goto(origin+'/signin')
   await capture(page,`${width}-signin`)
   await page.goto(open)
   await page.waitForURL(url=>url.pathname==='/setup'||url.pathname==='/app')
-  if(new URL(page.url()).pathname==='/setup'){await capture(page,`${width}-setup`);await page.getByRole('checkbox').check();await page.getByRole('button',{name:'Finish setup'}).click()}
+  if(new URL(page.url()).pathname==='/setup'){
+   await capture(page,`${width}-setup`)
+   if(width===1440){await page.setViewportSize({width:390,height:1000});await capture(page,'390-setup');await page.setViewportSize({width,height:1000})}
+   await page.getByRole('checkbox').check();await page.getByRole('button',{name:'Finish setup'}).click()
+  }
   await page.waitForURL(url=>url.pathname==='/app')
   assert.equal((await context.request.get(origin+'/api/desk')).status(),200,'printed link opens the owner desk')
   await capture(page,`${width}-desk`)
-  await page.getByLabel('Control in plain words').fill(`Review production access ${width}`)
+  if(width===1440){
+   await capture(page,'1440-desk-empty')
+   await page.setViewportSize({width:390,height:1000});await capture(page,'390-desk-empty');await page.setViewportSize({width,height:1000})
+  }
+  await page.getByLabel('Control in plain words').fill(width===1440?'Review who can access customer data':'Security awareness training')
   await page.getByLabel('Group',{exact:true}).selectOption('Access')
   await page.getByLabel('Named proof').fill('Dated owner access review')
   await page.getByLabel('Cadence',{exact:true}).selectOption('daily')
   await page.getByRole('button',{name:'Add control',exact:true}).click()
   await page.waitForURL('**/app/requirements/*')
   const requirementURL=page.url()
+  await capture(page,`${width}-requirement`)
   const today=new Date().toISOString().slice(0,10),yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10)
   const original=Buffer.from(`Owner supplied access review at ${width}px`)
   await page.getByLabel('File',{exact:true}).setInputFiles({name:'access-review.html',mimeType:'text/html',buffer:original})
@@ -115,7 +126,7 @@ try {
   await capture(page,`${width}-history`)
   await page.goto(firstURL);assert.match(await page.locator('main').textContent(),/Superseded by/)
   assert.deepEqual(await (await context.request.get(firstURL+'/download')).body(),original)
-  await page.goto(origin+'/app?date='+yesterday);await capture(page,`${width}-gap`)
+  await page.goto(origin+'/app?date='+yesterday);await capture(page,`${width}-gap`);await capture(page,`${width}-desk`)
   await moveInAndPrepare(page,origin,width,capture,scratch)
   await context.close()
  }

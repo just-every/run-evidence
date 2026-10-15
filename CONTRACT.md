@@ -67,3 +67,11 @@ Current practical limits: metadata is at most 8 MiB and 20,000 total rows; each 
 ## Scope and owner decisions
 
 Defaults remain current Base operator authentication, owner-only domain access, MIT source license, one business, and no shipped framework mappings or compliance templates. These are accepted owner scope choices; changes require an explicit scope decision. Evidence does not certify a business, replace an auditor, supply policies or legal advice, run collectors, answer questionnaires, provide certification seal artwork, or deploy itself. Original migrations remain unchanged; additive migrations carry the importer, agent decisions and current Base authentication schema. Undo does not erase receipts or files; selective custody erasure is outside this first release.
+
+## Run site and presentation
+
+The static run site is separate from each installation. `rer build --site` emits the marketing homepage with its Run Evidence action to `/run`, Base’s installation instructions, and `/docs` rendered from repository Markdown. It loads local assets and works without JavaScript. Site deployment remains disabled until enabled by the run-site gate.
+
+An installed `/` serves Base’s shared Lobby. `/setup/state` reveals only whether the owner has confirmed first-run setup; it admits the configured origin and host. The Lobby offers Finish setup before confirmation and Sign in afterwards, equally for anonymous and signed-in visitors.
+
+The landing, documentation, sign-in, setup and app share one token palette and self-hosted Onest/JetBrains Mono fonts. Acrylic drawings contain accessible text; state colour is confined to small dots. The phone app keeps the complete flows in a scrolling layout, with horizontal navigation and all owner form labels intact.

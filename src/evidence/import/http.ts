@@ -28,8 +28,8 @@ export function importHandler(clock:()=>Date=()=>new Date()){
   if(!session)return json({error:'Owner sign-in required.'},401)
   if(session.operator.role!=='owner')return json({error:'Owner access required.'},403)
   try{
-   if(['/app/import','/api/import'].includes(path)&&['GET','HEAD'].includes(request.method))return api?json({imports:await reviews(env)}):importPage(await reviews(env))
-   if(path==='/app/import/shape'&&['GET','HEAD'].includes(request.method))return shapePage()
+   if(['/app/import','/api/import'].includes(path)&&['GET','HEAD'].includes(request.method))return api?json({imports:await reviews(env)}):importPage(await reviews(env),session.operator.displayName)
+   if(path==='/app/import/shape'&&['GET','HEAD'].includes(request.method))return shapePage(session.operator.displayName)
    if(['/app/import/drata','/api/import/drata'].includes(path)&&request.method==='POST'){
     if(!request.headers.get('content-type')?.startsWith('multipart/form-data;'))throw new Refusal('Upload a ZIP using the file form.')
     const bytes=await boundedBody(request,MAX_ARCHIVE+65536)
@@ -47,7 +47,7 @@ export function importHandler(clock:()=>Date=()=>new Date()){
     const job=review.job_id?await jobAction(env,review,session,'read'):undefined
     if(api)return json({review,summary:JSON.parse(review.summary_json),mapping:review.mapping_json?JSON.parse(review.mapping_json):null,job})
     const {results}=await env.DB.prepare('SELECT r.id,r.name,c.name AS control_name FROM requirements r JOIN controls c ON c.id=r.control_id ORDER BY c.name,r.name').all<{id:string;name:string;control_name:string}>()
-    return reviewPage(review,results,job)
+    return reviewPage(review,results,job,session.operator.displayName)
    }
    if(request.method!=='POST')return json({error:'Method not allowed.'},405)
    const body=await input(request,review)

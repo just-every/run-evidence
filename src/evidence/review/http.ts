@@ -91,14 +91,14 @@ export function reviewHandler(clock: () => Date = () => new Date()) {
    if (path==='/app/folders' || path==='/api/folders') {
     if (request.method==='POST') {
      const result = await issueFolder(env,await validateInput(env,await readInput(request),now),now), reviewURL = env.AUTH_ORIGIN+'/review/'+result.token
-     return api ? json({folder:result.folder,review_url:reviewURL},201) : issuedPage(result.folder,reviewURL)
+     return api ? json({folder:result.folder,review_url:reviewURL},201) : issuedPage(result.folder,reviewURL,session.operator.displayName)
     }
-    if (['GET','HEAD'].includes(request.method)) { const data = await folders(env); return api ? json({folders:data}) : foldersPage(data,await controls(env),now) }
+    if (['GET','HEAD'].includes(request.method)) { const data = await folders(env); return api ? json({folders:data}) : foldersPage(data,await controls(env),now,session.operator.displayName) }
    }
    const closing = /^\/(?:app|api)\/folders\/([a-f0-9-]+)\/close$/.exec(path)
    if (closing && request.method==='POST') { const folder = await closeFolder(env,closing[1],now); return !folder ? absent() : api ? json({folder}) : redirect('/app/folders') }
    const log = /^\/(?:app|api)\/folders\/(?:([a-f0-9-]+)\/)?events$/.exec(path)
-   if (log && ['GET','HEAD'].includes(request.method)) { const data=await events(env,log[1]); return api ? json({events:data}) : logsPage(data) }
+   if (log && ['GET','HEAD'].includes(request.method)) { const data=await events(env,log[1]); return api ? json({events:data}) : logsPage(data,session.operator.displayName) }
    return ['GET','HEAD'].includes(request.method) ? absent() : json({error:'Method not allowed.'},405)
   } catch (error) {
    if (error instanceof Refusal) return json({error:error.message},error.status)

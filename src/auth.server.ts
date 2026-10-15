@@ -50,18 +50,11 @@ export async function authResponse(request: Request, original: Bindings): Promis
   return await createDevelopmentOutboxHandler({ local: true, origin: env.AUTH_ORIGIN, outbox: createD1DevelopmentOutbox({ db: env.DB }) })(request) ?? devNotFound()
  }
  // The shared server-rendered sign-in page: plain forms that work before any script.
- const signedOutEntry = url.pathname === '/' && ['GET', 'HEAD'].includes(request.method)
- if (url.pathname === '/signin' || signedOutEntry) {
-  const auth = operatorAuth(env)
-  if (signedOutEntry && await auth.getSession(request)) return null
-  // Keep a signed-out root as HTML so Base's fragment exchange can run before
-  // its dev persona enters /app. Reuse the existing sign-in document unchanged.
-  const signInURL = new URL(url)
-  signInURL.pathname = '/signin'
-  const page = await createSignInHandler(auth, {
+ if (url.pathname === '/signin') {
+  const page = await createSignInHandler(operatorAuth(env), {
    defaultReturnTo: '/setup',
    links: () => env.MAIL_PROVIDER === 'development' && env.AUTH_LOCAL === 'true' ? [{ href: '/__dev/outbox', label: 'Open the local development outbox' }] : [],
-  })(signedOutEntry ? new Request(signInURL, request) : request)
+  })(request)
   if (page) return fontDocumentResponse(page)
  }
  if (url.pathname.startsWith('/auth/')) return fontDocumentResponse(await createAuthHandler(operatorAuth(env))(request))

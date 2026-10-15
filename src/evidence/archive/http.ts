@@ -17,7 +17,7 @@ export function archiveHandler(clock:()=>Date=()=>new Date()) {
   if(!session) return path.startsWith('/api/') ? json({error:'Owner sign-in required.'},401) : page('Owner sign-in required','<p><a href="/signin">Sign in</a></p>',401)
   if(session.operator.role!=='owner') return json({error:'Owner access required.'},403)
   try {
-   if(request.method==='GET' && path==='/app/archive') return archivePage(await inventory(env,clock()))
+   if(request.method==='GET' && path==='/app/archive') return archivePage(await inventory(env,clock()),session.operator.displayName)
    if(request.method==='GET' && path==='/api/archive/manifest') {const manifest=await inventory(env,clock()); return json({manifest,...summary(manifest)})}
    if(request.method==='GET' && path==='/api/archive/export') {
     const manifest=await inventory(env,clock())

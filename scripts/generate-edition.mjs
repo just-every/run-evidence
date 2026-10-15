@@ -11,6 +11,16 @@ for(const copy of copies){
  for(const p of Object.keys(copy.files)){mapped.add(p);entries.push({path:p,originPath:copy.originPath+p.slice(copy.path.length)})}
  groups.set(copy.revision,entries)
 }
+// The font preload is an intentional edition adaptation; retain its Base origin
+// without claiming the modified file is a byte-for-byte copy.
+const adapted = 'src/base/font-head.ts'
+const baseRevision = '4a7833932a723c203191e84f1de905d84e4cbf1c'
+if (files.includes(adapted)) {
+ mapped.add(adapted)
+ const entries = groups.get(baseRevision) || []
+ entries.push({ path: adapted, originPath: 'foundation/runtime/font-head.ts' })
+ groups.set(baseRevision, entries)
+}
 const components=[...groups].map(([revision,mappings],index)=>({id:index?'runeditrun/base-history-'+revision.slice(0,7):'runeditrun/base',role:'foundation',source:{kind:'local',paths:mappings.map(x=>x.path).sort(),origin:{repository:'https://github.com/runeditrun/base.git',revision,path:'.',paths:[...new Set(mappings.map(x=>x.originPath))].sort()},mappings:mappings.sort((a,b)=>a.path.localeCompare(b.path))}}))
 components.push({id:'just-every/evidence',role:'edition',source:{kind:'local',paths:files.filter(p=>!reserved(p)&&!mapped.has(p)).sort()}})
 writeFileSync('edition.json',JSON.stringify({schemaVersion:1,id:'just-every/evidence',identityKind:'project',toolchain:{id:'runeditrun/edition-authoring',version:'1.1.0'},parent:null,components},null,2)+'\n')

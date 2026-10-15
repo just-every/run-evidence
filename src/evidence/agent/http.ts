@@ -41,20 +41,20 @@ export function agentHandler(clock:()=>Date=()=>new Date()) {
    const actor=session.operator,now=clock()
    if((path==='/app/agent' || path==='/api/agent') && request.method==='GET') {
     const [access,rows]=await Promise.all([tokens(env),proposals(env)])
-    return api?json({tokens:access,proposals:rows}):agentPage(access,rows,now)
+    return api?json({tokens:access,proposals:rows}):agentPage(access,rows,now,actor.displayName)
    }
    if(/^\/(?:app|api)\/agent\/tokens$/.test(path) && request.method==='POST') {
     const input=await inputBody(request)
     if(typeof input.label!=='string' || !input.label.trim() || input.label.trim().length>100) throw new Refusal('Name the agent (up to 100 characters).')
     const result=await issueToken(env,input.label.trim(),future(input.expires_at,now),actor,now)
-    return api?json(result,201):tokenPage(result.grant.label,result.token)
+    return api?json(result,201):tokenPage(result.grant.label,result.token,actor.displayName)
    }
    const revoking=/^\/(?:app|api)\/agent\/tokens\/([a-f0-9-]+)\/revoke$/.exec(path)
    if(revoking && request.method==='POST') { const token=await revoke(env,revoking[1],actor,now);return token?(api?json({grant:token}):redirect()):json({error:'Not found.'},404) }
    const match=/^\/(?:app|api)\/agent\/proposals\/([a-f0-9-]+)(?:\/(approve|reject))?$/.exec(path)
    if(match) {
     const row=await proposal(env,match[1]);if(!row) return json({error:'Not found.'},404)
-    if(!match[2] && request.method==='GET') return api?json({proposal:row}):proposalPage(row)
+    if(!match[2] && request.method==='GET') return api?json({proposal:row}):proposalPage(row,actor.displayName)
     if(match[2] && request.method==='POST') {
      const input=await inputBody(request)
      if(input.snapshot_hash!==row.snapshot_hash) throw new Refusal('Review and submit the exact proposal fingerprint.',409)
@@ -62,7 +62,7 @@ export function agentHandler(clock:()=>Date=()=>new Date()) {
      const result=await decide(env,row,match[2]==='approve'?'approved':'rejected',actor,clock())
      if('folder' in result && result.folder && 'token' in result) {
       const reviewURL=env.AUTH_ORIGIN+'/review/'+result.token
-      return api?json({decision:result.decision,folder:result.folder,review_url:reviewURL},201):issuedPage(result.folder,reviewURL)
+      return api?json({decision:result.decision,folder:result.folder,review_url:reviewURL},201):issuedPage(result.folder,reviewURL,actor.displayName)
      }
      return api?json({decision:result.decision}):redirect()
     }

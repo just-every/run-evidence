@@ -15,10 +15,19 @@ const readReceipt=async(response)=>{assert.equal(response.status,303,await respo
 let requirement,first,second,cookie
 const primary = async(date) => (await rows(date)).find(r=>r.id===requirement)
 try {
+ await scenario('Installed Lobby exposes only first-run state before and after owner setup',async()=>{
+  const state=await app.fetch('/setup/state');assert.equal(state.status,200);assert.equal((await state.json()).state,'unclaimed')
+  const lobby=await app.fetch('/');assert.equal(lobby.status,200);assert.match(await lobby.text(),/href="\/setup"/)
+  assert.equal((await app.fetch('/setup/state',{headers:{host:'evil.test'}})).status,404)
+ })
  await scenario('Owner routes refuse anonymous, invalid sessions and cross-origin requests',async()=>{
   for(const path of ['/app','/api/desk','/app/requirements/abc','/app/receipts/abc','/app/receipts/abc/download','/api/receipts/abc','/api/receipts/abc/download']) for(const cookie of ['', 'operator_session_local=invalid']) assert.equal((await app.fetch(path,{headers:{cookie}})).status,401,path)
   for(const path of ['/app/controls','/app/requirements/abc/uploads']) assert.equal((await app.fetch(path,{method:'POST',headers:{origin:app.origin}})).status,401)
   cookie=await app.signin()
+  assert.equal((await (await app.fetch('/setup/state')).json()).state,'claimed')
+  const lobby=await app.fetch('/',{headers:{cookie:''}});assert.equal(lobby.status,200)
+  assert.match(await lobby.text(),/href="\/signin"/)
+
   for(const headers of [{origin:'https://evil.test'},{'sec-fetch-site':'cross-site'},{host:'evil.test'}]) assert.equal((await app.fetch('/api/desk',{headers})).status,403)
   for(const headers of [{},{origin:'https://evil.test'}]) assert.equal((await app.fetch('/app/controls',{method:'POST',headers})).status,403)
  })

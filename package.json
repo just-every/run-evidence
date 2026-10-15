@@ -17,7 +17,7 @@
     "test:email-link": "rer queue test:email-link -- sh -c \"node tests/email-link.mjs\"",
     "onboard": "node scripts/install.mjs",
     "build:app": "rer queue build:app -- sh -c \"vite build\"",
-    "verify:app": "rer queue verify:app -- sh -c \"pnpm run build && pnpm run typecheck && node scripts/edition-authoring/cli.mjs check && node tests/evidence.mjs && node tests/review.mjs && node tests/archive.mjs && node tests/import.mjs && node tests/agent.mjs && node tests/email-link.mjs && node tests/browser.mjs && node tests/review-browser.mjs\"",
+    "verify:app": "rer queue verify:app -- sh -c \"pnpm run build && rer build --site && node tests/site.mjs && pnpm run typecheck && node scripts/edition-authoring/cli.mjs check && node tests/evidence.mjs && node tests/review.mjs && node tests/archive.mjs && node tests/import.mjs && node tests/agent.mjs && node tests/email-link.mjs && node tests/browser.mjs && node tests/review-browser.mjs\"",
     "reset": "rer reset",
     "export": "rer export",
     "import": "rer import",
@@ -36,7 +36,8 @@
     "archive": "node scripts/archive.mjs",
     "test:import": "node tests/import.mjs",
     "test:agent": "node tests/agent.mjs",
-    "agent": "node scripts/evidence-agent.mjs"
+    "agent": "node scripts/evidence-agent.mjs",
+    "test:site": "node tests/site.mjs"
   },
   "dependencies": {
     "@tanstack/react-router": "1.170.33",
@@ -53,6 +54,7 @@
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.7",
     "@vitejs/plugin-react": "6.1.1",
+    "marked": "18.1.1",
     "playwright": "1.56.1",
     "typescript": "5.9.3",
     "vite": "8.2.2",

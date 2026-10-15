@@ -1,9 +1,12 @@
-import { authResponse, type Bindings } from './auth.server'
+import { authResponse, runtimeBindings, type Bindings } from './auth.server'
 import { evidenceHandler } from './evidence/http'
 import { reviewHandler } from './evidence/review/http'
 import { archiveHandler } from './evidence/archive/http'
 import { agentHandler } from './evidence/agent/http'
 import { importHandler } from './evidence/import/http'
+import { lobbyResponse } from './base/lobby'
+import { setupStateResponse } from './base/setup-state'
+import { identity } from './identity'
 // The production Worker and workerd harness share this complete owner HTTP door.
 export function createAppResponse(clock: () => Date = () => new Date()) {
  const agents = agentHandler(clock)
@@ -14,6 +17,11 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
  return async (request: Request, env: Bindings) => {
   const path = new URL(request.url).pathname
   if (request.headers.has('authorization') && (path.startsWith('/app') || path.startsWith('/api')) && !path.startsWith('/api/agent')) return Response.json({error:'Agent credentials cannot use owner doors.'}, {status:403,headers:{'cache-control':'no-store'}})
+  const installed = runtimeBindings(env)
+  const state = await setupStateResponse(request,installed)
+  if (state) return state
+  const lobby = await lobbyResponse(request,installed,identity)
+  if (lobby) return lobby
   const auth = await authResponse(request,env)
   if (auth) return auth
   const prepared = await agents(request,env)
@@ -26,7 +34,6 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
   if (custody) return custody
   const response = await evidence(request,env)
   if (response) return response
-  if (new URL(request.url).pathname === '/') return new Response(null,{status:303,headers:{location:'/app'}})
   return null
  }
 }

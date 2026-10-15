@@ -1,35 +1,97 @@
-html.rer-themed main { max-width: 940px; padding: 36px; box-shadow: none; border: 1px solid #d3d8da; }
-.rer-themed body { padding: 32px 20px; }
-.rer-themed nav { margin-bottom: 24px; }
-.rer-themed section { margin-top: 32px; border-top: 1px solid #d3d8da; padding-top: 24px; }
-.rer-themed article { border-top: 1px solid #d3d8da; padding: 20px 0; }
-.rer-themed article h2, .rer-themed article h3 { margin: 0; }
-.rer-themed article p { margin: 8px 0; }
-.rer-themed .heading, .rer-themed .dates { display: flex; gap: 16px; justify-content: space-between; }
-.rer-themed .dates > label { flex: 1; min-width: 0; }
-.rer-themed .heading { align-items: start; flex-wrap: wrap; }
-.rer-themed .state { font-size: 15px; font-weight: 600; border-left: 3px solid #747f85; padding-left: 10px; }
-.rer-themed select { width: 100%; max-width: 100%; min-height: 46px; font: inherit; color: inherit; background: #fff; border: 1px solid #6b747a; border-radius: 4px; padding: 8px; }
-.rer-themed form { max-width: 640px; }
-.rer-themed .period { display: flex; align-items: end; gap: 16px; margin: 24px 0; }
-.rer-themed .period button { width: auto; }
-.rer-themed .empty { padding: 24px 0; }
-.rer-themed .fingerprint { display: block; font: 14px/1.7 monospace; overflow-wrap: anywhere; margin: 0 0 24px; }
-.rer-themed footer { border-top: 1px solid #d3d8da; margin-top: 36px; padding-top: 20px; font-size: 14px; color: #535e64; }
-.rer-themed input[type=file] { font-size: 14px; padding: 10px; }
-.rer-themed dl { grid-template-columns: minmax(70px, 130px) minmax(0, 1fr); }
-@media(max-width: 600px) { .rer-themed body { padding: 16px 10px; } html.rer-themed main { padding: 24px 16px; } .rer-themed .dates { flex-direction: column; } .rer-themed .period { align-items: stretch; flex-direction: column; } }
-/* Keep Base's local identity switch visible without covering owner content. */
-html.rer-themed #rer-dev-badge { position: static; width: fit-content; margin: 16px auto 0; max-width: 100%; }
+@import url('/app-shell.css');
+@import url('/app-components.css');
 
-.rer-themed table { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 24px 0; }
-.rer-themed th, .rer-themed td { padding: 12px 8px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--rer-border, #d3d8da); overflow-wrap: anywhere; }
-.rer-themed code, .rer-themed pre { white-space: pre-wrap; overflow-wrap: anywhere; }
-.rer-themed fieldset { min-width: 0; border: 1px solid var(--rer-border, #d3d8da); padding: 16px; display: grid; gap: 16px; }
-.rer-themed legend { max-width: 100%; overflow-wrap: anywhere; padding: 0 6px; }
-@media(max-width: 600px) {
- .rer-themed table, .rer-themed tbody, .rer-themed tr, .rer-themed td { display: block; }
- .rer-themed thead { display: none; }
- .rer-themed tr { margin: 16px 0; border: 1px solid var(--rer-border, #d3d8da); }
- .rer-themed td::before { content: attr(data-label); display: block; font-weight: 600; }
+/* Proof desk: date and live requirement rows opposite the control form. */
+.desk-columns { display: grid; grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr); align-items: start; gap: 24px; }
+.desk-requirements { display: grid; gap: 16px; min-width: 0; }
+.rer-themed .period-slab > .card { padding: 18px 24px; }
+.rer-themed .period { display: grid; grid-template-columns: auto minmax(150px, 1fr) auto; align-items: center; gap: 16px; }
+.rer-themed .period label { font-size: 17px; font-weight: 600; white-space: nowrap; }
+.rer-themed .period button { width: auto; min-width: 144px; }
+.rer-themed .requirement-slab > .card { padding: 20px 18px; }
+.requirement-card { position: relative; display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: start; gap: 16px; }
+.rer-themed .requirement-summary h2 { margin: 0 0 4px; font-size: 19px; font-weight: 600; line-height: 1.3; letter-spacing: -.02em; }
+.rer-themed .requirement-summary p { margin: 0 0 4px; font-size: 15px; line-height: 1.45; }
+.rer-themed .requirement-link { font-size: 15px; }
+.requirement-link::after, .receipt-title::after { content: ''; position: absolute; inset: 0; z-index: 1; }
+.requirement-link::after { inset: -20px -18px; border-radius: 16px; }
+.requirement-card:has(a:focus-visible), .receipt-row:has(.receipt-title:focus-visible) { outline: 3px solid var(--ev-ink); outline-offset: 6px; border-radius: 8px; }
+.requirement-card a:focus-visible, .receipt-title:focus-visible { outline: none; }
+.requirement-state { display: flex; gap: 12px; align-items: center; }
+.requirement-state > .icon { width: 18px; height: 18px; }
+.rer-themed .control-slab > .card { padding: 24px; }
+.rer-themed .control-slab form { gap: 20px; }
+.rer-themed .empty-slab > .card { min-height: 420px; display: grid; align-items: center; }
+
+/* Requirement: upload form and receipt history remain independent columns. */
+.rer-themed .requirement-period { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: -12px 0 28px; color: var(--ev-ink); }
+.requirement-columns { align-items: stretch; }
+.requirement-columns > .slab > .card { height: 100%; }
+.receipt-row { position: relative; display: grid; grid-template-columns: 48px minmax(0, 1fr) 18px; gap: 16px; align-items: start; padding: 18px 14px; border: 1px solid var(--ev-line); border-radius: 16px; background: var(--ev-surface); }
+.rer-themed .receipt-row .icon-tile { width: 48px; height: 48px; }
+.rer-themed .receipt-row h3 { margin: 0 0 6px; font-size: 17px; }
+.rer-themed .receipt-title { text-decoration: none; }
+.rer-themed .receipt-row p { margin: 0 0 4px; font-size: 15px; line-height: 1.45; }
+.rer-themed .receipt-download { position: relative; z-index: 2; font-size: 15px; }
+.receipt-chevron { align-self: center; }
+.receipt-chevron .icon { width: 18px; height: 18px; }
+
+/* Receipt: retained facts beside the fingerprint and its three actions. */
+.rer-themed .receipt-filename { margin: 0 0 32px; color: var(--ev-ink); font-size: 40px; font-weight: 400; line-height: 1.2; letter-spacing: -.025em; }
+.receipt-columns { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 24px; align-items: stretch; }
+.receipt-columns > .slab > .card { height: 100%; padding: 32px; }
+.rer-themed .fingerprint-slab h2 { font-size: 19px; font-weight: 500; letter-spacing: 0; margin-bottom: 16px; }
+.rer-themed .fingerprint { display: block; margin: 0 0 40px; overflow-wrap: anywhere; }
+.receipt-actions { display: grid; gap: 16px; margin-top: 24px; }
+/* The editable desk conversion establishes the desktop panel rhythm:
+   112px date slab, 146px minimum rows, a 630px control slab, and 32px gutter.
+   Slab edges and every label remain local CSS and real application text. */
+@media (min-width: 1101px) {
+ .desk-columns { gap: 32px; }
+ .rer-themed .period-slab > .card { min-height: 90px; display: grid; align-items: center; }
+ .rer-themed .requirement-slab > .card { min-height: 124px; }
+ .rer-themed .control-slab > .card { min-height: 608px; display: flex; }
+ .rer-themed .control-slab .add-control { flex: 1; display: flex; flex-direction: column; }
+ .rer-themed .control-slab h2 { margin-bottom: 24px; }
+ .rer-themed .control-slab form { flex: 1; display: flex; flex-direction: column; gap: 24px; }
+ .rer-themed .control-slab button { margin-top: auto; }
+}
+@media (min-width: 1101px) and (max-width: 1350px) {
+ .desk-columns { grid-template-columns: minmax(0, 1.65fr) minmax(300px, 1fr); gap: 16px; }
+ .requirement-card { grid-template-columns: 48px minmax(0, 1fr); gap: 12px; }
+ .requirement-state { grid-column: 2; grid-row: 1; justify-self: end; }
+ .requirement-summary { grid-column: 2; }
+ .requirement-card > .icon-tile { grid-row: 1 / 3; width: 48px; height: 48px; }
+ .rer-themed .period { grid-template-columns: minmax(0, 1fr) auto; }
+ .rer-themed .period label { grid-column: 1 / -1; }
+}
+@media (max-width: 1100px) {
+ .desk-columns, .receipt-columns { grid-template-columns: minmax(0, 1fr); }
+ .control-slab { max-width: none; }
+}
+@media (max-width: 760px) {
+ .desk-columns, .receipt-columns, .app-columns { gap: 20px; }
+ .rer-themed .period-slab > .card { padding: 16px; }
+ .rer-themed .period { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+ .rer-themed .period label { font-size: 16px; }
+ .rer-themed .period button { width: 100%; }
+ .rer-themed .requirement-slab > .card { padding: 16px 12px; }
+ .requirement-card { grid-template-columns: 40px minmax(0, 1fr); gap: 12px; }
+ .rer-themed .requirement-card > .icon-tile { width: 40px; height: 40px; grid-column: 1; grid-row: 1; }
+ .rer-themed .requirement-card > .icon-tile .icon { width: 25px; height: 25px; }
+ .requirement-summary { grid-column: 1 / -1; grid-row: 2; }
+ .requirement-link::after { inset: -16px -12px; }
+ .rer-themed .requirement-summary h2 { font-size: 17px; margin-bottom: 8px; }
+ .rer-themed .requirement-summary p, .rer-themed .requirement-link { font-size: 14px; }
+ .requirement-state { grid-column: 2; grid-row: 1; justify-self: end; gap: 8px; }
+ .rer-themed .control-slab > .card { padding: 20px 16px; }
+ .rer-themed .empty-slab > .card { min-height: 300px; }
+ .rer-themed .requirement-period { margin: -8px 0 24px; align-items: start; font-size: 14px; }
+ .receipt-row { grid-template-columns: 40px minmax(0, 1fr) 16px; gap: 10px; padding: 14px 10px; }
+ .rer-themed .receipt-row .icon-tile { width: 40px; height: 40px; }
+ .rer-themed .receipt-row .icon-tile .icon { width: 25px; height: 25px; }
+ .rer-themed .receipt-row p, .rer-themed .receipt-download { font-size: 14px; }
+ .rer-themed .receipt-filename { margin-bottom: 24px; font-size: 28px; }
+ .receipt-columns > .slab > .card { padding: 24px 16px; }
+ .rer-themed .fingerprint { margin-bottom: 28px; }
 }
