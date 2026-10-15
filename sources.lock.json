@@ -1930,7 +1930,7 @@
   ],
   "files": {
     ".github/workflows/run-site.yml": {
-      "sha256": "4d418e37af4239d650783763e4ac41850e4dcf2c063db06a419e100b25d6062b",
+      "sha256": "1d3ce495145e2790d3d3448e208d99ef43c80e9298afe0d3cc3969cce90322e0",
       "executable": false
     },
     ".github/workflows/verify.yml": {
@@ -2146,7 +2146,7 @@
       "executable": false
     },
     "README.md": {
-      "sha256": "51e401c7022d91552e3dd854a1e13e5aa6b0f48dbf1e418c19447be239fb2033",
+      "sha256": "1850f24c780d110b25c25e6308319d96ed4c6b9c1f3d9cc8b385da5664199b56",
       "executable": false
     },
     "rer-project.json": {

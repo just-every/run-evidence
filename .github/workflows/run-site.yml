@@ -1,6 +1,7 @@
-# Prepared only. Publishing is disabled until the owner enables this workflow.
 name: Run site
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
@@ -9,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   deploy:
-    if: ${{ false }}
+    if: vars.RUN_SITE_DEPLOY == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     environment: run-site
@@ -30,5 +31,9 @@ jobs:
       - name: Public readback
         run: |
           domain=$(node -p "require('./deploy-site.json').domain")
+          for i in $(seq 1 60); do
+            [ "$(curl -s -o /dev/null -w '%{http_code}' "https://$domain/run")" = 200 ] && break
+            sleep 10
+          done
           test "$(curl -s -o /dev/null -w '%{http_code}' "https://$domain/run")" = 200
           test "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' "https://www.$domain/")" = "301 https://$domain/"

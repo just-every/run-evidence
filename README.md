@@ -20,7 +20,7 @@ rer dev
 
 `rer build --site` builds the marketing homepage, `/run`, and `/docs` from this README and `docs/*.md`. The site is independent of your private installation and contains no business records. `rer dev` prints its local `RER_SITE` address. The main “Run Evidence” action opens the installation instructions at `/run`.
 
-The [getting started guide](docs/GETTING-STARTED.md) introduces the owner journey; the other on-site guides cover controls and proof, review folders, moving in, archive backup and restore, and agent preparation. Site deployment is deliberately disabled until the run-site gate enables it.
+The [getting started guide](docs/GETTING-STARTED.md) introduces the owner journey; the other on-site guides cover controls and proof, review folders, moving in, archive backup and restore, and agent preparation. The public run site is at https://run-evidence.com and deploys automatically from `main` through GitHub Actions.
 
 ## Use the desk
 
@@ -68,7 +68,7 @@ rer verify
 
 Run touched test files during development; GitHub Verify runs all public-door checks. `tests/import.mjs` and `tests/agent.mjs` cover the new trust boundaries. Browser journeys use Chromium (`pnpm exec playwright install chromium`) at 1440 and 390. The integration checks use real local D1/R2, native sessions and the production HTTP handler. [ACCEPTANCE.md](ACCEPTANCE.md) is the first-release scope; [CONTRACT.md](CONTRACT.md) describes receipt and review semantics.
 
-Local data is in `.wrangler/state`; credentials and runtime state are ignored. Research and acceptance screenshots are kept outside this public repository. No domain, marketing site, policy templates, framework mappings, certification, live collectors or payment features are included.
+Local data is in `.wrangler/state`; credentials and runtime state are ignored. Research and acceptance screenshots are kept outside this public repository. No policy templates, framework mappings, certification, live collectors or payment features are included.
 
 The product carries forward private Evidence revision `a65a3cbd193f35b9ab8a8a639fea430aeb6b110d`. Current Base runtime and import-kit source start at `4a7833932a723c203191e84f1de905d84e4cbf1c`; `base-copies.json` records exact copies, and historical migrations retain their original pins.
 
