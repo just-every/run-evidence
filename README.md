@@ -7,7 +7,7 @@ Evidence is an MIT audit-evidence desk for one business: write controls, keep pr
 Install Node.js 22 or newer and Git. Install the shared command once, then clone:
 
 ```sh
-npx -y @runeditrun/rer@0.2.21 cli install
+npx -y @runeditrun/rer@0.2.22 cli install
 export PATH="$HOME/.local/bin:$PATH"
 git clone https://github.com/just-every/run-evidence.git
 cd run-evidence

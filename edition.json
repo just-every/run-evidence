@@ -201,13 +201,11 @@
       }
     },
     {
-      "id": "runeditrun/base-history-756bf5a",
+      "id": "runeditrun/base-history-1ce15dd",
       "role": "module",
       "source": {
         "kind": "local",
         "paths": [
-          "migrations/core/0014_owner_claim.sql",
-          "migrations/core/0015_owner_signin.sql",
           "src/evidence/d1-transport/index.d.mts",
           "src/evidence/d1-transport/index.mjs",
           "src/evidence/import/base/d1/README.md",
@@ -531,7 +529,7 @@
         ],
         "origin": {
           "repository": "https://github.com/runeditrun/base.git",
-          "revision": "756bf5a8544d792a51bb76f6e90a8ee5908a32a5",
+          "revision": "1ce15dd8cbb7c8cf2d83ebfde2b4a8a130ff9d74",
           "path": ".",
           "paths": [
             "modules/d1-transport/index.d.mts",
@@ -857,14 +855,6 @@
           ]
         },
         "mappings": [
-          {
-            "path": "migrations/core/0014_owner_claim.sql",
-            "originPath": "modules/owner-claim/schema/owner-claim.sql"
-          },
-          {
-            "path": "migrations/core/0015_owner_signin.sql",
-            "originPath": "modules/operator-auth/accounts/schema/owner-signin.sql"
-          },
           {
             "path": "src/evidence/d1-transport/index.d.mts",
             "originPath": "modules/d1-transport/index.d.mts"
@@ -2192,6 +2182,8 @@
           "migrations/core/0009_custody.sql",
           "migrations/core/0010_import.sql",
           "migrations/core/0011_agent.sql",
+          "migrations/core/0014_owner_claim.sql",
+          "migrations/core/0015_owner_signin.sql",
           "package.json",
           "pnpm-lock.yaml",
           "public/app-components.css",
