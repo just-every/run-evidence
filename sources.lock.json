@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "ccba49a66dce48082b722533372c7a9c069779e96ea5dfd0bd81ac3b4a4b8f5b",
+  "manifest": "afc356effd5294497e7cd8ddb606647400cd4812cc212da0e03d01dd463d481c",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -42,265 +42,7 @@
           "src/base/setup-state.ts",
           "src/base/setup.ts",
           "src/base/static-assets.ts",
-          "src/base/theme-frame.ts",
-          "src/evidence/import/base/d1/apply.ts",
-          "src/evidence/import/base/d1/budget.ts",
-          "src/evidence/import/base/d1/compressed-plan.ts",
-          "src/evidence/import/base/d1/creation.ts",
-          "src/evidence/import/base/d1/custody-state-schema.ts",
-          "src/evidence/import/base/d1/database.ts",
-          "src/evidence/import/base/d1/erased-artifacts.ts",
-          "src/evidence/import/base/d1/erased-custody.ts",
-          "src/evidence/import/base/d1/erased-plan.ts",
-          "src/evidence/import/base/d1/erased-reversal.ts",
-          "src/evidence/import/base/d1/erasure-bounded.ts",
-          "src/evidence/import/base/d1/erasure-claims.ts",
-          "src/evidence/import/base/d1/erasure-compiler.ts",
-          "src/evidence/import/base/d1/erasure-disposition.ts",
-          "src/evidence/import/base/d1/erasure-fragments.ts",
-          "src/evidence/import/base/d1/erasure-index.ts",
-          "src/evidence/import/base/d1/erasure-pages.ts",
-          "src/evidence/import/base/d1/erasure-related.ts",
-          "src/evidence/import/base/d1/erasure-report.ts",
-          "src/evidence/import/base/d1/erasure-schema.ts",
-          "src/evidence/import/base/d1/erasure-snapshot.ts",
-          "src/evidence/import/base/d1/erasure-values.ts",
-          "src/evidence/import/base/d1/erasure-writes.ts",
-          "src/evidence/import/base/d1/erasure.ts",
-          "src/evidence/import/base/d1/evolutions/0001-preserved-undo.ts",
-          "src/evidence/import/base/d1/expected-state.ts",
-          "src/evidence/import/base/d1/field-redaction.ts",
-          "src/evidence/import/base/d1/guards.ts",
-          "src/evidence/import/base/d1/history.ts",
-          "src/evidence/import/base/d1/integrity.ts",
-          "src/evidence/import/base/d1/inventory-snapshot.ts",
-          "src/evidence/import/base/d1/jobs.ts",
-          "src/evidence/import/base/d1/native-staging-admission.ts",
-          "src/evidence/import/base/d1/native-staging-context.ts",
-          "src/evidence/import/base/d1/native-staging-lifecycle.ts",
-          "src/evidence/import/base/d1/native-staging-publication.ts",
-          "src/evidence/import/base/d1/native-staging-rows.ts",
-          "src/evidence/import/base/d1/native-staging-schema.ts",
-          "src/evidence/import/base/d1/native-staging-state.ts",
-          "src/evidence/import/base/d1/native-staging.ts",
-          "src/evidence/import/base/d1/original-copies.ts",
-          "src/evidence/import/base/d1/original-storage.ts",
-          "src/evidence/import/base/d1/originals.ts",
-          "src/evidence/import/base/d1/plan-dictionary.ts",
-          "src/evidence/import/base/d1/plans.ts",
-          "src/evidence/import/base/d1/preparation-schema.ts",
-          "src/evidence/import/base/d1/preserved-reverse.ts",
-          "src/evidence/import/base/d1/provenance-set.ts",
-          "src/evidence/import/base/d1/publication-fence.ts",
-          "src/evidence/import/base/d1/publication-receipt-schema.ts",
-          "src/evidence/import/base/d1/read-fence.ts",
-          "src/evidence/import/base/d1/read-results.ts",
-          "src/evidence/import/base/d1/redacted-custody.ts",
-          "src/evidence/import/base/d1/retained-values.ts",
-          "src/evidence/import/base/d1/retirement-schema.ts",
-          "src/evidence/import/base/d1/retirement-scope.ts",
-          "src/evidence/import/base/d1/retirement-tally.ts",
-          "src/evidence/import/base/d1/retirement.ts",
-          "src/evidence/import/base/d1/reversal-fence-schema.ts",
-          "src/evidence/import/base/d1/reversal-fence.ts",
-          "src/evidence/import/base/d1/reverse.ts",
-          "src/evidence/import/base/d1/reviewed-source.ts",
-          "src/evidence/import/base/d1/sets.ts",
-          "src/evidence/import/base/d1/staging-erasure.ts",
-          "src/evidence/import/base/d1/staging-privacy.ts",
-          "src/evidence/import/base/d1/staging-schema.ts",
-          "src/evidence/import/base/d1/staging-statements.ts",
-          "src/evidence/import/base/d1/staging-transport.ts",
-          "src/evidence/import/base/d1/stream-boundary.ts",
-          "src/evidence/import/base/d1/stream-layout.ts",
-          "src/evidence/import/base/d1/stream-origin.ts",
-          "src/evidence/import/base/d1/stream-partition.ts",
-          "src/evidence/import/base/d1/stream-plan.ts",
-          "src/evidence/import/base/d1/stream-receipt.ts",
-          "src/evidence/import/base/d1/stream-revision-schema.ts",
-          "src/evidence/import/base/d1/stream-snapshot.ts",
-          "src/evidence/import/base/d1/stream-working-set.ts",
-          "src/evidence/import/base/d1/target-guards.ts",
-          "src/evidence/import/base/d1/target-identities.ts",
-          "src/evidence/import/base/d1/transport.ts",
-          "src/evidence/import/base/d1/types.ts",
-          "src/evidence/import/base/d1/undo-observations.ts",
-          "src/evidence/import/base/d1/undo-snapshot.ts",
-          "src/evidence/import/base/d1/undo-state.ts",
-          "src/evidence/import/base/d1/undo-types.ts",
-          "src/evidence/import/base/journal/authority.ts",
-          "src/evidence/import/base/plan/budget.ts",
-          "src/evidence/import/base/plan/index.ts",
-          "src/evidence/import/base/plan/size.ts",
-          "src/evidence/import/base/provenance/canonical-hash.ts",
-          "src/evidence/import/base/provenance/canonical-stream.ts",
-          "src/evidence/import/base/provenance/credentials.ts",
-          "src/evidence/import/base/provenance/identity.ts",
-          "src/evidence/import/base/provenance/json-snapshot.ts",
-          "src/evidence/import/base/provenance/validate-json.ts",
-          "src/evidence/import/base/storage/originals.ts",
-          "src/evidence/import/base/storage/provenance.ts",
-          "src/evidence/import/base/storage/schema.ts",
-          "src/evidence/import/base/types.ts",
-          "src/modules/dependencies/README.md",
-          "src/modules/dependencies/approval.mjs",
-          "src/modules/dependencies/auth.mjs",
-          "src/modules/dependencies/authority.mjs",
-          "src/modules/dependencies/crypto.mjs",
-          "src/modules/dependencies/index.d.mts",
-          "src/modules/dependencies/index.mjs",
-          "src/modules/dependencies/logout.mjs",
-          "src/modules/dependencies/native.mjs",
-          "src/modules/dependencies/protocol.mjs",
-          "src/modules/dependencies/schema/approval-attempt.sql",
-          "src/modules/dependencies/schema/dependencies.sql",
-          "src/modules/dependencies/store.mjs",
-          "src/modules/mail/.gitignore",
-          "src/modules/mail/LICENSE",
-          "src/modules/mail/README.md",
-          "src/modules/mail/doctor.mjs",
-          "src/modules/mail/index.mjs",
-          "src/modules/mail/package.json",
-          "src/modules/mail/src/adapters/cloudflare/README.md",
-          "src/modules/mail/src/adapters/cloudflare/headers.mjs",
-          "src/modules/mail/src/adapters/cloudflare/index.mjs",
-          "src/modules/mail/src/adapters/cloudflare/response.mjs",
-          "src/modules/mail/src/adapters/messaging/README.md",
-          "src/modules/mail/src/adapters/messaging/contract.mjs",
-          "src/modules/mail/src/adapters/messaging/event-schema.mjs",
-          "src/modules/mail/src/adapters/messaging/index.mjs",
-          "src/modules/mail/src/adapters/messaging/jws.mjs",
-          "src/modules/mail/src/adapters/messaging/request.mjs",
-          "src/modules/mail/src/adapters/messaging/serialize.mjs",
-          "src/modules/mail/src/adapters/resend/README.md",
-          "src/modules/mail/src/adapters/resend/index.mjs",
-          "src/modules/mail/src/adapters/resend/response.mjs",
-          "src/modules/mail/src/adapters/resend/serialize.mjs",
-          "src/modules/mail/src/adapters/resend/size.mjs",
-          "src/modules/mail/src/adapters/sendgrid/README.md",
-          "src/modules/mail/src/adapters/sendgrid/index.mjs",
-          "src/modules/mail/src/adapters/sendgrid/serialize.mjs",
-          "src/modules/mail/src/core/errors.mjs",
-          "src/modules/mail/src/core/transport.mjs",
-          "src/modules/mail/src/core/validation.mjs",
-          "src/modules/mail/src/development/index.d.mts",
-          "src/modules/mail/src/development/index.mjs",
-          "src/modules/mail/src/development/outbox.mjs",
-          "src/modules/mail/src/development/schema.sql",
-          "src/modules/mail/src/development/viewer-html.mjs",
-          "src/modules/mail/src/development/viewer.mjs",
-          "src/modules/mail/src/doctor/README.md",
-          "src/modules/mail/src/doctor/common.mjs",
-          "src/modules/mail/src/doctor/dns.mjs",
-          "src/modules/mail/src/doctor/index.mjs",
-          "src/modules/mail/src/doctor/probe.mjs",
-          "src/modules/mail/src/doctor/receive.mjs",
-          "src/modules/mail/src/doctor/records.mjs",
-          "src/modules/mail/src/events/README.md",
-          "src/modules/mail/src/events/d1-schema.sql",
-          "src/modules/mail/src/events/d1-storage.mjs",
-          "src/modules/mail/src/events/index.mjs",
-          "src/modules/mail/src/events/intake.mjs",
-          "src/modules/mail/src/events/storage.mjs",
-          "src/modules/mail/src/events/verify.mjs",
-          "src/modules/mail/src/inbound/README.md",
-          "src/modules/mail/src/inbound/bytes.mjs",
-          "src/modules/mail/src/inbound/headers.mjs",
-          "src/modules/mail/src/inbound/index.mjs",
-          "src/modules/mail/src/inbound/mime.mjs",
-          "src/modules/mail/src/inbound/multipart.mjs",
-          "src/modules/mail/src/inbound/resend-attachment.mjs",
-          "src/modules/mail/src/inbound/resend.mjs",
-          "src/modules/mail/src/inbound/sendgrid.mjs",
-          "src/modules/mail/src/sender.mjs",
-          "src/modules/mail/src/sendgrid-email/index.d.mts",
-          "src/modules/mail/src/sendgrid-email/index.mjs",
-          "src/modules/mail/src/unsubscribe/index.mjs",
-          "src/modules/operator-auth/README.md",
-          "src/modules/operator-auth/accounts/adapter.mjs",
-          "src/modules/operator-auth/accounts/admin.mjs",
-          "src/modules/operator-auth/accounts/credentials.mjs",
-          "src/modules/operator-auth/accounts/editor-owner.mjs",
-          "src/modules/operator-auth/accounts/index.d.mts",
-          "src/modules/operator-auth/accounts/index.mjs",
-          "src/modules/operator-auth/accounts/native.d.mts",
-          "src/modules/operator-auth/accounts/native.mjs",
-          "src/modules/operator-auth/accounts/oa.mjs",
-          "src/modules/operator-auth/accounts/provider-control.mjs",
-          "src/modules/operator-auth/accounts/provider-pin.mjs",
-          "src/modules/operator-auth/accounts/roles.mjs",
-          "src/modules/operator-auth/accounts/schema/dependency-setup.sql",
-          "src/modules/operator-auth/accounts/schema/dev-sessions.sql",
-          "src/modules/operator-auth/accounts/schema/domain-rules-step-up.sql",
-          "src/modules/operator-auth/accounts/schema/invitation-cancellation.sql",
-          "src/modules/operator-auth/accounts/schema/operator-auth.sql",
-          "src/modules/operator-auth/accounts/schema/provider-control.sql",
-          "src/modules/operator-auth/accounts/schema/provider-pins.sql",
-          "src/modules/operator-auth/accounts/settings-page.mjs",
-          "src/modules/operator-auth/accounts/store.mjs",
-          "src/modules/operator-auth/branding.mjs",
-          "src/modules/operator-auth/config.mjs",
-          "src/modules/operator-auth/conformance/README.md",
-          "src/modules/operator-auth/conformance/index.d.mts",
-          "src/modules/operator-auth/conformance/index.mjs",
-          "src/modules/operator-auth/conformance/presentation.mjs",
-          "src/modules/operator-auth/crypto.mjs",
-          "src/modules/operator-auth/dev-admission.d.mts",
-          "src/modules/operator-auth/dev-admission.mjs",
-          "src/modules/operator-auth/dev-gate.mjs",
-          "src/modules/operator-auth/dev/badge.mjs",
-          "src/modules/operator-auth/dev/index.d.mts",
-          "src/modules/operator-auth/dev/index.mjs",
-          "src/modules/operator-auth/dev/personas.mjs",
-          "src/modules/operator-auth/dev/sign-in-as.d.mts",
-          "src/modules/operator-auth/dev/sign-in-as.mjs",
-          "src/modules/operator-auth/docs/README.md",
-          "src/modules/operator-auth/docs/native-accounts.md",
-          "src/modules/operator-auth/docs/tanstack-start.md",
-          "src/modules/operator-auth/docs/vite-spa.md",
-          "src/modules/operator-auth/errors.mjs",
-          "src/modules/operator-auth/http.mjs",
-          "src/modules/operator-auth/identity/admission.mjs",
-          "src/modules/operator-auth/identity/after-confirm.mjs",
-          "src/modules/operator-auth/identity/email-link/confirmation.mjs",
-          "src/modules/operator-auth/identity/email-link/index.d.mts",
-          "src/modules/operator-auth/identity/email-link/index.mjs",
-          "src/modules/operator-auth/identity/email-link/message.mjs",
-          "src/modules/operator-auth/identity/index.d.mts",
-          "src/modules/operator-auth/identity/index.mjs",
-          "src/modules/operator-auth/identity/oidc/README.md",
-          "src/modules/operator-auth/identity/oidc/client-auth.mjs",
-          "src/modules/operator-auth/identity/oidc/config.mjs",
-          "src/modules/operator-auth/identity/oidc/crypto.mjs",
-          "src/modules/operator-auth/identity/oidc/errors.mjs",
-          "src/modules/operator-auth/identity/oidc/index.d.mts",
-          "src/modules/operator-auth/identity/oidc/index.mjs",
-          "src/modules/operator-auth/identity/oidc/jwt.mjs",
-          "src/modules/operator-auth/identity/oidc/network.mjs",
-          "src/modules/operator-auth/identity/oidc/presets.mjs",
-          "src/modules/operator-auth/identity/oidc/schema/oidc.sql",
-          "src/modules/operator-auth/identity/oidc/store.mjs",
-          "src/modules/operator-auth/identity/principal.mjs",
-          "src/modules/operator-auth/index.d.mts",
-          "src/modules/operator-auth/index.mjs",
-          "src/modules/operator-auth/input.mjs",
-          "src/modules/operator-auth/local-cli.mjs",
-          "src/modules/operator-auth/loopback.mjs",
-          "src/modules/operator-auth/page.mjs",
-          "src/modules/operator-auth/policy.mjs",
-          "src/modules/operator-auth/routes.mjs",
-          "src/modules/operator-auth/service.mjs",
-          "src/modules/operator-auth/signin/index.d.mts",
-          "src/modules/operator-auth/signin/index.mjs",
-          "src/modules/owner-claim/README.md",
-          "src/modules/owner-claim/idp.mjs",
-          "src/modules/owner-claim/index.d.mts",
-          "src/modules/owner-claim/index.mjs",
-          "src/modules/owner-claim/page.mjs",
-          "src/modules/owner-claim/schema/idp.sql",
-          "src/modules/owner-claim/schema/owner-claim.sql",
-          "src/modules/owner-claim/transaction.mjs",
-          "src/modules/owner-claim/verify.mjs"
+          "src/base/theme-frame.ts"
         ],
         "origin": {
           "repository": "https://github.com/runeditrun/base.git",
@@ -334,264 +76,8 @@
             "foundation/runtime/setup.ts",
             "foundation/runtime/static-assets.ts",
             "foundation/runtime/theme-frame.ts",
-            "modules/dependencies/README.md",
-            "modules/dependencies/approval.mjs",
-            "modules/dependencies/auth.mjs",
-            "modules/dependencies/authority.mjs",
-            "modules/dependencies/crypto.mjs",
-            "modules/dependencies/index.d.mts",
-            "modules/dependencies/index.mjs",
-            "modules/dependencies/logout.mjs",
-            "modules/dependencies/native.mjs",
-            "modules/dependencies/protocol.mjs",
-            "modules/dependencies/schema/approval-attempt.sql",
-            "modules/dependencies/schema/dependencies.sql",
-            "modules/dependencies/store.mjs",
-            "modules/import-kit/src/d1/apply.ts",
-            "modules/import-kit/src/d1/budget.ts",
-            "modules/import-kit/src/d1/compressed-plan.ts",
-            "modules/import-kit/src/d1/creation.ts",
-            "modules/import-kit/src/d1/custody-state-schema.ts",
-            "modules/import-kit/src/d1/database.ts",
-            "modules/import-kit/src/d1/erased-artifacts.ts",
-            "modules/import-kit/src/d1/erased-custody.ts",
-            "modules/import-kit/src/d1/erased-plan.ts",
-            "modules/import-kit/src/d1/erased-reversal.ts",
-            "modules/import-kit/src/d1/erasure-bounded.ts",
-            "modules/import-kit/src/d1/erasure-claims.ts",
-            "modules/import-kit/src/d1/erasure-compiler.ts",
-            "modules/import-kit/src/d1/erasure-disposition.ts",
-            "modules/import-kit/src/d1/erasure-fragments.ts",
-            "modules/import-kit/src/d1/erasure-index.ts",
-            "modules/import-kit/src/d1/erasure-pages.ts",
-            "modules/import-kit/src/d1/erasure-related.ts",
-            "modules/import-kit/src/d1/erasure-report.ts",
-            "modules/import-kit/src/d1/erasure-schema.ts",
-            "modules/import-kit/src/d1/erasure-snapshot.ts",
-            "modules/import-kit/src/d1/erasure-values.ts",
-            "modules/import-kit/src/d1/erasure-writes.ts",
-            "modules/import-kit/src/d1/erasure.ts",
-            "modules/import-kit/src/d1/evolutions/0001-preserved-undo.ts",
-            "modules/import-kit/src/d1/expected-state.ts",
-            "modules/import-kit/src/d1/field-redaction.ts",
-            "modules/import-kit/src/d1/guards.ts",
-            "modules/import-kit/src/d1/history.ts",
-            "modules/import-kit/src/d1/integrity.ts",
-            "modules/import-kit/src/d1/inventory-snapshot.ts",
-            "modules/import-kit/src/d1/jobs.ts",
-            "modules/import-kit/src/d1/native-staging-admission.ts",
-            "modules/import-kit/src/d1/native-staging-context.ts",
-            "modules/import-kit/src/d1/native-staging-lifecycle.ts",
-            "modules/import-kit/src/d1/native-staging-publication.ts",
-            "modules/import-kit/src/d1/native-staging-rows.ts",
-            "modules/import-kit/src/d1/native-staging-schema.ts",
-            "modules/import-kit/src/d1/native-staging-state.ts",
-            "modules/import-kit/src/d1/native-staging.ts",
-            "modules/import-kit/src/d1/original-copies.ts",
-            "modules/import-kit/src/d1/original-storage.ts",
-            "modules/import-kit/src/d1/originals.ts",
-            "modules/import-kit/src/d1/plan-dictionary.ts",
-            "modules/import-kit/src/d1/plans.ts",
-            "modules/import-kit/src/d1/preparation-schema.ts",
-            "modules/import-kit/src/d1/preserved-reverse.ts",
-            "modules/import-kit/src/d1/provenance-set.ts",
-            "modules/import-kit/src/d1/publication-fence.ts",
-            "modules/import-kit/src/d1/publication-receipt-schema.ts",
-            "modules/import-kit/src/d1/read-fence.ts",
-            "modules/import-kit/src/d1/read-results.ts",
-            "modules/import-kit/src/d1/redacted-custody.ts",
-            "modules/import-kit/src/d1/retained-values.ts",
-            "modules/import-kit/src/d1/retirement-schema.ts",
-            "modules/import-kit/src/d1/retirement-scope.ts",
-            "modules/import-kit/src/d1/retirement-tally.ts",
-            "modules/import-kit/src/d1/retirement.ts",
-            "modules/import-kit/src/d1/reversal-fence-schema.ts",
-            "modules/import-kit/src/d1/reversal-fence.ts",
-            "modules/import-kit/src/d1/reverse.ts",
-            "modules/import-kit/src/d1/reviewed-source.ts",
-            "modules/import-kit/src/d1/sets.ts",
-            "modules/import-kit/src/d1/staging-erasure.ts",
-            "modules/import-kit/src/d1/staging-privacy.ts",
-            "modules/import-kit/src/d1/staging-schema.ts",
-            "modules/import-kit/src/d1/staging-statements.ts",
-            "modules/import-kit/src/d1/staging-transport.ts",
-            "modules/import-kit/src/d1/stream-boundary.ts",
-            "modules/import-kit/src/d1/stream-layout.ts",
-            "modules/import-kit/src/d1/stream-origin.ts",
-            "modules/import-kit/src/d1/stream-partition.ts",
-            "modules/import-kit/src/d1/stream-plan.ts",
-            "modules/import-kit/src/d1/stream-receipt.ts",
-            "modules/import-kit/src/d1/stream-revision-schema.ts",
-            "modules/import-kit/src/d1/stream-snapshot.ts",
-            "modules/import-kit/src/d1/stream-working-set.ts",
-            "modules/import-kit/src/d1/target-guards.ts",
-            "modules/import-kit/src/d1/target-identities.ts",
-            "modules/import-kit/src/d1/transport.ts",
-            "modules/import-kit/src/d1/types.ts",
-            "modules/import-kit/src/d1/undo-observations.ts",
-            "modules/import-kit/src/d1/undo-snapshot.ts",
-            "modules/import-kit/src/d1/undo-state.ts",
-            "modules/import-kit/src/d1/undo-types.ts",
-            "modules/import-kit/src/journal/authority.ts",
-            "modules/import-kit/src/plan/budget.ts",
-            "modules/import-kit/src/plan/index.ts",
-            "modules/import-kit/src/plan/size.ts",
-            "modules/import-kit/src/provenance/canonical-hash.ts",
-            "modules/import-kit/src/provenance/canonical-stream.ts",
-            "modules/import-kit/src/provenance/credentials.ts",
-            "modules/import-kit/src/provenance/identity.ts",
-            "modules/import-kit/src/provenance/json-snapshot.ts",
-            "modules/import-kit/src/provenance/validate-json.ts",
-            "modules/import-kit/src/storage/originals.ts",
-            "modules/import-kit/src/storage/provenance.ts",
-            "modules/import-kit/src/storage/schema.ts",
-            "modules/import-kit/src/types.ts",
-            "modules/mail/.gitignore",
-            "modules/mail/LICENSE",
-            "modules/mail/README.md",
-            "modules/mail/doctor.mjs",
-            "modules/mail/index.mjs",
-            "modules/mail/package.json",
-            "modules/mail/src/adapters/cloudflare/README.md",
-            "modules/mail/src/adapters/cloudflare/headers.mjs",
-            "modules/mail/src/adapters/cloudflare/index.mjs",
-            "modules/mail/src/adapters/cloudflare/response.mjs",
-            "modules/mail/src/adapters/messaging/README.md",
-            "modules/mail/src/adapters/messaging/contract.mjs",
-            "modules/mail/src/adapters/messaging/event-schema.mjs",
-            "modules/mail/src/adapters/messaging/index.mjs",
-            "modules/mail/src/adapters/messaging/jws.mjs",
-            "modules/mail/src/adapters/messaging/request.mjs",
-            "modules/mail/src/adapters/messaging/serialize.mjs",
-            "modules/mail/src/adapters/resend/README.md",
-            "modules/mail/src/adapters/resend/index.mjs",
-            "modules/mail/src/adapters/resend/response.mjs",
-            "modules/mail/src/adapters/resend/serialize.mjs",
-            "modules/mail/src/adapters/resend/size.mjs",
-            "modules/mail/src/adapters/sendgrid/README.md",
-            "modules/mail/src/adapters/sendgrid/index.mjs",
-            "modules/mail/src/adapters/sendgrid/serialize.mjs",
-            "modules/mail/src/core/errors.mjs",
-            "modules/mail/src/core/transport.mjs",
-            "modules/mail/src/core/validation.mjs",
-            "modules/mail/src/development/index.d.mts",
-            "modules/mail/src/development/index.mjs",
-            "modules/mail/src/development/outbox.mjs",
-            "modules/mail/src/development/schema.sql",
-            "modules/mail/src/development/viewer-html.mjs",
-            "modules/mail/src/development/viewer.mjs",
-            "modules/mail/src/doctor/README.md",
-            "modules/mail/src/doctor/common.mjs",
-            "modules/mail/src/doctor/dns.mjs",
-            "modules/mail/src/doctor/index.mjs",
-            "modules/mail/src/doctor/probe.mjs",
-            "modules/mail/src/doctor/receive.mjs",
-            "modules/mail/src/doctor/records.mjs",
-            "modules/mail/src/events/README.md",
-            "modules/mail/src/events/d1-schema.sql",
-            "modules/mail/src/events/d1-storage.mjs",
-            "modules/mail/src/events/index.mjs",
-            "modules/mail/src/events/intake.mjs",
-            "modules/mail/src/events/storage.mjs",
-            "modules/mail/src/events/verify.mjs",
-            "modules/mail/src/inbound/README.md",
-            "modules/mail/src/inbound/bytes.mjs",
-            "modules/mail/src/inbound/headers.mjs",
-            "modules/mail/src/inbound/index.mjs",
-            "modules/mail/src/inbound/mime.mjs",
-            "modules/mail/src/inbound/multipart.mjs",
-            "modules/mail/src/inbound/resend-attachment.mjs",
-            "modules/mail/src/inbound/resend.mjs",
-            "modules/mail/src/inbound/sendgrid.mjs",
-            "modules/mail/src/sender.mjs",
-            "modules/mail/src/sendgrid-email/index.d.mts",
-            "modules/mail/src/sendgrid-email/index.mjs",
-            "modules/mail/src/unsubscribe/index.mjs",
-            "modules/operator-auth/README.md",
-            "modules/operator-auth/accounts/adapter.mjs",
-            "modules/operator-auth/accounts/admin.mjs",
-            "modules/operator-auth/accounts/credentials.mjs",
-            "modules/operator-auth/accounts/editor-owner.mjs",
-            "modules/operator-auth/accounts/index.d.mts",
-            "modules/operator-auth/accounts/index.mjs",
-            "modules/operator-auth/accounts/native.d.mts",
-            "modules/operator-auth/accounts/native.mjs",
-            "modules/operator-auth/accounts/oa.mjs",
-            "modules/operator-auth/accounts/provider-control.mjs",
-            "modules/operator-auth/accounts/provider-pin.mjs",
-            "modules/operator-auth/accounts/roles.mjs",
             "modules/operator-auth/accounts/schema/dependency-setup.sql",
-            "modules/operator-auth/accounts/schema/dev-sessions.sql",
-            "modules/operator-auth/accounts/schema/domain-rules-step-up.sql",
-            "modules/operator-auth/accounts/schema/invitation-cancellation.sql",
-            "modules/operator-auth/accounts/schema/operator-auth.sql",
-            "modules/operator-auth/accounts/schema/provider-control.sql",
-            "modules/operator-auth/accounts/schema/provider-pins.sql",
-            "modules/operator-auth/accounts/settings-page.mjs",
-            "modules/operator-auth/accounts/store.mjs",
-            "modules/operator-auth/branding.mjs",
-            "modules/operator-auth/config.mjs",
-            "modules/operator-auth/conformance/README.md",
-            "modules/operator-auth/conformance/index.d.mts",
-            "modules/operator-auth/conformance/index.mjs",
-            "modules/operator-auth/conformance/presentation.mjs",
-            "modules/operator-auth/crypto.mjs",
-            "modules/operator-auth/dev-admission.d.mts",
-            "modules/operator-auth/dev-admission.mjs",
-            "modules/operator-auth/dev-gate.mjs",
-            "modules/operator-auth/dev/badge.mjs",
-            "modules/operator-auth/dev/index.d.mts",
-            "modules/operator-auth/dev/index.mjs",
-            "modules/operator-auth/dev/personas.mjs",
-            "modules/operator-auth/dev/sign-in-as.d.mts",
-            "modules/operator-auth/dev/sign-in-as.mjs",
-            "modules/operator-auth/docs/README.md",
-            "modules/operator-auth/docs/native-accounts.md",
-            "modules/operator-auth/docs/tanstack-start.md",
-            "modules/operator-auth/docs/vite-spa.md",
-            "modules/operator-auth/errors.mjs",
-            "modules/operator-auth/http.mjs",
-            "modules/operator-auth/identity/admission.mjs",
-            "modules/operator-auth/identity/after-confirm.mjs",
-            "modules/operator-auth/identity/email-link/confirmation.mjs",
-            "modules/operator-auth/identity/email-link/index.d.mts",
-            "modules/operator-auth/identity/email-link/index.mjs",
-            "modules/operator-auth/identity/email-link/message.mjs",
-            "modules/operator-auth/identity/index.d.mts",
-            "modules/operator-auth/identity/index.mjs",
-            "modules/operator-auth/identity/oidc/README.md",
-            "modules/operator-auth/identity/oidc/client-auth.mjs",
-            "modules/operator-auth/identity/oidc/config.mjs",
-            "modules/operator-auth/identity/oidc/crypto.mjs",
-            "modules/operator-auth/identity/oidc/errors.mjs",
-            "modules/operator-auth/identity/oidc/index.d.mts",
-            "modules/operator-auth/identity/oidc/index.mjs",
-            "modules/operator-auth/identity/oidc/jwt.mjs",
-            "modules/operator-auth/identity/oidc/network.mjs",
-            "modules/operator-auth/identity/oidc/presets.mjs",
-            "modules/operator-auth/identity/oidc/schema/oidc.sql",
-            "modules/operator-auth/identity/oidc/store.mjs",
-            "modules/operator-auth/identity/principal.mjs",
-            "modules/operator-auth/index.d.mts",
-            "modules/operator-auth/index.mjs",
-            "modules/operator-auth/input.mjs",
-            "modules/operator-auth/local-cli.mjs",
-            "modules/operator-auth/loopback.mjs",
-            "modules/operator-auth/page.mjs",
-            "modules/operator-auth/policy.mjs",
-            "modules/operator-auth/routes.mjs",
-            "modules/operator-auth/service.mjs",
-            "modules/operator-auth/signin/index.d.mts",
-            "modules/operator-auth/signin/index.mjs",
-            "modules/owner-claim/README.md",
-            "modules/owner-claim/idp.mjs",
-            "modules/owner-claim/index.d.mts",
-            "modules/owner-claim/index.mjs",
-            "modules/owner-claim/page.mjs",
-            "modules/owner-claim/schema/idp.sql",
-            "modules/owner-claim/schema/owner-claim.sql",
-            "modules/owner-claim/transaction.mjs",
-            "modules/owner-claim/verify.mjs"
+            "modules/operator-auth/accounts/schema/provider-control.sql"
           ]
         },
         "mappings": [
@@ -710,6 +196,686 @@
           {
             "path": "src/base/theme-frame.ts",
             "originPath": "foundation/runtime/theme-frame.ts"
+          }
+        ]
+      },
+      "baseline": {
+        "key": "04653499d64f002fcf88ffe9549216f2592e8584ecdc3deb7ee9a7970db1dcb0",
+        "digest": "9cf135cf09d34b439a49a3114a088b8bfa62965bb1f7ed9e37f6827e0e255d2f",
+        "sha256": "0b6ddfdce4c30970ca0d6311fc520e81872131b01ce08a3027f2f0a7dff0d8c7"
+      }
+    },
+    {
+      "id": "runeditrun/base-history-756bf5a",
+      "source": {
+        "kind": "local",
+        "paths": [
+          "migrations/core/0014_owner_claim.sql",
+          "migrations/core/0015_owner_signin.sql",
+          "src/evidence/d1-transport/index.d.mts",
+          "src/evidence/d1-transport/index.mjs",
+          "src/evidence/import/base/d1/README.md",
+          "src/evidence/import/base/d1/apply.ts",
+          "src/evidence/import/base/d1/budget.ts",
+          "src/evidence/import/base/d1/compressed-plan.ts",
+          "src/evidence/import/base/d1/creation.ts",
+          "src/evidence/import/base/d1/custody-state-schema.ts",
+          "src/evidence/import/base/d1/database.ts",
+          "src/evidence/import/base/d1/erased-artifacts.ts",
+          "src/evidence/import/base/d1/erased-custody.ts",
+          "src/evidence/import/base/d1/erased-plan.ts",
+          "src/evidence/import/base/d1/erased-reversal.ts",
+          "src/evidence/import/base/d1/erasure-bounded.ts",
+          "src/evidence/import/base/d1/erasure-claims.ts",
+          "src/evidence/import/base/d1/erasure-compiler.ts",
+          "src/evidence/import/base/d1/erasure-disposition.ts",
+          "src/evidence/import/base/d1/erasure-fragments.ts",
+          "src/evidence/import/base/d1/erasure-index.ts",
+          "src/evidence/import/base/d1/erasure-pages.ts",
+          "src/evidence/import/base/d1/erasure-progress-schema.ts",
+          "src/evidence/import/base/d1/erasure-progress.ts",
+          "src/evidence/import/base/d1/erasure-related.ts",
+          "src/evidence/import/base/d1/erasure-report.ts",
+          "src/evidence/import/base/d1/erasure-schema.ts",
+          "src/evidence/import/base/d1/erasure-selection.ts",
+          "src/evidence/import/base/d1/erasure-snapshot.ts",
+          "src/evidence/import/base/d1/erasure-stage.ts",
+          "src/evidence/import/base/d1/erasure-step.ts",
+          "src/evidence/import/base/d1/erasure-values.ts",
+          "src/evidence/import/base/d1/erasure-writes.ts",
+          "src/evidence/import/base/d1/erasure.ts",
+          "src/evidence/import/base/d1/evolutions/0001-preserved-undo.ts",
+          "src/evidence/import/base/d1/expected-state.ts",
+          "src/evidence/import/base/d1/field-redaction.ts",
+          "src/evidence/import/base/d1/guards.ts",
+          "src/evidence/import/base/d1/history.ts",
+          "src/evidence/import/base/d1/index.ts",
+          "src/evidence/import/base/d1/integrity.ts",
+          "src/evidence/import/base/d1/inventory-snapshot.ts",
+          "src/evidence/import/base/d1/jobs.ts",
+          "src/evidence/import/base/d1/native-staging-admission.ts",
+          "src/evidence/import/base/d1/native-staging-context.ts",
+          "src/evidence/import/base/d1/native-staging-lifecycle.ts",
+          "src/evidence/import/base/d1/native-staging-offset.ts",
+          "src/evidence/import/base/d1/native-staging-publication.ts",
+          "src/evidence/import/base/d1/native-staging-rows.ts",
+          "src/evidence/import/base/d1/native-staging-schema.ts",
+          "src/evidence/import/base/d1/native-staging-state.ts",
+          "src/evidence/import/base/d1/native-staging.ts",
+          "src/evidence/import/base/d1/original-copies.ts",
+          "src/evidence/import/base/d1/original-storage.ts",
+          "src/evidence/import/base/d1/originals.ts",
+          "src/evidence/import/base/d1/plan-dictionary.ts",
+          "src/evidence/import/base/d1/plans.ts",
+          "src/evidence/import/base/d1/preparation-fingerprint.ts",
+          "src/evidence/import/base/d1/preparation-header.ts",
+          "src/evidence/import/base/d1/preparation-reader.ts",
+          "src/evidence/import/base/d1/preparation-schema.ts",
+          "src/evidence/import/base/d1/preparation-state.ts",
+          "src/evidence/import/base/d1/preparation-step-combine.ts",
+          "src/evidence/import/base/d1/preparation-step-control.ts",
+          "src/evidence/import/base/d1/preparation-step-hash.ts",
+          "src/evidence/import/base/d1/preparation-step-pages.ts",
+          "src/evidence/import/base/d1/preparation-steps-schema.ts",
+          "src/evidence/import/base/d1/preparation-steps.ts",
+          "src/evidence/import/base/d1/preparations.ts",
+          "src/evidence/import/base/d1/preserved-reverse.ts",
+          "src/evidence/import/base/d1/provenance-set.ts",
+          "src/evidence/import/base/d1/publication-fence.ts",
+          "src/evidence/import/base/d1/publication-receipt-schema.ts",
+          "src/evidence/import/base/d1/published-stream.ts",
+          "src/evidence/import/base/d1/read-fence.ts",
+          "src/evidence/import/base/d1/read-results.ts",
+          "src/evidence/import/base/d1/redacted-custody.ts",
+          "src/evidence/import/base/d1/redaction-step.ts",
+          "src/evidence/import/base/d1/retained-values.ts",
+          "src/evidence/import/base/d1/retirement-bounded.ts",
+          "src/evidence/import/base/d1/retirement-schema.ts",
+          "src/evidence/import/base/d1/retirement-scope.ts",
+          "src/evidence/import/base/d1/retirement-steps.ts",
+          "src/evidence/import/base/d1/retirement-tally.ts",
+          "src/evidence/import/base/d1/retirement.ts",
+          "src/evidence/import/base/d1/reversal-fence-schema.ts",
+          "src/evidence/import/base/d1/reversal-fence.ts",
+          "src/evidence/import/base/d1/reverse.ts",
+          "src/evidence/import/base/d1/reviewed-source.ts",
+          "src/evidence/import/base/d1/sets.ts",
+          "src/evidence/import/base/d1/staging-admission.ts",
+          "src/evidence/import/base/d1/staging-control.ts",
+          "src/evidence/import/base/d1/staging-erasure.ts",
+          "src/evidence/import/base/d1/staging-lifecycle.ts",
+          "src/evidence/import/base/d1/staging-plan.ts",
+          "src/evidence/import/base/d1/staging-privacy.ts",
+          "src/evidence/import/base/d1/staging-publication.ts",
+          "src/evidence/import/base/d1/staging-schema.ts",
+          "src/evidence/import/base/d1/staging-statements.ts",
+          "src/evidence/import/base/d1/staging-transport.ts",
+          "src/evidence/import/base/d1/stream-boundary.ts",
+          "src/evidence/import/base/d1/stream-create.ts",
+          "src/evidence/import/base/d1/stream-identity-admission.ts",
+          "src/evidence/import/base/d1/stream-input.ts",
+          "src/evidence/import/base/d1/stream-layout.ts",
+          "src/evidence/import/base/d1/stream-origin.ts",
+          "src/evidence/import/base/d1/stream-page-integrity.ts",
+          "src/evidence/import/base/d1/stream-partition.ts",
+          "src/evidence/import/base/d1/stream-plan.ts",
+          "src/evidence/import/base/d1/stream-receipt.ts",
+          "src/evidence/import/base/d1/stream-revision-schema.ts",
+          "src/evidence/import/base/d1/stream-snapshot.ts",
+          "src/evidence/import/base/d1/stream-stage.ts",
+          "src/evidence/import/base/d1/stream-state.ts",
+          "src/evidence/import/base/d1/stream-working-set.ts",
+          "src/evidence/import/base/d1/streams.ts",
+          "src/evidence/import/base/d1/target-guards.ts",
+          "src/evidence/import/base/d1/target-identities.ts",
+          "src/evidence/import/base/d1/transport.ts",
+          "src/evidence/import/base/d1/types.ts",
+          "src/evidence/import/base/d1/undo-observations.ts",
+          "src/evidence/import/base/d1/undo-report.ts",
+          "src/evidence/import/base/d1/undo-snapshot.ts",
+          "src/evidence/import/base/d1/undo-state.ts",
+          "src/evidence/import/base/d1/undo-types.ts",
+          "src/evidence/import/base/journal/authority.ts",
+          "src/evidence/import/base/journal/boundary.ts",
+          "src/evidence/import/base/journal/jobs.ts",
+          "src/evidence/import/base/journal/originals.ts",
+          "src/evidence/import/base/plan/budget.ts",
+          "src/evidence/import/base/plan/index.ts",
+          "src/evidence/import/base/plan/size.ts",
+          "src/evidence/import/base/provenance/canonical-hash.ts",
+          "src/evidence/import/base/provenance/canonical-stream.ts",
+          "src/evidence/import/base/provenance/credentials.ts",
+          "src/evidence/import/base/provenance/identity.ts",
+          "src/evidence/import/base/provenance/json-snapshot.ts",
+          "src/evidence/import/base/provenance/numeric-credentials.ts",
+          "src/evidence/import/base/provenance/resumable-sha256.ts",
+          "src/evidence/import/base/provenance/validate-json.ts",
+          "src/evidence/import/base/storage/cleanup.ts",
+          "src/evidence/import/base/storage/integrity.ts",
+          "src/evidence/import/base/storage/originals.ts",
+          "src/evidence/import/base/storage/provenance.ts",
+          "src/evidence/import/base/storage/schema.ts",
+          "src/evidence/import/base/storage/sqlite.ts",
+          "src/evidence/import/base/types.ts",
+          "src/modules/demo/README.md",
+          "src/modules/demo/effects.mjs",
+          "src/modules/demo/index.d.mts",
+          "src/modules/demo/index.mjs",
+          "src/modules/demo/label.d.mts",
+          "src/modules/demo/label.mjs",
+          "src/modules/demo/responses.mjs",
+          "src/modules/demo/sockets.mjs",
+          "src/modules/demo/vite.d.mts",
+          "src/modules/demo/vite.mjs",
+          "src/modules/dependencies/README.md",
+          "src/modules/dependencies/approval.mjs",
+          "src/modules/dependencies/auth.mjs",
+          "src/modules/dependencies/authority.mjs",
+          "src/modules/dependencies/crypto.mjs",
+          "src/modules/dependencies/index.d.mts",
+          "src/modules/dependencies/index.mjs",
+          "src/modules/dependencies/logout.mjs",
+          "src/modules/dependencies/native.mjs",
+          "src/modules/dependencies/protocol.mjs",
+          "src/modules/dependencies/schema/approval-attempt.sql",
+          "src/modules/dependencies/schema/dependencies.sql",
+          "src/modules/dependencies/store.mjs",
+          "src/modules/mail/.gitignore",
+          "src/modules/mail/LICENSE",
+          "src/modules/mail/README.md",
+          "src/modules/mail/doctor.mjs",
+          "src/modules/mail/index.mjs",
+          "src/modules/mail/package.json",
+          "src/modules/mail/src/adapters/cloudflare/README.md",
+          "src/modules/mail/src/adapters/cloudflare/headers.mjs",
+          "src/modules/mail/src/adapters/cloudflare/index.mjs",
+          "src/modules/mail/src/adapters/cloudflare/response.mjs",
+          "src/modules/mail/src/adapters/messaging/README.md",
+          "src/modules/mail/src/adapters/messaging/contract.mjs",
+          "src/modules/mail/src/adapters/messaging/event-schema.mjs",
+          "src/modules/mail/src/adapters/messaging/index.mjs",
+          "src/modules/mail/src/adapters/messaging/jws.mjs",
+          "src/modules/mail/src/adapters/messaging/request.mjs",
+          "src/modules/mail/src/adapters/messaging/serialize.mjs",
+          "src/modules/mail/src/adapters/rer/contract.mjs",
+          "src/modules/mail/src/adapters/rer/index.mjs",
+          "src/modules/mail/src/adapters/resend/README.md",
+          "src/modules/mail/src/adapters/resend/index.mjs",
+          "src/modules/mail/src/adapters/resend/response.mjs",
+          "src/modules/mail/src/adapters/resend/serialize.mjs",
+          "src/modules/mail/src/adapters/resend/size.mjs",
+          "src/modules/mail/src/adapters/sendgrid/README.md",
+          "src/modules/mail/src/adapters/sendgrid/index.mjs",
+          "src/modules/mail/src/adapters/sendgrid/serialize.mjs",
+          "src/modules/mail/src/core/errors.mjs",
+          "src/modules/mail/src/core/transport.mjs",
+          "src/modules/mail/src/core/validation.mjs",
+          "src/modules/mail/src/development/index.d.mts",
+          "src/modules/mail/src/development/index.mjs",
+          "src/modules/mail/src/development/outbox.mjs",
+          "src/modules/mail/src/development/schema.sql",
+          "src/modules/mail/src/doctor/README.md",
+          "src/modules/mail/src/doctor/common.mjs",
+          "src/modules/mail/src/doctor/dns.mjs",
+          "src/modules/mail/src/doctor/index.mjs",
+          "src/modules/mail/src/doctor/probe.mjs",
+          "src/modules/mail/src/doctor/receive.mjs",
+          "src/modules/mail/src/doctor/records.mjs",
+          "src/modules/mail/src/events/README.md",
+          "src/modules/mail/src/events/d1-schema.sql",
+          "src/modules/mail/src/events/d1-storage.mjs",
+          "src/modules/mail/src/events/index.mjs",
+          "src/modules/mail/src/events/intake.mjs",
+          "src/modules/mail/src/events/storage.mjs",
+          "src/modules/mail/src/events/verify.mjs",
+          "src/modules/mail/src/inbound/README.md",
+          "src/modules/mail/src/inbound/bytes.mjs",
+          "src/modules/mail/src/inbound/headers.mjs",
+          "src/modules/mail/src/inbound/index.mjs",
+          "src/modules/mail/src/inbound/mime.mjs",
+          "src/modules/mail/src/inbound/multipart.mjs",
+          "src/modules/mail/src/inbound/resend-attachment.mjs",
+          "src/modules/mail/src/inbound/resend.mjs",
+          "src/modules/mail/src/inbound/sendgrid.mjs",
+          "src/modules/mail/src/sender.mjs",
+          "src/modules/mail/src/sendgrid-email/index.d.mts",
+          "src/modules/mail/src/sendgrid-email/index.mjs",
+          "src/modules/mail/src/unsubscribe/index.mjs",
+          "src/modules/operator-auth/README.md",
+          "src/modules/operator-auth/accounts/adapter.mjs",
+          "src/modules/operator-auth/accounts/admin.mjs",
+          "src/modules/operator-auth/accounts/credentials.mjs",
+          "src/modules/operator-auth/accounts/editor-owner.mjs",
+          "src/modules/operator-auth/accounts/email-change.mjs",
+          "src/modules/operator-auth/accounts/index.d.mts",
+          "src/modules/operator-auth/accounts/index.mjs",
+          "src/modules/operator-auth/accounts/native.d.mts",
+          "src/modules/operator-auth/accounts/native.mjs",
+          "src/modules/operator-auth/accounts/oa.mjs",
+          "src/modules/operator-auth/accounts/owner-signin.mjs",
+          "src/modules/operator-auth/accounts/provider-control.mjs",
+          "src/modules/operator-auth/accounts/provider-pin.mjs",
+          "src/modules/operator-auth/accounts/roles.mjs",
+          "src/modules/operator-auth/accounts/schema/dependency-setup.sql",
+          "src/modules/operator-auth/accounts/schema/dev-sessions.sql",
+          "src/modules/operator-auth/accounts/schema/domain-rules-step-up.sql",
+          "src/modules/operator-auth/accounts/schema/invitation-cancellation.sql",
+          "src/modules/operator-auth/accounts/schema/operator-auth.sql",
+          "src/modules/operator-auth/accounts/schema/owner-signin.sql",
+          "src/modules/operator-auth/accounts/schema/provider-control.sql",
+          "src/modules/operator-auth/accounts/schema/provider-pins.sql",
+          "src/modules/operator-auth/accounts/settings-page.mjs",
+          "src/modules/operator-auth/accounts/store.mjs",
+          "src/modules/operator-auth/branding.mjs",
+          "src/modules/operator-auth/config.mjs",
+          "src/modules/operator-auth/conformance/README.md",
+          "src/modules/operator-auth/conformance/index.d.mts",
+          "src/modules/operator-auth/conformance/index.mjs",
+          "src/modules/operator-auth/conformance/presentation.mjs",
+          "src/modules/operator-auth/crypto.mjs",
+          "src/modules/operator-auth/csp.mjs",
+          "src/modules/operator-auth/dev-admission.d.mts",
+          "src/modules/operator-auth/dev-admission.mjs",
+          "src/modules/operator-auth/dev-gate.mjs",
+          "src/modules/operator-auth/dev/cli-session.mjs",
+          "src/modules/operator-auth/dev/index.d.mts",
+          "src/modules/operator-auth/dev/index.mjs",
+          "src/modules/operator-auth/dev/personas.mjs",
+          "src/modules/operator-auth/dev/sign-in-as.d.mts",
+          "src/modules/operator-auth/dev/sign-in-as.mjs",
+          "src/modules/operator-auth/docs/README.md",
+          "src/modules/operator-auth/docs/native-accounts.md",
+          "src/modules/operator-auth/docs/tanstack-start.md",
+          "src/modules/operator-auth/docs/vite-spa.md",
+          "src/modules/operator-auth/errors.mjs",
+          "src/modules/operator-auth/http.mjs",
+          "src/modules/operator-auth/identity/admission.mjs",
+          "src/modules/operator-auth/identity/after-confirm.mjs",
+          "src/modules/operator-auth/identity/email-link/confirmation.mjs",
+          "src/modules/operator-auth/identity/email-link/index.d.mts",
+          "src/modules/operator-auth/identity/email-link/index.mjs",
+          "src/modules/operator-auth/identity/email-link/message.mjs",
+          "src/modules/operator-auth/identity/index.d.mts",
+          "src/modules/operator-auth/identity/index.mjs",
+          "src/modules/operator-auth/identity/oidc/README.md",
+          "src/modules/operator-auth/identity/oidc/client-auth.mjs",
+          "src/modules/operator-auth/identity/oidc/config.mjs",
+          "src/modules/operator-auth/identity/oidc/crypto.mjs",
+          "src/modules/operator-auth/identity/oidc/errors.mjs",
+          "src/modules/operator-auth/identity/oidc/index.d.mts",
+          "src/modules/operator-auth/identity/oidc/index.mjs",
+          "src/modules/operator-auth/identity/oidc/jwt.mjs",
+          "src/modules/operator-auth/identity/oidc/network.mjs",
+          "src/modules/operator-auth/identity/oidc/presets.mjs",
+          "src/modules/operator-auth/identity/oidc/schema/oidc.sql",
+          "src/modules/operator-auth/identity/oidc/store.mjs",
+          "src/modules/operator-auth/identity/principal.mjs",
+          "src/modules/operator-auth/index.d.mts",
+          "src/modules/operator-auth/index.mjs",
+          "src/modules/operator-auth/input.mjs",
+          "src/modules/operator-auth/local-cli.mjs",
+          "src/modules/operator-auth/loopback.mjs",
+          "src/modules/operator-auth/owner-signin-grant.mjs",
+          "src/modules/operator-auth/page.mjs",
+          "src/modules/operator-auth/policy.mjs",
+          "src/modules/operator-auth/rejected-response.mjs",
+          "src/modules/operator-auth/routes.mjs",
+          "src/modules/operator-auth/service.mjs",
+          "src/modules/operator-auth/signin/index.d.mts",
+          "src/modules/operator-auth/signin/index.mjs",
+          "src/modules/owner-claim/README.md",
+          "src/modules/owner-claim/idp.mjs",
+          "src/modules/owner-claim/index.d.mts",
+          "src/modules/owner-claim/index.mjs",
+          "src/modules/owner-claim/page.mjs",
+          "src/modules/owner-claim/schema/idp.sql",
+          "src/modules/owner-claim/schema/owner-claim.sql",
+          "src/modules/owner-claim/transaction.mjs",
+          "src/modules/owner-claim/verify.mjs"
+        ],
+        "origin": {
+          "repository": "https://github.com/runeditrun/base.git",
+          "revision": "756bf5a8544d792a51bb76f6e90a8ee5908a32a5",
+          "path": ".",
+          "paths": [
+            "modules/d1-transport/index.d.mts",
+            "modules/d1-transport/index.mjs",
+            "modules/demo/README.md",
+            "modules/demo/effects.mjs",
+            "modules/demo/index.d.mts",
+            "modules/demo/index.mjs",
+            "modules/demo/label.d.mts",
+            "modules/demo/label.mjs",
+            "modules/demo/responses.mjs",
+            "modules/demo/sockets.mjs",
+            "modules/demo/vite.d.mts",
+            "modules/demo/vite.mjs",
+            "modules/dependencies/README.md",
+            "modules/dependencies/approval.mjs",
+            "modules/dependencies/auth.mjs",
+            "modules/dependencies/authority.mjs",
+            "modules/dependencies/crypto.mjs",
+            "modules/dependencies/index.d.mts",
+            "modules/dependencies/index.mjs",
+            "modules/dependencies/logout.mjs",
+            "modules/dependencies/native.mjs",
+            "modules/dependencies/protocol.mjs",
+            "modules/dependencies/schema/approval-attempt.sql",
+            "modules/dependencies/schema/dependencies.sql",
+            "modules/dependencies/store.mjs",
+            "modules/import-kit/src/d1/README.md",
+            "modules/import-kit/src/d1/apply.ts",
+            "modules/import-kit/src/d1/budget.ts",
+            "modules/import-kit/src/d1/compressed-plan.ts",
+            "modules/import-kit/src/d1/creation.ts",
+            "modules/import-kit/src/d1/custody-state-schema.ts",
+            "modules/import-kit/src/d1/database.ts",
+            "modules/import-kit/src/d1/erased-artifacts.ts",
+            "modules/import-kit/src/d1/erased-custody.ts",
+            "modules/import-kit/src/d1/erased-plan.ts",
+            "modules/import-kit/src/d1/erased-reversal.ts",
+            "modules/import-kit/src/d1/erasure-bounded.ts",
+            "modules/import-kit/src/d1/erasure-claims.ts",
+            "modules/import-kit/src/d1/erasure-compiler.ts",
+            "modules/import-kit/src/d1/erasure-disposition.ts",
+            "modules/import-kit/src/d1/erasure-fragments.ts",
+            "modules/import-kit/src/d1/erasure-index.ts",
+            "modules/import-kit/src/d1/erasure-pages.ts",
+            "modules/import-kit/src/d1/erasure-progress-schema.ts",
+            "modules/import-kit/src/d1/erasure-progress.ts",
+            "modules/import-kit/src/d1/erasure-related.ts",
+            "modules/import-kit/src/d1/erasure-report.ts",
+            "modules/import-kit/src/d1/erasure-schema.ts",
+            "modules/import-kit/src/d1/erasure-selection.ts",
+            "modules/import-kit/src/d1/erasure-snapshot.ts",
+            "modules/import-kit/src/d1/erasure-stage.ts",
+            "modules/import-kit/src/d1/erasure-step.ts",
+            "modules/import-kit/src/d1/erasure-values.ts",
+            "modules/import-kit/src/d1/erasure-writes.ts",
+            "modules/import-kit/src/d1/erasure.ts",
+            "modules/import-kit/src/d1/evolutions/0001-preserved-undo.ts",
+            "modules/import-kit/src/d1/expected-state.ts",
+            "modules/import-kit/src/d1/field-redaction.ts",
+            "modules/import-kit/src/d1/guards.ts",
+            "modules/import-kit/src/d1/history.ts",
+            "modules/import-kit/src/d1/index.ts",
+            "modules/import-kit/src/d1/integrity.ts",
+            "modules/import-kit/src/d1/inventory-snapshot.ts",
+            "modules/import-kit/src/d1/jobs.ts",
+            "modules/import-kit/src/d1/native-staging-admission.ts",
+            "modules/import-kit/src/d1/native-staging-context.ts",
+            "modules/import-kit/src/d1/native-staging-lifecycle.ts",
+            "modules/import-kit/src/d1/native-staging-offset.ts",
+            "modules/import-kit/src/d1/native-staging-publication.ts",
+            "modules/import-kit/src/d1/native-staging-rows.ts",
+            "modules/import-kit/src/d1/native-staging-schema.ts",
+            "modules/import-kit/src/d1/native-staging-state.ts",
+            "modules/import-kit/src/d1/native-staging.ts",
+            "modules/import-kit/src/d1/original-copies.ts",
+            "modules/import-kit/src/d1/original-storage.ts",
+            "modules/import-kit/src/d1/originals.ts",
+            "modules/import-kit/src/d1/plan-dictionary.ts",
+            "modules/import-kit/src/d1/plans.ts",
+            "modules/import-kit/src/d1/preparation-fingerprint.ts",
+            "modules/import-kit/src/d1/preparation-header.ts",
+            "modules/import-kit/src/d1/preparation-reader.ts",
+            "modules/import-kit/src/d1/preparation-schema.ts",
+            "modules/import-kit/src/d1/preparation-state.ts",
+            "modules/import-kit/src/d1/preparation-step-combine.ts",
+            "modules/import-kit/src/d1/preparation-step-control.ts",
+            "modules/import-kit/src/d1/preparation-step-hash.ts",
+            "modules/import-kit/src/d1/preparation-step-pages.ts",
+            "modules/import-kit/src/d1/preparation-steps-schema.ts",
+            "modules/import-kit/src/d1/preparation-steps.ts",
+            "modules/import-kit/src/d1/preparations.ts",
+            "modules/import-kit/src/d1/preserved-reverse.ts",
+            "modules/import-kit/src/d1/provenance-set.ts",
+            "modules/import-kit/src/d1/publication-fence.ts",
+            "modules/import-kit/src/d1/publication-receipt-schema.ts",
+            "modules/import-kit/src/d1/published-stream.ts",
+            "modules/import-kit/src/d1/read-fence.ts",
+            "modules/import-kit/src/d1/read-results.ts",
+            "modules/import-kit/src/d1/redacted-custody.ts",
+            "modules/import-kit/src/d1/redaction-step.ts",
+            "modules/import-kit/src/d1/retained-values.ts",
+            "modules/import-kit/src/d1/retirement-bounded.ts",
+            "modules/import-kit/src/d1/retirement-schema.ts",
+            "modules/import-kit/src/d1/retirement-scope.ts",
+            "modules/import-kit/src/d1/retirement-steps.ts",
+            "modules/import-kit/src/d1/retirement-tally.ts",
+            "modules/import-kit/src/d1/retirement.ts",
+            "modules/import-kit/src/d1/reversal-fence-schema.ts",
+            "modules/import-kit/src/d1/reversal-fence.ts",
+            "modules/import-kit/src/d1/reverse.ts",
+            "modules/import-kit/src/d1/reviewed-source.ts",
+            "modules/import-kit/src/d1/sets.ts",
+            "modules/import-kit/src/d1/staging-admission.ts",
+            "modules/import-kit/src/d1/staging-control.ts",
+            "modules/import-kit/src/d1/staging-erasure.ts",
+            "modules/import-kit/src/d1/staging-lifecycle.ts",
+            "modules/import-kit/src/d1/staging-plan.ts",
+            "modules/import-kit/src/d1/staging-privacy.ts",
+            "modules/import-kit/src/d1/staging-publication.ts",
+            "modules/import-kit/src/d1/staging-schema.ts",
+            "modules/import-kit/src/d1/staging-statements.ts",
+            "modules/import-kit/src/d1/staging-transport.ts",
+            "modules/import-kit/src/d1/stream-boundary.ts",
+            "modules/import-kit/src/d1/stream-create.ts",
+            "modules/import-kit/src/d1/stream-identity-admission.ts",
+            "modules/import-kit/src/d1/stream-input.ts",
+            "modules/import-kit/src/d1/stream-layout.ts",
+            "modules/import-kit/src/d1/stream-origin.ts",
+            "modules/import-kit/src/d1/stream-page-integrity.ts",
+            "modules/import-kit/src/d1/stream-partition.ts",
+            "modules/import-kit/src/d1/stream-plan.ts",
+            "modules/import-kit/src/d1/stream-receipt.ts",
+            "modules/import-kit/src/d1/stream-revision-schema.ts",
+            "modules/import-kit/src/d1/stream-snapshot.ts",
+            "modules/import-kit/src/d1/stream-stage.ts",
+            "modules/import-kit/src/d1/stream-state.ts",
+            "modules/import-kit/src/d1/stream-working-set.ts",
+            "modules/import-kit/src/d1/streams.ts",
+            "modules/import-kit/src/d1/target-guards.ts",
+            "modules/import-kit/src/d1/target-identities.ts",
+            "modules/import-kit/src/d1/transport.ts",
+            "modules/import-kit/src/d1/types.ts",
+            "modules/import-kit/src/d1/undo-observations.ts",
+            "modules/import-kit/src/d1/undo-report.ts",
+            "modules/import-kit/src/d1/undo-snapshot.ts",
+            "modules/import-kit/src/d1/undo-state.ts",
+            "modules/import-kit/src/d1/undo-types.ts",
+            "modules/import-kit/src/journal/authority.ts",
+            "modules/import-kit/src/journal/boundary.ts",
+            "modules/import-kit/src/journal/jobs.ts",
+            "modules/import-kit/src/journal/originals.ts",
+            "modules/import-kit/src/plan/budget.ts",
+            "modules/import-kit/src/plan/index.ts",
+            "modules/import-kit/src/plan/size.ts",
+            "modules/import-kit/src/provenance/canonical-hash.ts",
+            "modules/import-kit/src/provenance/canonical-stream.ts",
+            "modules/import-kit/src/provenance/credentials.ts",
+            "modules/import-kit/src/provenance/identity.ts",
+            "modules/import-kit/src/provenance/json-snapshot.ts",
+            "modules/import-kit/src/provenance/numeric-credentials.ts",
+            "modules/import-kit/src/provenance/resumable-sha256.ts",
+            "modules/import-kit/src/provenance/validate-json.ts",
+            "modules/import-kit/src/storage/cleanup.ts",
+            "modules/import-kit/src/storage/integrity.ts",
+            "modules/import-kit/src/storage/originals.ts",
+            "modules/import-kit/src/storage/provenance.ts",
+            "modules/import-kit/src/storage/schema.ts",
+            "modules/import-kit/src/storage/sqlite.ts",
+            "modules/import-kit/src/types.ts",
+            "modules/mail/.gitignore",
+            "modules/mail/LICENSE",
+            "modules/mail/README.md",
+            "modules/mail/doctor.mjs",
+            "modules/mail/index.mjs",
+            "modules/mail/package.json",
+            "modules/mail/src/adapters/cloudflare/README.md",
+            "modules/mail/src/adapters/cloudflare/headers.mjs",
+            "modules/mail/src/adapters/cloudflare/index.mjs",
+            "modules/mail/src/adapters/cloudflare/response.mjs",
+            "modules/mail/src/adapters/messaging/README.md",
+            "modules/mail/src/adapters/messaging/contract.mjs",
+            "modules/mail/src/adapters/messaging/event-schema.mjs",
+            "modules/mail/src/adapters/messaging/index.mjs",
+            "modules/mail/src/adapters/messaging/jws.mjs",
+            "modules/mail/src/adapters/messaging/request.mjs",
+            "modules/mail/src/adapters/messaging/serialize.mjs",
+            "modules/mail/src/adapters/rer/contract.mjs",
+            "modules/mail/src/adapters/rer/index.mjs",
+            "modules/mail/src/adapters/resend/README.md",
+            "modules/mail/src/adapters/resend/index.mjs",
+            "modules/mail/src/adapters/resend/response.mjs",
+            "modules/mail/src/adapters/resend/serialize.mjs",
+            "modules/mail/src/adapters/resend/size.mjs",
+            "modules/mail/src/adapters/sendgrid/README.md",
+            "modules/mail/src/adapters/sendgrid/index.mjs",
+            "modules/mail/src/adapters/sendgrid/serialize.mjs",
+            "modules/mail/src/core/errors.mjs",
+            "modules/mail/src/core/transport.mjs",
+            "modules/mail/src/core/validation.mjs",
+            "modules/mail/src/development/index.d.mts",
+            "modules/mail/src/development/index.mjs",
+            "modules/mail/src/development/outbox.mjs",
+            "modules/mail/src/development/schema.sql",
+            "modules/mail/src/doctor/README.md",
+            "modules/mail/src/doctor/common.mjs",
+            "modules/mail/src/doctor/dns.mjs",
+            "modules/mail/src/doctor/index.mjs",
+            "modules/mail/src/doctor/probe.mjs",
+            "modules/mail/src/doctor/receive.mjs",
+            "modules/mail/src/doctor/records.mjs",
+            "modules/mail/src/events/README.md",
+            "modules/mail/src/events/d1-schema.sql",
+            "modules/mail/src/events/d1-storage.mjs",
+            "modules/mail/src/events/index.mjs",
+            "modules/mail/src/events/intake.mjs",
+            "modules/mail/src/events/storage.mjs",
+            "modules/mail/src/events/verify.mjs",
+            "modules/mail/src/inbound/README.md",
+            "modules/mail/src/inbound/bytes.mjs",
+            "modules/mail/src/inbound/headers.mjs",
+            "modules/mail/src/inbound/index.mjs",
+            "modules/mail/src/inbound/mime.mjs",
+            "modules/mail/src/inbound/multipart.mjs",
+            "modules/mail/src/inbound/resend-attachment.mjs",
+            "modules/mail/src/inbound/resend.mjs",
+            "modules/mail/src/inbound/sendgrid.mjs",
+            "modules/mail/src/sender.mjs",
+            "modules/mail/src/sendgrid-email/index.d.mts",
+            "modules/mail/src/sendgrid-email/index.mjs",
+            "modules/mail/src/unsubscribe/index.mjs",
+            "modules/operator-auth/README.md",
+            "modules/operator-auth/accounts/adapter.mjs",
+            "modules/operator-auth/accounts/admin.mjs",
+            "modules/operator-auth/accounts/credentials.mjs",
+            "modules/operator-auth/accounts/editor-owner.mjs",
+            "modules/operator-auth/accounts/email-change.mjs",
+            "modules/operator-auth/accounts/index.d.mts",
+            "modules/operator-auth/accounts/index.mjs",
+            "modules/operator-auth/accounts/native.d.mts",
+            "modules/operator-auth/accounts/native.mjs",
+            "modules/operator-auth/accounts/oa.mjs",
+            "modules/operator-auth/accounts/owner-signin.mjs",
+            "modules/operator-auth/accounts/provider-control.mjs",
+            "modules/operator-auth/accounts/provider-pin.mjs",
+            "modules/operator-auth/accounts/roles.mjs",
+            "modules/operator-auth/accounts/schema/dependency-setup.sql",
+            "modules/operator-auth/accounts/schema/dev-sessions.sql",
+            "modules/operator-auth/accounts/schema/domain-rules-step-up.sql",
+            "modules/operator-auth/accounts/schema/invitation-cancellation.sql",
+            "modules/operator-auth/accounts/schema/operator-auth.sql",
+            "modules/operator-auth/accounts/schema/owner-signin.sql",
+            "modules/operator-auth/accounts/schema/provider-control.sql",
+            "modules/operator-auth/accounts/schema/provider-pins.sql",
+            "modules/operator-auth/accounts/settings-page.mjs",
+            "modules/operator-auth/accounts/store.mjs",
+            "modules/operator-auth/branding.mjs",
+            "modules/operator-auth/config.mjs",
+            "modules/operator-auth/conformance/README.md",
+            "modules/operator-auth/conformance/index.d.mts",
+            "modules/operator-auth/conformance/index.mjs",
+            "modules/operator-auth/conformance/presentation.mjs",
+            "modules/operator-auth/crypto.mjs",
+            "modules/operator-auth/csp.mjs",
+            "modules/operator-auth/dev-admission.d.mts",
+            "modules/operator-auth/dev-admission.mjs",
+            "modules/operator-auth/dev-gate.mjs",
+            "modules/operator-auth/dev/cli-session.mjs",
+            "modules/operator-auth/dev/index.d.mts",
+            "modules/operator-auth/dev/index.mjs",
+            "modules/operator-auth/dev/personas.mjs",
+            "modules/operator-auth/dev/sign-in-as.d.mts",
+            "modules/operator-auth/dev/sign-in-as.mjs",
+            "modules/operator-auth/docs/README.md",
+            "modules/operator-auth/docs/native-accounts.md",
+            "modules/operator-auth/docs/tanstack-start.md",
+            "modules/operator-auth/docs/vite-spa.md",
+            "modules/operator-auth/errors.mjs",
+            "modules/operator-auth/http.mjs",
+            "modules/operator-auth/identity/admission.mjs",
+            "modules/operator-auth/identity/after-confirm.mjs",
+            "modules/operator-auth/identity/email-link/confirmation.mjs",
+            "modules/operator-auth/identity/email-link/index.d.mts",
+            "modules/operator-auth/identity/email-link/index.mjs",
+            "modules/operator-auth/identity/email-link/message.mjs",
+            "modules/operator-auth/identity/index.d.mts",
+            "modules/operator-auth/identity/index.mjs",
+            "modules/operator-auth/identity/oidc/README.md",
+            "modules/operator-auth/identity/oidc/client-auth.mjs",
+            "modules/operator-auth/identity/oidc/config.mjs",
+            "modules/operator-auth/identity/oidc/crypto.mjs",
+            "modules/operator-auth/identity/oidc/errors.mjs",
+            "modules/operator-auth/identity/oidc/index.d.mts",
+            "modules/operator-auth/identity/oidc/index.mjs",
+            "modules/operator-auth/identity/oidc/jwt.mjs",
+            "modules/operator-auth/identity/oidc/network.mjs",
+            "modules/operator-auth/identity/oidc/presets.mjs",
+            "modules/operator-auth/identity/oidc/schema/oidc.sql",
+            "modules/operator-auth/identity/oidc/store.mjs",
+            "modules/operator-auth/identity/principal.mjs",
+            "modules/operator-auth/index.d.mts",
+            "modules/operator-auth/index.mjs",
+            "modules/operator-auth/input.mjs",
+            "modules/operator-auth/local-cli.mjs",
+            "modules/operator-auth/loopback.mjs",
+            "modules/operator-auth/owner-signin-grant.mjs",
+            "modules/operator-auth/page.mjs",
+            "modules/operator-auth/policy.mjs",
+            "modules/operator-auth/rejected-response.mjs",
+            "modules/operator-auth/routes.mjs",
+            "modules/operator-auth/service.mjs",
+            "modules/operator-auth/signin/index.d.mts",
+            "modules/operator-auth/signin/index.mjs",
+            "modules/owner-claim/README.md",
+            "modules/owner-claim/idp.mjs",
+            "modules/owner-claim/index.d.mts",
+            "modules/owner-claim/index.mjs",
+            "modules/owner-claim/page.mjs",
+            "modules/owner-claim/schema/idp.sql",
+            "modules/owner-claim/schema/owner-claim.sql",
+            "modules/owner-claim/transaction.mjs",
+            "modules/owner-claim/verify.mjs"
+          ]
+        },
+        "mappings": [
+          {
+            "path": "migrations/core/0014_owner_claim.sql",
+            "originPath": "modules/owner-claim/schema/owner-claim.sql"
+          },
+          {
+            "path": "migrations/core/0015_owner_signin.sql",
+            "originPath": "modules/operator-auth/accounts/schema/owner-signin.sql"
+          },
+          {
+            "path": "src/evidence/d1-transport/index.d.mts",
+            "originPath": "modules/d1-transport/index.d.mts"
+          },
+          {
+            "path": "src/evidence/d1-transport/index.mjs",
+            "originPath": "modules/d1-transport/index.mjs"
           },
           {
             "path": "src/evidence/import/base/d1/apply.ts",
@@ -780,6 +946,14 @@
             "originPath": "modules/import-kit/src/d1/erasure-pages.ts"
           },
           {
+            "path": "src/evidence/import/base/d1/erasure-progress-schema.ts",
+            "originPath": "modules/import-kit/src/d1/erasure-progress-schema.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/erasure-progress.ts",
+            "originPath": "modules/import-kit/src/d1/erasure-progress.ts"
+          },
+          {
             "path": "src/evidence/import/base/d1/erasure-related.ts",
             "originPath": "modules/import-kit/src/d1/erasure-related.ts"
           },
@@ -792,8 +966,20 @@
             "originPath": "modules/import-kit/src/d1/erasure-schema.ts"
           },
           {
+            "path": "src/evidence/import/base/d1/erasure-selection.ts",
+            "originPath": "modules/import-kit/src/d1/erasure-selection.ts"
+          },
+          {
             "path": "src/evidence/import/base/d1/erasure-snapshot.ts",
             "originPath": "modules/import-kit/src/d1/erasure-snapshot.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/erasure-stage.ts",
+            "originPath": "modules/import-kit/src/d1/erasure-stage.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/erasure-step.ts",
+            "originPath": "modules/import-kit/src/d1/erasure-step.ts"
           },
           {
             "path": "src/evidence/import/base/d1/erasure-values.ts",
@@ -828,6 +1014,10 @@
             "originPath": "modules/import-kit/src/d1/history.ts"
           },
           {
+            "path": "src/evidence/import/base/d1/index.ts",
+            "originPath": "modules/import-kit/src/d1/index.ts"
+          },
+          {
             "path": "src/evidence/import/base/d1/integrity.ts",
             "originPath": "modules/import-kit/src/d1/integrity.ts"
           },
@@ -850,6 +1040,10 @@
           {
             "path": "src/evidence/import/base/d1/native-staging-lifecycle.ts",
             "originPath": "modules/import-kit/src/d1/native-staging-lifecycle.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/native-staging-offset.ts",
+            "originPath": "modules/import-kit/src/d1/native-staging-offset.ts"
           },
           {
             "path": "src/evidence/import/base/d1/native-staging-publication.ts",
@@ -892,8 +1086,52 @@
             "originPath": "modules/import-kit/src/d1/plans.ts"
           },
           {
+            "path": "src/evidence/import/base/d1/preparation-fingerprint.ts",
+            "originPath": "modules/import-kit/src/d1/preparation-fingerprint.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/preparation-header.ts",
+            "originPath": "modules/import-kit/src/d1/preparation-header.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/preparation-reader.ts",
+            "originPath": "modules/import-kit/src/d1/preparation-reader.ts"
+          },
+          {
             "path": "src/evidence/import/base/d1/preparation-schema.ts",
             "originPath": "modules/import-kit/src/d1/preparation-schema.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/preparation-state.ts",
+            "originPath": "modules/import-kit/src/d1/preparation-state.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/preparation-step-combine.ts",
+            "originPath": "modules/import-kit/src/d1/preparation-step-combine.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/preparation-step-control.ts",
+            "originPath": "modules/import-kit/src/d1/preparation-step-control.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/preparation-step-hash.ts",
+            "originPath": "modules/import-kit/src/d1/preparation-step-hash.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/preparation-step-pages.ts",
+            "originPath": "modules/import-kit/src/d1/preparation-step-pages.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/preparation-steps-schema.ts",
+            "originPath": "modules/import-kit/src/d1/preparation-steps-schema.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/preparation-steps.ts",
+            "originPath": "modules/import-kit/src/d1/preparation-steps.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/preparations.ts",
+            "originPath": "modules/import-kit/src/d1/preparations.ts"
           },
           {
             "path": "src/evidence/import/base/d1/preserved-reverse.ts",
@@ -912,6 +1150,10 @@
             "originPath": "modules/import-kit/src/d1/publication-receipt-schema.ts"
           },
           {
+            "path": "src/evidence/import/base/d1/published-stream.ts",
+            "originPath": "modules/import-kit/src/d1/published-stream.ts"
+          },
+          {
             "path": "src/evidence/import/base/d1/read-fence.ts",
             "originPath": "modules/import-kit/src/d1/read-fence.ts"
           },
@@ -920,12 +1162,24 @@
             "originPath": "modules/import-kit/src/d1/read-results.ts"
           },
           {
+            "path": "src/evidence/import/base/d1/README.md",
+            "originPath": "modules/import-kit/src/d1/README.md"
+          },
+          {
             "path": "src/evidence/import/base/d1/redacted-custody.ts",
             "originPath": "modules/import-kit/src/d1/redacted-custody.ts"
           },
           {
+            "path": "src/evidence/import/base/d1/redaction-step.ts",
+            "originPath": "modules/import-kit/src/d1/redaction-step.ts"
+          },
+          {
             "path": "src/evidence/import/base/d1/retained-values.ts",
             "originPath": "modules/import-kit/src/d1/retained-values.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/retirement-bounded.ts",
+            "originPath": "modules/import-kit/src/d1/retirement-bounded.ts"
           },
           {
             "path": "src/evidence/import/base/d1/retirement-schema.ts",
@@ -934,6 +1188,10 @@
           {
             "path": "src/evidence/import/base/d1/retirement-scope.ts",
             "originPath": "modules/import-kit/src/d1/retirement-scope.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/retirement-steps.ts",
+            "originPath": "modules/import-kit/src/d1/retirement-steps.ts"
           },
           {
             "path": "src/evidence/import/base/d1/retirement-tally.ts",
@@ -964,12 +1222,32 @@
             "originPath": "modules/import-kit/src/d1/sets.ts"
           },
           {
+            "path": "src/evidence/import/base/d1/staging-admission.ts",
+            "originPath": "modules/import-kit/src/d1/staging-admission.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/staging-control.ts",
+            "originPath": "modules/import-kit/src/d1/staging-control.ts"
+          },
+          {
             "path": "src/evidence/import/base/d1/staging-erasure.ts",
             "originPath": "modules/import-kit/src/d1/staging-erasure.ts"
           },
           {
+            "path": "src/evidence/import/base/d1/staging-lifecycle.ts",
+            "originPath": "modules/import-kit/src/d1/staging-lifecycle.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/staging-plan.ts",
+            "originPath": "modules/import-kit/src/d1/staging-plan.ts"
+          },
+          {
             "path": "src/evidence/import/base/d1/staging-privacy.ts",
             "originPath": "modules/import-kit/src/d1/staging-privacy.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/staging-publication.ts",
+            "originPath": "modules/import-kit/src/d1/staging-publication.ts"
           },
           {
             "path": "src/evidence/import/base/d1/staging-schema.ts",
@@ -988,12 +1266,28 @@
             "originPath": "modules/import-kit/src/d1/stream-boundary.ts"
           },
           {
+            "path": "src/evidence/import/base/d1/stream-create.ts",
+            "originPath": "modules/import-kit/src/d1/stream-create.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/stream-identity-admission.ts",
+            "originPath": "modules/import-kit/src/d1/stream-identity-admission.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/stream-input.ts",
+            "originPath": "modules/import-kit/src/d1/stream-input.ts"
+          },
+          {
             "path": "src/evidence/import/base/d1/stream-layout.ts",
             "originPath": "modules/import-kit/src/d1/stream-layout.ts"
           },
           {
             "path": "src/evidence/import/base/d1/stream-origin.ts",
             "originPath": "modules/import-kit/src/d1/stream-origin.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/stream-page-integrity.ts",
+            "originPath": "modules/import-kit/src/d1/stream-page-integrity.ts"
           },
           {
             "path": "src/evidence/import/base/d1/stream-partition.ts",
@@ -1016,8 +1310,20 @@
             "originPath": "modules/import-kit/src/d1/stream-snapshot.ts"
           },
           {
+            "path": "src/evidence/import/base/d1/stream-stage.ts",
+            "originPath": "modules/import-kit/src/d1/stream-stage.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/stream-state.ts",
+            "originPath": "modules/import-kit/src/d1/stream-state.ts"
+          },
+          {
             "path": "src/evidence/import/base/d1/stream-working-set.ts",
             "originPath": "modules/import-kit/src/d1/stream-working-set.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/streams.ts",
+            "originPath": "modules/import-kit/src/d1/streams.ts"
           },
           {
             "path": "src/evidence/import/base/d1/target-guards.ts",
@@ -1040,6 +1346,10 @@
             "originPath": "modules/import-kit/src/d1/undo-observations.ts"
           },
           {
+            "path": "src/evidence/import/base/d1/undo-report.ts",
+            "originPath": "modules/import-kit/src/d1/undo-report.ts"
+          },
+          {
             "path": "src/evidence/import/base/d1/undo-snapshot.ts",
             "originPath": "modules/import-kit/src/d1/undo-snapshot.ts"
           },
@@ -1054,6 +1364,18 @@
           {
             "path": "src/evidence/import/base/journal/authority.ts",
             "originPath": "modules/import-kit/src/journal/authority.ts"
+          },
+          {
+            "path": "src/evidence/import/base/journal/boundary.ts",
+            "originPath": "modules/import-kit/src/journal/boundary.ts"
+          },
+          {
+            "path": "src/evidence/import/base/journal/jobs.ts",
+            "originPath": "modules/import-kit/src/journal/jobs.ts"
+          },
+          {
+            "path": "src/evidence/import/base/journal/originals.ts",
+            "originPath": "modules/import-kit/src/journal/originals.ts"
           },
           {
             "path": "src/evidence/import/base/plan/budget.ts",
@@ -1088,8 +1410,24 @@
             "originPath": "modules/import-kit/src/provenance/json-snapshot.ts"
           },
           {
+            "path": "src/evidence/import/base/provenance/numeric-credentials.ts",
+            "originPath": "modules/import-kit/src/provenance/numeric-credentials.ts"
+          },
+          {
+            "path": "src/evidence/import/base/provenance/resumable-sha256.ts",
+            "originPath": "modules/import-kit/src/provenance/resumable-sha256.ts"
+          },
+          {
             "path": "src/evidence/import/base/provenance/validate-json.ts",
             "originPath": "modules/import-kit/src/provenance/validate-json.ts"
+          },
+          {
+            "path": "src/evidence/import/base/storage/cleanup.ts",
+            "originPath": "modules/import-kit/src/storage/cleanup.ts"
+          },
+          {
+            "path": "src/evidence/import/base/storage/integrity.ts",
+            "originPath": "modules/import-kit/src/storage/integrity.ts"
           },
           {
             "path": "src/evidence/import/base/storage/originals.ts",
@@ -1104,8 +1442,52 @@
             "originPath": "modules/import-kit/src/storage/schema.ts"
           },
           {
+            "path": "src/evidence/import/base/storage/sqlite.ts",
+            "originPath": "modules/import-kit/src/storage/sqlite.ts"
+          },
+          {
             "path": "src/evidence/import/base/types.ts",
             "originPath": "modules/import-kit/src/types.ts"
+          },
+          {
+            "path": "src/modules/demo/effects.mjs",
+            "originPath": "modules/demo/effects.mjs"
+          },
+          {
+            "path": "src/modules/demo/index.d.mts",
+            "originPath": "modules/demo/index.d.mts"
+          },
+          {
+            "path": "src/modules/demo/index.mjs",
+            "originPath": "modules/demo/index.mjs"
+          },
+          {
+            "path": "src/modules/demo/label.d.mts",
+            "originPath": "modules/demo/label.d.mts"
+          },
+          {
+            "path": "src/modules/demo/label.mjs",
+            "originPath": "modules/demo/label.mjs"
+          },
+          {
+            "path": "src/modules/demo/README.md",
+            "originPath": "modules/demo/README.md"
+          },
+          {
+            "path": "src/modules/demo/responses.mjs",
+            "originPath": "modules/demo/responses.mjs"
+          },
+          {
+            "path": "src/modules/demo/sockets.mjs",
+            "originPath": "modules/demo/sockets.mjs"
+          },
+          {
+            "path": "src/modules/demo/vite.d.mts",
+            "originPath": "modules/demo/vite.d.mts"
+          },
+          {
+            "path": "src/modules/demo/vite.mjs",
+            "originPath": "modules/demo/vite.mjs"
           },
           {
             "path": "src/modules/dependencies/approval.mjs",
@@ -1228,6 +1610,14 @@
             "originPath": "modules/mail/src/adapters/messaging/serialize.mjs"
           },
           {
+            "path": "src/modules/mail/src/adapters/rer/contract.mjs",
+            "originPath": "modules/mail/src/adapters/rer/contract.mjs"
+          },
+          {
+            "path": "src/modules/mail/src/adapters/rer/index.mjs",
+            "originPath": "modules/mail/src/adapters/rer/index.mjs"
+          },
+          {
             "path": "src/modules/mail/src/adapters/resend/index.mjs",
             "originPath": "modules/mail/src/adapters/resend/index.mjs"
           },
@@ -1286,14 +1676,6 @@
           {
             "path": "src/modules/mail/src/development/schema.sql",
             "originPath": "modules/mail/src/development/schema.sql"
-          },
-          {
-            "path": "src/modules/mail/src/development/viewer-html.mjs",
-            "originPath": "modules/mail/src/development/viewer-html.mjs"
-          },
-          {
-            "path": "src/modules/mail/src/development/viewer.mjs",
-            "originPath": "modules/mail/src/development/viewer.mjs"
           },
           {
             "path": "src/modules/mail/src/doctor/common.mjs",
@@ -1420,6 +1802,10 @@
             "originPath": "modules/operator-auth/accounts/editor-owner.mjs"
           },
           {
+            "path": "src/modules/operator-auth/accounts/email-change.mjs",
+            "originPath": "modules/operator-auth/accounts/email-change.mjs"
+          },
+          {
             "path": "src/modules/operator-auth/accounts/index.d.mts",
             "originPath": "modules/operator-auth/accounts/index.d.mts"
           },
@@ -1438,6 +1824,10 @@
           {
             "path": "src/modules/operator-auth/accounts/oa.mjs",
             "originPath": "modules/operator-auth/accounts/oa.mjs"
+          },
+          {
+            "path": "src/modules/operator-auth/accounts/owner-signin.mjs",
+            "originPath": "modules/operator-auth/accounts/owner-signin.mjs"
           },
           {
             "path": "src/modules/operator-auth/accounts/provider-control.mjs",
@@ -1470,6 +1860,10 @@
           {
             "path": "src/modules/operator-auth/accounts/schema/operator-auth.sql",
             "originPath": "modules/operator-auth/accounts/schema/operator-auth.sql"
+          },
+          {
+            "path": "src/modules/operator-auth/accounts/schema/owner-signin.sql",
+            "originPath": "modules/operator-auth/accounts/schema/owner-signin.sql"
           },
           {
             "path": "src/modules/operator-auth/accounts/schema/provider-control.sql",
@@ -1516,6 +1910,10 @@
             "originPath": "modules/operator-auth/crypto.mjs"
           },
           {
+            "path": "src/modules/operator-auth/csp.mjs",
+            "originPath": "modules/operator-auth/csp.mjs"
+          },
+          {
             "path": "src/modules/operator-auth/dev-admission.d.mts",
             "originPath": "modules/operator-auth/dev-admission.d.mts"
           },
@@ -1528,8 +1926,8 @@
             "originPath": "modules/operator-auth/dev-gate.mjs"
           },
           {
-            "path": "src/modules/operator-auth/dev/badge.mjs",
-            "originPath": "modules/operator-auth/dev/badge.mjs"
+            "path": "src/modules/operator-auth/dev/cli-session.mjs",
+            "originPath": "modules/operator-auth/dev/cli-session.mjs"
           },
           {
             "path": "src/modules/operator-auth/dev/index.d.mts",
@@ -1680,6 +2078,10 @@
             "originPath": "modules/operator-auth/loopback.mjs"
           },
           {
+            "path": "src/modules/operator-auth/owner-signin-grant.mjs",
+            "originPath": "modules/operator-auth/owner-signin-grant.mjs"
+          },
+          {
             "path": "src/modules/operator-auth/page.mjs",
             "originPath": "modules/operator-auth/page.mjs"
           },
@@ -1690,6 +2092,10 @@
           {
             "path": "src/modules/operator-auth/README.md",
             "originPath": "modules/operator-auth/README.md"
+          },
+          {
+            "path": "src/modules/operator-auth/rejected-response.mjs",
+            "originPath": "modules/operator-auth/rejected-response.mjs"
           },
           {
             "path": "src/modules/operator-auth/routes.mjs",
@@ -1746,9 +2152,9 @@
         ]
       },
       "baseline": {
-        "key": "e29c21bf20744cb5c3ef6c3d6a599c258d3b7063f07c053d71d089d21d535761",
-        "digest": "3ff5ac298113b79d3ca8931071af71b528cf592886272c66bac34128fe0e4873",
-        "sha256": "dae8c0096689113d2442b660ac19c1bea8620e6d83d3b442f6871eb48c192479"
+        "key": "d4ce0a9e3b6e048535cd48d4fc24f6995949b11c3ccf054ed4c44d53d42e2ee1",
+        "digest": "d894bc725dff7edcb89112546d503568bfc2c46d72f013dba44874f4325cd314",
+        "sha256": "fd00e92031ce3236f105b7e678387ab61aaec758f1c6cc4fa0dc7ff59d520e54"
       }
     },
     {
@@ -1756,6 +2162,7 @@
       "source": {
         "kind": "local",
         "paths": [
+          ".github/workflows/run-demo.yml",
           ".github/workflows/run-site.yml",
           ".github/workflows/verify.yml",
           ".gitignore",
@@ -1764,6 +2171,7 @@
           "AGENTS.md",
           "CHANGELOG.md",
           "CONTRACT.md",
+          "DEMO.md",
           "LICENSE",
           "ONBOARDING.md",
           "OPERATIONS.json",
@@ -1772,6 +2180,7 @@
           "RUN-LOCALLY.md",
           "SEED-COMMAND-CONTRACT.md",
           "base-copies.json",
+          "deploy-demo.json",
           "deploy-site.json",
           "deploy.json",
           "docs/AGENT-COMMANDS.md",
@@ -1792,7 +2201,6 @@
           "migrations/core/0010_import.sql",
           "migrations/core/0011_agent.sql",
           "package.json",
-          "patches/@runeditrun__rer@0.2.15.patch",
           "pnpm-lock.yaml",
           "public/app-components.css",
           "public/app-shell.css",
@@ -1826,6 +2234,8 @@
           "src/app.server.ts",
           "src/auth.server.ts",
           "src/branding.json",
+          "src/demo-data.ts",
+          "src/demo.ts",
           "src/dev-personas.ts",
           "src/evidence/agent/archive.ts",
           "src/evidence/agent/http.ts",
@@ -1929,6 +2339,10 @@
     }
   ],
   "files": {
+    ".github/workflows/run-demo.yml": {
+      "sha256": "f7263d881a6a091a4c37b50da1b8014d01d8381b47b0a38a29b17cc48af02508",
+      "executable": false
+    },
     ".github/workflows/run-site.yml": {
       "sha256": "1d3ce495145e2790d3d3448e208d99ef43c80e9298afe0d3cc3969cce90322e0",
       "executable": false
@@ -1938,7 +2352,7 @@
       "executable": false
     },
     ".gitignore": {
-      "sha256": "2250f2cf6e24506dec46bc81008c18fe8912401b1dbd5e15a94fe316638d5862",
+      "sha256": "a37f8e9cd7aafa522744a849df9eb0303d55cc0cdd5666d64c90a728b34fe2e2",
       "executable": false
     },
     ".node-version": {
@@ -1954,7 +2368,7 @@
       "executable": false
     },
     "base-copies.json": {
-      "sha256": "8ccc4f5d0a70d92b22a5471315e23f10b38cd66893503c91da256950a0dcd428",
+      "sha256": "5d998db24d6decd5bc93657725d01b2cb192f0c9b8e513d9f735e303f62492e9",
       "executable": false
     },
     "CHANGELOG.md": {
@@ -1965,12 +2379,20 @@
       "sha256": "dfd8a01a3c4fd350074411f8a27bf0eb95a2d47173829d40b74786cafb2a3d52",
       "executable": false
     },
+    "DEMO.md": {
+      "sha256": "4bfe784c97cac08a56345cec05df2b4af1dd7861477eef3f3da19e8604ea3ff0",
+      "executable": false
+    },
+    "deploy-demo.json": {
+      "sha256": "61a53bb8601a1029e99f1e407e5236e9e6208defec652bab99a8c645abe34e20",
+      "executable": false
+    },
     "deploy-site.json": {
       "sha256": "8de39911d3f7e867bd3cc9790e4e1fa307da1010a50be2441025cd1e0b36b7c1",
       "executable": false
     },
     "deploy.json": {
-      "sha256": "8dcdf0d2674deca786a77135e904fade6bb591e7d9480e08e0f7723ad5faa4a3",
+      "sha256": "ec308bdb55934c8b95ba90780b2a056631d8d37cc1489f6d08f30315c41ced87",
       "executable": false
     },
     "docs/AGENT-COMMANDS.md": {
@@ -1998,7 +2420,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "ccba49a66dce48082b722533372c7a9c069779e96ea5dfd0bd81ac3b4a4b8f5b",
+      "sha256": "afc356effd5294497e7cd8ddb606647400cd4812cc212da0e03d01dd463d481c",
       "executable": false
     },
     "LICENSE": {
@@ -2057,6 +2479,14 @@
       "sha256": "7b36f7e1fb0991fe3e808613d911393bbad3386ead06427082c69a48c5738108",
       "executable": false
     },
+    "migrations/core/0014_owner_claim.sql": {
+      "sha256": "c3ffe653727bb4867b064dc2489df5013613f08f4b5998d2fe2b6a8485cdb815",
+      "executable": false
+    },
+    "migrations/core/0015_owner_signin.sql": {
+      "sha256": "98da904e768e35b43fb1be83d9dcc9c9b5d86ab3a795234ed5223c4fddc567d9",
+      "executable": false
+    },
     "ONBOARDING.md": {
       "sha256": "cb41287b866ebe7a7b902fadead43c339e794063e62874a85056ac02db59bbef",
       "executable": false
@@ -2070,15 +2500,11 @@
       "executable": false
     },
     "package.json": {
-      "sha256": "45bf314e3f333484ed7e83e83e67c3a22700a4d22478c9a04cb6479f6ac09fca",
-      "executable": false
-    },
-    "patches/@runeditrun__rer@0.2.15.patch": {
-      "sha256": "4d77be536390b07f8255ca381a330ea5eccdddc0c5e4a82a6e276cab3c1068dd",
+      "sha256": "2bccdc95e521b4923e28460c9e2a64abca6a0dae075022e9ce8fc8269ea9f8d3",
       "executable": false
     },
     "pnpm-lock.yaml": {
-      "sha256": "0b6399032b292aa9c282e846ae1e39269d586df893e1de60d2faa073b397a3f9",
+      "sha256": "ef694b661a69779b1bb0f7a138b29cd419c46657cf5ac367bfd4ffc4cde177d5",
       "executable": false
     },
     "public/app-components.css": {
@@ -2146,7 +2572,7 @@
       "executable": false
     },
     "README.md": {
-      "sha256": "1850f24c780d110b25c25e6308319d96ed4c6b9c1f3d9cc8b385da5664199b56",
+      "sha256": "0e362c6fa2f11b3a220e875b2da14c95993ec4999627e363efdecc6c033f79df",
       "executable": false
     },
     "rer-project.json": {
@@ -2214,7 +2640,7 @@
       "executable": false
     },
     "scripts/generate-edition.mjs": {
-      "sha256": "83f69d79251b333f183500293048841652adf8a5f5d1d352b917b8539cdfd730",
+      "sha256": "eebabf47a7f68e327e590f6ca41fba550ca2421e58d128d369918b57acb7757f",
       "executable": false
     },
     "scripts/install.mjs": {
@@ -2254,7 +2680,7 @@
       "executable": false
     },
     "src/auth.server.ts": {
-      "sha256": "83f29ce3f8cfdefa895b3e85bf3e24e7930c733104047eda61785e268b3d3956",
+      "sha256": "f2b2d5b78cfeb91eb8410fce34c78a64df10b0907ebfb0585f52865a904246d0",
       "executable": false
     },
     "src/base/deployment-health.ts": {
@@ -2329,6 +2755,14 @@
       "sha256": "380abf23ce43e2cbf8262637a95f7e555eda6d406cb9343ff7d916c82a16098a",
       "executable": false
     },
+    "src/demo-data.ts": {
+      "sha256": "9fd903a19ae6ab0f6a415855fb1d9fadfe0471ea495817419bcbb8268266eaff",
+      "executable": false
+    },
+    "src/demo.ts": {
+      "sha256": "7f50f69cf05e848ff105e6c3c18809ee7174ca2c38699ed19595651a7f9a4fef",
+      "executable": false
+    },
     "src/dev-personas.ts": {
       "sha256": "7d24cb83de4302472d944adeb1b0467a54cd1f50112223fded8302c34163fdf6",
       "executable": false
@@ -2389,6 +2823,14 @@
       "sha256": "4bad11abece30d9dbda5e1b8c2ec55b127abbf2c095a5a2399cd6e7b3b21fa13",
       "executable": false
     },
+    "src/evidence/d1-transport/index.d.mts": {
+      "sha256": "b1dcfba529210c9237fa257faa0da8c9062bef946961ba8edeb8af7e171611f3",
+      "executable": false
+    },
+    "src/evidence/d1-transport/index.mjs": {
+      "sha256": "a8a79a0c2673536e221facd892e688000bfae71485d864b4fff9801eb7aaf4a9",
+      "executable": false
+    },
     "src/evidence/http.ts": {
       "sha256": "b7843ecf220835ebdf1847fe44549bcdb866fe8db1c3dd08ce8f3b0ac1530154",
       "executable": false
@@ -2406,7 +2848,7 @@
       "executable": false
     },
     "src/evidence/import/base/d1/budget.ts": {
-      "sha256": "15a85719224332a015d653d2619ed5c60c8b230fe197573159b5209a2fd603bd",
+      "sha256": "98d13384a76b0d42fc3cd25bbaa4a6063250d6baa20ab5c8823eed55957ef0ec",
       "executable": false
     },
     "src/evidence/import/base/d1/compressed-plan.ts": {
@@ -2414,7 +2856,7 @@
       "executable": false
     },
     "src/evidence/import/base/d1/creation.ts": {
-      "sha256": "06ed88e62a1afedbc47e1bbe8edac1f4cb434a3ccce5ddd1b3c9a3ea70fe91cf",
+      "sha256": "8f860e99f638efa3bb450da9ad1c8b975808034927639412e4a90f94d2864a7c",
       "executable": false
     },
     "src/evidence/import/base/d1/custody-state-schema.ts": {
@@ -2422,7 +2864,7 @@
       "executable": false
     },
     "src/evidence/import/base/d1/database.ts": {
-      "sha256": "a0da0005d37f51c693e5101dbb736135345706d31d09af9ce4fd82dfaa7e5763",
+      "sha256": "1e3c63e3aa832d9df3ee712c9a2d22e56fc73764c635c0de35918f9bbecc36fc",
       "executable": false
     },
     "src/evidence/import/base/d1/erased-artifacts.ts": {
@@ -2430,7 +2872,7 @@
       "executable": false
     },
     "src/evidence/import/base/d1/erased-custody.ts": {
-      "sha256": "3b32fc2de77dc7ada815466f31645bc1322d8ef7a70bf357ddef3dc39455e51d",
+      "sha256": "64792af544f4f618a5aaed4c5fefcd29db137a47f9aff53d2c70635aa24ab5cc",
       "executable": false
     },
     "src/evidence/import/base/d1/erased-plan.ts": {
@@ -2442,7 +2884,7 @@
       "executable": false
     },
     "src/evidence/import/base/d1/erasure-bounded.ts": {
-      "sha256": "53a19e61fbce0fe8b3066a45e08486a795d7450a6496980d4ebb7d1f5e488f06",
+      "sha256": "d267210753501752609671a3c7e63ae393e3e4ebaa736c3bc662cd9984792381",
       "executable": false
     },
     "src/evidence/import/base/d1/erasure-claims.ts": {
@@ -2450,7 +2892,7 @@
       "executable": false
     },
     "src/evidence/import/base/d1/erasure-compiler.ts": {
-      "sha256": "1d9d948ede9b3d5428db7ddc0c9e125b61bbe4cb24c2c5415abf6ad1003537c7",
+      "sha256": "91c738beb50ca8ec51700c26bd735980bf9b752d7bb40f58bfb4b4d414d42b3f",
       "executable": false
     },
     "src/evidence/import/base/d1/erasure-disposition.ts": {
@@ -2458,7 +2900,7 @@
       "executable": false
     },
     "src/evidence/import/base/d1/erasure-fragments.ts": {
-      "sha256": "46d299b1a2efa8017e010fd17c500ce062e64126d7334605d1844e9085e24ed4",
+      "sha256": "0aeb2d74f341c6d6fec871564abf4a9abd1f777fa2c36776722daee12572b97a",
       "executable": false
     },
     "src/evidence/import/base/d1/erasure-index.ts": {
@@ -2469,8 +2911,16 @@
       "sha256": "0224a40b3466a1b61f5b226ae614f7db8d160bbecfad9470c900de88c706f698",
       "executable": false
     },
+    "src/evidence/import/base/d1/erasure-progress-schema.ts": {
+      "sha256": "cf0650ba10181b80244a4e5aaf4029afae7863098b02b04c2a270544f6a13c61",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/erasure-progress.ts": {
+      "sha256": "e47ba101cf7359649eb792e80d1673ccab0bea1b81ddeee5be3ff2f94375418a",
+      "executable": false
+    },
     "src/evidence/import/base/d1/erasure-related.ts": {
-      "sha256": "a21dd9a138c493989101ee704f09b3ed2554093f7979aee41020945933bf66c9",
+      "sha256": "c07448313510c116c9f2fc96d1d35a415674f284700257bfafadcc94c6dd1f1a",
       "executable": false
     },
     "src/evidence/import/base/d1/erasure-report.ts": {
@@ -2481,20 +2931,32 @@
       "sha256": "582dadabb6c8c010560fb8e5e46521766c72fdf743a3784cd08deb7b63988eef",
       "executable": false
     },
+    "src/evidence/import/base/d1/erasure-selection.ts": {
+      "sha256": "3159c51e8507885c2f2d73650f64b98c8fdf7b154f037043a37e4512da09fbfc",
+      "executable": false
+    },
     "src/evidence/import/base/d1/erasure-snapshot.ts": {
       "sha256": "5a16b9a9bf9ac22c9d22624314218e0f901d3ac511e3f642df11970bb2732244",
       "executable": false
     },
+    "src/evidence/import/base/d1/erasure-stage.ts": {
+      "sha256": "9ecbdf112c28bb1bccf49ad28fcb2f469b01c8982a726efd99d3271ec64018b4",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/erasure-step.ts": {
+      "sha256": "419335e01d25670a4ae5a0b12ed6991d4badd6019dd5e5bb8dd89fe25a9fd049",
+      "executable": false
+    },
     "src/evidence/import/base/d1/erasure-values.ts": {
-      "sha256": "93b18362f5deb0ef80933b8f24f03ac4fa56e7015986ea993ba12b9ddff40e09",
+      "sha256": "aa84881bea35969c83fce0b072a2878e761cbbc58137786a6d657ea28a27f22d",
       "executable": false
     },
     "src/evidence/import/base/d1/erasure-writes.ts": {
-      "sha256": "0782c50143ab1e4feae218ce2baac4db425ad2b53699ad9d63e392ac82ac07a9",
+      "sha256": "2dc08bead90f4ff95fb338f70eb14aef27d31c14bd474dfb0c71dbd0db8ee084",
       "executable": false
     },
     "src/evidence/import/base/d1/erasure.ts": {
-      "sha256": "1ad0f9ddd9628cb855a0488b3bdacd17d54460548beda298ec10980a3a39be86",
+      "sha256": "932e3a6749c663f06295e32380b0994d839fadf6cbf49f0371efb2537bb0b3c8",
       "executable": false
     },
     "src/evidence/import/base/d1/evolutions/0001-preserved-undo.ts": {
@@ -2506,7 +2968,7 @@
       "executable": false
     },
     "src/evidence/import/base/d1/field-redaction.ts": {
-      "sha256": "61422c38c28bd68eb93d3e506e669ac31b997d69c93ce3083709a1c063551f2f",
+      "sha256": "f7320418e95c0cba58048e526e561b567739b263f6e66299cc159d060fd3566f",
       "executable": false
     },
     "src/evidence/import/base/d1/guards.ts": {
@@ -2515,6 +2977,10 @@
     },
     "src/evidence/import/base/d1/history.ts": {
       "sha256": "004b6b72a3c33b33de05196ccaa7ee09777c9a3253bac8128f3cf4ebeb66aea9",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/index.ts": {
+      "sha256": "909ed14e5bd3df9beb0a623989140a14f2c50a7ce2933bef0f343160ff78c4b6",
       "executable": false
     },
     "src/evidence/import/base/d1/integrity.ts": {
@@ -2526,11 +2992,11 @@
       "executable": false
     },
     "src/evidence/import/base/d1/jobs.ts": {
-      "sha256": "130ea5c7f62c149a961f458e7c68a5f4cf25f785cf9241d4ce6c9ed0b2f1c733",
+      "sha256": "2823ebd50ea2d2adbaaf52394a6c8a4f414e051241eb716e77bdcbe7344cdc07",
       "executable": false
     },
     "src/evidence/import/base/d1/native-staging-admission.ts": {
-      "sha256": "64d798314f2271d6af590ec2797c5e3395ca6e529aa221b2935c4c7b1b0a6ee3",
+      "sha256": "3ef2ca0bc8e8f2f64d68606f8d61de78cdc1daf8b762cc5952eb05514cb052a7",
       "executable": false
     },
     "src/evidence/import/base/d1/native-staging-context.ts": {
@@ -2541,12 +3007,16 @@
       "sha256": "f404f3fd618e11ae9f37de7ead2f80ed70fbc6d4ce97af62ce0176ba2a154591",
       "executable": false
     },
+    "src/evidence/import/base/d1/native-staging-offset.ts": {
+      "sha256": "4311a193b25f811e7c674d3a4f158383ee548113c161da008ca47d26f13dc525",
+      "executable": false
+    },
     "src/evidence/import/base/d1/native-staging-publication.ts": {
       "sha256": "fac9a4dd25642d962adcf2e0999a570c7b78d5abec7c98b2c61cd43e6a1191c9",
       "executable": false
     },
     "src/evidence/import/base/d1/native-staging-rows.ts": {
-      "sha256": "2b2b1ca60b43ce4fec23e6aabd237d42604793b43502d0a00b32b282358a2f75",
+      "sha256": "4f9ccddf4327575c5720621370e27b1e500bb6c32da079b8c95be4b406eea443",
       "executable": false
     },
     "src/evidence/import/base/d1/native-staging-schema.ts": {
@@ -2578,11 +3048,55 @@
       "executable": false
     },
     "src/evidence/import/base/d1/plans.ts": {
-      "sha256": "4caabb330bb1dbb8dfe58cf5ee3baa5ac77173b8f236254abd86dc25c9daec94",
+      "sha256": "370322963f34e217b89369c00eb73f3a8a8c4a8affde8d1779a7efe8a7642001",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/preparation-fingerprint.ts": {
+      "sha256": "566ffe073ab090265cf3d2d745bad012d355e41bbe3cb454c486824ec6bf9e8c",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/preparation-header.ts": {
+      "sha256": "9b9f7a678ee0bdfd596bb6e9812c8b018c6b137c4e5e14f1521650250a2469b9",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/preparation-reader.ts": {
+      "sha256": "4f0a152f7c2a16e0d52eb60260e3fc6213c918accf0cda21d2b7fd7a1e98d0c7",
       "executable": false
     },
     "src/evidence/import/base/d1/preparation-schema.ts": {
       "sha256": "57af45460c857c59b3e2866e9885c1b18424aed5cb851fc0298186486958ecc1",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/preparation-state.ts": {
+      "sha256": "a46c501d435902eb66b06d89b2708d084ed5eca666822cde48873e0dfc2b5f12",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/preparation-step-combine.ts": {
+      "sha256": "23503394414d44e8a4e80b78ed8884953a992b3525c9da27dd8e1589fabce573",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/preparation-step-control.ts": {
+      "sha256": "76a40d603944d4c446e08e8ccef4968dd37949ee36720f60ebdd3696edba38ce",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/preparation-step-hash.ts": {
+      "sha256": "23b939dcbf551c8433ca435d70d374b110cda6dae41d1d3d11490e2b0111d015",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/preparation-step-pages.ts": {
+      "sha256": "0f88ebdb72487c6ab59626e9b51055d58691b20a15ad7deaaef93f7b9bbe0b45",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/preparation-steps-schema.ts": {
+      "sha256": "b085e0b64abc7b045178ed2e27c0a77db2766b668150f8acf3c6191547237888",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/preparation-steps.ts": {
+      "sha256": "d23442e368506740ce0acbfdf1f44c4934f2735db445965c290d30eaa421bb7c",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/preparations.ts": {
+      "sha256": "3e674caf01c9f104df6bc038563018dfcbac4f25c0e1fe87ddafd7ac94f7d4d2",
       "executable": false
     },
     "src/evidence/import/base/d1/preserved-reverse.ts": {
@@ -2601,6 +3115,10 @@
       "sha256": "a8562507cad8506e7c3ceaade0161b6de82a202f5bad368ea322187c62be1929",
       "executable": false
     },
+    "src/evidence/import/base/d1/published-stream.ts": {
+      "sha256": "8e672ca3c1921fce0dc2fe37fa4470a5ada1dd38924a9b39db0cb5a97060a222",
+      "executable": false
+    },
     "src/evidence/import/base/d1/read-fence.ts": {
       "sha256": "e77cf651e56af1d6d37c78ac68ae339b7a5e98049dad2e3f501b602b01b203b3",
       "executable": false
@@ -2609,12 +3127,24 @@
       "sha256": "75fe5cb009f41c2aa850941e8db21bfe77261baeccf5a0203505871d4ef66e2d",
       "executable": false
     },
+    "src/evidence/import/base/d1/README.md": {
+      "sha256": "8ac1970fd468181de192e144a781d36691b4ef6acfd24bba85b018a5e413b96b",
+      "executable": false
+    },
     "src/evidence/import/base/d1/redacted-custody.ts": {
-      "sha256": "3bc3dca93e5df1a3b67f4c454f0d3ca5707c42a76bca0a6a69c09fbdc798542d",
+      "sha256": "4ff48e38c5063bab4911c4a117fc89fb32898f3924a35d01340e106a87fa2692",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/redaction-step.ts": {
+      "sha256": "fca71a8e4b5d2c69694030bdcfaeab4a0dafad931a42920dbac6f7ee8126fa5c",
       "executable": false
     },
     "src/evidence/import/base/d1/retained-values.ts": {
       "sha256": "d864ad9edcfe335507dcc64c478bb6133a3633ea5e91040887381bf8e8f2d889",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/retirement-bounded.ts": {
+      "sha256": "508f3e2efa5624e525eb4ebf1c75ed954a3cfbdce8129ee10f8821a125f8e25d",
       "executable": false
     },
     "src/evidence/import/base/d1/retirement-schema.ts": {
@@ -2622,15 +3152,19 @@
       "executable": false
     },
     "src/evidence/import/base/d1/retirement-scope.ts": {
-      "sha256": "7bbe5d54f1813768d2b020d3f3d00f7ed49238694dd047b9d890e59d5c50ced5",
+      "sha256": "243228a0414dcdd580a3c0feba606f9336415de8f72d102063fbfa2f11fd83db",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/retirement-steps.ts": {
+      "sha256": "55ff982d28289d6602f1be17515069440d69283ccb23c360a87c1c550f29363b",
       "executable": false
     },
     "src/evidence/import/base/d1/retirement-tally.ts": {
-      "sha256": "e2530e05d0108a5b6eee28b506b67cc4cabadde7d4e0d4f498c326630917b753",
+      "sha256": "fca5bf6b6728a8cc472796d285d5e4b5792e471536016fa416e9e4351d1b05b5",
       "executable": false
     },
     "src/evidence/import/base/d1/retirement.ts": {
-      "sha256": "db04a33d4525ee2eb4054855cfe55e52b635791e68b6966a668ece0180fbd1a4",
+      "sha256": "441e30eda04da8127d64fd79fc1e4a8175722dae99595051e9eb7fda53bcddc1",
       "executable": false
     },
     "src/evidence/import/base/d1/reversal-fence-schema.ts": {
@@ -2653,12 +3187,32 @@
       "sha256": "f1a6572f8a5701fd3d72cf5793dcb0302dc05e7ef6f33c941636562291d179bd",
       "executable": false
     },
+    "src/evidence/import/base/d1/staging-admission.ts": {
+      "sha256": "dcf561f9098294c33b0d85c52d3a85d7737f203c5cd09d502db6244a2300b343",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/staging-control.ts": {
+      "sha256": "4fb9c1677578f06d5f449c9e5b2d16f0698313a2454533b72507dabe13ba5b06",
+      "executable": false
+    },
     "src/evidence/import/base/d1/staging-erasure.ts": {
       "sha256": "b334d4d6f381c49bec8acad7add6c830e81a5ac1c8ab11fa3a763b461b6051f4",
       "executable": false
     },
+    "src/evidence/import/base/d1/staging-lifecycle.ts": {
+      "sha256": "dbe20b9744dbf374030575c83679d045813d63014c12cc6dc41918745d733fd3",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/staging-plan.ts": {
+      "sha256": "0a277f2c6f7ff99b142f140962a1f4417f712d9706c0f51ea484063ba5d6f43f",
+      "executable": false
+    },
     "src/evidence/import/base/d1/staging-privacy.ts": {
       "sha256": "68433ca2720cba3563ebe59fbdf7a1e82ccb0f15e5a944492977cbe9d7fd8574",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/staging-publication.ts": {
+      "sha256": "7c754477b91851ba6ceb91aa101f833f624687c6a8116092b9ff1881c0fc49d5",
       "executable": false
     },
     "src/evidence/import/base/d1/staging-schema.ts": {
@@ -2677,12 +3231,28 @@
       "sha256": "a3db1aa700d66c23c1297ccaea1afb24171dccd5ebd0416ebb02649820871833",
       "executable": false
     },
+    "src/evidence/import/base/d1/stream-create.ts": {
+      "sha256": "81e288457d5bb8e094b3ce2bb8ea9607f167435864665a61b047ce6396a11860",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/stream-identity-admission.ts": {
+      "sha256": "04f7360f42814c168c643d83222968484a830d46167f5c5f9f21584e257637bb",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/stream-input.ts": {
+      "sha256": "4979b905310d8ebd94278267569301316bc38d3c1b6a8220ed44fb9159146b51",
+      "executable": false
+    },
     "src/evidence/import/base/d1/stream-layout.ts": {
       "sha256": "9b1771a447233e39609e28a27c034270127ca9628d1045786066a7cc5f03f31c",
       "executable": false
     },
     "src/evidence/import/base/d1/stream-origin.ts": {
       "sha256": "8c593ea5d256102b6027edc6759c4d2accff520fbb586391bb4240d11e84b1f1",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/stream-page-integrity.ts": {
+      "sha256": "b81cc04000f7733f537b3817a3513433abb5a5922d3590a506169888a91c035d",
       "executable": false
     },
     "src/evidence/import/base/d1/stream-partition.ts": {
@@ -2705,8 +3275,20 @@
       "sha256": "82c8c6c698d7548bc781c776c6ad00a6c7293b21b2d2cd58bf75a85fa3d6ee4b",
       "executable": false
     },
+    "src/evidence/import/base/d1/stream-stage.ts": {
+      "sha256": "9c18c0ffe72ad26a42d84b452fedebbc2885c09dae1a348ce98e8cc697b02c1b",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/stream-state.ts": {
+      "sha256": "79930506755884b83efeb43cb00c1f9a10a69cfdd3b5523bd38d37b4e8b67277",
+      "executable": false
+    },
     "src/evidence/import/base/d1/stream-working-set.ts": {
       "sha256": "29b16f9d5ec10aabbd8f228130f897695ae8c7a7a81122130afbb9e023b0a293",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/streams.ts": {
+      "sha256": "581dc7bcaa8fd3cbef5e7cfbde6fda2cdb76ed1f628c81d23b57e2a6bc69ab1f",
       "executable": false
     },
     "src/evidence/import/base/d1/target-guards.ts": {
@@ -2718,15 +3300,19 @@
       "executable": false
     },
     "src/evidence/import/base/d1/transport.ts": {
-      "sha256": "8db08ec77553f58f816bc0e3325a20e63552e38a99604237a58e8843de7819bf",
+      "sha256": "2aee9daa6d18cb2d43f2e9fe426ba6ab9c2571bda46d450d82c6229c1661584f",
       "executable": false
     },
     "src/evidence/import/base/d1/types.ts": {
-      "sha256": "db1fb94503e7244e006a111d0404eb82aee06a2002089e2cc2299e07854d2540",
+      "sha256": "6aa12c766998a259e38675ad69270b32073c9138b8101e6be7ea9cd1e0940e64",
       "executable": false
     },
     "src/evidence/import/base/d1/undo-observations.ts": {
       "sha256": "aa5c7eac0fd202244fe7a5518a95dcab377809b9eda12c52b610fe03b00f9958",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/undo-report.ts": {
+      "sha256": "10776e6240f7090e59023aa2e9ed212ead66b37c2c696ec0d44dba424be34b71",
       "executable": false
     },
     "src/evidence/import/base/d1/undo-snapshot.ts": {
@@ -2743,6 +3329,18 @@
     },
     "src/evidence/import/base/journal/authority.ts": {
       "sha256": "45934861cf653954615329c2ac003a106d8abad33a8e42c633cde43832af7b37",
+      "executable": false
+    },
+    "src/evidence/import/base/journal/boundary.ts": {
+      "sha256": "ee0ef90f37adaae55859d4875b56c12bf9de8eabbbcac892f9fc91d76c79cde0",
+      "executable": false
+    },
+    "src/evidence/import/base/journal/jobs.ts": {
+      "sha256": "0108321240af0073d0f6c136929c9063dfe311e7d0cf5023142f61587ac1f440",
+      "executable": false
+    },
+    "src/evidence/import/base/journal/originals.ts": {
+      "sha256": "8861f01cc383b4c4d16d1c5804b5369a158c16161f550ed9e9a8e066dadf4ae7",
       "executable": false
     },
     "src/evidence/import/base/LICENSE": {
@@ -2762,7 +3360,7 @@
       "executable": false
     },
     "src/evidence/import/base/provenance/canonical-hash.ts": {
-      "sha256": "c456931f94554f62dd9fae1923d44b9e04db63c822ec97fe708e55d687cadfe5",
+      "sha256": "e0acc9e93bacbe75ccc8f71f2c5297fb6a7772c832c20ad77a8f97e80d46b964",
       "executable": false
     },
     "src/evidence/import/base/provenance/canonical-stream.ts": {
@@ -2781,12 +3379,28 @@
       "sha256": "0f966fc02c2605bdb055b9db13fb954d499f64439ab5e4873137c8d825c4b212",
       "executable": false
     },
+    "src/evidence/import/base/provenance/numeric-credentials.ts": {
+      "sha256": "dd21174c30a70a93e984a06a30f1045d1d36ca0d6a789c676c1cc183605f66c4",
+      "executable": false
+    },
+    "src/evidence/import/base/provenance/resumable-sha256.ts": {
+      "sha256": "2ded24de0d94c79ba98c9d15f7c84570e1b9efb89be82ca9cf259acbc86f4142",
+      "executable": false
+    },
     "src/evidence/import/base/provenance/validate-json.ts": {
       "sha256": "43d2424fb804f11b10b716504bf1f0ab9c03381372e2c9fe5eb7500224449007",
       "executable": false
     },
     "src/evidence/import/base/SOURCE.md": {
       "sha256": "10980702e8fbefdcad179dca0f41fd3b1594bcc0233f421354443904b6817ac4",
+      "executable": false
+    },
+    "src/evidence/import/base/storage/cleanup.ts": {
+      "sha256": "d07d231a526948e59ec89ef5113b01cf4a7b25b8e897e53bc6ede19183cdb58e",
+      "executable": false
+    },
+    "src/evidence/import/base/storage/integrity.ts": {
+      "sha256": "d9dc5e580e97e6355e7b092bedaf9e6ecc395e53dd085f10f0fb440ac1cdf5c4",
       "executable": false
     },
     "src/evidence/import/base/storage/originals.ts": {
@@ -2799,6 +3413,10 @@
     },
     "src/evidence/import/base/storage/schema.ts": {
       "sha256": "4173d0e3d1c02ee49899cbe651986363c4bb5d8a8c7d59fc068313d4c00ad5df",
+      "executable": false
+    },
+    "src/evidence/import/base/storage/sqlite.ts": {
+      "sha256": "e13a6a0902ea266a40e5db7a95c32017e0c4341b8ad7c0d7587d3919729f545c",
       "executable": false
     },
     "src/evidence/import/base/types.ts": {
@@ -2878,7 +3496,7 @@
       "executable": false
     },
     "src/evidence/shell.ts": {
-      "sha256": "c90c7e0a76a29339c0d107c116bc0dfa75e390d97a67228d08ffcab6703794b5",
+      "sha256": "fb360990374aa7a7511aa0bde4d6f09b2337a0c71f9e1a29fac9467e5a47bb92",
       "executable": false
     },
     "src/evidence/storage.ts": {
@@ -2914,7 +3532,47 @@
       "executable": false
     },
     "src/mail.server.mjs": {
-      "sha256": "e00e88c78cfdbaa17ef8cf47e19712972934864bf7f0acac5470967da32003a1",
+      "sha256": "d5a4d310704704e20ba239e3889bb77cbb115215840c9ae1074939d2c96797e9",
+      "executable": false
+    },
+    "src/modules/demo/effects.mjs": {
+      "sha256": "2e523da1d9fcffc4b6e3e0e4901b6bd45e6f08adfb380b397e775acb0358c395",
+      "executable": false
+    },
+    "src/modules/demo/index.d.mts": {
+      "sha256": "71caa39f5001ab8bd2891ae5bdb9bf1ab4910c121fb038d83ae549adaf8fcf10",
+      "executable": false
+    },
+    "src/modules/demo/index.mjs": {
+      "sha256": "a90f58afaf7d7d54121f1e49746a51631c1b12c603e44edba81b1570eaa68d96",
+      "executable": false
+    },
+    "src/modules/demo/label.d.mts": {
+      "sha256": "96a4692d568cfb6fd5593c9d7d4296bced338e0f54c2d17f80ae1da105287285",
+      "executable": false
+    },
+    "src/modules/demo/label.mjs": {
+      "sha256": "05c208a184941cf4c8be04502e2918c0ce9372159978022f02fb35c219f74d4f",
+      "executable": false
+    },
+    "src/modules/demo/README.md": {
+      "sha256": "b00a8aa86d6a0df3c7ce904c3fa3bbb18b0b25a5fac722b4d7beafad183ae74f",
+      "executable": false
+    },
+    "src/modules/demo/responses.mjs": {
+      "sha256": "3194f1a6aaec1f84477c15cf22fd32b650e317a119cfca26f0529c7ec5cd0cc5",
+      "executable": false
+    },
+    "src/modules/demo/sockets.mjs": {
+      "sha256": "af88b298b721b3b2a9fe2425b9a8b7c95d842f28b56b3c48cf4366226ec90389",
+      "executable": false
+    },
+    "src/modules/demo/vite.d.mts": {
+      "sha256": "f43b152b4a993feaf96afdbc276922bfa20d64725ea0150a12ec6ec805a7c7b3",
+      "executable": false
+    },
+    "src/modules/demo/vite.mjs": {
+      "sha256": "e38556e50c954814ee8e12278babd627d5cdd051a7ea2c242a61d6c5d84d12f8",
       "executable": false
     },
     "src/modules/dependencies/approval.mjs": {
@@ -2986,11 +3644,11 @@
       "executable": false
     },
     "src/modules/mail/package.json": {
-      "sha256": "b099b75f009c5cfd41c42cccd748c8530fb6f1caf8444d3de82fbc42241e7dfe",
+      "sha256": "b6e2d1e285c44deffbec6ae94ab67599d8dda0aaa548066c415ec94418ffbd30",
       "executable": false
     },
     "src/modules/mail/README.md": {
-      "sha256": "5b7a0e638c367eef44557c9941b74372da3fd752ad210fba90238226643c90d2",
+      "sha256": "4eae21c84caf86429a0274e5dccb002a304915c74ff58f0c75279555d2cb16a0",
       "executable": false
     },
     "src/modules/mail/src/adapters/cloudflare/headers.mjs": {
@@ -3037,6 +3695,14 @@
       "sha256": "4ee46c1ccb75edfd53b94bfff67ccdb08196a3ee68576c1eb0aa2494f9d4e1f5",
       "executable": false
     },
+    "src/modules/mail/src/adapters/rer/contract.mjs": {
+      "sha256": "b8ae90da173b40c7bde1a194ac35e9367802b9b608f050d63e2337a64e58454c",
+      "executable": false
+    },
+    "src/modules/mail/src/adapters/rer/index.mjs": {
+      "sha256": "2f27ff23d1182b4792b13b777e44fe1de9f7568474df11f3b60655415d2a6635",
+      "executable": false
+    },
     "src/modules/mail/src/adapters/resend/index.mjs": {
       "sha256": "03d292468577cb51b012b2c71c13654cd7b0af82c240ec124921ee88e05639dc",
       "executable": false
@@ -3074,19 +3740,19 @@
       "executable": false
     },
     "src/modules/mail/src/core/transport.mjs": {
-      "sha256": "3f7bf52854e4908bb69b93032ac65cbd90bba57d03a62da1c2652ef4e470a1f8",
+      "sha256": "aecc91b5b12c2f315a3154679bb6780518453d04516c750517f06f25548ebb18",
       "executable": false
     },
     "src/modules/mail/src/core/validation.mjs": {
-      "sha256": "6a08d0f42f795b8e16520a3f7ea2a1accef17c91584f13f9be791c2d3e6f4f56",
+      "sha256": "fa1f79579a96fc7b12964d9515e98135993c18ea1af23922779139abc4221571",
       "executable": false
     },
     "src/modules/mail/src/development/index.d.mts": {
-      "sha256": "5a5974b24b90d01e11957f1b67852cfa6cf4498ed41f6cebc637a11312dcfa48",
+      "sha256": "abec697c7f83a0cb7035a6c8d9b4e3a87c393d6ecd3ccb1ccbe49022eb03d0e2",
       "executable": false
     },
     "src/modules/mail/src/development/index.mjs": {
-      "sha256": "400ea3689e3fc64f228ad4bbc2e9eb31fc4dc7a0d5e043cd08e3a009cecdc7d0",
+      "sha256": "e4feac5772dd57b02b380584f38395063758905e8c850034f822a3c23ffb2c3f",
       "executable": false
     },
     "src/modules/mail/src/development/outbox.mjs": {
@@ -3095,14 +3761,6 @@
     },
     "src/modules/mail/src/development/schema.sql": {
       "sha256": "45d6b03eadfe1e91737763ae85cdff74e7216f859869e34431550bba48294996",
-      "executable": false
-    },
-    "src/modules/mail/src/development/viewer-html.mjs": {
-      "sha256": "4b9ad61da0517b2741417b5c61d054defbb853850edd628e306c93ddb6b9c922",
-      "executable": false
-    },
-    "src/modules/mail/src/development/viewer.mjs": {
-      "sha256": "dba10b05bfa58d30e64eae0a5afcf894e33984a7989db11b45e4676950e655f2",
       "executable": false
     },
     "src/modules/mail/src/doctor/common.mjs": {
@@ -3198,7 +3856,7 @@
       "executable": false
     },
     "src/modules/mail/src/sender.mjs": {
-      "sha256": "1e4ec0a59b6a7a523ed929e56bc5a9433b039ff75c5611d8e1a9162d8a508a6b",
+      "sha256": "32e35cd88b3b7199f5ce7ac7139be853890428549a84f70a733a5a9a0df6979d",
       "executable": false
     },
     "src/modules/mail/src/sendgrid-email/index.d.mts": {
@@ -3229,6 +3887,10 @@
       "sha256": "ed47e235de1fc52aa4b92e9ab60be5f7fbb07d8f29a5fc3d3c0b3e86702c4da7",
       "executable": false
     },
+    "src/modules/operator-auth/accounts/email-change.mjs": {
+      "sha256": "32e60c1e7cfc5041edfb1456ff4a4f7e629410925e42fa694ad380af67983a66",
+      "executable": false
+    },
     "src/modules/operator-auth/accounts/index.d.mts": {
       "sha256": "bea6399182774eaa7a2269aa1575679af98ec5d3340325098edac4aac2445cc0",
       "executable": false
@@ -3247,6 +3909,10 @@
     },
     "src/modules/operator-auth/accounts/oa.mjs": {
       "sha256": "84508f8c507d12d3df4cd0d683baa8bbd5a3b60522bd08d31cf49ebb92a72aa1",
+      "executable": false
+    },
+    "src/modules/operator-auth/accounts/owner-signin.mjs": {
+      "sha256": "20a538bf6b343edc3209718174f63f7b2015d98f64c19fe5b5f878e02e83b3a0",
       "executable": false
     },
     "src/modules/operator-auth/accounts/provider-control.mjs": {
@@ -3281,6 +3947,10 @@
       "sha256": "389e6fc3201a73ab5e7280bbe4fdb793b652b84f157e444bab48cc3c25eb8c41",
       "executable": false
     },
+    "src/modules/operator-auth/accounts/schema/owner-signin.sql": {
+      "sha256": "98da904e768e35b43fb1be83d9dcc9c9b5d86ab3a795234ed5223c4fddc567d9",
+      "executable": false
+    },
     "src/modules/operator-auth/accounts/schema/provider-control.sql": {
       "sha256": "f19cc7a792538a8ff36d87760a3cad58fccab0316984488d1834af14fbf37cfe",
       "executable": false
@@ -3290,7 +3960,7 @@
       "executable": false
     },
     "src/modules/operator-auth/accounts/settings-page.mjs": {
-      "sha256": "3036524d91e838e63654748b6fe0c8671c8590bc6632eb9990fc2b518e1bbcc7",
+      "sha256": "1f7bfcbceb4c7fbc95a42b23fb62f869aaf02e0b5590ce75419c14235b48af8d",
       "executable": false
     },
     "src/modules/operator-auth/accounts/store.mjs": {
@@ -3325,6 +3995,10 @@
       "sha256": "c9a843518d9223ec91698060bacd5a44cd0c4361adaa6b09c05be69f11a828b8",
       "executable": false
     },
+    "src/modules/operator-auth/csp.mjs": {
+      "sha256": "7cf7cca59410434708213945cb762f6a9fa302b5eaf7575b903ca3f171264d8d",
+      "executable": false
+    },
     "src/modules/operator-auth/dev-admission.d.mts": {
       "sha256": "4fa20898bba75ecf5a09005fd4ea3ae520f8a43b4b2cca5ecb5069443cd72d1d",
       "executable": false
@@ -3334,11 +4008,11 @@
       "executable": false
     },
     "src/modules/operator-auth/dev-gate.mjs": {
-      "sha256": "efff8220a192d8def2a9642fa14429958a103c9c887b052882c621a5ca343c54",
+      "sha256": "c42b4bb9f335a4645d523a5547690bc1f20c3286a6c9a546adc2d139e1045340",
       "executable": false
     },
-    "src/modules/operator-auth/dev/badge.mjs": {
-      "sha256": "4c020304e411be6d87fcf12e6c84b27385e357ff9b84f45a1ed3a50fdf7dd933",
+    "src/modules/operator-auth/dev/cli-session.mjs": {
+      "sha256": "d7feb7f56c2db591495502d2da95735b4050edacd610090c6608cc7fc96dd227",
       "executable": false
     },
     "src/modules/operator-auth/dev/index.d.mts": {
@@ -3346,7 +4020,7 @@
       "executable": false
     },
     "src/modules/operator-auth/dev/index.mjs": {
-      "sha256": "e9882a4a3c4cc75246f29a98d8e3fc251208875c0e31e0e5f32b5715717e289c",
+      "sha256": "75a8189aff8cc8310819d14c47f9addb5bc2fa8ecfc099d361fdd99a761538fa",
       "executable": false
     },
     "src/modules/operator-auth/dev/personas.mjs": {
@@ -3394,7 +4068,7 @@
       "executable": false
     },
     "src/modules/operator-auth/identity/email-link/confirmation.mjs": {
-      "sha256": "20e3d8e91bb3562801abf762d84e93629c01469b89e646320e232946793e1499",
+      "sha256": "b01e1ea198eaada5085c4c60b836dbe458421d10553adf73cc906e54449e5a7f",
       "executable": false
     },
     "src/modules/operator-auth/identity/email-link/index.d.mts": {
@@ -3402,7 +4076,7 @@
       "executable": false
     },
     "src/modules/operator-auth/identity/email-link/index.mjs": {
-      "sha256": "eadf57db13711637de084d763ad4fa2bfcc3c7b5896e33665bb0767112eefb2b",
+      "sha256": "4e42a8a3e82b1b251d52c7d39d1f38e1bea68d5578ead4672cea38e9e8e2d1ff",
       "executable": false
     },
     "src/modules/operator-auth/identity/email-link/message.mjs": {
@@ -3438,7 +4112,7 @@
       "executable": false
     },
     "src/modules/operator-auth/identity/oidc/index.mjs": {
-      "sha256": "c8de8f8fd8672e0f7d44cd062d05ea8074a8ce900a423437713973fa169af90b",
+      "sha256": "18cd11dd1cdf57b207491a6b8d2f4ba9c9b74ca7f7ba6126ad2145c5d3389144",
       "executable": false
     },
     "src/modules/operator-auth/identity/oidc/jwt.mjs": {
@@ -3470,7 +4144,7 @@
       "executable": false
     },
     "src/modules/operator-auth/index.d.mts": {
-      "sha256": "68a29b714052218ed6c4528c1d2a61bdd5a7f59162ce8f5fb0dfc7380b358b0e",
+      "sha256": "d51648eaed1df60a210e96375c28764e48fe5c67c9dcfdb85c09f02ffa120f31",
       "executable": false
     },
     "src/modules/operator-auth/index.mjs": {
@@ -3489,8 +4163,12 @@
       "sha256": "13b32a076bce23a3124be1745202c18eda553f298fad3d9f5cb93ac61aee3115",
       "executable": false
     },
+    "src/modules/operator-auth/owner-signin-grant.mjs": {
+      "sha256": "739808e5ad58b982d7d40a0ce2dc3836b90d57f515d8ce904cf6cf90965ed745",
+      "executable": false
+    },
     "src/modules/operator-auth/page.mjs": {
-      "sha256": "d6bb3bcce21c060cc1f5936f445c7dd4205b62494295896e4b23374c44a961c1",
+      "sha256": "5a6e74e3e1861dbe6906ab2e0219b498f1943c11e9c88a779819563ec32e7322",
       "executable": false
     },
     "src/modules/operator-auth/policy.mjs": {
@@ -3498,19 +4176,23 @@
       "executable": false
     },
     "src/modules/operator-auth/README.md": {
-      "sha256": "90ed6b62dd5557e517392ef62837d1059f0c44f701db2bbf205974369c4483e9",
+      "sha256": "999850a2a54147326ab738eac1446dcb8b2321ba0046d767c1536172cefb611e",
+      "executable": false
+    },
+    "src/modules/operator-auth/rejected-response.mjs": {
+      "sha256": "38c4e7621901173d0bca9bc62587486951ce24d2e0e31e97f26e1dfe406c9726",
       "executable": false
     },
     "src/modules/operator-auth/routes.mjs": {
-      "sha256": "1daf7f60b6905c24009e090779d852285a60997d8b0d012af2b1476983095ebe",
+      "sha256": "30e43f0da6c7b512639fd5187b67e3114773948ed9bdef751e4c8950b60e2dca",
       "executable": false
     },
     "src/modules/operator-auth/service.mjs": {
-      "sha256": "be4aee5deb9c18101acafe98f896faad0c282a795ccb85a4016e46f4d8d1f584",
+      "sha256": "ea77181f36b03f3fc821e5d8b7fbd31594a99303c89621f7e2a0b8fcf60f62ac",
       "executable": false
     },
     "src/modules/operator-auth/signin/index.d.mts": {
-      "sha256": "220f869fbe7e93a293f6cde24bec0f3fd9639289b7548353b9904b4085f94a6a",
+      "sha256": "9acad80108b974454b1473c761222ba7daaeceb13b7c9842107cbf1b15745c10",
       "executable": false
     },
     "src/modules/operator-auth/signin/index.mjs": {
@@ -3534,7 +4216,7 @@
       "executable": false
     },
     "src/modules/owner-claim/README.md": {
-      "sha256": "400d900fbe0981f9e6e27ff40b7913ebb140680bd045167cfb9ddb2a45a4c890",
+      "sha256": "ab3ead07f6a21347c4f084c48acbdd5d62ee9abc711982cc09ffb1c53f239459",
       "executable": false
     },
     "src/modules/owner-claim/schema/idp.sql": {
@@ -3546,7 +4228,7 @@
       "executable": false
     },
     "src/modules/owner-claim/transaction.mjs": {
-      "sha256": "ca36db33042d7778d518b407bd9b403dd4bac82d4b89d81beeb78ed47421cca2",
+      "sha256": "56f9cf605a5a4afae2be22012e84035e661fb38c07612ec7d4f8cdc39526aa54",
       "executable": false
     },
     "src/modules/owner-claim/verify.mjs": {
@@ -3570,7 +4252,7 @@
       "executable": false
     },
     "src/server.ts": {
-      "sha256": "53a04ce619ca42d44b0964a6cf5bb42c1cc9c6fe9ee0bd4f48b779a2ea7ee895",
+      "sha256": "b623a3ea28dfed9d27eb48120030df45066e11fdaa7d34300db40eef3fb1fd14",
       "executable": false
     },
     "src/site/assets.d.ts": {
@@ -3674,7 +4356,7 @@
       "executable": false
     },
     "tests/archive.mjs": {
-      "sha256": "d0738b62090e0f0147890b5c320832993808693235d7dbbe19ffa56800802446",
+      "sha256": "f80c3fe8c8c0d3a87fe492bab2e303b52290db373655256234c7fd7f14d64026",
       "executable": false
     },
     "tests/browser.mjs": {
@@ -3682,7 +4364,7 @@
       "executable": false
     },
     "tests/email-link.mjs": {
-      "sha256": "906285b2e43da8e81754d6cfb3e6adf50f6bf7539fc36f5ac3173562508d34c5",
+      "sha256": "c0786ab90953b57f7b98f4a99a5750b94f667d0682fbe0c2f1b54777bad76bb7",
       "executable": false
     },
     "tests/evidence.mjs": {
@@ -3710,7 +4392,7 @@
       "executable": false
     },
     "tests/helpers/runtime.mjs": {
-      "sha256": "b1aa7cfda20f07ad3bc4a3259dac03428147d0f85ba63019071bcc376e0320d8",
+      "sha256": "7f8cec2519f2a6644c2ecaac267f5992108a034577d451d1c16672abd31f1b08",
       "executable": false
     },
     "tests/helpers/site-runtime.mjs": {
@@ -3730,7 +4412,7 @@
       "executable": false
     },
     "tests/review.mjs": {
-      "sha256": "012cb49f9b9c47fce7d66b55ceec01f0100e84b935d625a27560edb7c36b48af",
+      "sha256": "b1612a9135a0b318a0c1d1664ef287969b1e8b03fc1d1c4e9f5c1d3f25de763e",
       "executable": false
     },
     "tests/site.mjs": {
@@ -3738,11 +4420,11 @@
       "executable": false
     },
     "tsconfig.json": {
-      "sha256": "54d38c791f1570448bf550f708c01bede26a02111c9da21a242501ac252989bc",
+      "sha256": "dca9b788ce557085987ba2e9a24e2e895802bc6395b2ca0675386dcc32fee2b1",
       "executable": false
     },
     "vite.config.ts": {
-      "sha256": "1689a2b9fbffc15af95f28d881b47e4107b7fb3985182c44809de5f7560acd9d",
+      "sha256": "bbd1717a7bd3fbfa4e50d7cbd340bdb4bf92f33685a46d472ee939e3e30a6f4a",
       "executable": false
     },
     "wrangler.jsonc": {

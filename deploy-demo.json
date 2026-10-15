@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "domain": "run-evidence.com",
+  "name": "Evidence",
+  "settings": {
+    "MAIL_FROM": "Evidence <auth@demo.invalid>",
+    "MAIL_PROVIDER": "development"
+  }
+}

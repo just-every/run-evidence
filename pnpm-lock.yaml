@@ -4,11 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-patchedDependencies:
-  '@runeditrun/rer@0.2.15':
-    hash: 4d77be536390b07f8255ca381a330ea5eccdddc0c5e4a82a6e276cab3c1068dd
-    path: patches/@runeditrun__rer@0.2.15.patch
-
 importers:
 
   .:
@@ -36,8 +31,8 @@ importers:
         specifier: 5.20260908.1
         version: 5.20260908.1
       '@runeditrun/rer':
-        specifier: 0.2.15
-        version: 0.2.15(patch_hash=4d77be536390b07f8255ca381a330ea5eccdddc0c5e4a82a6e276cab3c1068dd)
+        specifier: 0.2.21
+        version: 0.2.21
       '@types/node':
         specifier: 22.20.5
         version: 22.20.5
@@ -641,8 +636,8 @@ packages:
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
-  '@runeditrun/rer@0.2.15':
-    resolution: {integrity: sha512-E8ttNRxVklwsmmmhAjYdTnVyNLZkJM+V7U5cztUzEQkVvYVyS7AIDoaLyJg1zmTjQL+ZBWyO9ow2AzYatEYM4g==}
+  '@runeditrun/rer@0.2.21':
+    resolution: {integrity: sha512-VEP0kqfoHgf94CfJg73bg5K4w+M/JIoHVeu0XkITF552MEJw0fQWjP6CJnRno2nHB+sF7Lf7bHRlNSf/5S5YSA==}
     engines: {node: '>=22'}
     hasBin: true
 
@@ -1760,7 +1755,7 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
-  '@runeditrun/rer@0.2.15(patch_hash=4d77be536390b07f8255ca381a330ea5eccdddc0c5e4a82a6e276cab3c1068dd)': {}
+  '@runeditrun/rer@0.2.21': {}
 
   '@sindresorhus/is@7.2.0': {}
 

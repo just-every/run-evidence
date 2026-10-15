@@ -25,7 +25,7 @@ try {
   assert.equal((await app.fetch('/api/folders',{method:'POST'})).status,403)
   for(const role of ['admin','member']) {
    assert.equal((await ownerPost('/auth/invite',{email:role+'@example.test',displayName:role,role})).status,202)
-   const mail=JSON.parse((await app.db.prepare('SELECT message FROM rer_mail_development_outbox ORDER BY sequence DESC LIMIT 1').first()).message)
+   const mail=app.messages.at(-1)
    const link=new URL(mail.html.match(/href="([^"]*\/auth\/confirm\?token=[^"]+)"/)[1].replaceAll('&amp;','&'),app.origin)
    const confirmed=await app.fetch('/auth/confirm',{method:'POST',headers:{cookie:'',origin:app.origin,'content-type':'application/json'},body:JSON.stringify({token:link.searchParams.get('token')})})
    assert.equal(confirmed.status,303)

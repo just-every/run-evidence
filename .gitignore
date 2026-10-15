@@ -14,3 +14,6 @@ dist/
 exports/
 research/
 .rer/
+
+.rer/demo/
+.rer/demo-host/

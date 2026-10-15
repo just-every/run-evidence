@@ -32,7 +32,7 @@ try{
   const a=await createControl(app,'Access review'),b=await createControl(app,'Vendor review'),c=await createControl(app,'Data review')
   first=await upload(app,a,Buffer.alloc(2*1024*1024,11));second=await upload(app,a,Buffer.alloc(2*1024*1024,12),first.id);third=await upload(app,b,Buffer.alloc(2*1024*1024,13));missing=await upload(app,c,'missing original')
   const old=Object.fromEntries(await Promise.all(['controls','requirements','exhibits','receipts'].map(async t=>[t,await rows(app,t)])))
-  for(const file of (await readdir('migrations/core')).filter(f=>f.endsWith('.sql') && f.slice(0,4)>'0007' && !/^001[0-3]_/.test(f)).sort())for(const sql of unstable_splitSqlQuery(await readFile(join('migrations/core',file),'utf8')))await app.db.prepare(sql).run()
+  for(const file of (await readdir('migrations/core')).filter(f=>f.endsWith('.sql') && f.slice(0,4)>'0007' && !/^001[0-7]_/.test(f)).sort())for(const sql of unstable_splitSqlQuery(await readFile(join('migrations/core',file),'utf8')))await app.db.prepare(sql).run()
   for(const [table,data]of Object.entries(old))assert.deepEqual(await rows(app,table),data)
   for(const r of [first,second,third,missing]){const response=await app.fetch('/api/receipts/'+r.id+'/download');assert.equal(response.status,200);assert.equal(digest(Buffer.from(await response.arrayBuffer())),r.sha256)}
   await assert.rejects(app.db.prepare('UPDATE receipts SET source=?').bind('changed').run(),/immutable_receipt/)

@@ -7,14 +7,14 @@ Evidence is an MIT audit-evidence desk for one business: write controls, keep pr
 Install Node.js 22 or newer and Git. Install the shared command once, then clone:
 
 ```sh
-npx -y @runeditrun/rer@0.2.15 cli install
+npx -y @runeditrun/rer@0.2.21 cli install
 export PATH="$HOME/.local/bin:$PATH"
 git clone https://github.com/just-every/run-evidence.git
 cd run-evidence
 rer dev
 ```
 
-`rer dev` installs the pinned dependencies, selects Node 22.20.0, applies the D1 migrations, prepares a local owner and starts the app. Open its private `RER_OPEN` link on this computer, then confirm first-run setup. The installed `/` is the Lobby; the desk is `/app`. The printed `RER_SITE` address opens the run site and on-site guides. Keep that link private. Local email sign-in uses the development outbox and sends no email; no Cloudflare or model account is needed. To use your own mailbox locally, run `rer setup --owner-email you@example.com` before the first launch. Stop with `rer dev --stop`.
+`rer dev` installs the pinned dependencies, selects Node 22.20.0, applies the D1 migrations, prepares a local owner and starts the app. Open its private `RER_OPEN` link on this computer, then confirm first-run setup. The installed `/` is the Lobby; the desk is `/app`. The printed `RER_SITE` address opens the run site and on-site guides. Keep that link private. Local sign-in uses the private owner link and sends no email; no Cloudflare or model account is needed. To use your own mailbox locally, run `rer setup --owner-email you@example.com` before the first launch. Stop with `rer dev --stop`.
 
 ## Run site and guides
 
@@ -72,4 +72,4 @@ Local data is in `.wrangler/state`; credentials and runtime state are ignored. R
 
 The product carries forward private Evidence revision `a65a3cbd193f35b9ab8a8a639fea430aeb6b110d`. Current Base runtime and import-kit source start at `4a7833932a723c203191e84f1de905d84e4cbf1c`; `base-copies.json` records exact copies, and historical migrations retain their original pins.
 
-The pinned RER package has a small pnpm patch for macOS process inspection (a 30-second bounded socket check and explicit errors) and recognition of pnpm's hash-bound patch entries. Listener ownership and the exact registry version remain required. Remove the patch when a published RER includes the fixes.
+See [DEMO.md](DEMO.md) for local and hosted throwaway demos.
