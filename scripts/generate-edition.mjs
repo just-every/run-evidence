@@ -6,7 +6,7 @@ const copies=JSON.parse(readFileSync('base-copies.json','utf8')).copies
 const reserved=p=>['edition.json','sources.lock.json'].includes(p)||p.startsWith('.edition/')
 const mapped=new Set(),groups=new Map()
 for(const copy of copies){
- if(!['4a7833932a723c203191e84f1de905d84e4cbf1c','1ce15dd8cbb7c8cf2d83ebfde2b4a8a130ff9d74'].includes(copy.revision))continue
+ if(copy.path.startsWith('migrations/'))continue
  const entries=groups.get(copy.revision)||[]
  for(const p of Object.keys(copy.files)){mapped.add(p);entries.push({path:p,originPath:copy.originPath+p.slice(copy.path.length)})}
  groups.set(copy.revision,entries)

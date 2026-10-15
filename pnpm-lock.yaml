@@ -30,9 +30,12 @@ importers:
       '@cloudflare/workers-types':
         specifier: 5.20260908.1
         version: 5.20260908.1
+      '@playwright/test':
+        specifier: 1.56.1
+        version: 1.56.1
       '@runeditrun/rer':
-        specifier: 0.2.22
-        version: 0.2.22
+        specifier: 0.2.24
+        version: 0.2.24
       '@types/node':
         specifier: 22.20.5
         version: 22.20.5
@@ -534,6 +537,11 @@ packages:
   '@oxc-project/types@0.149.0':
     resolution: {integrity: sha512-Efcc+iF0j3Bf67YjEqIqWXbX5XddXoK/Mw4K1/JuXwRCZ8N16VR7iT23nlCc9XrveFVh/E5Rqs2StT0V8v9LdA==}
 
+  '@playwright/test@1.56.1':
+    resolution: {integrity: sha512-vSMYtL/zOcFpvJCW71Q/OEGQb7KYBPAdKh35WNSkaZA75JlAO8ED8UN6GUNTm3drWomcbcqRPFqQbLae8yBTdg==}
+    engines: {node: '>=18'}
+    hasBin: true
+
   '@poppinss/colors@4.1.6':
     resolution: {integrity: sha512-H9xkIdFswbS8n1d6vmRd8+c10t2Qe+rZITbbDHHkQixH5+2x1FDGmi/0K+WgWiqQFKPSlIYB7jlH6Kpfn6Fleg==}
 
@@ -636,8 +644,8 @@ packages:
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
-  '@runeditrun/rer@0.2.22':
-    resolution: {integrity: sha512-1jpDmyLomHOJhDxzu2Vj1DrJZb0FB+Du+iKPwgoglnD/DFlSrrTJ2ppiIBCGvfOsx/6nJ+wnS3Mmp6ggXZnvvA==}
+  '@runeditrun/rer@0.2.24':
+    resolution: {integrity: sha512-qBFZUwo/KWvi9Tw5UtuHYViK3TVk7lym/1pClhRQdM6uDiU+LSy+FKBIt8wz7qSeeZbH5m2V24i4DqVvSO1QhA==}
     engines: {node: '>=22'}
     hasBin: true
 
@@ -1696,6 +1704,10 @@ snapshots:
 
   '@oxc-project/types@0.149.0': {}
 
+  '@playwright/test@1.56.1':
+    dependencies:
+      playwright: 1.56.1
+
   '@poppinss/colors@4.1.6':
     dependencies:
       kleur: 4.1.5
@@ -1755,7 +1767,7 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
-  '@runeditrun/rer@0.2.22': {}
+  '@runeditrun/rer@0.2.24': {}
 
   '@sindresorhus/is@7.2.0': {}
 

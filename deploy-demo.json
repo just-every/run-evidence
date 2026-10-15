@@ -3,8 +3,9 @@
   "domain": "run-evidence.com",
   "name": "Evidence",
   "settings": {
-    "MAIL_FROM": "Evidence <auth@demo.invalid>",
+    "MAIL_FROM": "Evidence <auth@northstarstudio.example>",
     "MAIL_PROVIDER": "development"
   },
-  "instanceType": "standard-1"
+  "instanceType": "basic",
+  "ownerEmail": "maya@northstarstudio.example"
 }

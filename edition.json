@@ -14,8 +14,6 @@
       "source": {
         "kind": "local",
         "paths": [
-          "migrations/core/0012_provider_control.sql",
-          "migrations/core/0013_dependency_setup.sql",
           "scripts/edition-authoring/README.md",
           "scripts/edition-authoring/base-copies.mjs",
           "scripts/edition-authoring/cli.mjs",
@@ -28,7 +26,6 @@
           "scripts/edition-authoring/updates.mjs",
           "src/base/deployment-health.ts",
           "src/base/dispatch.ts",
-          "src/base/font-head.ts",
           "src/base/font-response.ts",
           "src/base/hydration/README.md",
           "src/base/hydration/intro-guard.ts",
@@ -42,170 +39,7 @@
           "src/base/setup-state.ts",
           "src/base/setup.ts",
           "src/base/static-assets.ts",
-          "src/base/theme-frame.ts"
-        ],
-        "origin": {
-          "repository": "https://github.com/runeditrun/base.git",
-          "revision": "4a7833932a723c203191e84f1de905d84e4cbf1c",
-          "path": ".",
-          "paths": [
-            "edition-authoring/README.md",
-            "edition-authoring/base-copies.mjs",
-            "edition-authoring/cli.mjs",
-            "edition-authoring/files.mjs",
-            "edition-authoring/manifest.mjs",
-            "edition-authoring/parent-comparison.mjs",
-            "edition-authoring/projection-lock.mjs",
-            "edition-authoring/release.mjs",
-            "edition-authoring/sources.mjs",
-            "edition-authoring/updates.mjs",
-            "foundation/runtime/deployment-health.ts",
-            "foundation/runtime/dispatch.ts",
-            "foundation/runtime/font-head.ts",
-            "foundation/runtime/font-response.ts",
-            "foundation/runtime/hydration/README.md",
-            "foundation/runtime/hydration/intro-guard.ts",
-            "foundation/runtime/hydration/report.ts",
-            "foundation/runtime/hydration/unit.tsx",
-            "foundation/runtime/identity.ts",
-            "foundation/runtime/lobby.ts",
-            "foundation/runtime/page-style.ts",
-            "foundation/runtime/rejected-response.ts",
-            "foundation/runtime/run-site.ts",
-            "foundation/runtime/setup-state.ts",
-            "foundation/runtime/setup.ts",
-            "foundation/runtime/static-assets.ts",
-            "foundation/runtime/theme-frame.ts",
-            "modules/operator-auth/accounts/schema/dependency-setup.sql",
-            "modules/operator-auth/accounts/schema/provider-control.sql"
-          ]
-        },
-        "mappings": [
-          {
-            "path": "migrations/core/0012_provider_control.sql",
-            "originPath": "modules/operator-auth/accounts/schema/provider-control.sql"
-          },
-          {
-            "path": "migrations/core/0013_dependency_setup.sql",
-            "originPath": "modules/operator-auth/accounts/schema/dependency-setup.sql"
-          },
-          {
-            "path": "scripts/edition-authoring/base-copies.mjs",
-            "originPath": "edition-authoring/base-copies.mjs"
-          },
-          {
-            "path": "scripts/edition-authoring/cli.mjs",
-            "originPath": "edition-authoring/cli.mjs"
-          },
-          {
-            "path": "scripts/edition-authoring/files.mjs",
-            "originPath": "edition-authoring/files.mjs"
-          },
-          {
-            "path": "scripts/edition-authoring/manifest.mjs",
-            "originPath": "edition-authoring/manifest.mjs"
-          },
-          {
-            "path": "scripts/edition-authoring/parent-comparison.mjs",
-            "originPath": "edition-authoring/parent-comparison.mjs"
-          },
-          {
-            "path": "scripts/edition-authoring/projection-lock.mjs",
-            "originPath": "edition-authoring/projection-lock.mjs"
-          },
-          {
-            "path": "scripts/edition-authoring/README.md",
-            "originPath": "edition-authoring/README.md"
-          },
-          {
-            "path": "scripts/edition-authoring/release.mjs",
-            "originPath": "edition-authoring/release.mjs"
-          },
-          {
-            "path": "scripts/edition-authoring/sources.mjs",
-            "originPath": "edition-authoring/sources.mjs"
-          },
-          {
-            "path": "scripts/edition-authoring/updates.mjs",
-            "originPath": "edition-authoring/updates.mjs"
-          },
-          {
-            "path": "src/base/deployment-health.ts",
-            "originPath": "foundation/runtime/deployment-health.ts"
-          },
-          {
-            "path": "src/base/dispatch.ts",
-            "originPath": "foundation/runtime/dispatch.ts"
-          },
-          {
-            "path": "src/base/font-head.ts",
-            "originPath": "foundation/runtime/font-head.ts"
-          },
-          {
-            "path": "src/base/font-response.ts",
-            "originPath": "foundation/runtime/font-response.ts"
-          },
-          {
-            "path": "src/base/hydration/intro-guard.ts",
-            "originPath": "foundation/runtime/hydration/intro-guard.ts"
-          },
-          {
-            "path": "src/base/hydration/README.md",
-            "originPath": "foundation/runtime/hydration/README.md"
-          },
-          {
-            "path": "src/base/hydration/report.ts",
-            "originPath": "foundation/runtime/hydration/report.ts"
-          },
-          {
-            "path": "src/base/hydration/unit.tsx",
-            "originPath": "foundation/runtime/hydration/unit.tsx"
-          },
-          {
-            "path": "src/base/identity.ts",
-            "originPath": "foundation/runtime/identity.ts"
-          },
-          {
-            "path": "src/base/lobby.ts",
-            "originPath": "foundation/runtime/lobby.ts"
-          },
-          {
-            "path": "src/base/page-style.ts",
-            "originPath": "foundation/runtime/page-style.ts"
-          },
-          {
-            "path": "src/base/rejected-response.ts",
-            "originPath": "foundation/runtime/rejected-response.ts"
-          },
-          {
-            "path": "src/base/run-site.ts",
-            "originPath": "foundation/runtime/run-site.ts"
-          },
-          {
-            "path": "src/base/setup-state.ts",
-            "originPath": "foundation/runtime/setup-state.ts"
-          },
-          {
-            "path": "src/base/setup.ts",
-            "originPath": "foundation/runtime/setup.ts"
-          },
-          {
-            "path": "src/base/static-assets.ts",
-            "originPath": "foundation/runtime/static-assets.ts"
-          },
-          {
-            "path": "src/base/theme-frame.ts",
-            "originPath": "foundation/runtime/theme-frame.ts"
-          }
-        ]
-      }
-    },
-    {
-      "id": "runeditrun/base-history-1ce15dd",
-      "role": "module",
-      "source": {
-        "kind": "local",
-        "paths": [
+          "src/base/theme-frame.ts",
           "src/evidence/d1-transport/index.d.mts",
           "src/evidence/d1-transport/index.mjs",
           "src/evidence/import/base/d1/README.md",
@@ -529,9 +363,35 @@
         ],
         "origin": {
           "repository": "https://github.com/runeditrun/base.git",
-          "revision": "1ce15dd8cbb7c8cf2d83ebfde2b4a8a130ff9d74",
+          "revision": "1ee378e41142c673a9098f60af21664c6d8477d1",
           "path": ".",
           "paths": [
+            "edition-authoring/README.md",
+            "edition-authoring/base-copies.mjs",
+            "edition-authoring/cli.mjs",
+            "edition-authoring/files.mjs",
+            "edition-authoring/manifest.mjs",
+            "edition-authoring/parent-comparison.mjs",
+            "edition-authoring/projection-lock.mjs",
+            "edition-authoring/release.mjs",
+            "edition-authoring/sources.mjs",
+            "edition-authoring/updates.mjs",
+            "foundation/runtime/deployment-health.ts",
+            "foundation/runtime/dispatch.ts",
+            "foundation/runtime/font-response.ts",
+            "foundation/runtime/hydration/README.md",
+            "foundation/runtime/hydration/intro-guard.ts",
+            "foundation/runtime/hydration/report.ts",
+            "foundation/runtime/hydration/unit.tsx",
+            "foundation/runtime/identity.ts",
+            "foundation/runtime/lobby.ts",
+            "foundation/runtime/page-style.ts",
+            "foundation/runtime/rejected-response.ts",
+            "foundation/runtime/run-site.ts",
+            "foundation/runtime/setup-state.ts",
+            "foundation/runtime/setup.ts",
+            "foundation/runtime/static-assets.ts",
+            "foundation/runtime/theme-frame.ts",
             "modules/d1-transport/index.d.mts",
             "modules/d1-transport/index.mjs",
             "modules/demo/README.md",
@@ -855,6 +715,110 @@
           ]
         },
         "mappings": [
+          {
+            "path": "scripts/edition-authoring/base-copies.mjs",
+            "originPath": "edition-authoring/base-copies.mjs"
+          },
+          {
+            "path": "scripts/edition-authoring/cli.mjs",
+            "originPath": "edition-authoring/cli.mjs"
+          },
+          {
+            "path": "scripts/edition-authoring/files.mjs",
+            "originPath": "edition-authoring/files.mjs"
+          },
+          {
+            "path": "scripts/edition-authoring/manifest.mjs",
+            "originPath": "edition-authoring/manifest.mjs"
+          },
+          {
+            "path": "scripts/edition-authoring/parent-comparison.mjs",
+            "originPath": "edition-authoring/parent-comparison.mjs"
+          },
+          {
+            "path": "scripts/edition-authoring/projection-lock.mjs",
+            "originPath": "edition-authoring/projection-lock.mjs"
+          },
+          {
+            "path": "scripts/edition-authoring/README.md",
+            "originPath": "edition-authoring/README.md"
+          },
+          {
+            "path": "scripts/edition-authoring/release.mjs",
+            "originPath": "edition-authoring/release.mjs"
+          },
+          {
+            "path": "scripts/edition-authoring/sources.mjs",
+            "originPath": "edition-authoring/sources.mjs"
+          },
+          {
+            "path": "scripts/edition-authoring/updates.mjs",
+            "originPath": "edition-authoring/updates.mjs"
+          },
+          {
+            "path": "src/base/deployment-health.ts",
+            "originPath": "foundation/runtime/deployment-health.ts"
+          },
+          {
+            "path": "src/base/dispatch.ts",
+            "originPath": "foundation/runtime/dispatch.ts"
+          },
+          {
+            "path": "src/base/font-response.ts",
+            "originPath": "foundation/runtime/font-response.ts"
+          },
+          {
+            "path": "src/base/hydration/intro-guard.ts",
+            "originPath": "foundation/runtime/hydration/intro-guard.ts"
+          },
+          {
+            "path": "src/base/hydration/README.md",
+            "originPath": "foundation/runtime/hydration/README.md"
+          },
+          {
+            "path": "src/base/hydration/report.ts",
+            "originPath": "foundation/runtime/hydration/report.ts"
+          },
+          {
+            "path": "src/base/hydration/unit.tsx",
+            "originPath": "foundation/runtime/hydration/unit.tsx"
+          },
+          {
+            "path": "src/base/identity.ts",
+            "originPath": "foundation/runtime/identity.ts"
+          },
+          {
+            "path": "src/base/lobby.ts",
+            "originPath": "foundation/runtime/lobby.ts"
+          },
+          {
+            "path": "src/base/page-style.ts",
+            "originPath": "foundation/runtime/page-style.ts"
+          },
+          {
+            "path": "src/base/rejected-response.ts",
+            "originPath": "foundation/runtime/rejected-response.ts"
+          },
+          {
+            "path": "src/base/run-site.ts",
+            "originPath": "foundation/runtime/run-site.ts"
+          },
+          {
+            "path": "src/base/setup-state.ts",
+            "originPath": "foundation/runtime/setup-state.ts"
+          },
+          {
+            "path": "src/base/setup.ts",
+            "originPath": "foundation/runtime/setup.ts"
+          },
+          {
+            "path": "src/base/static-assets.ts",
+            "originPath": "foundation/runtime/static-assets.ts"
+          },
+          {
+            "path": "src/base/theme-frame.ts",
+            "originPath": "foundation/runtime/theme-frame.ts"
+          },
           {
             "path": "src/evidence/d1-transport/index.d.mts",
             "originPath": "modules/d1-transport/index.d.mts"
@@ -2139,6 +2103,30 @@
       }
     },
     {
+      "id": "runeditrun/base-history-4a78339",
+      "role": "module",
+      "source": {
+        "kind": "local",
+        "paths": [
+          "src/base/font-head.ts"
+        ],
+        "origin": {
+          "repository": "https://github.com/runeditrun/base.git",
+          "revision": "4a7833932a723c203191e84f1de905d84e4cbf1c",
+          "path": ".",
+          "paths": [
+            "foundation/runtime/font-head.ts"
+          ]
+        },
+        "mappings": [
+          {
+            "path": "src/base/font-head.ts",
+            "originPath": "foundation/runtime/font-head.ts"
+          }
+        ]
+      }
+    },
+    {
       "id": "just-every/evidence",
       "role": "edition",
       "source": {
@@ -2182,6 +2170,8 @@
           "migrations/core/0009_custody.sql",
           "migrations/core/0010_import.sql",
           "migrations/core/0011_agent.sql",
+          "migrations/core/0012_provider_control.sql",
+          "migrations/core/0013_dependency_setup.sql",
           "migrations/core/0014_owner_claim.sql",
           "migrations/core/0015_owner_signin.sql",
           "package.json",
@@ -2205,6 +2195,7 @@
           "rer-project.json",
           "rer-setup.json",
           "scripts/archive.mjs",
+          "scripts/demo-quiet.mjs",
           "scripts/evidence-agent.mjs",
           "scripts/evidence-archive/local.mjs",
           "scripts/generate-edition.mjs",

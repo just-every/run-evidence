@@ -26,7 +26,11 @@ try {
   cookie=await app.signin()
   assert.equal((await (await app.fetch('/setup/state')).json()).state,'claimed')
   const lobby=await app.fetch('/',{headers:{cookie:''}});assert.equal(lobby.status,200)
-  assert.match(await lobby.text(),/href="\/signin"/)
+  const signIn = (await lobby.text()).match(/href="([^"]*\/signin[^"]*)"/)
+  assert.ok(signIn)
+  const target = new URL(signIn[1], app.origin)
+  assert.equal(target.pathname, '/signin')
+  assert.equal(target.searchParams.get('login_hint'), 'owner@example.test')
 
   for(const headers of [{origin:'https://evil.test'},{'sec-fetch-site':'cross-site'},{host:'evil.test'}]) assert.equal((await app.fetch('/api/desk',{headers})).status,403)
   for(const headers of [{},{origin:'https://evil.test'}]) assert.equal((await app.fetch('/app/controls',{method:'POST',headers})).status,403)

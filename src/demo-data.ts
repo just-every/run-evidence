@@ -2,7 +2,7 @@ import type { Cadence } from './evidence/model'
 
 // Illustrative Northstar Studio records, based on the seed's access-review and
 // training examples. These are sample assertions, never observed customer facts.
-export const sampleControls: { slug: string; name: string; group: string; proof: string; cadence: Cadence; author: string; note: string; state?: 'overdue' | 'missing' }[] = [
+export const sampleControls: { slug: string; name: string; group: string; proof: string; cadence: Cadence; author: string; note: string; state?: 'overdue' }[] = [
  { slug: 'production-access', name: 'Review production access', group: 'Access', proof: 'Signed production access review', cadence: 'monthly', author: 'Maya Chen', note: 'Reviewed 14 production accounts. Removed two former contractor accounts. Priya confirmed the administrator list.' },
  { slug: 'joiners-leavers', name: 'Close access for departing colleagues', group: 'Access', proof: 'Joiner and leaver checklist', cadence: 'weekly', author: 'Priya Shah', note: 'Checked the people register against identity accounts. All three leavers closed within one business day.' },
  { slug: 'privileged-access', name: 'Check privileged account use', group: 'Access', proof: 'Privileged account activity review', cadence: 'daily', author: 'Liam Brooks', note: 'Reviewed administrator activity and the emergency account log. No unexpected use recorded.' },
@@ -17,5 +17,5 @@ export const sampleControls: { slug: string; name: string; group: string; proof:
  { slug: 'incident-exercise', name: 'Practice incident response', group: 'People', proof: 'Incident tabletop notes', cadence: 'quarterly', author: 'Maya Chen', note: 'Walked through a lost device scenario. Updated contacts and assigned follow-up actions.', state: 'overdue' },
  { slug: 'supplier-access', name: 'Review supplier access', group: 'Vendors', proof: 'Supplier access register', cadence: 'monthly', author: 'Maya Chen', note: 'Checked the three suppliers with workspace access. Confirmed named owners, expiry dates and least privilege.' },
  { slug: 'supplier-review', name: 'Review critical service suppliers', group: 'Vendors', proof: 'Critical supplier assessment', cadence: 'quarterly', author: 'Jonah Williams', note: 'Reviewed hosting, payments and support suppliers. Current assurance documents are retained with the assessment.' },
- { slug: 'supplier-exit', name: 'Confirm supplier exit arrangements', group: 'Vendors', proof: 'Supplier exit plan review', cadence: 'quarterly', author: 'Maya Chen', note: 'The next exit-plan review is assigned to Maya.', state: 'missing' },
+ { slug: 'supplier-exit', name: 'Confirm supplier exit arrangements', group: 'Vendors', proof: 'Supplier exit plan review', cadence: 'quarterly', author: 'Maya Chen', note: 'Confirmed export formats, deletion contacts and a named replacement for each critical supplier. Maya completed the annual exit walkthrough.' },
 ]
