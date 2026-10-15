@@ -1,0 +1,35 @@
+html.rer-themed main { max-width: 940px; padding: 36px; box-shadow: none; border: 1px solid #d3d8da; }
+.rer-themed body { padding: 32px 20px; }
+.rer-themed nav { margin-bottom: 24px; }
+.rer-themed section { margin-top: 32px; border-top: 1px solid #d3d8da; padding-top: 24px; }
+.rer-themed article { border-top: 1px solid #d3d8da; padding: 20px 0; }
+.rer-themed article h2, .rer-themed article h3 { margin: 0; }
+.rer-themed article p { margin: 8px 0; }
+.rer-themed .heading, .rer-themed .dates { display: flex; gap: 16px; justify-content: space-between; }
+.rer-themed .dates > label { flex: 1; min-width: 0; }
+.rer-themed .heading { align-items: start; flex-wrap: wrap; }
+.rer-themed .state { font-size: 15px; font-weight: 600; border-left: 3px solid #747f85; padding-left: 10px; }
+.rer-themed select { width: 100%; max-width: 100%; min-height: 46px; font: inherit; color: inherit; background: #fff; border: 1px solid #6b747a; border-radius: 4px; padding: 8px; }
+.rer-themed form { max-width: 640px; }
+.rer-themed .period { display: flex; align-items: end; gap: 16px; margin: 24px 0; }
+.rer-themed .period button { width: auto; }
+.rer-themed .empty { padding: 24px 0; }
+.rer-themed .fingerprint { display: block; font: 14px/1.7 monospace; overflow-wrap: anywhere; margin: 0 0 24px; }
+.rer-themed footer { border-top: 1px solid #d3d8da; margin-top: 36px; padding-top: 20px; font-size: 14px; color: #535e64; }
+.rer-themed input[type=file] { font-size: 14px; padding: 10px; }
+.rer-themed dl { grid-template-columns: minmax(70px, 130px) minmax(0, 1fr); }
+@media(max-width: 600px) { .rer-themed body { padding: 16px 10px; } html.rer-themed main { padding: 24px 16px; } .rer-themed .dates { flex-direction: column; } .rer-themed .period { align-items: stretch; flex-direction: column; } }
+/* Keep Base's local identity switch visible without covering owner content. */
+html.rer-themed #rer-dev-badge { position: static; width: fit-content; margin: 16px auto 0; max-width: 100%; }
+
+.rer-themed table { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 24px 0; }
+.rer-themed th, .rer-themed td { padding: 12px 8px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--rer-border, #d3d8da); overflow-wrap: anywhere; }
+.rer-themed code, .rer-themed pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.rer-themed fieldset { min-width: 0; border: 1px solid var(--rer-border, #d3d8da); padding: 16px; display: grid; gap: 16px; }
+.rer-themed legend { max-width: 100%; overflow-wrap: anywhere; padding: 0 6px; }
+@media(max-width: 600px) {
+ .rer-themed table, .rer-themed tbody, .rer-themed tr, .rer-themed td { display: block; }
+ .rer-themed thead { display: none; }
+ .rer-themed tr { margin: 16px 0; border: 1px solid var(--rer-border, #d3d8da); }
+ .rer-themed td::before { content: attr(data-label); display: block; font-weight: 600; }
+}

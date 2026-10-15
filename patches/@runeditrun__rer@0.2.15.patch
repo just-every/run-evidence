@@ -1,0 +1,40 @@
+diff --git a/cli/package-mode.mjs b/cli/package-mode.mjs
+index 5e4f3d7e0670c33cb092d653981258feaa2ae332..163bad3597be2271c60a253871a7d18d3e3db5cf 100644
+--- a/cli/package-mode.mjs
++++ b/cli/package-mode.mjs
+@@ -39,6 +39,14 @@ export async function lockedPackage(root) {
+   const entries = block(...own, `${group}:`, 4), entry = entries && block(...entries, `'${packageName}':`, 6);
+   if (!entry) continue;
+   const fields = Object.fromEntries(lines.slice(...entry).map(line => /^\s+(specifier|version):\s*'?([^'\s]*)'?\s*$/.exec(line)).filter(Boolean).map(match => [match[1], match[2]]));
++  // pnpm retains the registry integrity under the unpatched version, and
++  // binds the installed snapshot to a declared patch hash separately.
++  const patched = /^(.+)\(patch_hash=([a-f0-9]{64})\)$/.exec(fields.version ?? '');
++  if (patched && exactVersion.test(patched[1])) {
++   const patches = block(0, lines.length, 'patchedDependencies:', 0);
++   const patch = patches && block(...patches, `'${packageName}@${patched[1]}':`, 2);
++   if (patch && lines.slice(...patch).some(line => line.trim() === `hash: ${patched[2]}`)) fields.version = patched[1];
++  }
+   const packages = block(0, lines.length, 'packages:', 0), resolved = packages && block(...packages, `'${packageName}@${fields.version}':`, 2);
+   return { group, specifier: fields.specifier, version: fields.version, locked: Boolean(resolved && lines.slice(...resolved).some(line => /^\s+resolution: \{integrity: sha512-/.test(line))) };
+  }
+diff --git a/onboarding/process-diagnostics.mjs b/onboarding/process-diagnostics.mjs
+index dfb2b14c154dd7c3b06a0b1b7262ae71bea9e15a..c6b9667b83826e2ebd9ab2b664ecddeefbc0ca39 100644
+--- a/onboarding/process-diagnostics.mjs
++++ b/onboarding/process-diagnostics.mjs
+@@ -7,11 +7,14 @@ const exec=promisify(execFile);
+ // Diagnose sockets with the system utility even when that PATH is constrained.
+ const lsof=process.platform==='darwin'?'/usr/sbin/lsof':'lsof';
+ const run=async(command,args)=>{
+- try{return (await exec(command,args,{timeout:3000,maxBuffer:1024*1024})).stdout;}
++ // macOS socket inspection can exceed three seconds even for one live PID.
++ try{return (await exec(command,args,{timeout:command===lsof?30000:3000,maxBuffer:1024*1024})).stdout;}
+  catch(error){
+   // lsof exits 1 when a selected PID has exited,
+   // while still returning the live listeners of other selected PIDs.
+-  return command===lsof&&error.code===1&&typeof error.stdout==='string'?error.stdout:'';
++  if(command===lsof&&error.code===1&&!error.killed&&typeof error.stdout==='string')return error.stdout;
++  // An unsuccessful inspection is not evidence that no owned listener exists.
++  throw new Error(`Could not inspect application processes (${basename(command)} ${error.killed?'timed out':'failed'}). Nothing was sent.`,{cause:error});
+  }
+ };
+ export async function processName(pid){

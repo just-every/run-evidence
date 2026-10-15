@@ -1,0 +1,4 @@
+// Undo removes live import links, never the archived facts. A control still
+// used by a person's later proof or approved folder remains on the desk.
+export const activeReceipt = (alias: string) => `(NOT EXISTS(SELECT 1 FROM import_additions ia WHERE ia.kind='receipt' AND ia.id=${alias}.id) OR EXISTS(SELECT 1 FROM import_active ia WHERE ia.kind='receipt' AND ia.id=${alias}.id))`
+export const activeControl = (alias: string) => `(NOT EXISTS(SELECT 1 FROM import_additions ia WHERE ia.kind='control' AND ia.id=${alias}.id) OR EXISTS(SELECT 1 FROM import_active ia WHERE ia.kind='control' AND ia.id=${alias}.id) OR EXISTS(SELECT 1 FROM requirements qr JOIN receipts rr ON rr.requirement_id=qr.id WHERE qr.control_id=${alias}.id AND rr.origin!='imported') OR EXISTS(SELECT 1 FROM review_folder_controls fc WHERE fc.control_id=${alias}.id))`

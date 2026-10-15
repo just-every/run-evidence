@@ -1,0 +1,83 @@
+{
+  "id": "evidence",
+  "name": "Evidence",
+  "version": "0.1.0",
+  "maturity": "first-release",
+  "category": "audit-evidence",
+  "spine": {
+    "id": "evidence",
+    "record": "Receipt"
+  },
+  "description": "Provider-free manual proof desk: owner controls, named proof, immutable file receipts and honest cadence gaps.",
+  "capabilities": [
+    {
+      "id": "manual-proof",
+      "clauses": [
+        "PROOF-001"
+      ]
+    },
+    {
+      "id": "period-gaps",
+      "clauses": [
+        "GAP-001"
+      ]
+    }
+  ],
+  "nonGoals": [
+    "Certification or auditor replacement",
+    "Framework mappings and compliance templates",
+    "Live collectors and questionnaires",
+    "Money movement"
+  ],
+  "externals": [
+    {
+      "id": "cloudflare",
+      "required": false,
+      "why": "Hosted target only; local workerd/D1/R2 need no provider account",
+      "data": [
+        "HTTP requests"
+      ],
+      "adapters": []
+    }
+  ],
+  "env": [],
+  "deploy": {
+    "healthPath": "/health",
+    "publicPaths": [
+      "/",
+      "/health",
+      "/signin"
+    ],
+    "notes": "Native owner sessions guard /app; unknown paths return real 404s; the development outbox is local-only."
+  },
+  "extensionPoints": {
+    "contributions": [],
+    "policies": [],
+    "events": [],
+    "slots": [],
+    "adapters": []
+  },
+  "limits": {
+    "status": "unmeasured"
+  },
+  "accessibility": {
+    "level": "WCAG 2.2 AA",
+    "status": "target; unaudited"
+  },
+  "operatingCost": {
+    "status": "unmeasured"
+  },
+  "composition": {
+    "base": "base",
+    "family": "evidence-foundation",
+    "edition": "evidence",
+    "modules": [
+      "job-queue",
+      "release",
+      "deploy-kit",
+      "mail",
+      "operator-auth",
+      "portability"
+    ]
+  }
+}
