@@ -50,9 +50,17 @@ export const programColumns = {
  risk_acceptances:['id','risk_id','assessment_id','rationale','approver_name','approved_by','approved_at','expires_at','escalated_at'],
  policies:['id','title','owner_person_id','created_at','updated_at'],
  policy_revisions:['id','policy_id','version','body','body_sha256','status','drafted_by','drafted_at','decided_by','decided_at','decision_note','approved_sha256','published_at','effective_date','review_due'],
+ tracker_destinations:['id','provider','label','api_base','account','project','project_name','mapping_json','hook_audience','status','created_by','created_name','created_at','rotated_at','revoked_at','last_success_at','last_error'],
+ tickets:['id','obligation_id','destination_id','remote_id','remote_key','remote_url','created_at','created_name','sync_state','sync_error','remote_status','remote_closed','remote_assignee','remote_due','synced_due','last_synced_at','last_attempt_at'],
+ ticket_events:['id','ticket_id','kind','remote_value','local_value','detail','trigger','at'],
+ ticket_comments:['ticket_id','remote_comment_id','direction','at'],
+ tracker_deliveries:['destination_id','delivery_id','ticket_ref','outcome','received_at'],
 } as const
 export type ProgramTable = keyof typeof programColumns
 export const programTables = Object.keys(programColumns) as ProgramTable[]
+// Tables first carried by archive version 4; a version 3 archive lists none of them.
+const addedInVersion4 = new Set<ProgramTable>(['tracker_destinations', 'tickets', 'ticket_events', 'ticket_comments', 'tracker_deliveries'])
+const tablesOf = (version: number) => programTables.filter(t => version >= 4 || !addedInVersion4.has(t))
 export interface ProgramArchive { rows: Record<ProgramTable, Row[]> }
 export async function exportProgramArchive(env: Pick<Bindings, 'DB'>): Promise<ProgramArchive> {
  const results = await env.DB.batch(programTables.map(t => env.DB.prepare(`SELECT ${programColumns[t].join(',')} FROM ${t} ORDER BY rowid LIMIT 20001`)))
@@ -60,18 +68,20 @@ export async function exportProgramArchive(env: Pick<Bindings, 'DB'>): Promise<P
 }
 export const programRowCount = (value: ProgramArchive) => Object.values(value.rows).reduce((sum, rows) => sum + rows.length, 0)
 const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v)
-export function validateProgramExtension(value: unknown): asserts value is ProgramArchive {
- if (!object(value) || Object.keys(value).join() !== 'rows' || !object(value.rows) || Object.keys(value.rows).length !== programTables.length || programTables.some(t => !Array.isArray((value.rows as Record<string, unknown>)[t]))) fail('Invalid program archive extension: every program table must be listed exactly.')
+export function validateProgramExtension(value: unknown, version: number): asserts value is ProgramArchive {
+ const expected = tablesOf(version)
+ if (!object(value) || Object.keys(value).join() !== 'rows' || !object(value.rows) || Object.keys(value.rows).length !== expected.length || expected.some(t => !Array.isArray((value.rows as Record<string, unknown>)[t]))) fail('Invalid program archive extension: every program table must be listed exactly.')
  let count = 0
- for (const table of programTables) for (const row of (value.rows as Record<string, unknown[]>)[table]) {
+ for (const table of expected) for (const row of (value.rows as Record<string, unknown[]>)[table]) {
   if (++count > 20000 || !object(row) || Object.keys(row).length !== programColumns[table].length || programColumns[table].some(c => !Object.hasOwn(row, c))) fail(`Invalid ${table} row in the program archive.`)
   for (const field of Object.values(row)) if (!(field === null || (typeof field === 'number' && Number.isFinite(field)) || (typeof field === 'string' && field.length <= 262144))) fail(`Invalid ${table} field in the program archive.`)
  }
 }
-// Restored grants hold no authority: tokens lack digests and connections wait.
+// Restored grants hold no authority: tokens lack digests, and connections and
+// ticket destinations wait without credentials until an owner reconnects them.
 export function restoreProgramStatements(env: Pick<Bindings, 'DB'>, value: ProgramArchive) {
- return programTables.flatMap(table => value.rows[table].map(row => {
-  const columns = [...programColumns[table]], values = columns.map(c => table === 'connections' && c === 'status' ? 'inactive after restore' : table === 'connections' && c === 'next_attempt_at' ? null : row[c])
+ return programTables.flatMap(table => (value.rows[table] ?? []).map(row => {
+  const columns = [...programColumns[table]], values = columns.map(c => (table === 'connections' || table === 'tracker_destinations') && c === 'status' ? 'inactive after restore' : table === 'connections' && c === 'next_attempt_at' ? null : row[c])
   return env.DB.prepare(`INSERT INTO ${table}(${columns.join(',')}) VALUES(${columns.map(() => '?').join(',')})`).bind(...values)
  }))
 }

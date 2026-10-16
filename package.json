@@ -42,6 +42,7 @@
     "test:api": "node tests/api.mjs",
     "test:github": "node tests/github.mjs",
     "test:risk": "node tests/risk.mjs",
+    "test:work": "node tests/work.mjs",
     "check:library": "node scripts/library-check.mjs"
   },
   "dependencies": {

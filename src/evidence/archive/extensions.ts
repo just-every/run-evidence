@@ -13,9 +13,9 @@ export async function inventoryExtensions(env: Store): Promise<Extensions> {
 export async function validateExtensions(manifest: Manifest) {
  if (manifest.version === 1) return
  const value = manifest.extensions
- // Version 2 archives predate program records; version 3 must list them all.
+ // Version 2 archives predate program records; versions 3 and 4 list the program tables of their version.
  if (!value || Object.keys(value).sort().join(',') !== (manifest.version === 2 ? 'agent,imports' : 'agent,imports,program')) fail('Invalid archive extensions.')
- if (value.program) validateProgramExtension(value.program)
+ if (value.program) validateProgramExtension(value.program, manifest.version)
  await validateAgentExtension(value.agent, manifest.rows)
  try { validateImportInventory(value.imports) } catch { fail('Invalid retained import custody.') }
  const allRows: Row[][] = [...Object.values(manifest.rows), ...Object.values(value.agent.rows), ...Object.values(value.imports.rows)]

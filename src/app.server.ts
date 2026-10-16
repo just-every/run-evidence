@@ -11,6 +11,8 @@ import { connectHandler } from './evidence/connect/http'
 import { riskHandler } from './evidence/risk/http'
 import { apiHandler } from './evidence/api/http'
 import { policyHandler } from './evidence/policy/http'
+import { workHandler } from './evidence/work/http'
+import { hookHandler } from './evidence/work/hooks'
 import { lobbyResponse } from './base/lobby'
 import { setupStateResponse } from './base/setup-state'
 import { identity } from './identity'
@@ -21,12 +23,15 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
  const evidence = evidenceHandler(clock)
  const review = reviewHandler(clock)
  const archive = archiveHandler(clock)
- const program = [programHandler(clock), testHandler(clock), remedyHandler(clock), connectHandler(clock), riskHandler(clock), policyHandler(clock)]
+ const program = [programHandler(clock), testHandler(clock), remedyHandler(clock), connectHandler(clock), riskHandler(clock), policyHandler(clock), workHandler(clock)]
  const api = apiHandler(clock)
+ const hooks = hookHandler(clock)
  return async (request: Request, env: Bindings) => {
   const path = new URL(request.url).pathname
   // The public API takes Bearer tokens only, outside every owner door.
   if (path.startsWith('/v1/')) return api(request,env)
+  // Tracker webhooks verify their own signatures; they carry no owner session.
+  if (path.startsWith('/hooks/')) return hooks(request,env)
   if (request.headers.has('authorization') && (path.startsWith('/app') || path.startsWith('/api')) && !path.startsWith('/api/agent')) return Response.json({error:'Agent credentials cannot use owner doors.'}, {status:403,headers:{'cache-control':'no-store'}})
   const installed = runtimeBindings(env)
   const state = await setupStateResponse(request,installed)

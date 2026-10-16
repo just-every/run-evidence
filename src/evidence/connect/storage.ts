@@ -3,20 +3,13 @@ import { Refusal } from '../upload'
 import { auditStatement, list, text, type Actor, type Input } from '../door'
 import { catalogueStatements } from '../tests/storage'
 import { seal } from './custody'
+import { publicBase } from '../net'
 import { githubClient, listRepositories, readOrganization, Throttled, Unauthorized } from './github'
 export interface Connection { id: string; provider: 'github'; label: string; account: string; api_base: string; secret_ciphertext: string | null; secret_iv: string | null; granted_scopes: string; status: 'active' | 'revoked' | 'needs reconnect' | 'inactive after restore'; created_by: string; created_name: string; created_at: string; rotated_at: string | null; revoked_at: string | null; last_success_at: string | null; last_attempt_at: string | null; next_attempt_at: string | null; backoff_seconds: number; last_error: string }
 export const connections = async (env: Bindings) => (await env.DB.prepare('SELECT * FROM connections ORDER BY created_at').all<Connection>()).results
 export async function requireConnection(env: Bindings, id: string) { const row = await env.DB.prepare('SELECT * FROM connections WHERE id=?').bind(id).first<Connection>(); if (!row) throw new Refusal('Connection not found.', 404); return row }
-// GitHub Enterprise Server is supported by its /api/v3 base; only HTTPS hosts.
-function apiBase(value: unknown) {
- if (typeof value !== 'string' || !value.trim()) return 'https://api.github.com'
- let url: URL
- try { url = new URL(value.trim()) } catch { throw new Refusal('The API base must be an https URL.') }
- if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) throw new Refusal('The API base must be a plain https URL.')
- // Collection reads only public provider hosts: no IP literals or local names.
- if (/^\[|^\d+\.\d+\.\d+\.\d+$/.test(url.hostname) || !url.hostname.includes('.') || /\.(local|internal|localhost|lan|home)$/i.test(url.hostname)) throw new Refusal('The API base must be a public host name.')
- return url.origin + url.pathname.replace(/\/+$/, '')
-}
+// GitHub Enterprise Server is supported by its /api/v3 base; only public HTTPS hosts.
+const apiBase = (value: unknown) => publicBase(value, 'https://api.github.com')
 // Check a credential against the real provider before it is kept.
 async function verify(base: string, org: string, token: string, now: Date) {
  const client = githubClient(base, token, () => now.getTime())

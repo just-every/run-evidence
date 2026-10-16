@@ -6,6 +6,9 @@ import { catalogueEntry } from '../tests/catalogue'
 import { categories, severities } from '../tests/storage'
 import { acceptRisk, assign, markDone, note, obligationEvents, obligations, queueRetest, requireObligation } from './storage'
 import { obligationPage, queuePage } from './view'
+import { destinations, ticketEvents, ticketsOf } from '../work/storage'
+import { mirrorComment } from '../work/sync'
+import { ticketPanel } from '../work/view'
 const id = `(${uuid})`
 const both = (path: string) => new RegExp(`^/(?:app|api)${path}$`)
 export function remedyHandler(clock: () => Date) {
@@ -30,12 +33,15 @@ export function remedyHandler(clock: () => Date) {
    const events = await obligationEvents(c.env, row.id)
    const observations = (await c.env.DB.prepare('SELECT o.result,o.reason,o.observed_at,o.revision,o.source_kind,r.trigger AS run_trigger FROM observations o JOIN test_runs r ON r.id=o.run_id WHERE o.test_id=? AND o.resource_id=? ORDER BY o.observed_at DESC,o.rowid DESC LIMIT 200').bind(row.test_id, row.resource_id).all<{ result: string; reason: string; observed_at: string; revision: number; source_kind: string; run_trigger: string }>()).results
    const controls = (await c.env.DB.prepare('SELECT c.id,c.name,l.library_id FROM test_controls t JOIN controls c ON c.id=t.control_id LEFT JOIN library_adoptions l ON l.control_id=c.id WHERE t.test_id=? ORDER BY c.name').bind(row.test_id).all<{ id: string; name: string; library_id: string | null }>()).results
-   return c.isApi ? json({ obligation: row, controls, events, observations }) : obligationPage(row, controls, events, observations, row.catalogue_id ? catalogueEntry(row.catalogue_id) : undefined, await people(c.env), c.actor.name)
+   const tickets = await ticketsOf(c.env, row.id), stale = (t: { last_synced_at: string | null; remote_id: string | null }) => !!t.remote_id && (!t.last_synced_at || c.now.getTime() - Date.parse(t.last_synced_at) > 15 * 60000)
+   if (c.isApi) return json({ obligation: row, controls, events, observations, tickets: tickets.map(t => ({ ...t, stale: stale(t) })) })
+   const ticketHistory = new Map(await Promise.all(tickets.map(async t => [t.id, await ticketEvents(c.env, t.id)] as const)))
+   return obligationPage(row, controls, events, observations, row.catalogue_id ? catalogueEntry(row.catalogue_id) : undefined, await people(c.env), ticketPanel(row.id, tickets, ticketHistory, await destinations(c.env), stale), c.actor.name)
   } },
   { method: 'POST', pattern: both(`/remediation/${id}/assign`), run: async (c, m) => { const input = await readInput(c.request); const owner = await requirePerson(c.env, input.owner_person_id, 'owner'); const target = typeof input.target_date === 'string' && input.target_date ? input.target_date : null
    if (target && !validDate(target)) throw new Refusal('The target date must be a real date.')
    await assign(c.env, c.actor, m[1], owner.id, text(input, 'next_action', 500, true), target, c.now); return done(c, '/app/remediation/' + m[1], { assigned: true }) } },
-  { method: 'POST', pattern: both(`/remediation/${id}/comments`), run: async (c, m) => { await note(c.env, c.actor, m[1], 'comment', text(await readInput(c.request), 'body', 2000), c.now); return done(c, '/app/remediation/' + m[1], { commented: true }, 201) } },
+  { method: 'POST', pattern: both(`/remediation/${id}/comments`), run: async (c, m) => { const body = text(await readInput(c.request), 'body', 2000); await note(c.env, c.actor, m[1], 'comment', body, c.now); await mirrorComment(c.env, m[1], c.actor, body, c.now); return done(c, '/app/remediation/' + m[1], { commented: true }, 201) } },
   { method: 'POST', pattern: both(`/remediation/${id}/changes`), run: async (c, m) => { await note(c.env, c.actor, m[1], 'change attached', text(await readInput(c.request), 'body', 1000), c.now); return done(c, '/app/remediation/' + m[1], { attached: true }, 201) } },
   { method: 'POST', pattern: both(`/remediation/${id}/done`), run: async (c, m) => { await markDone(c.env, c.actor, m[1], text(await readInput(c.request), 'body', 1000, true), c.now); return done(c, '/app/remediation/' + m[1], { state: 'awaiting verification' }) } },
   { method: 'POST', pattern: both(`/remediation/${id}/retest`), run: async (c, m) => { await requireObligation(c.env, m[1]); await queueRetest(c.env, c.actor, m[1], 'Requested by ' + c.actor.name, c.now); return done(c, '/app/remediation/' + m[1], { queued: true }, 202) } },
