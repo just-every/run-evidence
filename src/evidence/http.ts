@@ -33,7 +33,7 @@ export function evidenceHandler(clock: () => Date = () => new Date()) {
    if (!['GET','HEAD'].includes(request.method)) return json({ error:'Method not allowed.' },405)
    if (path === '/app' || path === '/api/desk') { const data = await desk(env,selected,now); return isApi ? json(data) : deskPage(data,session.operator.displayName) }
    const requirement = /^\/app\/requirements\/([a-f0-9-]+)$/.exec(path)
-   if (requirement) { const data = await desk(env,selected,now), row = data.requirements.find(x => x.id === requirement[1]); return row ? requirementPage(row,selected,session.operator.displayName) : json({ error:'Requirement not found.' },404) }
+   if (requirement) { const data = await desk(env,selected,now), row = data.requirements.find(x => x.id === requirement[1]); return row ? requirementPage(row,selected,session.operator.displayName,(await env.DB.prepare('SELECT id,name,email FROM people ORDER BY name').all<{ id: string; name: string; email: string }>()).results,(await env.DB.prepare('SELECT id,name FROM programs ORDER BY created_at').all<{ id: string; name: string }>()).results) : json({ error:'Requirement not found.' },404) }
    const match = /^\/(?:app|api)\/receipts\/([a-f0-9-]+)(\/download)?$/.exec(path)
    if (match) {
     const row = await receipt(env,match[1]); if (!row) return json({ error:'Receipt not found.' },404)

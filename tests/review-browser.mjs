@@ -132,7 +132,7 @@ try {
   const source=await installation(process.cwd());installations.push(source)
   const target=await installation(process.cwd());installations.push(target)
   const open=await source.start()
-  browser ||= await chromium.launch({headless:true})
+  browser ||= await chromium.launch({headless:true,args:['--use-mock-keychain','--password-store=basic']})
   const owner=await context(width,source.origin)
   await signIn(owner.page,open)
   const today=new Date().toISOString().slice(0,10)

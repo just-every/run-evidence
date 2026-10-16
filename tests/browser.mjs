@@ -65,7 +65,7 @@ try {
  }
  const open=serverOutput.match(/^RER_OPEN (\S+)/m)?.[1]
  assert.ok(open,'rer dev printed its sign-in link')
- browser=await chromium.launch({headless:true})
+ browser=await chromium.launch({headless:true,args:['--use-mock-keychain','--password-store=basic']})
  for(const width of [1440,390]) {
   const context=await browser.newContext({viewport:{width,height:1000}})
   const page=await context.newPage()

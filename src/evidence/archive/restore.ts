@@ -62,8 +62,10 @@ export async function restoreArchive(env:Store, body:ReadableStream<Uint8Array>,
   if(objectCount!==written.length) fail('Exhibit bucket changed during restore; admission refused.')
   // D1 batch is transactional. Check emptiness again inside that transaction,
   // so a concurrent upload/control creation cannot admit a mixed installation.
-  const empty=[...tables,...extensionTables].map(t=>`(SELECT COUNT(*) FROM ${t})`).join('+')
-  const statements=[env.DB.prepare(`INSERT INTO custody_admission(singleton,empty_check) VALUES(1,CASE WHEN (${empty})=0 THEN 1 ELSE 0 END)`)]
+  // Sums grouped by ten keep the expression within SQLite's depth limit.
+  const counts=[...tables,...extensionTables].map(t=>`(SELECT COUNT(*) FROM ${t})`), groups:string[]=[]
+  for(let i=0;i<counts.length;i+=10) groups.push('('+counts.slice(i,i+10).join('+')+')')
+  const statements=[env.DB.prepare(`INSERT INTO custody_admission(singleton,empty_check) VALUES(1,CASE WHEN (${groups.join('+')})=0 THEN 1 ELSE 0 END)`)]
   for(const table of tables) for(const row of manifest.rows[table]) {
    const values=columns[table].map(c=>table==='review_folders' && c==='closed_at' ? row[c] || now.toISOString() : row[c])
    statements.push(env.DB.prepare(`INSERT INTO ${table}(${columns[table].join(',')}) VALUES(${columns[table].map(()=>'?').join(',')})`).bind(...values))

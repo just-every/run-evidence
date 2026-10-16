@@ -31,6 +31,6 @@ export function archiveHandler(clock:()=>Date=()=>new Date()) {
     return json(await restoreArchive(env,request.body,dryRun,clock()))
    }
    return json({error:'Method or route not allowed.'},405)
-  } catch(error) { if(request.body && !request.body.locked) await request.body.pipeTo(new WritableStream({write(){}})).catch(()=>{}); return json({error:error instanceof ArchiveError ? error.message : 'Archive storage operation failed; no complete archive or successful restore is claimed.'},error instanceof ArchiveError ? 400 : 503) }
+  } catch(error) { if(!(error instanceof ArchiveError)) console.error('Archive operation failed', error instanceof Error ? error.message : ''); if(request.body && !request.body.locked) await request.body.pipeTo(new WritableStream({write(){}})).catch(()=>{}); return json({error:error instanceof ArchiveError ? error.message : 'Archive storage operation failed; no complete archive or successful restore is claimed.'},error instanceof ArchiveError ? 400 : 503) }
  }
 }

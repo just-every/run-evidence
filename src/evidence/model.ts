@@ -1,5 +1,5 @@
-export const groups = ['Access', 'Data', 'Change', 'People', 'Vendors'] as const
-export const cadences = ['daily', 'weekly', 'monthly', 'quarterly'] as const
+export const groups = ['Access', 'Data', 'Change', 'People', 'Vendors', 'Operations', 'Governance'] as const
+export const cadences = ['daily', 'weekly', 'monthly', 'quarterly', 'semi-annual', 'annual'] as const
 export type Cadence = typeof cadences[number]
 export type Origin = 'source-observed' | 'manually-asserted' | 'imported'
 export interface Requirement { id: string; control_id: string; name: string; cadence: Cadence; created_at: string; control_name: string; group_name: string }
@@ -12,22 +12,30 @@ export function validDate(value: unknown): value is string {
 export function period(cadence: Cadence, selected: string) {
  const start = new Date(selected + 'T00:00:00Z')
  if (cadence === 'weekly') start.setUTCDate(start.getUTCDate() - (start.getUTCDay() + 6) % 7)
- if (cadence === 'monthly' || cadence === 'quarterly') start.setUTCDate(1)
+ if (cadence !== 'daily' && cadence !== 'weekly') start.setUTCDate(1)
  if (cadence === 'quarterly') start.setUTCMonth(Math.floor(start.getUTCMonth() / 3) * 3)
+ if (cadence === 'semi-annual') start.setUTCMonth(Math.floor(start.getUTCMonth() / 6) * 6)
+ if (cadence === 'annual') start.setUTCMonth(0)
  const end = new Date(start)
  if (cadence === 'daily') end.setUTCDate(end.getUTCDate() + 1)
  if (cadence === 'weekly') end.setUTCDate(end.getUTCDate() + 7)
  if (cadence === 'monthly') end.setUTCMonth(end.getUTCMonth() + 1)
  if (cadence === 'quarterly') end.setUTCMonth(end.getUTCMonth() + 3)
+ if (cadence === 'semi-annual') end.setUTCMonth(end.getUTCMonth() + 6)
+ if (cadence === 'annual') end.setUTCFullYear(end.getUTCFullYear() + 1)
  return { from: day(start), to: day(new Date(end.getTime() - 1)), deadline: end.getTime(), start: start.getTime() }
 }
 export function gap(cadence: Cadence, selected: string, receipts: Receipt[], now: Date): Gap {
- const window = period(cadence, selected)
+ return gapIn(period(cadence, selected), selected, receipts, now)
+}
+// The GAP-001 precedence for one period window; CADENCE-001 supplies anchored
+// windows and an optional owner-set reminder lead in place of the final 20%.
+export function gapIn(window: ReturnType<typeof period>, selected: string, receipts: Receipt[], now: Date, leadDays?: number | null): Gap {
  const matching = receipts.filter(r => r.origin !== 'imported' && r.covered_from <= window.from && r.covered_to >= window.to)
  const current = matching.filter(r => !r.superseded_by)
  if (current.some(r => !r.available)) return 'unavailable bytes'
  if (current.length) {
-  const soon = (window.deadline - window.start) * .2
+  const soon = leadDays ? leadDays * 86400000 : (window.deadline - window.start) * .2
   return now.getTime() >= window.deadline - soon && now.getTime() < window.deadline ? 'due soon' : 'covered'
  }
  if (matching.length) return 'superseded-only'

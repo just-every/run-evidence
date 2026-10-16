@@ -31,11 +31,11 @@ importers:
         specifier: 5.20260908.1
         version: 5.20260908.1
       '@playwright/test':
-        specifier: 1.56.1
-        version: 1.56.1
+        specifier: 1.63.0
+        version: 1.63.0
       '@runeditrun/rer':
-        specifier: 0.2.24
-        version: 0.2.24
+        specifier: 0.2.35
+        version: 0.2.35
       '@types/node':
         specifier: 22.20.5
         version: 22.20.5
@@ -52,8 +52,8 @@ importers:
         specifier: 18.1.1
         version: 18.1.1
       playwright:
-        specifier: 1.56.1
-        version: 1.56.1
+        specifier: 1.63.0
+        version: 1.63.0
       typescript:
         specifier: 5.9.3
         version: 5.9.3
@@ -537,9 +537,9 @@ packages:
   '@oxc-project/types@0.149.0':
     resolution: {integrity: sha512-Efcc+iF0j3Bf67YjEqIqWXbX5XddXoK/Mw4K1/JuXwRCZ8N16VR7iT23nlCc9XrveFVh/E5Rqs2StT0V8v9LdA==}
 
-  '@playwright/test@1.56.1':
-    resolution: {integrity: sha512-vSMYtL/zOcFpvJCW71Q/OEGQb7KYBPAdKh35WNSkaZA75JlAO8ED8UN6GUNTm3drWomcbcqRPFqQbLae8yBTdg==}
-    engines: {node: '>=18'}
+  '@playwright/test@1.63.0':
+    resolution: {integrity: sha512-oxMK4vllB9RK5NQ2l1pq1IfOf2AvnEuj/vYGDj0H2nMtmtZpKtCwt/l00GEO6xjGfpBNAvjovvYdCm50dRQkpQ==}
+    engines: {node: '>=20'}
     hasBin: true
 
   '@poppinss/colors@4.1.6':
@@ -644,8 +644,8 @@ packages:
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
-  '@runeditrun/rer@0.2.24':
-    resolution: {integrity: sha512-qBFZUwo/KWvi9Tw5UtuHYViK3TVk7lym/1pClhRQdM6uDiU+LSy+FKBIt8wz7qSeeZbH5m2V24i4DqVvSO1QhA==}
+  '@runeditrun/rer@0.2.35':
+    resolution: {integrity: sha512-3HO5Ga8WYEviLedct4vnxBQq/qZFOO9YQRb21HRR9xY7maoKjExf8oW3lkpaPlkAVLZ59XirU8qeIjpSr2NkPg==}
     engines: {node: '>=22'}
     hasBin: true
 
@@ -906,11 +906,6 @@ packages:
   fetchdts@0.1.7:
     resolution: {integrity: sha512-YoZjBdafyLIop9lSxXVI33oLD5kN31q4Td+CasofLLYeLXRFeOsuOw0Uo+XNRi9PZlbfdlN2GmRtm4tCEQ9/KA==}
 
-  fsevents@2.3.2:
-    resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==}
-    engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
-    os: [darwin]
-
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
@@ -1073,14 +1068,14 @@ packages:
     resolution: {integrity: sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==}
     engines: {node: '>=12'}
 
-  playwright-core@1.56.1:
-    resolution: {integrity: sha512-hutraynyn31F+Bifme+Ps9Vq59hKuUCz7H1kDOcBs+2oGguKkWTU50bBWrtz34OUWmIwpBTWDxaRPXrIXkgvmQ==}
-    engines: {node: '>=18'}
+  playwright-core@1.63.0:
+    resolution: {integrity: sha512-rYCsBF/M5HjUch52bbtVONEFjv6Xu8sm8h72dNlR5bzIE1fvC/bxgspzkjSfU+MweEMmPM8KJebG6nnyxo5mCg==}
+    engines: {node: '>=20'}
     hasBin: true
 
-  playwright@1.56.1:
-    resolution: {integrity: sha512-aFi5B0WovBHTEvpM3DzXTUaeN6eN0qWnTkKx4NQaH4Wvcmc153PdaY2UBdSYKaGYw+UyWXSVyxDUg5DoPEttjw==}
-    engines: {node: '>=18'}
+  playwright@1.63.0:
+    resolution: {integrity: sha512-+7ziBLidS4NaNCdt57SUDT+wYmmd5fmiQejUic/kb+YsYSCPyOOE9sebzMjNmQrsnNpDJqd4WHvV/8lfKfUDUg==}
+    engines: {node: '>=20'}
     hasBin: true
 
   postcss@8.5.28:
@@ -1704,9 +1699,9 @@ snapshots:
 
   '@oxc-project/types@0.149.0': {}
 
-  '@playwright/test@1.56.1':
+  '@playwright/test@1.63.0':
     dependencies:
-      playwright: 1.56.1
+      playwright: 1.63.0
 
   '@poppinss/colors@4.1.6':
     dependencies:
@@ -1767,7 +1762,7 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
-  '@runeditrun/rer@0.2.24': {}
+  '@runeditrun/rer@0.2.35': {}
 
   '@sindresorhus/is@7.2.0': {}
 
@@ -2096,9 +2091,6 @@ snapshots:
 
   fetchdts@0.1.7: {}
 
-  fsevents@2.3.2:
-    optional: true
-
   fsevents@2.3.3:
     optional: true
 
@@ -2212,13 +2204,11 @@ snapshots:
 
   picomatch@4.0.7: {}
 
-  playwright-core@1.56.1: {}
+  playwright-core@1.63.0: {}
 
-  playwright@1.56.1:
+  playwright@1.63.0:
     dependencies:
-      playwright-core: 1.56.1
-    optionalDependencies:
-      fsevents: 2.3.2
+      playwright-core: 1.63.0
 
   postcss@8.5.28:
     dependencies:

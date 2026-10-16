@@ -44,6 +44,19 @@
 .rer-themed legend { max-width: 100%; padding: 0 6px; overflow-wrap: anywhere; }
 .rer-themed table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .rer-themed th, .rer-themed td { padding: 12px 8px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--ev-line); overflow-wrap: anywhere; }
+/* Program, test, remediation, risk and connection pages reuse these primitives. */
+.rer-themed .app-main textarea { width: 100%; max-width: 100%; min-width: 0; padding: 12px 14px; border: 1px solid var(--ev-field); border-radius: 10px; background: var(--ev-surface); color: var(--ev-ink); font: inherit; font-size: 16px; resize: vertical; }
+.rer-themed label.check { display: flex; align-items: center; gap: 10px; font-weight: 400; }
+.rer-themed .slab section form + form, .rer-themed .slab section .table-scroll + form, .rer-themed .slab section form + .table-scroll { margin-top: 24px; }
+.table-scroll { max-width: 100%; overflow-x: auto; }
+.table-scroll table { min-width: 560px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.rer-themed .filter-row { margin: 0 0 16px; line-height: 2; }
+.rer-themed .filter-row a[aria-current] { font-weight: 700; }
+.rer-themed .actions-row { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0 0; }
+.rer-themed .actions-row .button { width: auto; }
+.rer-themed .issued-token { margin: 0 0 20px; padding: 16px; border: 1px solid var(--ev-field); border-radius: 10px; }
+.rer-themed td small, .rer-themed dd small { color: var(--ev-muted); font-size: 14px; }
 @media (max-width: 1100px) { .app-columns { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 760px) {
  .rer-themed .slab > .card { padding: 20px 16px; }

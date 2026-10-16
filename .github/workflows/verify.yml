@@ -8,8 +8,13 @@ permissions:
   contents: read
 jobs:
   verify:
+    name: verify (${{ matrix.shard }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [core, program, browser]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,4 +28,5 @@ jobs:
       - run: pnpm exec rer verify
         env:
           RER_VERIFY_WORKERS: '2'
+          VERIFY_SHARD: ${{ matrix.shard }}
           WRANGLER_SEND_METRICS: 'false'

@@ -2,21 +2,24 @@ import type { Bindings } from '../../auth.server'
 import { agentColumns, exportAgentArchive, validateAgentExtension, restoreAgentStatements, type AgentArchive } from '../agent/archive'
 import { importInventory, validateImportInventory, restoreImportStatements, importTableColumns, type ImportInventory } from '../import/archive'
 import { fail, type Manifest, type Row } from './format'
+import { exportProgramArchive, programRowCount, programTables, restoreProgramStatements, validateProgramExtension, type ProgramArchive } from './program'
 
-export interface Extensions { agent: AgentArchive; imports: ImportInventory }
-export const extensionTables = [...Object.keys(agentColumns), ...Object.keys(importTableColumns)]
+export interface Extensions { agent: AgentArchive; imports: ImportInventory; program?: ProgramArchive }
+export const extensionTables = [...Object.keys(agentColumns), ...Object.keys(importTableColumns), ...programTables]
 type Store = Pick<Bindings, 'DB' | 'EXHIBITS'>
 export async function inventoryExtensions(env: Store): Promise<Extensions> {
- return { agent: await exportAgentArchive(env as Bindings), imports: await importInventory(env as Bindings) }
+ return { agent: await exportAgentArchive(env as Bindings), imports: await importInventory(env as Bindings), program: await exportProgramArchive(env) }
 }
 export async function validateExtensions(manifest: Manifest) {
  if (manifest.version === 1) return
  const value = manifest.extensions
- if (!value || Object.keys(value).sort().join(',') !== 'agent,imports') fail('Invalid archive extensions.')
+ // Version 2 archives predate program records; version 3 must list them all.
+ if (!value || Object.keys(value).sort().join(',') !== (manifest.version === 2 ? 'agent,imports' : 'agent,imports,program')) fail('Invalid archive extensions.')
+ if (value.program) validateProgramExtension(value.program)
  await validateAgentExtension(value.agent, manifest.rows)
  try { validateImportInventory(value.imports) } catch { fail('Invalid retained import custody.') }
  const allRows: Row[][] = [...Object.values(manifest.rows), ...Object.values(value.agent.rows), ...Object.values(value.imports.rows)]
- if (allRows.reduce((sum, rows) => sum + rows.length, 0) > 20000) fail('Archive metadata exceeds 20,000 rows.')
+ if (allRows.reduce((sum, rows) => sum + rows.length, 0) + (value.program ? programRowCount(value.program) : 0) > 20000) fail('Archive metadata exceeds 20,000 rows; no incomplete archive was produced.')
  // Imported native facts must agree with their retained import additions.
  for (const row of value.imports.rows.import_additions) {
   const fact = JSON.parse(row.value_json)
@@ -36,6 +39,7 @@ export function extensionStatements(env: Store, manifest: Manifest) {
  return [
   ...restoreAgentStatements(env as Bindings, manifest.extensions.agent),
   ...restoreImportStatements(manifest.extensions.imports).map(s => env.DB.prepare(s.sql).bind(...(s.params ?? []))),
+  ...(manifest.extensions.program ? restoreProgramStatements(env, manifest.extensions.program) : []),
  ]
 }
 export function archiveFiles(manifest: Manifest) {

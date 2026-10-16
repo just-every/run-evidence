@@ -8,14 +8,16 @@ const dependency = createRequire(require.resolve('wrangler/package.json'))
 const { unstable_splitSqlQuery } = dependency('wrangler')
 const { Miniflare, convertV4MiniflareOptions } = dependency('miniflare')
 const { build } = dependency('esbuild')
-export async function runtime({ migrationThrough } = {}) {
+export async function runtime({ migrationThrough, outbound } = {}) {
  const dir = await mkdtemp(join(tmpdir(),'evidence-http-'))
  const bundled = await build({ entryPoints:['tests/helpers/worker.ts'], bundle:true, write:false, format:'esm', platform:'neutral', target:'es2022', external:['cloudflare:*','node:*'] })
  const origin = 'http://127.0.0.1:8787'
  const vars = { AUTH_LOCAL:'true',AUTH_ORIGIN:origin,OWNER_EMAIL:'owner@example.test',SESSION_SECRET:randomBytes(32).toString('hex'),SETUP_TOKEN:randomBytes(32).toString('hex'),MAIL_PROVIDER:'resend',MAIL_API_KEY:randomBytes(32).toString('hex'),MAIL_FROM:'auth@localhost.test',RER_DEV_KEY:randomBytes(32).toString('base64url'),HARNESS_NOW:'2026-10-11T12:00:00Z' }
  const messages = []
  // Fake only the paid mail-provider edge; authentication and D1/R2 remain real.
+ // A suite may add another provider's fake at the same network edge (outbound).
  const mailProvider = async request => {
+  if(outbound && request.url !== 'https://api.resend.com/emails') { const answer = await outbound(request); if (answer) return answer }
   if(request.url !== 'https://api.resend.com/emails' || request.method !== 'POST') throw Error('Unexpected outbound request')
   messages.push(await request.json())
   return Response.json({id:crypto.randomUUID()})
@@ -23,10 +25,11 @@ export async function runtime({ migrationThrough } = {}) {
  const options = () => ({ ...convertV4MiniflareOptions({ modules:true, script:bundled.outputFiles[0].text, compatibilityDate:'2026-09-08',compatibilityFlags:['nodejs_compat'],d1Databases:{DB:'evidence-tests'},r2Buckets:{EXHIBITS:'exhibits'},bindings:vars,outboundService:mailProvider,unsafeLocalExplorer:false,unsafeTriggerHandlers:false }),resourcePersistencePath:dir })
  const mf = new Miniflare(options())
  let db = await mf.getD1Database('DB')
- for (const file of (await readdir('migrations/core')).filter(x=>x.endsWith('.sql') && (!migrationThrough || x.slice(0,4)<=migrationThrough || /^001[0-7]_/.test(x))).sort()) {
+ for (const file of (await readdir('migrations/core')).filter(x=>x.endsWith('.sql') && (!migrationThrough || x.slice(0,4)<=migrationThrough || /^00(1\d|2\d)_/.test(x))).sort()) {
   const sql = await readFile(join('migrations/core',file),'utf8')
-  // Use Wrangler's migration splitter so trigger bodies stay intact.
-  for (const statement of unstable_splitSqlQuery(sql)) await db.prepare(statement).run()
+  // Use Wrangler's migration splitter so trigger bodies stay intact; one
+  // transaction per file, as D1 applies a migration.
+  await db.batch(unstable_splitSqlQuery(sql).map(statement => db.prepare(statement)))
  }
  let cookie = ''
  const fetch = async (path, init={}) => {
@@ -47,5 +50,7 @@ export async function runtime({ migrationThrough } = {}) {
   if(complete.status!==303) throw Error('First-run completion failed')
   return cookie
  }
- return { mf,messages,persistencePath:dir,get db(){return db},origin,fetch,signin, setCookie:value=>{cookie=value}, clock:async now=>{vars.HARNESS_NOW=now;await mf.setOptions(options());db=await mf.getD1Database('DB')}, close:async()=>{await mf.dispose();await rm(dir,{recursive:true,force:true})} }
+ // The Cron Trigger at the harness clock, as rer dev and Cloudflare fire it.
+ const tick = async () => (await mf.getWorker()).scheduled({ cron:'*/5 * * * *', scheduledTime:new Date(vars.HARNESS_NOW) })
+ return { mf,messages,tick,persistencePath:dir,get db(){return db},origin,fetch,signin, setCookie:value=>{cookie=value}, clock:async now=>{vars.HARNESS_NOW=now;await mf.setOptions(options());db=await mf.getD1Database('DB')}, close:async()=>{await mf.dispose();await rm(dir,{recursive:true,force:true})} }
 }

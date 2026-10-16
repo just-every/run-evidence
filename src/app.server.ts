@@ -4,6 +4,13 @@ import { reviewHandler } from './evidence/review/http'
 import { archiveHandler } from './evidence/archive/http'
 import { agentHandler } from './evidence/agent/http'
 import { importHandler } from './evidence/import/http'
+import { programHandler } from './evidence/program/http'
+import { testHandler } from './evidence/tests/http'
+import { remedyHandler } from './evidence/remedy/http'
+import { connectHandler } from './evidence/connect/http'
+import { riskHandler } from './evidence/risk/http'
+import { apiHandler } from './evidence/api/http'
+import { policyHandler } from './evidence/policy/http'
 import { lobbyResponse } from './base/lobby'
 import { setupStateResponse } from './base/setup-state'
 import { identity } from './identity'
@@ -14,8 +21,12 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
  const evidence = evidenceHandler(clock)
  const review = reviewHandler(clock)
  const archive = archiveHandler(clock)
+ const program = [programHandler(clock), testHandler(clock), remedyHandler(clock), connectHandler(clock), riskHandler(clock), policyHandler(clock)]
+ const api = apiHandler(clock)
  return async (request: Request, env: Bindings) => {
   const path = new URL(request.url).pathname
+  // The public API takes Bearer tokens only, outside every owner door.
+  if (path.startsWith('/v1/')) return api(request,env)
   if (request.headers.has('authorization') && (path.startsWith('/app') || path.startsWith('/api')) && !path.startsWith('/api/agent')) return Response.json({error:'Agent credentials cannot use owner doors.'}, {status:403,headers:{'cache-control':'no-store'}})
   const installed = runtimeBindings(env)
   const state = await setupStateResponse(request,installed)
@@ -32,6 +43,7 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
   if (shared) return shared
   const custody = await archive(request,env)
   if (custody) return custody
+  for (const handler of program) { const handled = await handler(request,env); if (handled) return handled }
   const response = await evidence(request,env)
   if (response) return response
   return null

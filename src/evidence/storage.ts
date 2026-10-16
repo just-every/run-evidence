@@ -1,7 +1,8 @@
 import { activeControl, activeReceipt } from './visibility'
 import type { Bindings } from '../auth.server'
-import { gap, type Receipt, type Requirement } from './model'
-const receiptSelect = `SELECT r.*, e.object_key,e.filename,e.size,e.media_type, (SELECT n.id FROM receipts n WHERE n.supersedes=r.id) AS superseded_by FROM receipts r JOIN exhibits e ON e.id=r.exhibit_id`
+import { day, type Receipt, type Requirement } from './model'
+import { renewal, scheduleAt, type Override, type ScheduleRow } from './cadence'
+const receiptSelect = `SELECT r.*, e.object_key,e.filename,e.size,e.media_type, (SELECT n.id FROM receipts n WHERE n.supersedes=r.id) AS superseded_by, (SELECT d.effective_date FROM receipt_effective_dates d WHERE d.receipt_id=r.id) AS effective_date, (SELECT a.token_name FROM api_evidence a WHERE a.receipt_id=r.id) AS pushed_by_token FROM receipts r JOIN exhibits e ON e.id=r.exhibit_id`
 export async function storedBytes(env: Bindings, row: Receipt): Promise<ArrayBuffer | null> {
  try {
   const object = await env.EXHIBITS.get(row.object_key)
@@ -17,10 +18,24 @@ export async function history(env: Bindings, requirement?: string): Promise<Rece
  const { results } = await (requirement ? statement.bind(requirement) : statement).all<Receipt>()
  return Promise.all(results.map(async r => ({ ...r, available: !!await storedBytes(env,r) })))
 }
+// Each requirement's state at the selected date under the schedule in force
+// then; calendar anchors on the four desk periods keep the GAP-001 logic.
 export async function desk(env: Bindings, selected: string, now: Date) {
- const { results } = await env.DB.prepare('SELECT r.*,c.name AS control_name,c.group_name FROM requirements r JOIN controls c ON c.id=r.control_id WHERE '+activeControl('c')+' ORDER BY c.created_at,c.id').all<Requirement>()
+ const [requirements, schedules, overrides, adoptions] = await env.DB.batch([
+  env.DB.prepare('SELECT r.*,c.name AS control_name,c.group_name FROM requirements r JOIN controls c ON c.id=r.control_id WHERE '+activeControl('c')+' ORDER BY c.created_at,c.id'),
+  env.DB.prepare('SELECT * FROM requirement_schedules ORDER BY effective_from,rowid'),
+  env.DB.prepare('SELECT requirement_id,cycle_due,due_date,reason,actor_name FROM renewal_overrides ORDER BY at,rowid'),
+  env.DB.prepare('SELECT control_id,library_id FROM library_adoptions'),
+ ])
  const receipts = await history(env)
- return { selected, requirements: results.map(r => { const rows = receipts.filter(row => row.requirement_id === r.id); return { ...r, gap: gap(r.cadence, selected, rows, now), receipts: rows } }) }
+ const instant = selected === day(now) ? now.getTime() : Math.min(now.getTime(), Date.parse(selected + 'T00:00:00Z') + 86399999)
+ const library = new Map((adoptions.results as { control_id: string; library_id: string }[]).map(a => [a.control_id, a.library_id]))
+ return { selected, requirements: (requirements.results as Requirement[]).map(r => {
+  const rows = receipts.filter(row => row.requirement_id === r.id)
+  const schedule = scheduleAt(r.cadence, (schedules.results as ScheduleRow[]).filter(s => s.requirement_id === r.id), instant)
+  const state = renewal(schedule, selected, rows, (overrides.results as (Override & { requirement_id: string })[]).filter(o => o.requirement_id === r.id), now)
+  return { ...r, library_id: library.get(r.control_id) ?? null, gap: state.gap, renewal: state, receipts: rows }
+ }) }
 }
 export async function receipt(env: Bindings, id: string) {
  return env.DB.prepare(receiptSelect + ' WHERE r.id=?').bind(id).first<Receipt>()

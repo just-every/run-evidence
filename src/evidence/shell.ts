@@ -1,6 +1,6 @@
 import { escape, icon } from './ui'
 export interface PageOptions {
- active?: 'desk' | 'folders' | 'archive' | 'import' | 'agent'
+ active?: 'desk' | 'programs' | 'tests' | 'remediation' | 'risks' | 'connections' | 'folders' | 'archive' | 'import' | 'agent'
  owner?: string
  heading?: boolean
  className?: string
@@ -9,6 +9,11 @@ export interface PageOptions {
 }
 const links = [
  ['desk', '/app', 'Proof desk', 'home'],
+ ['programs', '/app/programs', 'Programs', 'shield'],
+ ['tests', '/app/tests', 'Tests', 'check'],
+ ['remediation', '/app/remediation', 'Remediation', 'alert'],
+ ['risks', '/app/risks', 'Risks', 'scale'],
+ ['connections', '/app/connections', 'Connections', 'plug'],
  ['folders', '/app/folders', 'Review folders', 'folder'],
  ['archive', '/app/archive', 'Yours', 'person'],
  ['import', '/app/import', 'Move in', 'move'],
