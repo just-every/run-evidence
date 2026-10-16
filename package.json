@@ -52,6 +52,7 @@
     "test:population": "node tests/population.mjs",
     "test:clouds": "node tests/clouds.mjs",
     "test:access": "node tests/access.mjs",
+    "test:training": "node tests/training.mjs",
     "check:library": "node scripts/library-check.mjs"
   },
   "dependencies": {

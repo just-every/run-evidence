@@ -4,6 +4,7 @@ import { runAwsCollection } from '../cloud/collect'
 import { isDirectory, runDirectoryCollection } from '../identity/collect'
 import { isScopedCloud, scopedClouds } from '../cloud/clouds'
 import { runScopedCollection } from '../cloud/scoped'
+import { runKnowBe4 } from '../training/knowbe4'
 import { upsertResources, type ResourceSchema } from '../resources'
 import { runForType } from '../tests/engine'
 import { unseal } from './custody'
@@ -17,6 +18,7 @@ const organizationSchema: ResourceSchema = { fields: { login: 'string', two_fact
 const HOUR = 3600000
 export async function runCollection(env: Bindings, connection: Connection, trigger: 'schedule' | 'manual', now: Date): Promise<{ run: string | null; outcome: string }> {
  if (connection.provider === 'aws') return runAwsCollection(env, connection, trigger, now)
+ if (connection.provider === 'knowbe4') return runKnowBe4(env, connection, trigger, now)
  if (isDirectory(connection.provider)) return runDirectoryCollection(env, connection, trigger, now)
  if (isScopedCloud(connection.provider)) return runScopedCollection(env, connection, scopedClouds[connection.provider], trigger, now)
  const at = now.toISOString(), started = await startRun(env, connection, connectorRevision, trigger, now)

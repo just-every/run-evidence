@@ -4,6 +4,7 @@ import { gcpCatalogue } from '../cloud/gcp'
 import { azureCatalogue } from '../cloud/azure'
 import { identityCatalogue } from '../identity/catalogue'
 import { attestationTest, policyTests } from '../policy/templates'
+import { trainingTest } from '../training/courses'
 // The published LIBRARY-001 test catalogue for connectors Evidence ships. Each
 // entry names criteria, the evaluated resource type, mapped library controls,
 // cadence and remediation per provider. Classes the provider cannot expose are
@@ -78,5 +79,6 @@ export const catalogue: CatalogueEntry[] = [
  ...identityCatalogue,
  ...policyTests,
  attestationTest,
+ trainingTest,
 ]
 export const catalogueEntry = (id: string) => catalogue.find(e => e.id === id)

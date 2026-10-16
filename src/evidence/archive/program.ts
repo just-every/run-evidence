@@ -5,7 +5,7 @@ import { fail, type Row } from './format'
 // so restored API tokens cannot authenticate and restored connections stay
 // inactive until an owner reconnects them. Rate counters are transient.
 export const programColumns = {
- people:['id','name','email','kind','created_at','created_by'],
+ people:['id','name','email','kind','created_at','created_by','role'],
  programs:['id','framework','edition','name','legal_entity','report_type','categories','products','teams','regions','systems','audit_from','audit_to','assessor','lead_person_id','milestones','created_at','updated_at'],
  program_revisions:['id','program_id','revision','snapshot_json','actor_id','actor_name','reason','at'],
  program_applicability:['id','program_id','ref','state','rationale','actor_id','actor_name','decided_at'],
@@ -76,13 +76,20 @@ export const programColumns = {
  access_decisions:['id','item_id','decision','reason','decided_by_person','decided_by_name','decided_by_email','at'],
  access_delegations:['item_id','to_person_id','reason','by_name','at'],
  access_revocations:['item_id','state','requested_at','checked_at','verified_at','evidence'],
+ training_adoptions:['course_id','revision','adopted_by','adopted_at'],
+ training_campaigns:['id','name','course_id','kind','audience','due_days','interval_months','created_by','created_name','created_at'],
+ training_schedule_changes:['id','campaign_id','due_days','interval_months','reason','actor_name','at'],
+ training_assignments:['id','campaign_id','course_id','revision','person_id','cycle','assigned_at','due_date','state','completed_at','completion_id'],
+ training_attempts:['id','person_id','course_id','revision','answers_json','score','passed','operator_email','at'],
+ internal_courses:['id','title','description','counts_as','approved_by','approved_at'],
+ training_completions:['id','person_id','course_id','course_title','revision','source','provenance','score','attempt_id','external_ref','recorded_by','completed_at','recorded_at'],
 } as const
 export type ProgramTable = keyof typeof programColumns
 export const programTables = Object.keys(programColumns) as ProgramTable[]
 // Tables first carried by archive version 4; a version 3 archive lists none of them.
-const addedInVersion4 = new Set<ProgramTable>(['tracker_destinations', 'tickets', 'ticket_events', 'ticket_comments', 'tracker_deliveries', 'readiness_snapshots', 'followup_settings', 'followup_channels', 'notify_preferences', 'followup_pauses', 'identity_matches', 'policy_assignments', 'policy_acknowledgments', 'policy_exceptions', 'people_departures', 'review_schedules', 'review_completions', 'review_overrides', 'population_uploads', 'population_rows', 'population_matches', 'access_reviews', 'access_review_items', 'access_decisions', 'access_delegations', 'access_revocations'])
+const addedInVersion4 = new Set<ProgramTable>(['tracker_destinations', 'tickets', 'ticket_events', 'ticket_comments', 'tracker_deliveries', 'readiness_snapshots', 'followup_settings', 'followup_channels', 'notify_preferences', 'followup_pauses', 'identity_matches', 'policy_assignments', 'policy_acknowledgments', 'policy_exceptions', 'people_departures', 'review_schedules', 'review_completions', 'review_overrides', 'population_uploads', 'population_rows', 'population_matches', 'access_reviews', 'access_review_items', 'access_decisions', 'access_delegations', 'access_revocations', 'training_adoptions', 'training_campaigns', 'training_schedule_changes', 'training_assignments', 'training_attempts', 'internal_courses', 'training_completions'])
 // Columns first carried by version 4 in tables that version 3 already listed, with the value older rows restore with.
-const addedColumns: Partial<Record<ProgramTable, Record<string, string | null>>> = { followups: { channel: 'email' }, connections: { config_json: '{}' }, policies: { template_id: null } }
+const addedColumns: Partial<Record<ProgramTable, Record<string, string | null>>> = { followups: { channel: 'email' }, connections: { config_json: '{}' }, policies: { template_id: null }, people: { role: null } }
 const columnsOf = (table: ProgramTable, version: number) => programColumns[table].filter(c => version >= 4 || !Object.hasOwn(addedColumns[table] ?? {}, c))
 const tablesOf = (version: number) => programTables.filter(t => version >= 4 || !addedInVersion4.has(t))
 export interface ProgramArchive { rows: Record<ProgramTable, Row[]> }

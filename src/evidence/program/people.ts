@@ -14,10 +14,10 @@ export async function addPerson(env: Bindings, actor: Actor, input: Input, now: 
  const name = text(input, 'name', 200), email = text(input, 'email', 254).toLowerCase(), kind = oneOf(input, 'kind', personKinds)
  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Refusal('Enter a real email address.')
  if (await env.DB.prepare('SELECT 1 FROM people WHERE email=?').bind(email).first()) throw new Refusal('That email already belongs to a person.', 409)
- const id = crypto.randomUUID()
+ const id = crypto.randomUUID(), role = text(input, 'role', 60, true).toLowerCase() || null
  await env.DB.batch([
-  env.DB.prepare('INSERT INTO people(id,name,email,kind,created_at,created_by) VALUES(?,?,?,?,?,?)').bind(id, name, email, kind, now.toISOString(), actor.id),
+  env.DB.prepare('INSERT INTO people(id,name,email,kind,created_at,created_by,role) VALUES(?,?,?,?,?,?,?)').bind(id, name, email, kind, now.toISOString(), actor.id, role),
   auditStatement(env, actor, 'person.added', 'person:' + id, now),
  ])
- return { id, name, email, kind }
+ return { id, name, email, kind, role }
 }
