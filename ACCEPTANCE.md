@@ -16,11 +16,11 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
-- **PROGRAM-004 — Extended and regulated programs · missing.** For each named extended program, create it on a business that already runs SOC 2 through program setup, review applicability, and open readiness. Readiness reports zero requirements without a mapped control, shows the evidence reused from SOC 2, and names the external assessment dependency. Exclude one requirement with a rationale: it stays visible as excluded. Export the program. For CMMC Level 2, readiness also shows the computed SPRS score, and changing one control's state changes the score.
+- **PROGRAM-004 — Extended and regulated programs · missing.** For each named extended program, create it on a business that already runs SOC 2 through program setup, review applicability, and open readiness. Readiness reports zero requirements without a mapped control, shows the evidence reused from SOC 2, and names the external assessment dependency. Exclude one requirement with a rationale: it stays visible as excluded. Export the program. For CMMC Level 2, readiness also shows the computed SPRS score, and changing one control's state changes the score. For USDP, enter business figures that meet California's and Texas's thresholds but not Montana's: readiness shows California and Texas obligations, Montana stays visible as excluded with the recorded figures, and raising the figures above Montana's threshold adds its obligations as a reviewable applicability change; the self-attestation exports with the applicable states listed. For ISO/IEC 27701, readiness shows the reuse from ISO 27001 and keeps controller and processor controls separately applicable.
 
   Current evidence: —.
 
-- **LIBRARY-001 — Shipped control library, test catalogue and cadence · missing.** Create each core program on a fresh installation: readiness reports zero unmapped requirements, and every mapped control shows a test or an evidence requirement. A build-time catalogue check enumerates every program requirement and every listed connector evidence class, and fails on any requirement with no control, any control with neither test nor evidence requirement, or any evidence class with no shipped test. Connect one cloud account and leave it for two hours: at least two runs per configuration test appear. Pause the scheduler for an hour: that interval shows as stale. Accept a library revision: earlier observations keep the revision they were evaluated under.
+- **LIBRARY-001 — Shipped control library, test catalogue and cadence · missing.** Create each core program on a fresh installation: readiness reports zero unmapped requirements, and every mapped control shows a test or an evidence requirement. A build-time catalogue check enumerates every program requirement and every listed connector evidence class, and fails on any requirement with no control, any control with neither test nor evidence requirement, or any evidence class with neither a shipped test nor an explicit unsupported entry naming its replacement evidence requirement. Connect one cloud account and leave it for two hours: at least two runs per configuration test appear. Pause the scheduler for an hour: that interval shows as stale. Accept a library revision: earlier observations keep the revision they were evaluated under.
 
   Current evidence: —.
 
@@ -46,6 +46,10 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: `src/evidence/model.ts`; `src/evidence/storage.ts`; `tests/evidence.mjs`.
 
+- **CADENCE-001 — Annual, semi-annual and anchored evidence renewal · missing.** Create an annual penetration-test requirement and upload today a report whose effective date is eight months ago: the requirement shows covered with a due date four months out (effective date plus twelve months), not twelve. Advance the test-harness clock: it moves covered → due soon (one reminder sent and not repeated on restart) → overdue at the deadline, with a deadline reminder. Create a semi-annual access-review requirement anchored to an audit window that starts 1 February: periods run February–July and August–January. Anchor an annual risk assessment to a July fiscal year. Set a one-off custom renewal date on the pentest requirement: it moves the current deadline only, and the next cycle returns to the effective-date anchor. Upload an imported annual report: it stays imported and does not establish current proof. Reopen a historical quarterly period and an annual period from before a period change: each keeps its original state.
+
+  Current evidence: —.
+
 - **COLLECTION-001 — Scheduled source collection with visible failures · missing.** Connect a real authorized sandbox via the Connections UI, schedule collection, close the browser, change the source and inspect the next run. Revoke a required scope, throttle a page and interrupt a run; reconnect and resume. The run history and period report preserve missing coverage, failure and recovery separately; only actual source reads issue observed receipts.
 
   Current evidence: —.
@@ -62,7 +66,11 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
-- **CODE-001 — GitHub, GitLab and Azure DevOps change assurance · missing.** Connect each of GitHub, GitLab and Azure DevOps, select two repositories and run branch-protection/branch-policy and reviewed-change tests. Merge an authorized reviewed change, remove protection on one repository and revoke access to the other. Inspect source links, event period coverage, failure and unknown states without exposing repository secrets.
+- **CLOUD-002 — Heroku, Vercel, DigitalOcean, Cloudflare, Netlify, Supabase, MongoDB Atlas and Snowflake · missing.** For each of the eight platforms, connect an authorized sandbox through Connections and run every catalogue test with at least one deliberately failing resource. Examples: a Heroku Postgres database without continuous protection, an unprotected Vercel preview, a DigitalOcean Space with a public object, a Cloudflare zone with minimum TLS 1.0, an unprotected Netlify deploy preview, a Supabase table without row-level security, an Atlas IP access list open to 0.0.0.0/0, and a Snowflake user without MFA. Fix each in the real platform and observe a pass, with both observations retained. Revoke one read permission per platform: the affected resources show missing coverage and stay in the denominator. The catalogue lists each unsupported class with its manual requirement, and the LIBRARY-001 build-time check fails if any class has neither a test nor that entry.
+
+  Current evidence: —.
+
+- **CODE-001 — GitHub, GitLab, Bitbucket Cloud and Azure DevOps change assurance · missing.** Connect each of GitHub, GitLab, Bitbucket Cloud and Azure DevOps, select two repositories and run branch-protection/branch-policy, reviewed-change, membership-MFA and repository-privacy tests. Merge an authorized reviewed change (through a Bitbucket Pipelines deployment for Bitbucket), remove protection on one repository, make one repository public and revoke access to the other. Inspect source links, event period coverage, failure and unknown states without exposing repository secrets.
 
   Current evidence: —.
 
@@ -70,11 +78,15 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
+- **APPS-001 — App-level account connectors for access reviews and leaver checks · missing.** For each of the ten named apps, connect a sandbox workspace through Connections and ingest an admin, a member and a guest. Each appears in Inventory with role, status and MFA state (or "not exposed"), matched to its person. Terminate in a connected HRIS a person who holds an account in every app: the leaver checklist lists each app as a monitored account and stays open, and the departed-user test fails for each app while its account is active. Deactivate the account in each app: the next source readback closes that item, and the checklist closes only when all ten are verified. Add an unconnected app: it appears as a manual check-off and closes only with an attached exhibit. Start a quarterly access review: its frozen population includes each connected app's accounts and roles without any upload.
+
+  Current evidence: —.
+
 - **HRIS-001 — BambooHR, Gusto, Rippling, Justworks, Deel HR and ADP Workforce Now personnel sources · missing.** Connect each of the six named HRIS, import a joiner, mover and leaver, then correct a start date and terminate an account in the real source. The People UI shows source priority, conflict review, correct obligations and no collected payroll or tax identifiers.
 
   Current evidence: —.
 
-- **DEVICE-001 — Jamf, Microsoft Intune, Kandji, JumpCloud and CrowdStrike posture · missing.** Connect each of Jamf, Intune, Kandji, JumpCloud and CrowdStrike, match a device to a person, change encryption/patch or sensor-health state in a sandbox and run a fresh test. A missing device feed or unmatched endpoint stays a gap; the original failed posture and correction remain attributable.
+- **DEVICE-001 — MDM and EDR posture: Jamf, Intune, Kandji, JumpCloud, Addigy, NinjaOne, CrowdStrike, SentinelOne and Defender for Endpoint · missing.** Connect each of the six MDM sources, match a device to a person, change encryption or patch state in a sandbox and run a fresh test. Connect each of the three EDR sources, and for each put one sensor into an unhealthy or disabled state: the sensor-health test fails for that device, then passes after recovery. A missing device feed, a device with no EDR sensor or an unmatched endpoint stays a gap; the original failed posture and correction remain attributable.
 
   Current evidence: —.
 
@@ -82,7 +94,11 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
-- **VULN-001 — Tenable and Qualys vulnerability evidence · missing.** Connect each scanner via Connections, ingest a finding, link it to a control and remediation task, accept a time-bounded exception and let it expire. Correct the sandbox issue and perform a fresh scanner read; only verified resolution closes the compliance obligation, with original findings retained.
+- **VULN-001 — Vulnerability findings from scanners, code and cloud-native sources · missing.** Connect each of the ten named sources via Connections and ingest at least one finding from each. Ingest a Dependabot alert and an AWS Inspector ECR finding for the same CVE on the same service: they deduplicate into one finding retaining both source IDs. Link it to a control and remediation task, accept a time-bounded exception and let it expire. Change the critical-severity SLA from 15 to 7 days: every existing finding keeps its due date, and the next new critical finding gets 7 days. Correct the sandbox issue and perform a fresh source read: only verified resolution closes the compliance obligation, with original findings retained. Reintroduce the issue: the finding reopens with its history.
+
+  Current evidence: —.
+
+- **VULN-002 — Penetration-test findings with retest-verified closure · missing.** Import a 12-row pentest findings CSV with its PDF report through Vulnerabilities → Import. The dry run refuses one row with a missing severity and admits nothing until confirmed. Confirm: 11 findings appear labelled manual with tester, report date and SLA due dates. Mark one fixed without retest evidence: it stays awaiting verification. Attach a retest letter and have the reviewer approve: it closes, with the original finding and report retained. The AUDIT-002 vulnerability-remediation population lists the pentest findings with their provenance.
 
   Current evidence: —.
 
@@ -122,6 +138,10 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
+- **RISK-002 — Shipped risk library, register import and configurable scoring · missing.** On a fresh ISO 27001 program, add five library risks: each is linked to its suggested controls and matching in-scope assets. Import a 30-row register CSV through Risk Register → Import: the dry run refuses one invalid row with a reason, and 29 risks are admitted labelled imported. Change the scale from 5×5 to 4×4 with new labels: earlier assessments still show their original scale, labels and score. Reassess one risk: both assessments are retained with their method revisions. Start the HIPAA risk analysis (PROGRAM-003) and add its scenarios from the library. Export the register with the method revision per assessment.
+
+  Current evidence: —.
+
 - **VENDOR-001 — Vendor inventory and security diligence · missing.** Onboard a US SaaS supplier through Vendors, request a SOC 2 report and BAA where applicable, send a shipped CAIQ v4 questionnaire, collect the supplier's per-question response and record a finding. Approve with an expiring condition, reach renewal, and inspect overdue reassessment reminders and the unchanged original documents. An expired supplier link cannot read or mutate another vendor.
 
   Current evidence: —.
@@ -130,7 +150,7 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
-- **VENDOR-002 — Vendor discovery and risk-based follow-through · missing.** Connect an authorized application source and one named spend source, discover an unknown vendor and duplicate, review proposed matching/tier, then approve diligence. Change its access and reach its review date: a new assessment starts, missing replies escalate and rejected candidates receive no external requests.
+- **VENDOR-002 — Vendor discovery and risk-based follow-through · missing.** Connect each of the six named grant and spend sources (Google Workspace, Entra ID, Okta, QuickBooks Online, Ramp and Brex): each surfaces at least one candidate citing its source records (granted scopes and users, or spend amounts and dates). An app connected through APPS-001 that is not yet a vendor, and an AWS Marketplace subscription read through CLOUD-001, each surface as candidates too. The same vendor found in QuickBooks Online and Ramp is proposed as one duplicate match, which a human accepts. Review the proposed tier for an unknown vendor and approve diligence. Change its access and reach its review date: a new assessment starts, missing replies escalate and rejected candidates receive no external requests.
 
   Current evidence: —.
 
@@ -180,6 +200,10 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
+- **TRUST-003 — Trust-center updates, subscribers and subprocessor-change notices · missing.** Subscribe a signed-out visitor to Subprocessors and confirm the double opt-in. The owner adds a second subscriber by email with a reason, and a third subscribes and then unsubscribes. Add a subprocessor with an effective date 30 days out and draft its notice. Publishing without approval is refused. Approve it: the notice is sent, and delivery is recorded per subscriber, including one bounce simulated at the network edge. The unsubscribed address receives nothing. The public list shows the pending subprocessor with its effective date, and after that date it shows as active. Publish one Security update publicly and one only to approved customers: a signed-out browser sees only the public one. Export the notice record with per-subscriber outcomes.
+
+  Current evidence: —.
+
 - **ANSWER-001 — Cited security-questionnaire completion · missing.** Against a populated program (approved policies, passing and failing tests, a SOC 2 report), upload a full-length SIG Lite (XLSX) and CSA CAIQ v4 (XLSX), plus a CSV and a DOCX customer questionnaire, in Questionnaires, and generate cited drafts. A held-out reviewer key, prepared independently, lists for each question whether the populated sources can answer it and which source supports it. Then check:
   - the draft reports cited, flagged and conflicting counts that reconcile to the question total;
   - at least 90% of the questions the key marks answerable are drafted with citations;
@@ -195,15 +219,35 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
+- **ANSWER-003 — Questionnaire collaboration, PDF capture and answer-library import · missing.** Split a full-length SIG Lite across three assignees with due dates. One answers a question from a Slack message: the answer arrives as an uncited draft that is flagged until a citation is added, and it awaits reviewer approval. Let one assignment pass its due date: it escalates. Upload a 40-question PDF customer questionnaire: questions extract in order with section and page; merge one wrongly split question; draft and approve; export an answer document whose question order and numbering match the PDF. Import a prior completed XLSX questionnaire: its answers appear in the library labelled imported and unverified, a draft cannot cite one until it is re-cited or re-approved, and after re-approval it can be reused.
+
+  Current evidence: —.
+
 ### Portability and migration
 
 - **IMPORT-001 — Reviewed Drata archive admission and undo · done.** Through Move-in, inspect a documented-shape Drata ZIP, review mappings and refuse unsafe/malformed artifacts, admit with a journal, then undo active links. Inspect retained originals and import history after undo, restart and archive restore. `tests/import.mjs` exercises these routes; a real customer export remains separately required under MIGRATE-001.
 
   Current evidence: `src/evidence/import/http.ts`; `src/evidence/import/plan.ts`; `tests/import.mjs`; `docs/DRATA-IMPORT.md`.
 
-- **MIGRATE-001 — Switch from Vanta, Drata and Secureframe · partial.** For each incumbent, use a representative authorized customer export through Move-in, preview and reconcile source totals and unsupported fields, resolve a duplicate identity, admit, export and undo. Reconnect one actual source and verify imported history stays distinct from fresh observations. If an incumbent does not export a record type, the UI names it and offers an authorized API/manual mapping route without silently dropping it.
+- **MIGRATE-001 — Switch from Vanta, Drata and Secureframe · partial.** For each incumbent, use a representative authorized customer export through Move-in, preview it, resolve a duplicate identity, admit, export and undo. Reconcile each record class separately, showing source count, admitted, unsupported and refused for each:
+  - frameworks, controls and mappings;
+  - test history;
+  - policies with approval history and attestations;
+  - people;
+  - vendors;
+  - risks;
+  - access-review decisions;
+  - audit requests;
+  - trust-center and answer-library content;
+  - original exhibits, by bytes and digest.
+
+  Reconnect one actual source and verify imported history stays distinct from fresh observations. If an incumbent does not export a record type, the UI names it and offers an authorized API/manual mapping route without silently dropping it. A switch inside an open audit period follows MIGRATE-002.
 
   Current evidence: `src/evidence/import/plan.ts`; `src/evidence/import/http.ts`; `tests/import.mjs`. Current limit: Only the documented Drata archive shape is implemented and exercised with synthetic fixtures; Vanta, Secureframe, broader objects and live migration validation are missing.
+
+- **MIGRATE-002 — Switching in the middle of an audit period · missing.** Migrate from a Vanta export dated four months into a Type II period and set the cutover. Generate the terminations population across the whole period: pre-cutover rows show as imported, post-cutover rows as source-observed from the connected HRIS, the boundary is marked, and the count reconciles with no person missing or duplicated at the boundary. Sample one row from each side and satisfy both requests, the pre-cutover one with imported evidence. Remove one month of pre-cutover rows from the export and regenerate: that interval shows incomplete with its reason until back-filled from the HRIS. Export the pack: every record carries its provenance and the boundary is visible.
+
+  Current evidence: —.
 
 - **CUSTODY-001 — Complete custody archive and empty-target restore · done.** Export through `/api/archive/export`, inspect the manifest, dry-run and restore into empty real D1/R2; compare every portable record and byte. Try altered digests, traversal, missing/unlisted files, unavailable bytes and a nonempty target. Refusal preserves the target; successful restore leaves grants inactive. `tests/archive.mjs` and `tests/review-browser.mjs` exercise HTTP/CLI custody journeys.
 
@@ -269,7 +313,7 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
-- **AI-001 — AI inventory and governance · missing.** Discover an unapproved AI tool through an authorized source, review its data access and owner, link a risk and acceptable-use policy, and approve only a bounded use case. Change its permissions, rerun governance checks and inspect the reopened review. An unapproved provider cannot receive evidence or execute an agent job.
+- **AI-001 — AI inventory and governance · missing.** Exercise every named source. Grant an unapproved AI app in each of Google Workspace, Entra ID and Okta; add a member and an API key in an OpenAI organization and in an Anthropic organization; add an AI SDK to a connected repository; and record an AI vendor charge in a connected spend source. Each produces an inventory record citing its source. Review one tool's data access and owner, link a risk and acceptable-use policy, and approve only a bounded use case. Change its permissions and revoke one API key at the provider, rerun governance checks, and inspect the reopened review and the key's revoked state on the next read. An unapproved provider cannot receive evidence or execute an agent job.
 
   Current evidence: —.
 
@@ -285,4 +329,4 @@ The current public-door suites are `tests/evidence.mjs` (native owner access, re
 
 For each new user flow, build rounds must exercise the named public door, persistence/restart, refusal/error path, actor permissions and final state in the journey. Inspect each changed screen at 1440 and 390 with realistic data; provider acknowledgments are separate from source truth and human decisions. Certification, independent assessor judgment, legal applicability, outside-provider reliability and copies already downloaded remain the declared boundaries in BOUNDARY-001, rather than fabricated acceptance results.
 
-**Clause totals:** 61 — 7 done / 12 partial / 42 missing.
+**Clause totals:** 69 — 7 done / 12 partial / 50 missing.
