@@ -3587,7 +3587,7 @@
       "executable": false
     },
     "src/modules/dependencies/logout.mjs": {
-      "sha256": "3bfa236ead120187b96da5f05e94861da682eb8419954a97ac594ff2de49ceb0",
+      "sha256": "9995debd8e311733327788b685cdd529a817eb83b623743bf8b99a4766fc346d",
       "executable": false
     },
     "src/modules/dependencies/native.mjs": {
