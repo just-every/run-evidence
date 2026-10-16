@@ -6,6 +6,7 @@ import { runTest } from './engine'
 import { addException, catalogueFor, defineTest, latestRevision, parseDefinition, requireTest, reviseTest, staleIntervals, testControls, type TestRow } from './storage'
 import { testPage, testsPage, type TestDetail } from './view'
 import type { Bindings } from '../../auth.server'
+import { obligations } from '../remedy/storage'
 const id = `(${uuid})`
 const both = (path: string) => new RegExp(`^/(?:app|api)${path}$`)
 export async function testSummaries(env: Bindings, now: Date) {
@@ -22,7 +23,11 @@ export async function testDetail(env: Bindings, testId: string, now: Date): Prom
   env.DB.prepare('SELECT id,resource_id,reason,approved_name,approved_at,expires_at,revoked_at FROM test_exceptions WHERE test_id=? ORDER BY approved_at').bind(testId),
  ])
  const runRows = runs.results as TestDetail['runs']
- return { test: t, criteria: parseCriteria(t.criteria_json), entry: catalogueFor(t), revisions: revisions.results as TestDetail['revisions'], controls: await testControls(env, testId), runs: runRows, latest: latest.results as TestDetail['latest'], exceptions: exceptions.results as TestDetail['exceptions'], stale: staleIntervals([...runRows].reverse(), t.cadence, t.created_at, now) }
+ // Per-item SLA status and linked tracker tickets (REMEDY-002, WORK-002).
+ const own = (await obligations(env, now)).filter(o => o.test_id === testId)
+ const tickets = own.length ? (await env.DB.prepare(`SELECT k.obligation_id,k.remote_key,k.remote_url,k.remote_status,k.remote_assignee,k.sync_state,k.last_synced_at,d.label FROM tickets k JOIN tracker_destinations d ON d.id=k.destination_id WHERE k.obligation_id IN (${own.map(() => '?').join(',')})`).bind(...own.map(o => o.id)).all<TestDetail['latest'][number]['tickets'][number] & { obligation_id: string }>()).results : []
+ const latestRows = (latest.results as Omit<TestDetail['latest'][number], 'sla' | 'due' | 'tickets'>[]).map(o => { const ob = own.find(x => x.id === o.obligation); return { ...o, sla: ob ? (ob.state === 'risk accepted' ? 'risk accepted' : ob.sla.status) : null, due: ob?.sla.due ?? null, tickets: tickets.filter(t => t.obligation_id === o.obligation).map(t => ({ ...t, stale: !t.last_synced_at || now.getTime() - Date.parse(t.last_synced_at) > 15 * 60000 })) } })
+ return { test: t, criteria: parseCriteria(t.criteria_json), entry: catalogueFor(t), revisions: revisions.results as TestDetail['revisions'], controls: await testControls(env, testId), runs: runRows, latest: latestRows, exceptions: exceptions.results as TestDetail['exceptions'], stale: staleIntervals([...runRows].reverse(), t.cadence, t.created_at, now) }
 }
 export function testHandler(clock: () => Date) {
  const routes: Route[] = [

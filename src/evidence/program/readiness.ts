@@ -37,12 +37,16 @@ export async function readiness(env: Bindings, row: ProgramRow, now: Date) {
  })
  const included = requirements.filter(r => r.state === 'included')
  const programControls = new Set(included.flatMap(r => r.controls.map(c => c.id)))
+ // Remediation counted here is the program's own: obligations of tests mapped to its in-scope controls.
+ const programTests = new Set((await env.DB.prepare('SELECT test_id,control_id FROM test_controls').all<{ test_id: string; control_id: string }>()).results.filter(l => programControls.has(l.control_id)).map(l => l.test_id))
+ const open = queue.filter(o => o.state !== 'verified' && programTests.has(o.test_id))
  const totals = {
   requirements: requirements.length, excluded: requirements.length - included.length, included: included.length,
   unmapped: included.filter(r => r.proof === 'unmapped').length,
   proof_current: included.filter(r => r.proof === 'current').length, proof_missing: included.filter(r => r.proof === 'not current').length,
   tests_failing: included.filter(r => r.testing === 'failing').length, tests_unknown: included.filter(r => r.testing === 'unknown').length, tests_passing: included.filter(r => r.testing === 'passing').length, untested: included.filter(r => r.testing === 'untested').length,
-  controls: programControls.size, open_obligations: queue.filter(o => o.state !== 'verified').length,
+  controls: programControls.size, open_obligations: open.length,
+  sla_within: open.filter(o => o.sla.status === 'within SLA').length, sla_approaching: open.filter(o => o.sla.status === 'approaching').length, sla_missed: open.filter(o => o.sla.status === 'SLA missed').length,
  }
- return { framework: frameworks[row.framework], requirements, totals, calculation: 'Counts are requirements of the program edition. Proof is current when every mapped control\'s named proof is covered or due soon for today\'s period. Testing is failing when any mapped control has a failing latest observation, unknown when any is unknown or never ran. Excluded requirements stay listed with their rationale. Nothing here certifies the business.' }
+ return { framework: frameworks[row.framework], requirements, totals, calculation: 'Counts are requirements of the program edition. Proof is current when every mapped control\'s named proof is covered or due soon for today\'s period. Testing is failing when any mapped control has a failing latest observation, unknown when any is unknown or never ran. Excluded requirements stay listed with their rationale. Open remediation counts obligations of tests mapped to in-scope controls, each with its own SLA clock. Nothing here certifies the business.' }
 }

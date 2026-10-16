@@ -8,8 +8,12 @@ import { readiness } from './readiness'
 import { addMapping, assignOwner, changeScope, controlMappings, ownership, periodReport, removeMapping, requireControl, scopeAt } from './control'
 import { controlPage, peoplePage, programPage, programsPage, reportPage } from './view'
 import { scheduleRequirement, overrideRenewal } from './schedule'
+import { auditStatement } from '../door'
+import { boardCsv, boardReport, type BoardFilters } from './board'
+import { boardPage } from './board-view'
 const id = `(${uuid})`
 const both = (path: string) => new RegExp(`^/(?:app|api)${path}$`)
+const boardFilters = (url: URL): BoardFilters => ({ owner: url.searchParams.get('owner') ?? '', severity: url.searchParams.get('severity') ?? '', category: url.searchParams.get('category') ?? '', from: url.searchParams.get('from') ?? '', to: url.searchParams.get('to') ?? '' })
 export function programHandler(clock: () => Date) {
  const routes: Route[] = [
   { method: 'GET', pattern: both('/programs'), run: async c => {
@@ -40,6 +44,17 @@ export function programHandler(clock: () => Date) {
    const body = { format: 'evidence-program', version: 1, exported_at: c.now.toISOString(), certification: 'None asserted. ' + ready.framework.assessor, program: row, readiness: ready.totals, calculation: ready.calculation, requirements: ready.requirements, applicability_history: decisions, owners, history, unresolved: ready.requirements.filter(r => r.state === 'included' && (r.proof !== 'current' || r.testing === 'failing' || r.testing === 'unknown')).map(r => ({ ref: r.ref, title: r.title, proof: r.proof, testing: r.testing })) }
    await c.env.DB.prepare("INSERT INTO product_audit(id,actor_kind,actor_id,actor_name,action,subject,outcome,detail,at) VALUES(?,'owner',?,?,'program.exported',?,'succeeded','',?)").bind(crypto.randomUUID(), c.actor.id, c.actor.name, 'program:' + row.id, c.now.toISOString()).run()
    return new Response(JSON.stringify(body, null, 1), { headers: { 'content-type': 'application/json; charset=utf-8', 'content-disposition': `attachment; filename="program-${row.id}.json"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } })
+  } },
+  { method: 'GET', pattern: both(`/programs/${id}/board`), run: async (c, m) => {
+   const row = await requireProgram(c.env, m[1]), report = await boardReport(c.env, row, boardFilters(c.url), c.now)
+   if (!c.isApi) return boardPage(report, await people(c.env), c.actor.name)
+   await auditStatement(c.env, c.actor, 'program.board-exported', 'program:' + row.id, c.now, 'succeeded', 'json').run()
+   return json(report)
+  } },
+  { method: 'GET', pattern: new RegExp(`^/app/programs/${id}/board\\.csv$`), run: async (c, m) => {
+   const row = await requireProgram(c.env, m[1]), report = await boardReport(c.env, row, boardFilters(c.url), c.now)
+   await auditStatement(c.env, c.actor, 'program.board-exported', 'program:' + row.id, c.now, 'succeeded', 'csv').run()
+   return new Response(boardCsv(report), { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="board-report-${row.id}.csv"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } })
   } },
   { method: 'GET', pattern: both(`/controls/${id}`), run: async (c, m) => {
    const control = await requireControl(c.env, m[1]), data = await desk(c.env, day(c.now), c.now)

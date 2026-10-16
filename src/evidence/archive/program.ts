@@ -55,11 +55,12 @@ export const programColumns = {
  ticket_events:['id','ticket_id','kind','remote_value','local_value','detail','trigger','at'],
  ticket_comments:['ticket_id','remote_comment_id','direction','at'],
  tracker_deliveries:['destination_id','delivery_id','ticket_ref','outcome','received_at'],
+ readiness_snapshots:['program_id','day','totals_json','taken_at'],
 } as const
 export type ProgramTable = keyof typeof programColumns
 export const programTables = Object.keys(programColumns) as ProgramTable[]
 // Tables first carried by archive version 4; a version 3 archive lists none of them.
-const addedInVersion4 = new Set<ProgramTable>(['tracker_destinations', 'tickets', 'ticket_events', 'ticket_comments', 'tracker_deliveries'])
+const addedInVersion4 = new Set<ProgramTable>(['tracker_destinations', 'tickets', 'ticket_events', 'ticket_comments', 'tracker_deliveries', 'readiness_snapshots'])
 const tablesOf = (version: number) => programTables.filter(t => version >= 4 || !addedInVersion4.has(t))
 export interface ProgramArchive { rows: Record<ProgramTable, Row[]> }
 export async function exportProgramArchive(env: Pick<Bindings, 'DB'>): Promise<ProgramArchive> {

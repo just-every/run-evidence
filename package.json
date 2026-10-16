@@ -43,6 +43,7 @@
     "test:github": "node tests/github.mjs",
     "test:risk": "node tests/risk.mjs",
     "test:work": "node tests/work.mjs",
+    "test:report": "node tests/report.mjs",
     "check:library": "node scripts/library-check.mjs"
   },
   "dependencies": {

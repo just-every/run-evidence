@@ -56,10 +56,18 @@ export async function runCollection(env: Bindings, connection: Connection, trigg
  await upsertResources(env, 'github.organization', organizationSchema, organization ? [organization] : [], source, false, now)
  const written = await upsertResources(env, 'github.repository', repositorySchema, repos, source, true, now)
  const fresh = written.results.filter(r => r.id && r.outcome !== 'removed' && coverage.repositories_read.includes(r.uniqueId)).map(r => r.id!)
- await env.DB.batch([
+ const observed = [
   ...(coverage.organization === 'read' ? [env.DB.prepare("UPDATE resources SET observed_at=? WHERE type='github.organization' AND unique_id=?").bind(at, connection.account)] : []),
   ...(fresh.length ? [env.DB.prepare('UPDATE resources SET observed_at=? WHERE id IN (SELECT value FROM json_each(?))').bind(at, JSON.stringify(fresh))] : []),
- ])
+ ]
+ // Nothing read is nothing stamped: an empty batch would abort the run before it finishes.
+ if (observed.length) await env.DB.batch(observed)
+ // A run that read nothing at all is a failure: it never refreshes the last successful read.
+ if (coverage.organization !== 'read' && !coverage.repositories_read.length) {
+  const result = await finish('failed', coverage, 'nothing readable: organization ' + coverage.organization, env.DB.prepare('UPDATE connections SET last_attempt_at=?,last_error=? WHERE id=?').bind(at, `GitHub returned nothing readable (organization ${coverage.organization}).`, connection.id))
+  await runForType(env, 'github.repository', now); await runForType(env, 'github.organization', now)
+  return result
+ }
  const outcome = coverage.unreadable.length || coverage.organization !== 'read' ? 'partial' : 'complete'
  const result = await finish(outcome, coverage, '', env.DB.prepare("UPDATE connections SET last_attempt_at=?,last_success_at=?,next_attempt_at=NULL,backoff_seconds=0,last_error=? WHERE id=?").bind(at, at, outcome === 'partial' ? `${coverage.unreadable.length} repositories unreadable` : '', connection.id))
  await runForType(env, 'github.repository', now)
