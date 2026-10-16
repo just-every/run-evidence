@@ -45,6 +45,7 @@
     "test:work": "node tests/work.mjs",
     "test:report": "node tests/report.mjs",
     "test:followup": "node tests/followup.mjs",
+    "test:cloud": "node tests/cloud.mjs",
     "check:library": "node scripts/library-check.mjs"
   },
   "dependencies": {

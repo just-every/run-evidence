@@ -37,7 +37,7 @@ export const programColumns = {
  api_tokens:['id','name','scopes','created_by','created_name','created_at','expires_at','revoked_at','revoked_by'],
  api_calls:['id','token_id','method','route','status','at'],
  api_evidence:['receipt_id','token_id','token_name','owner_name'],
- connections:['id','provider','label','account','api_base','granted_scopes','status','created_by','created_name','created_at','rotated_at','revoked_at','last_success_at','last_attempt_at','next_attempt_at','backoff_seconds','last_error'],
+ connections:['id','provider','label','account','api_base','granted_scopes','status','created_by','created_name','created_at','rotated_at','revoked_at','last_success_at','last_attempt_at','next_attempt_at','backoff_seconds','last_error','config_json'],
  connection_repositories:['connection_id','full_name','selected'],
  collection_runs:['id','connection_id','trigger','connector_revision','started_at','finished_at','outcome','coverage_json','error_code'],
  risk_methods:['id','revision','scale','likelihood_labels','impact_labels','formula','matrix_json','thresholds_json','actor_name','at'],
@@ -66,7 +66,7 @@ export const programTables = Object.keys(programColumns) as ProgramTable[]
 // Tables first carried by archive version 4; a version 3 archive lists none of them.
 const addedInVersion4 = new Set<ProgramTable>(['tracker_destinations', 'tickets', 'ticket_events', 'ticket_comments', 'tracker_deliveries', 'readiness_snapshots', 'followup_settings', 'followup_channels', 'notify_preferences', 'followup_pauses'])
 // Columns first carried by version 4 in tables that version 3 already listed, with the value older rows restore with.
-const addedColumns: Partial<Record<ProgramTable, Record<string, string>>> = { followups: { channel: 'email' } }
+const addedColumns: Partial<Record<ProgramTable, Record<string, string>>> = { followups: { channel: 'email' }, connections: { config_json: '{}' } }
 const columnsOf = (table: ProgramTable, version: number) => programColumns[table].filter(c => version >= 4 || !Object.hasOwn(addedColumns[table] ?? {}, c))
 const tablesOf = (version: number) => programTables.filter(t => version >= 4 || !addedInVersion4.has(t))
 export interface ProgramArchive { rows: Record<ProgramTable, Row[]> }
