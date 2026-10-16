@@ -7,6 +7,7 @@ import { addException, catalogueFor, defineTest, latestRevision, parseDefinition
 import { testPage, testsPage, type TestDetail } from './view'
 import type { Bindings } from '../../auth.server'
 import { obligations } from '../remedy/storage'
+import { ticketPanel } from '../work/granularity'
 const id = `(${uuid})`
 const both = (path: string) => new RegExp(`^/(?:app|api)${path}$`)
 export async function testSummaries(env: Bindings, now: Date) {
@@ -38,7 +39,7 @@ export function testHandler(clock: () => Date) {
    return testsPage(rows, types, catalogue.filter(e => e.unsupported), c.actor.name, c.url.searchParams.get('controls') ?? '')
   } },
   { method: 'POST', pattern: both('/tests'), run: async c => { const created = await defineTest(c.env, parseDefinition(await readInput(c.request)), 'custom', c.actor.id, c.actor, c.now); return done(c, '/app/tests/' + created.id, created, 201) } },
-  { method: 'GET', pattern: both(`/tests/${id}`), run: async (c, m) => { const d = await testDetail(c.env, m[1], c.now); return c.isApi ? json(d) : testPage(d, c.actor.name) } },
+  { method: 'GET', pattern: both(`/tests/${id}`), run: async (c, m) => { const d = await testDetail(c.env, m[1], c.now), tickets = await ticketPanel(c.env, m[1], c.now); return c.isApi ? json({ ...d, tickets }) : testPage(d, c.actor.name, tickets) } },
   { method: 'POST', pattern: both(`/tests/${id}/run`), run: async (c, m) => { const result = await runTest(c.env, m[1], 'manual', c.now); return done(c, '/app/tests/' + m[1], { run: result.run, observations: result.observations.length }) } },
   { method: 'POST', pattern: both(`/tests/${id}/revisions`), run: async (c, m) => {
    const input = await readInput(c.request), prior = (await latestRevision(c.env, m[1]))!

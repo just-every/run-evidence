@@ -95,7 +95,8 @@ export async function syncTicket(env: Bindings, ticket: TicketRow, trigger: stri
    env.DB.prepare("UPDATE obligations SET state='awaiting verification' WHERE id=? AND state='open'").bind(ticket.obligation_id))
  } else if (!remote.closed && ticket.remote_closed) statements.push(ticketEvent(env, ticket.id, 'reopened in tracker', trigger, at, '', remote.status), obligationEvent(env, ticket.obligation_id, 'reopened in tracker', system, at, `${name} reopened (${remote.status})`))
  // Due date: Evidence owns it. Push local changes; show tracker edits as conflicts.
- if (adapter.supportsDue) {
+ // Whole-test tickets carry the earliest item deadline, written by the ticket automation.
+ if (adapter.supportsDue && !ticket.group_id) {
   const local = localDue(o), remoteChanged = remote.due !== ticket.synced_due, localChanged = local !== ticket.synced_due
   if (remote.due === local) { syncedDue = local; if (state === 'conflict') { state = 'linked'; statements.push(ticketEvent(env, ticket.id, 'conflict cleared', trigger, at, 'Both sides now agree', remote.due, local)) } }
   else if (remoteChanged) {

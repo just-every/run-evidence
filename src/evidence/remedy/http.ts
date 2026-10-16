@@ -15,9 +15,12 @@ const both = (path: string) => new RegExp(`^/(?:app|api)${path}$`)
 export function remedyHandler(clock: () => Date) {
  const routes: Route[] = [
   { method: 'GET', pattern: both('/remediation'), run: async c => {
-   const q = Object.fromEntries(['state', 'sla', 'owner', 'category', 'from', 'to'].map(k => [k, c.url.searchParams.get(k) ?? '']))
-   const all = await obligations(c.env, c.now)
-   const matches = (o: typeof all[number]) => (!q.owner || o.owner_person_id === q.owner) && (!q.category || o.category === q.category)
+   const q = Object.fromEntries(['state', 'sla', 'owner', 'category', 'from', 'to', 'tracker_assignee', 'tracker_status'].map(k => [k, c.url.searchParams.get(k) ?? '']))
+   // WORK-002: each item's linked tickets, filterable by tracker assignee and status.
+   const linked = (await c.env.DB.prepare('SELECT k.obligation_id,k.remote_key,k.remote_url,k.remote_status,k.remote_assignee,k.sync_state,k.last_synced_at,k.group_id,d.label FROM tickets k JOIN tracker_destinations d ON d.id=k.destination_id WHERE k.remote_id IS NOT NULL').all<{ obligation_id: string; remote_key: string; remote_url: string; remote_status: string; remote_assignee: string | null; sync_state: string; last_synced_at: string | null; group_id: string | null; label: string }>()).results
+   const all = (await obligations(c.env, c.now)).map(o => ({ ...o, tickets: linked.filter(k => k.obligation_id === o.id).map(k => ({ ...k, stale: !k.last_synced_at || c.now.getTime() - Date.parse(k.last_synced_at) > 15 * 60000 })) }))
+   const like = (value: string | null | undefined, wanted: string) => !wanted || (value ?? '').toLowerCase().includes(wanted.toLowerCase())
+   const matches = (o: typeof all[number]) => (!q.owner || o.owner_person_id === q.owner) && (!q.category || o.category === q.category) && (!q.tracker_assignee || o.tickets.some(k => like(k.remote_assignee, q.tracker_assignee))) && (!q.tracker_status || o.tickets.some(k => like(k.remote_status, q.tracker_status)))
    const open = all.filter(o => o.state !== 'verified' && matches(o) && (!q.state || o.state === q.state) && (!q.sla || o.sla.status === q.sla))
    const resolved = all.filter(o => o.state === 'verified' && matches(o) && (!q.from || (o.closed_at ?? '') >= q.from) && (!q.to || (o.closed_at ?? '') <= q.to + 'T23:59:59.999Z'))
    const policies = (await c.env.DB.prepare('SELECT category,severity,days,effective_at,actor_name FROM sla_policies ORDER BY effective_at DESC').all<{ category: string; severity: string; days: number; effective_at: string; actor_name: string }>()).results

@@ -30,4 +30,5 @@ export const githubIssues: Adapter = {
  },
  async comment(d, token, t, body) { return String(((await call(`${repoPath(d)}/issues/${encodeURIComponent(t.remote_id)}/comments`, { method: 'POST', headers: headers(token), body: JSON.stringify({ body }), label })).body as { id: number }).id) },
  async setDue() { throw new TrackerFailure('invalid', 400, 'GitHub issues have no due date field.') },
+ async reopen(d, token, t) { await call(`${repoPath(d)}/issues/${encodeURIComponent(t.remote_id)}`, { method: 'PATCH', headers: headers(token), body: JSON.stringify({ state: 'open' }), label }) },
 }

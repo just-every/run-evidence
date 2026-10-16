@@ -34,8 +34,9 @@ async function fakeTrackers(request) {
    if (!['Highest', 'High', 'Medium', 'Low'].includes(body.fields.priority?.name)) return reply(400, { errorMessages: [], errors: { priority: 'Specify the Priority (id or name) in the string format' } })
    const key = 'SEC-' + (sequence + 1), i = issue('jira', { id: key, title: body.fields.summary, description: JSON.stringify(body.fields.description), due: body.fields.duedate ?? null, status: 'To Do', labels: body.fields.labels }); return reply(201, { id: String(1000 + i.n), key })
   }
-  const m = /^\/rest\/api\/3\/issue\/(SEC-\d+)(\/comment)?$/.exec(url.pathname), i = m && find('jira', m[1])
+  const m = /^\/rest\/api\/3\/issue\/(SEC-\d+)(\/comment|\/transitions)?$/.exec(url.pathname), i = m && find('jira', m[1])
   if (!i || i.deleted) return reply(404, { errorMessages: ['Issue does not exist'] })
+  if (m[2] === '/transitions') { if (request.method === 'POST') { i.closed = false; i.status = 'To Do'; return reply(204) } return reply(200, { transitions: [{ id: '11', to: { statusCategory: { key: 'new' } } }, { id: '31', to: { statusCategory: { key: 'done' } } }] }) }
   if (m[2] && request.method === 'POST') { const id = String(++sequence); i.comments.push({ id, author: 'IT', body: body.body.content.map(p => p.content.map(t => t.text ?? '\n').join('')).join('\n'), at: tracker.clock }); return reply(201, { id }) }
   if (m[2]) return reply(200, { comments: i.comments.map(c => ({ id: c.id, author: { displayName: c.author }, body: { type: 'doc', version: 1, content: [{ type: 'paragraph', content: [{ type: 'text', text: c.body }] }] }, created: c.at })) })
   if (request.method === 'PUT') { i.due = body.fields.duedate; return reply(204) }
@@ -61,6 +62,7 @@ async function fakeTrackers(request) {
   if (!i || i.deleted) return reply(i?.deleted ? 410 : 404, { message: 'Not Found' })
   if (m[2] && request.method === 'POST') { const id = ++sequence; i.comments.push({ id: String(id), author: 'evidence-bot', body: body.body, at: tracker.clock }); return reply(201, { id }) }
   if (m[2]) return reply(200, i.comments.map(c => ({ id: Number(c.id), user: { login: c.author }, body: c.body, created_at: c.at })))
+  if (request.method === 'PATCH') { if (body.state) i.closed = body.state === 'closed'; return reply(200, {}) }
   return reply(200, { number: Number(i.id), state: i.closed ? 'closed' : 'open', state_reason: i.closed ? 'completed' : null, assignee: i.assignee ? { login: i.assignee } : null })
  }
  if (url.origin === 'https://app.asana.com') {
@@ -204,6 +206,56 @@ try {
   await owner(`/api/trackers/${dest.linear.id}/rotate`, { token: 'lin_key2' }, 200)
   await owner(`/api/tickets/${lin.id}/sync`, {}, 200)
   assert.equal((await detail(ob3)).tickets.find(t => t.id === lin.id).sync_state, 'linked')
+ })
+ await scenario('Per-item tickets are created automatically with their own due dates; closing one re-tests only its item; the queue filters by tracker assignee and status', async () => {
+  assert.equal((await v1(push.token, 'PUT', '/v1/resource-types/endpoint', { schema: { fields: { patched: 'boolean' } } })).status, 200)
+  assert.equal((await v1(push.token, 'PUT', '/v1/resources/endpoint', { resources: ['e1', 'e2'].map(u => ({ uniqueId: u, displayName: 'Endpoint ' + u, attributes: { patched: false } })) })).status, 200)
+  const test = await (await v1(push.token, 'POST', '/v1/tests', { name: 'Endpoints are patched', resourceType: 'endpoint', criteria: [{ attribute: 'patched', op: 'equals', value: true }], cadence: 'daily', category: 'device', severity: 'medium', controls: ['OPS-04'] })).json()
+  await owner(`/api/tests/${test.id}/ticket-settings`, { destination_id: dest.jira.id, granularity: 'item', auto_create: 'on', follow_up: 'reopen' }, 200)
+  await at('2026-10-11T14:00:00Z'); await app.tick()
+  const items = (await get('/api/remediation')).open.filter(o => o.test_id === test.id)
+  assert.equal(items.length, 2); assert.ok(items.every(o => o.tickets.length === 1 && /^SEC-/.test(o.tickets[0].remote_key)))
+  const [first, second] = items.map(o => find('jira', o.tickets[0].remote_key))
+  assert.ok(first.due && second.due); assert.notEqual(first.id, second.id)
+  first.assignee = 'Lena Ortiz'; first.status = 'In Progress'
+  await at('2026-10-11T14:15:00Z'); await app.tick()
+  const filtered = await get('/api/remediation?tracker_assignee=lena')
+  assert.deepEqual(filtered.open.map(o => o.resource_name), ['Endpoint e1'])
+  assert.deepEqual((await get('/api/remediation?tracker_status=progress')).open.map(o => o.resource_name), ['Endpoint e1'])
+  const page = await get('/api/tests/' + test.id)
+  assert.equal(page.latest.find(o => o.display_name === 'Endpoint e1').tickets[0].remote_assignee, 'Lena Ortiz')
+  first.closed = true; first.status = 'Done'
+  const before = (await app.db.prepare("SELECT COUNT(*) AS n FROM observations o JOIN test_runs r ON r.id=o.run_id WHERE r.trigger='retest' AND o.test_id=?").bind(test.id).first()).n
+  await at('2026-10-11T14:30:00Z'); await app.tick()
+  const retested = (await app.db.prepare("SELECT r2.display_name FROM observations o JOIN test_runs r ON r.id=o.run_id JOIN resources r2 ON r2.id=o.resource_id WHERE r.trigger='retest' AND o.test_id=?").bind(test.id).all()).results.slice(before).map(r => r.display_name)
+  assert.deepEqual(retested, ['Endpoint e1'])
+  const after = (await get('/api/remediation')).open.filter(o => o.test_id === test.id)
+  assert.equal(after.length, 2); assert.equal(after.find(o => o.resource_name === 'Endpoint e1').state, 'open')
+  assert.equal(after.find(o => o.resource_name === 'Endpoint e2').clock_started_at, items.find(o => o.resource_name === 'Endpoint e2').clock_started_at); assert.equal(after.find(o => o.resource_name === 'Endpoint e2').sla.due, items.find(o => o.resource_name === 'Endpoint e2').sla.due)
+ })
+ await scenario('A whole-test ticket lists every item with its deadline; closing it with one item fixed re-tests all, closes only the fixed one and reopens the ticket naming the rest', async () => {
+  assert.equal((await v1(push.token, 'PUT', '/v1/resource-types/bucket', { schema: { fields: { private: 'boolean' } } })).status, 200)
+  assert.equal((await v1(push.token, 'PUT', '/v1/resources/bucket', { resources: ['b1', 'b2', 'b3'].map(u => ({ uniqueId: u, displayName: 'Bucket ' + u, attributes: { private: false } })) })).status, 200)
+  const test = await (await v1(push.token, 'POST', '/v1/tests', { name: 'Buckets are private', resourceType: 'bucket', criteria: [{ attribute: 'private', op: 'equals', value: true }], cadence: 'daily', category: 'cloud', severity: 'high', controls: ['DAT-08'] })).json()
+  await owner(`/api/tests/${test.id}/ticket-settings`, { destination_id: dest.github.id, granularity: 'test', follow_up: 'reopen' }, 200)
+  assert.equal((await get('/api/tests/' + test.id)).tickets.waiting, 3)
+  const created = await owner(`/api/tests/${test.id}/tickets`, {})
+  assert.equal(created.items, 3)
+  const remote = find('github', created.url.split('/').pop())
+  for (const b of ['b1', 'b2', 'b3']) assert.match(remote.body, new RegExp(`Bucket ${b}: remediate by \\d{4}-\\d{2}-\\d{2}`))
+  assert.equal((await get('/api/tests/' + test.id)).tickets.waiting, 0)
+  assert.equal((await v1(push.token, 'PUT', '/v1/resources/bucket', { resources: ['b1', 'b2', 'b3', 'b4'].map(u => ({ uniqueId: u, displayName: 'Bucket ' + u, attributes: { private: u === 'b1' ? true : false } })) })).status, 200)
+  await owner(`/api/tests/${test.id}/tickets`, {})
+  assert.match(remote.comments.at(-1).body, /New failing items:\n- Bucket b4/)
+  remote.closed = true
+  await at('2026-10-11T14:45:00Z'); await app.tick()
+  const states = Object.fromEntries((await get('/api/remediation')).open.concat((await get('/api/remediation')).resolved).filter(o => o.test_id === test.id).map(o => [o.resource_name, o.state]))
+  assert.deepEqual(states, { 'Bucket b1': 'verified', 'Bucket b2': 'open', 'Bucket b3': 'open', 'Bucket b4': 'open' })
+  assert.equal(remote.closed, false)
+  const notice = remote.comments.at(-1).body
+  assert.match(notice, /Re-test still fails for:/); assert.match(notice, /Bucket b2/); assert.match(notice, /Bucket b4/); assert.ok(!/Bucket b1/.test(notice))
+  const group = (await get('/api/tests/' + test.id)).tickets.groups[0]
+  assert.equal(group.state, 'open'); assert.equal(group.item_list.split(',').length, 4)
  })
  await scenario('Tickets and their sync history travel in the archive; restored destinations hold no credentials', async () => {
   const exported = Buffer.from(await (await app.fetch('/api/archive/export')).arrayBuffer())

@@ -27,5 +27,6 @@ export const asana: Adapter = {
   return { status: task.completed ? 'completed' : 'incomplete', closed: task.completed === true, assignee: task.assignee?.name ?? null, due: dateOnly(task.due_on), comments: stories.filter(s => s.resource_subtype === 'comment_added').map(s => ({ id: s.gid, author: s.created_by?.name ?? 'Asana user', body: String(s.text ?? ''), at: s.created_at })) }
  },
  async comment(d, token, t, body) { return data<{ gid: string }>(await call(`${d.api_base}/tasks/${encodeURIComponent(t.remote_id)}/stories`, { method: 'POST', headers: headers(token), body: JSON.stringify({ data: { text: body } }), label })).gid },
+ async reopen(d, token, t) { await call(`${d.api_base}/tasks/${encodeURIComponent(t.remote_id)}`, { method: 'PUT', headers: headers(token), body: JSON.stringify({ data: { completed: false } }), label }) },
  async setDue(d, token, t, due) { await call(`${d.api_base}/tasks/${encodeURIComponent(t.remote_id)}`, { method: 'PUT', headers: headers(token), body: JSON.stringify({ data: { due_on: due } }), label }) },
 }

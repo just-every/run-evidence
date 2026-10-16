@@ -51,7 +51,7 @@ export const programColumns = {
  policies:['id','title','owner_person_id','created_at','updated_at','template_id'],
  policy_revisions:['id','policy_id','version','body','body_sha256','status','drafted_by','drafted_at','decided_by','decided_at','decision_note','approved_sha256','published_at','effective_date','review_due'],
  tracker_destinations:['id','provider','label','api_base','account','project','project_name','mapping_json','hook_audience','status','created_by','created_name','created_at','rotated_at','revoked_at','last_success_at','last_error'],
- tickets:['id','obligation_id','destination_id','remote_id','remote_key','remote_url','created_at','created_name','sync_state','sync_error','remote_status','remote_closed','remote_assignee','remote_due','synced_due','last_synced_at','last_attempt_at'],
+ tickets:['id','obligation_id','destination_id','remote_id','remote_key','remote_url','created_at','created_name','sync_state','sync_error','remote_status','remote_closed','remote_assignee','remote_due','synced_due','last_synced_at','last_attempt_at','group_id'],
  ticket_events:['id','ticket_id','kind','remote_value','local_value','detail','trigger','at'],
  ticket_comments:['ticket_id','remote_comment_id','direction','at'],
  tracker_deliveries:['destination_id','delivery_id','ticket_ref','outcome','received_at'],
@@ -83,13 +83,16 @@ export const programColumns = {
  training_attempts:['id','person_id','course_id','revision','answers_json','score','passed','operator_email','at'],
  internal_courses:['id','title','description','counts_as','approved_by','approved_at'],
  training_completions:['id','person_id','course_id','course_title','revision','source','provenance','score','attempt_id','external_ref','recorded_by','completed_at','recorded_at'],
+ ticket_settings:['test_id','destination_id','granularity','auto_create','follow_up','updated_by','updated_at'],
+ ticket_defaults:['singleton','destination_id','granularity','auto_create','follow_up','updated_by','updated_at'],
+ ticket_groups:['id','test_id','destination_id','remote_id','remote_key','remote_url','created_at','created_name','state','item_list','handled_close_at','due_written'],
 } as const
 export type ProgramTable = keyof typeof programColumns
 export const programTables = Object.keys(programColumns) as ProgramTable[]
 // Tables first carried by archive version 4; a version 3 archive lists none of them.
-const addedInVersion4 = new Set<ProgramTable>(['tracker_destinations', 'tickets', 'ticket_events', 'ticket_comments', 'tracker_deliveries', 'readiness_snapshots', 'followup_settings', 'followup_channels', 'notify_preferences', 'followup_pauses', 'identity_matches', 'policy_assignments', 'policy_acknowledgments', 'policy_exceptions', 'people_departures', 'review_schedules', 'review_completions', 'review_overrides', 'population_uploads', 'population_rows', 'population_matches', 'access_reviews', 'access_review_items', 'access_decisions', 'access_delegations', 'access_revocations', 'training_adoptions', 'training_campaigns', 'training_schedule_changes', 'training_assignments', 'training_attempts', 'internal_courses', 'training_completions'])
+const addedInVersion4 = new Set<ProgramTable>(['tracker_destinations', 'tickets', 'ticket_events', 'ticket_comments', 'tracker_deliveries', 'readiness_snapshots', 'followup_settings', 'followup_channels', 'notify_preferences', 'followup_pauses', 'identity_matches', 'policy_assignments', 'policy_acknowledgments', 'policy_exceptions', 'people_departures', 'review_schedules', 'review_completions', 'review_overrides', 'population_uploads', 'population_rows', 'population_matches', 'access_reviews', 'access_review_items', 'access_decisions', 'access_delegations', 'access_revocations', 'training_adoptions', 'training_campaigns', 'training_schedule_changes', 'training_assignments', 'training_attempts', 'internal_courses', 'training_completions', 'ticket_settings', 'ticket_defaults', 'ticket_groups'])
 // Columns first carried by version 4 in tables that version 3 already listed, with the value older rows restore with.
-const addedColumns: Partial<Record<ProgramTable, Record<string, string | null>>> = { followups: { channel: 'email' }, connections: { config_json: '{}' }, policies: { template_id: null }, people: { role: null } }
+const addedColumns: Partial<Record<ProgramTable, Record<string, string | null>>> = { followups: { channel: 'email' }, connections: { config_json: '{}' }, policies: { template_id: null }, people: { role: null }, tickets: { group_id: null } }
 const columnsOf = (table: ProgramTable, version: number) => programColumns[table].filter(c => version >= 4 || !Object.hasOwn(addedColumns[table] ?? {}, c))
 const tablesOf = (version: number) => programTables.filter(t => version >= 4 || !addedInVersion4.has(t))
 export interface ProgramArchive { rows: Record<ProgramTable, Row[]> }

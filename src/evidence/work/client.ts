@@ -24,6 +24,8 @@ export interface Adapter {
  read(d: DestinationRef, secret: string, t: TicketRef): Promise<Remote>
  comment(d: DestinationRef, secret: string, t: TicketRef, body: string): Promise<string>
  setDue(d: DestinationRef, secret: string, t: TicketRef, due: string | null): Promise<void>
+ // Move a closed ticket back to an open state (WORK-002 whole-test follow-through).
+ reopen(d: DestinationRef, secret: string, t: TicketRef): Promise<void>
 }
 const short = (value: unknown) => String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, 300)
 // One call to a tracker. Bodies are parsed as JSON when they are JSON.

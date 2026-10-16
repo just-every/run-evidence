@@ -49,5 +49,11 @@ export const linear: Adapter = {
   if (!data.commentCreate.comment) throw new TrackerFailure('invalid', 400, 'Linear did not add the comment.')
   return data.commentCreate.comment.id
  },
+ async reopen(d, key, t) {
+  const data = await gql<{ team: { states: { nodes: { id: string; type: string }[] } } | null }>(d.api_base, key, 'query($team: String!) { team(id: $team) { states { nodes { id type } } } }', { team: d.project })
+  const open = data.team?.states.nodes.find(s => s.type === 'unstarted') ?? data.team?.states.nodes.find(s => s.type === 'backlog')
+  if (!open) throw new TrackerFailure('invalid', 400, 'The Linear team has no open state to reopen into.')
+  await gql(d.api_base, key, 'mutation($id: String!, $input: IssueUpdateInput!) { issueUpdate(id: $id, input: $input) { success } }', { id: t.remote_id, input: { stateId: open.id } })
+ },
  async setDue(d, key, t, due) { await gql(d.api_base, key, 'mutation($id: String!, $input: IssueUpdateInput!) { issueUpdate(id: $id, input: $input) { success } }', { id: t.remote_id, input: { dueDate: due } }) },
 }

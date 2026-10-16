@@ -32,6 +32,13 @@ export const vector: Adapter = {
   }
  },
  async comment(d, token, t, body) { return String(((await call(`${issuePath(d.api_base, t.remote_key)}/comments`, { method: 'POST', headers: headers(token), body: JSON.stringify({ body }), label })).body as { id: string }).id) },
+ async reopen(d, token, t) {
+  const meta = (await call(`${d.api_base}/api/v1/metadata`, { headers: headers(token), label })).body as { teams?: { id: string; statuses?: { id: string; category: string }[] }[] }
+  const open = meta.teams?.find(x => x.id === d.project)?.statuses?.find(s => s.category === 'unstarted' || s.category === 'backlog')
+  if (!open) throw new TrackerFailure('invalid', 400, 'The Vector team has no open status to reopen into.')
+  const current = await issue(d.api_base, token, t.remote_key) as { version: number }
+  await call(issuePath(d.api_base, t.remote_key), { method: 'PATCH', headers: headers(token), body: JSON.stringify({ expectedVersion: current.version, statusId: open.id }), label })
+ },
  // Vector refuses stale writes: read the current version, then change only the due date.
  async setDue(d, token, t, due) {
   const current = await issue(d.api_base, token, t.remote_key) as { version: number }

@@ -42,5 +42,11 @@ export const jira: Adapter = {
   }
  },
  async comment(d, token, t, body) { return String(((await call(`${issueUrl(d, t.remote_key)}/comment`, { method: 'POST', headers: headers(d.account, token), body: JSON.stringify({ body: adf(body) }), label })).body as { id: string }).id) },
+ async reopen(d, token, t) {
+  const transitions = (await call(`${issueUrl(d, t.remote_key)}/transitions`, { headers: headers(d.account, token), label })).body as { transitions?: { id: string; to?: { statusCategory?: { key?: string } } }[] }
+  const back = transitions.transitions?.find(x => x.to?.statusCategory?.key === 'new') ?? transitions.transitions?.find(x => x.to?.statusCategory?.key === 'indeterminate')
+  if (!back) throw new TrackerFailure('invalid', 400, 'No Jira transition leads back to an open status.')
+  await call(`${issueUrl(d, t.remote_key)}/transitions`, { method: 'POST', headers: headers(d.account, token), body: JSON.stringify({ transition: { id: back.id } }), label })
+ },
  async setDue(d, token, t, due) { await call(issueUrl(d, t.remote_key), { method: 'PUT', headers: headers(d.account, token), body: JSON.stringify({ fields: { duedate: due } }), label }) },
 }
