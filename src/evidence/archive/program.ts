@@ -68,11 +68,14 @@ export const programColumns = {
  review_schedules:['id','subject_kind','subject_id','cadence','anchor','fiscal_start_month','window_start','program_id','reminder_lead_days','owner_person_id','effective_from','actor_id','actor_name','reason'],
  review_completions:['id','subject_kind','subject_id','completed_on','notes','recorded_by','recorded_at'],
  review_overrides:['id','subject_kind','subject_id','cycle_due','due_date','reason','actor_name','at'],
+ population_uploads:['id','kind','source_system','as_of','refresh_days','filename','sha256','size','object_key','mapping_json','uploaded_by','uploaded_name','uploaded_at','row_count','previous_id'],
+ population_rows:['id','upload_id','row_number','row_key','attributes_json'],
+ population_matches:['row_id','person_id','state','basis','candidates_json','decided_by','decided_at'],
 } as const
 export type ProgramTable = keyof typeof programColumns
 export const programTables = Object.keys(programColumns) as ProgramTable[]
 // Tables first carried by archive version 4; a version 3 archive lists none of them.
-const addedInVersion4 = new Set<ProgramTable>(['tracker_destinations', 'tickets', 'ticket_events', 'ticket_comments', 'tracker_deliveries', 'readiness_snapshots', 'followup_settings', 'followup_channels', 'notify_preferences', 'followup_pauses', 'identity_matches', 'policy_assignments', 'policy_acknowledgments', 'policy_exceptions', 'people_departures', 'review_schedules', 'review_completions', 'review_overrides'])
+const addedInVersion4 = new Set<ProgramTable>(['tracker_destinations', 'tickets', 'ticket_events', 'ticket_comments', 'tracker_deliveries', 'readiness_snapshots', 'followup_settings', 'followup_channels', 'notify_preferences', 'followup_pauses', 'identity_matches', 'policy_assignments', 'policy_acknowledgments', 'policy_exceptions', 'people_departures', 'review_schedules', 'review_completions', 'review_overrides', 'population_uploads', 'population_rows', 'population_matches'])
 // Columns first carried by version 4 in tables that version 3 already listed, with the value older rows restore with.
 const addedColumns: Partial<Record<ProgramTable, Record<string, string | null>>> = { followups: { channel: 'email' }, connections: { config_json: '{}' }, policies: { template_id: null } }
 const columnsOf = (table: ProgramTable, version: number) => programColumns[table].filter(c => version >= 4 || !Object.hasOwn(addedColumns[table] ?? {}, c))

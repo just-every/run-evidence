@@ -49,6 +49,7 @@
     "test:identity": "node tests/identity.mjs",
     "test:policy": "node tests/policy.mjs",
     "test:cadence": "node tests/cadence.mjs",
+    "test:population": "node tests/population.mjs",
     "check:library": "node scripts/library-check.mjs"
   },
   "dependencies": {
