@@ -60,11 +60,12 @@ export const programColumns = {
  followup_channels:['id','kind','label','account','target','status','created_by','created_name','created_at','rotated_at','revoked_at','last_success_at','last_error'],
  notify_preferences:['person_id','via','all_clear','updated_by','updated_at'],
  followup_pauses:['id','subject_id','reason','paused_by','paused_at','resumed_by','resumed_at'],
+ identity_matches:['resource_id','person_id','state','basis','proposed_at','decided_by','decided_at','reason'],
 } as const
 export type ProgramTable = keyof typeof programColumns
 export const programTables = Object.keys(programColumns) as ProgramTable[]
 // Tables first carried by archive version 4; a version 3 archive lists none of them.
-const addedInVersion4 = new Set<ProgramTable>(['tracker_destinations', 'tickets', 'ticket_events', 'ticket_comments', 'tracker_deliveries', 'readiness_snapshots', 'followup_settings', 'followup_channels', 'notify_preferences', 'followup_pauses'])
+const addedInVersion4 = new Set<ProgramTable>(['tracker_destinations', 'tickets', 'ticket_events', 'ticket_comments', 'tracker_deliveries', 'readiness_snapshots', 'followup_settings', 'followup_channels', 'notify_preferences', 'followup_pauses', 'identity_matches'])
 // Columns first carried by version 4 in tables that version 3 already listed, with the value older rows restore with.
 const addedColumns: Partial<Record<ProgramTable, Record<string, string>>> = { followups: { channel: 'email' }, connections: { config_json: '{}' } }
 const columnsOf = (table: ProgramTable, version: number) => programColumns[table].filter(c => version >= 4 || !Object.hasOwn(addedColumns[table] ?? {}, c))

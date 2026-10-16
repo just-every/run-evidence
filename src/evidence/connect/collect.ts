@@ -1,6 +1,7 @@
 import type { Bindings } from '../../auth.server'
 import { backoffUpdate, reconnectUpdate, startRun } from './runs'
 import { runAwsCollection } from '../cloud/collect'
+import { isDirectory, runDirectoryCollection } from '../identity/collect'
 import { upsertResources, type ResourceSchema } from '../resources'
 import { runForType } from '../tests/engine'
 import { unseal } from './custody'
@@ -14,6 +15,7 @@ const organizationSchema: ResourceSchema = { fields: { login: 'string', two_fact
 const HOUR = 3600000
 export async function runCollection(env: Bindings, connection: Connection, trigger: 'schedule' | 'manual', now: Date): Promise<{ run: string | null; outcome: string }> {
  if (connection.provider === 'aws') return runAwsCollection(env, connection, trigger, now)
+ if (isDirectory(connection.provider)) return runDirectoryCollection(env, connection, trigger, now)
  const at = now.toISOString(), started = await startRun(env, connection, connectorRevision, trigger, now)
  if (!started) return { run: null, outcome: 'already running' }
  const { finish } = started

@@ -5,8 +5,9 @@ import { catalogueStatements } from '../tests/storage'
 import { seal } from './custody'
 import { publicBase } from '../net'
 import { rotateAws } from '../cloud/connect'
+import { isDirectory, rotateDirectory } from '../identity/collect'
 import { githubClient, listRepositories, readOrganization, Throttled, Unauthorized } from './github'
-export interface Connection { id: string; provider: 'github' | 'aws'; config_json: string; label: string; account: string; api_base: string; secret_ciphertext: string | null; secret_iv: string | null; granted_scopes: string; status: 'active' | 'revoked' | 'needs reconnect' | 'inactive after restore'; created_by: string; created_name: string; created_at: string; rotated_at: string | null; revoked_at: string | null; last_success_at: string | null; last_attempt_at: string | null; next_attempt_at: string | null; backoff_seconds: number; last_error: string }
+export interface Connection { id: string; provider: string; config_json: string; label: string; account: string; api_base: string; secret_ciphertext: string | null; secret_iv: string | null; granted_scopes: string; status: 'active' | 'revoked' | 'needs reconnect' | 'inactive after restore'; created_by: string; created_name: string; created_at: string; rotated_at: string | null; revoked_at: string | null; last_success_at: string | null; last_attempt_at: string | null; next_attempt_at: string | null; backoff_seconds: number; last_error: string }
 export const connections = async (env: Bindings) => (await env.DB.prepare('SELECT * FROM connections ORDER BY created_at').all<Connection>()).results
 export async function requireConnection(env: Bindings, id: string) { const row = await env.DB.prepare('SELECT * FROM connections WHERE id=?').bind(id).first<Connection>(); if (!row) throw new Refusal('Connection not found.', 404); return row }
 // GitHub Enterprise Server is supported by its /api/v3 base; only public HTTPS hosts.
@@ -44,6 +45,7 @@ export async function connectGithub(env: Bindings, actor: Actor, input: Input, n
 export async function rotateCredential(env: Bindings, actor: Actor, id: string, input: Input, now: Date) {
  const row = await requireConnection(env, id)
  if (row.provider === 'aws') return rotateAws(env, actor, row, input, now)
+ if (isDirectory(row.provider)) return rotateDirectory(env, actor, row, input, now)
  const token = text(input, 'token', 400)
  const checked = await verify(row.api_base, row.account, token, now), sealed = await seal(env, token, id)
  await env.DB.batch([

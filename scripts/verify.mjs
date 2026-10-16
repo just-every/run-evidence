@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process'
 const shards = {
  core: [['rer', 'build', '--site'], ['node', 'tests/site.mjs'], ['pnpm', 'run', 'typecheck'], ['node', 'scripts/edition-authoring/cli.mjs', 'check'], ['node', 'scripts/library-check.mjs'], ['node', 'tests/evidence.mjs'], ['node', 'tests/review.mjs'], ['node', 'tests/archive.mjs'], ['node', 'tests/import.mjs'], ['node', 'tests/agent.mjs']],
  program: [['node', 'tests/program.mjs'], ['node', 'tests/api.mjs'], ['node', 'tests/github.mjs'], ['node', 'tests/risk.mjs'], ['node', 'tests/report.mjs']],
- integrations: [['node', 'tests/work.mjs'], ['node', 'tests/followup.mjs'], ['node', 'tests/cloud.mjs']],
+ integrations: [['node', 'tests/work.mjs'], ['node', 'tests/followup.mjs'], ['node', 'tests/cloud.mjs'], ['node', 'tests/identity.mjs']],
  browser: [['node', 'tests/email-link.mjs'], ['node', 'tests/browser.mjs'], ['node', 'tests/review-browser.mjs']],
 }
 const shard = process.env.VERIFY_SHARD

@@ -1,5 +1,6 @@
 import type { Criterion } from './criteria'
 import { awsCatalogue } from '../cloud/catalogue'
+import { identityCatalogue } from '../identity/catalogue'
 // The published LIBRARY-001 test catalogue for connectors Evidence ships. Each
 // entry names criteria, the evaluated resource type, mapped library controls,
 // cadence and remediation per provider. Classes the provider cannot expose are
@@ -69,5 +70,6 @@ export const catalogue: CatalogueEntry[] = [
    noTerraform: 'Membership removal is an operational action; github_membership resources can manage it if you hold membership in Terraform.',
   } } },
  ...awsCatalogue,
+ ...identityCatalogue,
 ]
 export const catalogueEntry = (id: string) => catalogue.find(e => e.id === id)

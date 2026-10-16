@@ -46,6 +46,7 @@
     "test:report": "node tests/report.mjs",
     "test:followup": "node tests/followup.mjs",
     "test:cloud": "node tests/cloud.mjs",
+    "test:identity": "node tests/identity.mjs",
     "check:library": "node scripts/library-check.mjs"
   },
   "dependencies": {

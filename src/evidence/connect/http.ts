@@ -4,6 +4,7 @@ import { runCollection } from './collect'
 import { connectGithub, connections, repositories, requireConnection, revokeConnection, rotateCredential, runs, selectRepositories } from './storage'
 import { connectionPage, connectionsPage } from './view'
 import { connectAws } from '../cloud/connect'
+import { connectDirectory, isDirectory } from '../identity/collect'
 const id = `(${uuid})`
 const both = (path: string) => new RegExp(`^/(?:app|api)${path}$`)
 // Connection listings never include ciphertext; tokens appear once at issue.
@@ -13,6 +14,7 @@ export function connectHandler(clock: () => Date) {
   { method: 'GET', pattern: both('/connections'), run: async c => { const rows = await connections(c.env), tokens = await apiTokens(c.env); return c.isApi ? json({ connections: rows.map(safe), api_tokens: tokens }) : connectionsPage(rows, tokens, null, c.actor.name) } },
   { method: 'POST', pattern: both('/connections'), run: async c => {
    const input = await readInput(c.request)
+   if (typeof input.provider === 'string' && isDirectory(input.provider)) { const created = await connectDirectory(c.env, c.actor, input, c.now); return done(c, '/app/connections/' + created.id + '#runs-title', created, 201) }
    if (input.provider === 'aws') { const created = await connectAws(c.env, c.actor, input, c.now); return done(c, '/app/connections/' + created.id + '#runs-title', created, 201) }
    const created = await connectGithub(c.env, c.actor, input, c.now); return done(c, '/app/connections/' + created.id + '#repos-title', created, 201)
   } },
