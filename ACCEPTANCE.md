@@ -12,6 +12,18 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
+- **PROGRAM-003 — Framework-required program documents · missing.** For each core program, generate its documents from a populated program through Program → Documents, edit and approve a revision, and export it (system description as DOCX and PDF, SoA as XLSX and PDF, risk analysis and SAQ worksheet as PDF). Then reconcile each document with program state. The SOC 2 description cites the inventory and policy revisions it pre-filled from. The SoA lists all 93 Annex A:2022 controls, and its exclusions match applicability. Record an internal audit with one nonconformity and corrective action, and one management review. Switching the SAQ answers changes the selected type and worksheet. Fail a test mapped to a control the SoA marks implemented: the SoA flags drift and needs review, and the approved prior revision stays retrievable.
+
+  Current evidence: —.
+
+- **PROGRAM-004 — Extended and regulated programs · missing.** For each named extended program, create it on a business that already runs SOC 2 through program setup, review applicability, and open readiness. Readiness reports zero requirements without a mapped control, shows the evidence reused from SOC 2, and names the external assessment dependency. Exclude one requirement with a rationale: it stays visible as excluded. Export the program. For CMMC Level 2, readiness also shows the computed SPRS score, and changing one control's state changes the score.
+
+  Current evidence: —.
+
+- **LIBRARY-001 — Shipped control library, test catalogue and cadence · missing.** Create each core program on a fresh installation: readiness reports zero unmapped requirements, and every mapped control shows a test or an evidence requirement. A build-time catalogue check enumerates every program requirement and every listed connector evidence class, and fails on any requirement with no control, any control with neither test nor evidence requirement, or any evidence class with no shipped test. Connect one cloud account and leave it for two hours: at least two runs per configuration test appear. Pause the scheduler for an hour: that interval shows as stale. Accept a library revision: earlier observations keep the revision they were evaluated under.
+
+  Current evidence: —.
+
 - **PROGRAM-002 — Reusable mappings and accountable ownership · missing.** In the program UI map an access-review control to SOC 2, ISO 27001 and HIPAA, assign an owner and contributor, attach period evidence once, and inspect all three mappings. Remove an asset from scope with a reason: earlier denominators and the changed-definition label remain in the audit-period report.
 
   Current evidence: —.
@@ -42,23 +54,31 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
-- **CLOUD-001 — AWS, Google Cloud and Microsoft Azure · missing.** For each provider, connect an authorized sandbox through Connections, discover a child account/project/subscription, and run a public-storage and privileged-MFA test. Change a setting in the real provider, re-test, and revoke one read permission. The failing resource, missing coverage, original observations and recovery are individually visible.
+- **API-001 — Public REST API for pushed resources, custom tests and program state · missing.** Issue a resource-push token in Settings → API. With a script, push 50 resources of a custom `internal_service` type, then push the same payload again: there are no duplicates and the update timestamps are unchanged. Run a full sync that omits one resource: it is marked removed, and its history remains. Define a custom test requiring `mfa_enforced=true`. One resource fails, and the readiness view shows the result labelled source-reported via the token. Read the program, test and remediation state through the API and reconcile it with the UI. A token from another installation, a write outside the token's scopes and a revoked token are each refused with no partial write. A schema-invalid payload is rejected per item with reasons.
 
   Current evidence: —.
 
-- **CODE-001 — GitHub and GitLab change assurance · missing.** Connect each code host, select two repositories and run branch-protection and reviewed-change tests. Merge an authorized reviewed change, remove protection on one repository and revoke access to the other. Inspect source links, event period coverage, failure and unknown states without exposing repository secrets.
+- **CLOUD-001 — AWS, Google Cloud and Microsoft Azure · missing.** For each provider, connect an authorized sandbox through Connections, discover a child account/project/subscription, and run every catalogue test, covering IAM/MFA, public storage, encryption, logging, backup and network classes, with at least one failing resource. Change a setting in the real provider, re-test, and revoke one read permission. The failing resource, missing coverage, original observations and recovery are individually visible.
 
   Current evidence: —.
 
-- **IDENTITY-001 — Google Workspace, Microsoft 365, Entra ID and Okta · missing.** For each named identity service connect a tenant via Connections, ingest an admin, employee, guest and service account, and test MFA and inactive-user access. Disable one real account and deny one scope. Reconcile duplicates with a human decision and inspect fresh source readback and incomplete coverage.
+- **CODE-001 — GitHub, GitLab and Azure DevOps change assurance · missing.** Connect each of GitHub, GitLab and Azure DevOps, select two repositories and run branch-protection/branch-policy and reviewed-change tests. Merge an authorized reviewed change, remove protection on one repository and revoke access to the other. Inspect source links, event period coverage, failure and unknown states without exposing repository secrets.
 
   Current evidence: —.
 
-- **HRIS-001 — BambooHR, Gusto and Rippling personnel sources · missing.** Connect each named HRIS, import a joiner, mover and leaver, then correct a start date and terminate an account in the real source. The People UI shows source priority, conflict review, correct obligations and no collected payroll or tax identifiers.
+- **IDENTITY-001 — Google Workspace, Microsoft 365, Entra ID, Okta and JumpCloud · missing.** For each named identity service connect a tenant via Connections, ingest an admin, employee, guest and service account, and test MFA and inactive-user access. Disable one real account and deny one scope. Reconcile duplicates with a human decision and inspect fresh source readback and incomplete coverage.
 
   Current evidence: —.
 
-- **DEVICE-001 — Jamf, Microsoft Intune and CrowdStrike posture · missing.** Connect each named service, match a device to a person, change encryption/patch or sensor-health state in a sandbox and run a fresh test. A missing device feed or unmatched endpoint stays a gap; the original failed posture and correction remain attributable.
+- **HRIS-001 — BambooHR, Gusto, Rippling, Justworks, Deel HR and ADP Workforce Now personnel sources · missing.** Connect each of the six named HRIS, import a joiner, mover and leaver, then correct a start date and terminate an account in the real source. The People UI shows source priority, conflict review, correct obligations and no collected payroll or tax identifiers.
+
+  Current evidence: —.
+
+- **DEVICE-001 — Jamf, Microsoft Intune, Kandji, JumpCloud and CrowdStrike posture · missing.** Connect each of Jamf, Intune, Kandji, JumpCloud and CrowdStrike, match a device to a person, change encryption/patch or sensor-health state in a sandbox and run a fresh test. A missing device feed or unmatched endpoint stays a gap; the original failed posture and correction remain attributable.
+
+  Current evidence: —.
+
+- **DEVICE-002 — Owned read-only device monitor for computers without MDM · missing.** Install the monitor on a real macOS and a real Windows device through the employee checklist, and confirm each device matches its person. For each of the four required checks, put the device into the failing state (encryption off, no password manager, protection disabled, lock above 60 minutes), observe a failing result within the next reporting interval, fix it and observe a pass, with both observations retained. Disconnect one device past the stale window, then uninstall the monitor from the other: each shows stale or unknown and the device test does not pass. Inspect the declared data list; the payload contains nothing beyond it.
 
   Current evidence: —.
 
@@ -70,13 +90,21 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
-- **TEST-001 — Continuous control tests and exception discipline · missing.** From a mapped control enable a scheduled MFA or reviewed-deployment test, fail a real source setting and inspect all resource results. Tune scope with an expiring exception, interrupt collection, and revise criteria. A later pass, expired exception or revised denominator never erases the earlier failure or fills an unobserved period.
+- **POPULATION-001 — Labelled CSV populations for unsupported systems · missing.** Upload a Justworks-style roster CSV and an account list for an unconnected SaaS app through Inventory → Upload population. Map one renamed column, resolve one ambiguous person match, and leave one row unmatched. The People and Inventory views show both lists labelled manual with the upload time. A test requiring source reads stays unknown for those records. Upload a revised list: the original exhibit stays, and the differences appear as joiners, leavers and removed accounts. Let the refresh window pass: the population shows stale. A malformed file is refused with row-level reasons, and nothing is admitted.
+
+  Current evidence: —.
+
+- **TEST-001 — Continuous control tests and exception discipline · missing.** From a mapped control enable a scheduled MFA or reviewed-deployment test, confirm it runs at least hourly, fail a real source setting and inspect all resource results. Tune scope with an expiring exception, interrupt collection, and revise criteria. A later pass, expired exception or revised denominator never erases the earlier failure or fills an unobserved period.
 
   Current evidence: —.
 
 ### Remediation and follow-through
 
 - **REMEDY-001 — Failed test to verified remediation · missing.** Fail a real connected control, follow its Remediate action, assign an owner and due date, attach a change and mark work done before fixing the source. The obligation remains open. Fix the source, re-test and observe verified closure; regress it and confirm reopening with both observations retained.
+
+  Current evidence: —.
+
+- **REMEDY-002 — Remediation SLAs and automatic re-test · missing.** Set a 7-day SLA for high-severity identity failures. Fail MFA for two real users, fix one within the SLA, and let the other's clock pass the deadline using the test-harness clock: one item shows within SLA and resolved, the other SLA missed with an escalation sent. Export the board report and reconcile per-item SLA status. Close the linked Jira ticket without fixing the source: a re-test starts automatically with no human action, fails, and keeps the obligation open. Fix the source: the source event triggers a re-test that verifies closure. Apply an expiring exception: the clock pauses, then resumes when it expires.
 
   Current evidence: —.
 
@@ -94,7 +122,11 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
-- **VENDOR-001 — Vendor inventory and security diligence · missing.** Onboard a US SaaS supplier through Vendors, request a SOC 2 report and BAA where applicable, collect a questionnaire response and record a finding. Approve with an expiring condition, reach renewal, and inspect overdue reassessment reminders and the unchanged original documents. An expired supplier link cannot read or mutate another vendor.
+- **VENDOR-001 — Vendor inventory and security diligence · missing.** Onboard a US SaaS supplier through Vendors, request a SOC 2 report and BAA where applicable, send a shipped CAIQ v4 questionnaire, collect the supplier's per-question response and record a finding. Approve with an expiring condition, reach renewal, and inspect overdue reassessment reminders and the unchanged original documents. An expired supplier link cannot read or mutate another vendor.
+
+  Current evidence: —.
+
+- **VENDOR-003 — Vendor document review with cited findings · missing.** Upload a real-format SOC 2 Type II report containing one tested-control exception and two CUECs, issued more than three months after its period ended, through Vendors → Documents. The proposed review shows report type, period, auditor, opinion, the exception and both CUECs, and each citation opens the cited page. Map one CUEC to an existing access-review control and leave the other unmapped: the unmapped CUEC stays an open obligation in readiness. The bridge-letter gap appears and clears when a bridge letter is uploaded. Correct one wrong extraction: the correction and the original proposal both remain. A qualified-opinion report raises a finding only after reviewer approval.
 
   Current evidence: —.
 
@@ -104,7 +136,7 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
 ### Policies, employees and access
 
-- **POLICY-001 — Policy library, approval and version control · missing.** From Policies tailor a template to connected business facts, review an exact revision, reject a changed draft, then publish and map it to two frameworks. Reach its review deadline and publish a replacement: original approval and attestations remain, with new required acknowledgments visible.
+- **POLICY-001 — Policy library, approval and version control · missing.** From Policies tailor a template to connected business facts, review an exact revision, reject a changed draft, then publish and map it to two frameworks. Reach its review deadline and publish a replacement: original approval and attestations remain, with new required acknowledgments visible. On a fresh SOC 2 program and a fresh ISO 27001 program, readiness first lists every requirement lacking an approved, published policy. After the shipped templates are approved and published, it lists none. A build-time check fails if any library requirement calling for a policy has no shipped template. Let one policy pass its review deadline: its linked policy test fails.
 
   Current evidence: —.
 
@@ -112,15 +144,15 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
-- **TRAIN-001 — Security awareness and KnowBe4 evidence · missing.** Create an onboarding and annual campaign in Training, enroll a new hire, complete an approved internal course and ingest a real KnowBe4 sandbox completion. Leave another learner overdue, amend the schedule, and verify reminders, original result provenance and an auditor export without fabricated completions.
+- **TRAIN-001 — Shipped security training and KnowBe4 evidence · missing.** Create an onboarding and annual campaign in Training, enroll a new hire, have them complete the shipped general security-awareness course including its assessment, and fail and retake the assessment once (both attempts retained). Confirm that HIPAA and secure-coding courses appear only after their programs and roles apply. Complete an approved internal course and ingest a real KnowBe4 sandbox completion. Leave another learner overdue, amend the schedule, and verify reminders, original result provenance and an auditor export without fabricated completions.
 
   Current evidence: —.
 
-- **LIFECYCLE-001 — Joiner, mover and leaver compliance · missing.** Change a joiner, mover and leaver in an authorized HRIS; follow their checklists in People, assign tasks, and attempt to close leaver work with an active Okta account. It remains open and escalates. Disable the real account, re-read identity/device sources and verify closure with historical worker evidence preserved.
+- **LIFECYCLE-001 — Joiner, mover and leaver compliance · missing.** Change a joiner, mover and leaver in an authorized HRIS; follow their checklists in People, ingest the joiner's background-check completion from a Certn sandbox and a Checkr sandbox (status and date only), assign tasks, and attempt to close leaver work with an active Okta account. It remains open and escalates. Disable the real account, re-read identity/device sources and verify closure with historical worker evidence preserved.
 
   Current evidence: —.
 
-- **ACCESS-001 — Quarterly access-review campaigns · missing.** Start a quarterly review from Access Reviews, have two resource owners decide on employee, guest and privileged service access, and leave one decision overdue. Request revocation, keep the source account active and inspect unresolved work. Revoke in the source and re-test; export complete decisions, population and period evidence.
+- **ACCESS-001 — Quarterly access-review campaigns · missing.** Start a quarterly review from Access Reviews, have two resource owners decide on employee, guest and privileged service access, and leave one decision overdue. Request revocation, keep the source account active and inspect unresolved work. Revoke in the source and re-test; export complete decisions, population and period evidence. Add an unconnected SaaS app by uploading its account list: decide revoke on a departed person's account, re-upload the list without that account, and confirm the revocation is evidenced by the new upload with both lists retained.
 
   Current evidence: —.
 
@@ -134,13 +166,32 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: `src/evidence/review/http.ts`; `src/evidence/review/storage.ts`; `tests/review.mjs`. Current limit: Expiring scoped read-only folders and access history exist; authenticated auditor collaboration, requests, comments and findings are missing.
 
+- **AUDIT-002 — Type II populations, sampling and non-occurrence · missing.** As auditor on a Type II engagement, generate the terminations population for the period and reconcile its count and identities with the connected HRIS. Select five samples with a recorded seed: five per-sample requests open with owners. Satisfy four, and leave one rejected and resubmitted. Generate the incidents population with zero records: record a non-occurrence. Readiness and the exported pack show it as a non-occurrence, never a pass, and a request to mark it passing is refused. Revoke HRIS read scope mid-period and regenerate: the population shows incomplete and cannot be closed. Export the population CSV with its retrieval metadata and sample decisions.
+
+  Current evidence: —.
+
 ### Customer assurance
 
 - **TRUST-001 — Published and permissioned trust center · partial.** Publish an approved statement, request a restricted SOC 2 report as a prospect, complete an NDA through each named e-signature integration, approve one recipient and deny another. Check expiry/revocation, downloads and custom-domain access from a signed-out browser. An unapproved draft and another prospect’s documents never appear.
 
   Current evidence: `src/evidence/review/http.ts`; `tests/review.mjs`. Current limit: Scoped expiring reviewer downloads are implemented; trust publication, customer access requests, NDA integrations and domains are missing.
 
-- **ANSWER-001 — Cited security-questionnaire completion · missing.** Upload representative XLSX, CSV and DOCX customer questionnaires in Questionnaires, generate a cited draft with one unsupported and one conflicting question, inspect citations, edit and approve an exact version. Modify a source after approval and attempt reuse/submission: require a new decision. Export and reopen the original formats without losing question placement, IDs or flagged gaps.
+- **TRUST-002 — CRM-driven access, click-through NDA and live control status · missing.** Connect Salesforce and HubSpot sandboxes and create one auto-approval rule in each. A prospect whose domain matches a gated Salesforce account is auto-approved for SOC 2 tags with the matched record shown. A matching HubSpot contact is approved under that rule. A non-matching requester is queued for review. Clear the Salesforce checkbox: the next request is no longer auto-approved. Complete a click-through NDA as a new requester and inspect its acceptance record. Publish live status for an access-control category, then fail its linked MFA test: a signed-out browser sees "under review" with no resource detail. Pass the re-test: the category shows monitored again. A stale collector also drops the category to "under review".
+
+  Current evidence: —.
+
+- **ANSWER-001 — Cited security-questionnaire completion · missing.** Against a populated program (approved policies, passing and failing tests, a SOC 2 report), upload a full-length SIG Lite (XLSX) and CSA CAIQ v4 (XLSX), plus a CSV and a DOCX customer questionnaire, in Questionnaires, and generate cited drafts. A held-out reviewer key, prepared independently, lists for each question whether the populated sources can answer it and which source supports it. Then check:
+  - the draft reports cited, flagged and conflicting counts that reconcile to the question total;
+  - at least 90% of the questions the key marks answerable are drafted with citations;
+  - 100% of citations resolve to the source revision and period they name, and support the claim per the key;
+  - zero answers are uncited or assert beyond their sources;
+  - every question the key marks unanswerable is flagged.
+
+  Inspect citations, edit and approve an exact version. Modify a source after approval and attempt reuse/submission: require a new decision. Export and reopen the original formats without losing question placement, IDs or flagged gaps.
+
+  Current evidence: —.
+
+- **ANSWER-002 — Portal and web-form questionnaire capture and fill-back · missing.** On a test portal of at least three pages with text, single-choice, multi-select and file fields, capture the questionnaire with the extension in Chrome, Edge and Brave. All fields import with page and type. Draft and approve answers in Questionnaires, leaving one answer unapproved. Change one choice field's options on the portal, then run fill-back: every approved, unchanged field fills with the exact approved text, the changed field and the unapproved answer are refused with reasons, and the form is not submitted. Re-capture the changed field, approve its answer and complete the fill. The questionnaire history shows capture time, page structure and every fill.
 
   Current evidence: —.
 
@@ -184,7 +235,7 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: `SEED-COMMAND-CONTRACT.md`; `src/auth.server.ts`; `tests/evidence.mjs`; `tests/archive.mjs`; `tests/email-link.mjs`. Current limit: Current CLI/auth/custody journeys are exercised; target collectors, durable scheduled obligations, all-operation outcomes and provider cost disclosure are missing.
 
-- **MOBILE-001 — Responsive and accessible complete workflows · partial.** With realistic program data, use desktop and phone browsers to complete each role’s journey, upload a phone file/photo, resolve an error and return from a task notification. Inspect every end state at both widths, use keyboard navigation and a screen reader, and verify no hidden controls, color-only states or cross-role disclosures.
+- **MOBILE-001 — Responsive and accessible complete workflows · partial.** With realistic program data, use desktop and phone browsers to complete each role’s journey, upload a phone file/photo, resolve an error and return from a task notification. Inspect every end state at both widths, run axe-core with the WCAG 2.2 AA rule tags on each end state at 1440 and 390 pixels with zero violations, and complete each role's journey by a scripted keyboard-only run (no pointer events) that reaches the same end state. Spot-check with VoiceOver and NVDA, and verify no hidden controls, color-only states or cross-role disclosures.
 
   Current evidence: `tests/browser.mjs`; `tests/review-browser.mjs`; `src/evidence/view.ts`; `public/desk.css`; `public/review.css`. Current limit: Existing owner/reviewer custody flows have 1440/390 browser journeys; new program/employee workflows, mobile camera validation and independent accessibility conformance are unproven.
 
@@ -234,4 +285,4 @@ The current public-door suites are `tests/evidence.mjs` (native owner access, re
 
 For each new user flow, build rounds must exercise the named public door, persistence/restart, refusal/error path, actor permissions and final state in the journey. Inspect each changed screen at 1440 and 390 with realistic data; provider acknowledgments are separate from source truth and human decisions. Certification, independent assessor judgment, legal applicability, outside-provider reliability and copies already downloaded remain the declared boundaries in BOUNDARY-001, rather than fabricated acceptance results.
 
-**Clause totals:** 50 — 7 done / 12 partial / 31 missing.
+**Clause totals:** 61 — 7 done / 12 partial / 42 missing.
