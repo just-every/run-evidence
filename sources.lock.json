@@ -2391,7 +2391,7 @@
       "executable": false
     },
     "docs/GETTING-STARTED.md": {
-      "sha256": "e5371745efc08ccda49c2a8fdae012e0563a324f2535ebc2a09b324dcde62b44",
+      "sha256": "64a15100e9c27a249f458973d9181d55c2546cf5db4521a7b70d8f731631d57d",
       "executable": false
     },
     "docs/MAIN-FLOWS.md": {
@@ -2555,7 +2555,7 @@
       "executable": false
     },
     "README.md": {
-      "sha256": "38bf069678e7b0d7f84ed46ac805757c384adacca33f57bd176583248322f365",
+      "sha256": "1d1c794d323bce1b2f7db25dd0b5d3caac4cc81af9ed19e7b0c372faf7e7ad84",
       "executable": false
     },
     "rer-project.json": {
@@ -4331,7 +4331,7 @@
       "executable": false
     },
     "src/site/run.ts": {
-      "sha256": "de1dce5bd9a414ca8b82643fca54da89e5f37ad87b34cfcc202af5de96565860",
+      "sha256": "512cd6b3e3a3882a5d59c31692346f682004de733efbb5040d7303df1a2107e2",
       "executable": false
     },
     "src/site/shell/SiteChrome.tsx": {

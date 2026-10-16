@@ -4,15 +4,13 @@ Evidence is an MIT audit-evidence desk for one business: write controls, keep pr
 
 ## Run
 
-Install Node.js 22 or newer and Git. Install the shared command once, then clone:
+Install Node.js 22 or newer and Git, then run one line. It installs the shared command, clones Evidence and starts it:
 
 ```sh
-npx -y @runeditrun/rer@0.2.22 cli install
-export PATH="$HOME/.local/bin:$PATH"
-git clone https://github.com/just-every/run-evidence.git
-cd run-evidence
-rer dev
+npx -y @runeditrun/rer dev just-every/run-evidence
 ```
+
+To start it again later, run `cd run-evidence && rer dev`.
 
 `rer dev` installs the pinned dependencies, selects Node 22.20.0, applies the D1 migrations, prepares a local owner and starts the app. Open its private `RER_OPEN` link on this computer, then confirm first-run setup. The installed `/` is the Lobby; the desk is `/app`. The printed `RER_SITE` address opens the run site and on-site guides. Keep that link private. Local sign-in uses the private owner link and sends no email; no Cloudflare or model account is needed. To use your own mailbox locally, run `rer setup --owner-email you@example.com` before the first launch. Stop with `rer dev --stop`.
 

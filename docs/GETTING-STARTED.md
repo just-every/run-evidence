@@ -6,26 +6,13 @@ Evidence keeps audit evidence for one business. You write the controls, add proo
 
 Install Node.js 22 or newer, Git and pnpm 10.12.4. These commands work on macOS, Linux or Windows with WSL2.
 
-Install the shared Run Edit Run command once:
+One line installs the shared Run Edit Run command, gets Evidence and starts it:
 
 ```sh
-curl -fsSL https://runeditrun.com/install.sh | sh
-export PATH="$HOME/.local/bin:$PATH"
+npx -y @runeditrun/rer dev just-every/run-evidence
 ```
 
-Or install it with npm:
-
-```sh
-npm install -g @runeditrun/rer
-```
-
-Get Evidence and start it:
-
-```sh
-git clone https://github.com/just-every/run-evidence.git
-cd run-evidence
-rer dev
-```
+To start it again later, run `cd run-evidence && rer dev`.
 
 `rer dev` installs the pinned dependencies, selects the required Node version, applies local migrations, prepares a local owner and starts the app. Open the private `RER_OPEN` link it prints on this computer. Keep this link private: it signs you in as the local owner.
 
