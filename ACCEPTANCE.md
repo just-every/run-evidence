@@ -307,11 +307,11 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: `src/auth.server.ts`; `tests/site.mjs`; `tests/evidence.mjs`; `tests/browser.mjs`; `tests/review-browser.mjs`.
 
-### Push further: agents accountable to the compliance job
-
 - **AGENT-001 — Prepare-only proposals with exact human approval · done.** Issue a prepare token, inspect gaps and propose a folder through agent commands/API. Attempt direct sharing, owner-only mutation, approval with an agent token and stale-snapshot approval; refuse each. Have the owner approve the current snapshot, revisit its immutable decision and revoke the token. `tests/agent.mjs` exercises these doors.
 
   Current evidence: `src/evidence/agent/http.ts`; `src/evidence/agent/storage.ts`; `tests/agent.mjs`; `docs/AGENT-COMMANDS.md`.
+
+### Push further: agents accountable to the compliance job
 
 - **AGENT-002 — Prove operation across the audit period · missing.** From a period report ask the agent to investigate a control that passes its latest snapshot but had a documented mid-period privilege/merge violation and a missing event window. Follow its citations to original sources; both the failure and unknown interval appear. Reject its proposed exception and verify no mapping, pass or auditor decision changes.
 

@@ -6,6 +6,14 @@ This is the product to build toward, not a description of today’s release. The
 
 `done` means the entire named clause has implementing code and cited public-door tests at the status baseline. `partial` means only the explicitly stated subset exists or acceptance is incomplete. `missing` means the target behavior has no implementing product path. Future acceptance journeys below are requirements, not claims that planned screens/routes exist. Current `seed.json` metadata and README first-release descriptions have not been changed in this documents-only round and do not narrow this target.
 
+## Product target
+
+| | |
+| --- | --- |
+| Category | Security compliance automation and customer trust (SOC 2, ISO 27001, HIPAA, PCI DSS) |
+| Incumbents a buyer switches from | Vanta, Drata, Secureframe, Comp AI, Sprinto, Delve |
+| First buyer | A US security or operations lead at a 20–250 person business preparing for SOC 2, ISO 27001, HIPAA or PCI DSS readiness, or moving its program off Vanta, Drata or Secureframe; one installation for the business, costs in USD |
+
 ## Target clauses
 
 ### Program and readiness
@@ -487,11 +495,11 @@ The cutover boundary is shown explicitly in each report, in population exports (
 
 **Acceptance evidence:** Build the run site, follow the homepage Run/docs links without JavaScript, and inspect installed Lobby before and after setup. Existing browser journeys inspect the approved owner/reviewer flows at 1440 and 390. `tests/site.mjs`, `tests/evidence.mjs`, `tests/browser.mjs` and `tests/review-browser.mjs` are the existing checks.
 
-### Push further: agents accountable to the compliance job
-
 **AGENT-001 — Prepare-only proposals with exact human approval.** Expiring/revocable prepare-only agent credentials read the permitted desk and prepare an evidence-folder proposal. Only an authenticated owner session approves the exact current proposal snapshot; changed or stale snapshots require a new decision. Immutable decisions survive restart and archive transfer without reviving agent authority. Preparation does not grant sharing or source-write power. See `docs/AGENT-COMMANDS.md`.
 
 **Acceptance evidence:** Issue a prepare token, inspect gaps and propose a folder through agent commands/API. Attempt direct sharing, owner-only mutation, approval with an agent token and stale-snapshot approval; refuse each. Have the owner approve the current snapshot, revisit its immutable decision and revoke the token. `tests/agent.mjs` exercises these doors.
+
+### Push further: agents accountable to the compliance job
 
 **AGENT-002 — Prove operation across the audit period.** An agent correlates cloud configuration changes, identity/security events, deployment history and control revisions across a selected audit period. It flags controls that pass now but failed earlier, missing windows, contradictory sources and unobserved assets, and proposes attributable findings rather than a fabricated pass. Compliance owners approve control meaning and exceptions; the auditor decides evidence sufficiency. Original observations, source times and periods remain inspectable.
 
