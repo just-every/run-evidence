@@ -1,10 +1,11 @@
 // The internal verification target, split into shards that CI runs in parallel
-// (VERIFY_SHARD=core|program|integrations|browser). Without a shard every step runs in order.
+// (VERIFY_SHARD=core|program|people|integrations|browser). Without a shard every step runs in order.
 import { spawnSync } from 'node:child_process'
 const shards = {
  core: [['rer', 'build', '--site'], ['node', 'tests/site.mjs'], ['pnpm', 'run', 'typecheck'], ['node', 'scripts/edition-authoring/cli.mjs', 'check'], ['node', 'scripts/library-check.mjs'], ['node', 'tests/evidence.mjs'], ['node', 'tests/review.mjs'], ['node', 'tests/archive.mjs'], ['node', 'tests/import.mjs'], ['node', 'tests/agent.mjs']],
- program: [['node', 'tests/program.mjs'], ['node', 'tests/api.mjs'], ['node', 'tests/github.mjs'], ['node', 'tests/risk.mjs'], ['node', 'tests/report.mjs'], ['node', 'tests/policy.mjs'], ['node', 'tests/cadence.mjs']],
- integrations: [['node', 'tests/work.mjs'], ['node', 'tests/followup.mjs'], ['node', 'tests/cloud.mjs'], ['node', 'tests/identity.mjs'], ['node', 'tests/population.mjs'], ['node', 'tests/clouds.mjs']],
+ program: [['node', 'tests/program.mjs'], ['node', 'tests/api.mjs'], ['node', 'tests/github.mjs'], ['node', 'tests/risk.mjs'], ['node', 'tests/report.mjs']],
+ people: [['node', 'tests/policy.mjs'], ['node', 'tests/cadence.mjs'], ['node', 'tests/population.mjs'], ['node', 'tests/access.mjs']],
+ integrations: [['node', 'tests/work.mjs'], ['node', 'tests/followup.mjs'], ['node', 'tests/cloud.mjs'], ['node', 'tests/identity.mjs'], ['node', 'tests/clouds.mjs']],
  browser: [['node', 'tests/email-link.mjs'], ['node', 'tests/browser.mjs'], ['node', 'tests/review-browser.mjs']],
 }
 const shard = process.env.VERIFY_SHARD

@@ -2330,7 +2330,7 @@
       "executable": false
     },
     ".github/workflows/verify.yml": {
-      "sha256": "0260b6df53b733f6f6f76965eea0fc59c04f810a8bcb181a4cf2adb07befe9f4",
+      "sha256": "5304bc981e5a16bf1d72ba6a4f793705a73e313b8862a833160e8b371a8e553e",
       "executable": false
     },
     ".gitignore": {
@@ -2537,6 +2537,10 @@
       "sha256": "492063fd0ab1b24e6b212d09d37482f49ebe0f43b91dfdbf47b6ddb928768569",
       "executable": false
     },
+    "migrations/core/0031_access.sql": {
+      "sha256": "7ce639a9b5494189098f3ac7519cae23db7c5a186d9f60beca7f8d40436d7db9",
+      "executable": false
+    },
     "ONBOARDING.md": {
       "sha256": "cb41287b866ebe7a7b902fadead43c339e794063e62874a85056ac02db59bbef",
       "executable": false
@@ -2550,7 +2554,7 @@
       "executable": false
     },
     "package.json": {
-      "sha256": "86e8ebc45d944c7e00365274148d1042f18c509c0328f984f71758267ebfb7ae",
+      "sha256": "5f189e0d88a12ea74905e02c6f5b220bd0d923e9a8d0eb229e407dd7d9b396d5",
       "executable": false
     },
     "pnpm-lock.yaml": {
@@ -2722,7 +2726,7 @@
       "executable": false
     },
     "scripts/verify.mjs": {
-      "sha256": "22b6021794ecd1130105bbf1933c941850f61e483592d94d0dcd01a805f2ebf9",
+      "sha256": "e0bb56a5182b3041f8dd9c9431c5cb588ee760b2bcbad4d391c39bf0fdb7cb74",
       "executable": false
     },
     "SEED-COMMAND-CONTRACT.md": {
@@ -2734,7 +2738,7 @@
       "executable": false
     },
     "src/app.server.ts": {
-      "sha256": "7226f87862220c0d2e3f8400a8b15c8b88d39930dcab56953f9e07d0f7bd2597",
+      "sha256": "44aa61f506a24f681692cb77bc4cf7657fe75cb33de971cb8219fd80ba5ef208",
       "executable": false
     },
     "src/auth.server.ts": {
@@ -2825,6 +2829,14 @@
       "sha256": "7d24cb83de4302472d944adeb1b0467a54cd1f50112223fded8302c34163fdf6",
       "executable": false
     },
+    "src/evidence/access/http.ts": {
+      "sha256": "b9e36470b819f1c23e3a229affe5add1d52d9f1cc6b631eb8ba0db75b65c20ba",
+      "executable": false
+    },
+    "src/evidence/access/storage.ts": {
+      "sha256": "4a24ab216c9efa2b07b014b6b1ce1f94903d7d41ce6ce3bd40390fceb0755b50",
+      "executable": false
+    },
     "src/evidence/agent/archive.ts": {
       "sha256": "ea6e9c1fba57e1450d0238a220538f9dcefdb150b1eccc0cde38db098bb754a2",
       "executable": false
@@ -2886,7 +2898,7 @@
       "executable": false
     },
     "src/evidence/archive/program.ts": {
-      "sha256": "9617486c3d8db5a5e2ba08e08e7c9e97a4a0986c14b7a6ce56063165372b6960",
+      "sha256": "c809a6072f82b0143c8875617a280bfd3de6d7cf0acb33e9e5dab48649042ceb",
       "executable": false
     },
     "src/evidence/archive/restore.ts": {
@@ -3714,7 +3726,7 @@
       "executable": false
     },
     "src/evidence/me/http.ts": {
-      "sha256": "0d5bd2eb1e39c813073045eea9301f223020642980aedb47bf102253fd5c5b8c",
+      "sha256": "8cca93ce3e0cd364c5722726aa5b5d4043764b3df5c4cab129c3c9729cb32bb1",
       "executable": false
     },
     "src/evidence/model.ts": {
@@ -3862,7 +3874,7 @@
       "executable": false
     },
     "src/evidence/scheduler.ts": {
-      "sha256": "5b61900fd0a0a9e091d6cd60b00a7e09b3da1350e606f124ab8af4aabc95b883",
+      "sha256": "40ee9dc64e3bf8a827002584d401f97f52333f38cbe982699225980e9c132e9d",
       "executable": false
     },
     "src/evidence/shell.ts": {
@@ -4815,6 +4827,10 @@
     },
     "src/site/shell/SiteChrome.tsx": {
       "sha256": "4a0219d884253820bf7a11dc7dfdbbcf690bbc44c260e8cd70deef4a8a71adc6",
+      "executable": false
+    },
+    "tests/access.mjs": {
+      "sha256": "78cc81a4632e9c7c3d176580088d86fd01a10da803a90bdedf7b33aeb0c6169e",
       "executable": false
     },
     "tests/agent.mjs": {

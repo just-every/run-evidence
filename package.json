@@ -51,6 +51,7 @@
     "test:cadence": "node tests/cadence.mjs",
     "test:population": "node tests/population.mjs",
     "test:clouds": "node tests/clouds.mjs",
+    "test:access": "node tests/access.mjs",
     "check:library": "node scripts/library-check.mjs"
   },
   "dependencies": {
