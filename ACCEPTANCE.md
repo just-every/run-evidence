@@ -1,13 +1,356 @@
-# First release
+# Target acceptance
 
-- An owner signs in, writes controls and cadence, uploads proof, and downloads immutable receipts and retained replacements.
-- The owner reviews any period with honest missing, due soon, overdue, superseded-only, unavailable bytes and covered states.
-- The owner shares selected controls and periods in an expiring auditor folder, sees access history and closes access.
-- The owner exports the whole evidence archive and dry-runs/restores it into an empty installation; restored access stays closed.
-- An agent reads the desk and prepares an audit-folder proposal; a person approves the exact proposal and the decision is recorded.
-- The owner dry-runs a documented-shape Drata ZIP/HTML-manifest import, reviews its mappings, admits it with a journal and undoes its active links while retaining custody.
+Target date: **16 October 2026**. This extends the original first-release journey list to the complete Evidence product. Every named contract clause has one acceptance item below, in the existing journey-list form. Status describes current code at `74d8dbbfd719403a4fd610518df257ee6e3851fb`, not a promised release or a test-run receipt. `done` clauses have implemented behavior and cited existing tests; `partial` and `missing` items are work for build rounds. Planned UI names are acceptance destinations, not present capabilities.
 
-No certification, framework mappings, policy templates, money movement, live collectors, model account, domain or provider calls are needed for these jobs. A fingerprint proves unchanged bytes, not that a control operated. See README.md for the journeys and tests/ for public-door checks.
+A passing proof-custody test cannot stand in for a passing compliance/control test. Provider integrations require authorized real sandbox source/readback acceptance before they are done; unit fakes at network/paid edges alone cannot establish provider operation. No live provider, model, SSO, migration or regulated-data acceptance is claimed here. Keep original failures, unknown periods, denied authority and unavailable bytes in the end-state evidence. Use realistic US business data without secrets in logs or committed fixtures.
 
-- The run site builds with `rer build --site`: the picked landing, `/run` instructions and repository Markdown guides work without JavaScript. The installed root uses Base’s Lobby and reflects confirmed setup.
-- Sign-in, setup, proof desk, receipts, folders, reviewer views, archive, move-in and agent preparation share Evidence’s approved paper/acrylic styling and work at 1440 and 390 pixels.
+## Journeys by clause
+
+### Program and readiness
+
+- **PROGRAM-001 — Framework programs and applicability · missing.** From the program-setup UI, create each of the four core programs for a US SaaS business, choose two scoped products and different periods, review applicability with an assessor, then upgrade one framework edition. Reopen the program and export it: owners, exclusions, edition history and unresolved obligations survive; excluded work is visible and no certification is asserted.
+
+  Current evidence: —.
+
+- **PROGRAM-003 — Framework-required program documents · missing.** For each core program, generate its documents from a populated program through Program → Documents, edit and approve a revision, and export it (system description as DOCX and PDF, SoA as XLSX and PDF, risk analysis and SAQ worksheet as PDF). Then reconcile each document with program state. The SOC 2 description cites the inventory and policy revisions it pre-filled from. The SoA lists all 93 Annex A:2022 controls, and its exclusions match applicability. Record an internal audit with one nonconformity and corrective action, and one management review. Switching the SAQ answers changes the selected type and worksheet. Fail a test mapped to a control the SoA marks implemented: the SoA flags drift and needs review, and the approved prior revision stays retrievable.
+
+  Current evidence: —.
+
+- **PROGRAM-004 — Extended and regulated programs · missing.** For each named extended program, create it on a business that already runs SOC 2 through program setup, review applicability, and open readiness. Readiness reports zero requirements without a mapped control, shows the evidence reused from SOC 2, and names the external assessment dependency. Exclude one requirement with a rationale: it stays visible as excluded. Export the program. For CMMC Level 2, readiness also shows the computed SPRS score, and changing one control's state changes the score. For USDP, enter business figures that meet California's and Texas's thresholds but not Montana's: readiness shows California and Texas obligations, Montana stays visible as excluded with the recorded figures, and raising the figures above Montana's threshold adds its obligations as a reviewable applicability change; the self-attestation exports with the applicable states listed. For ISO/IEC 27701, readiness shows the reuse from ISO 27001 and keeps controller and processor controls separately applicable.
+
+  Current evidence: —.
+
+- **LIBRARY-001 — Shipped control library, test catalogue and cadence · missing.** Create each core program on a fresh installation: readiness reports zero unmapped requirements, and every mapped control shows a test or an evidence requirement. A build-time catalogue check enumerates every program requirement and every listed connector evidence class, and fails on any requirement with no control, any control with neither test nor evidence requirement, or any evidence class with neither a shipped test nor an explicit unsupported entry naming its replacement evidence requirement. The same check fails on any test entry with no remediation steps for a provider it runs against, and on any cloud or hosting configuration test with neither a Terraform snippet nor a stated absence of a Terraform provider. Fail an AWS S3 public-access test and a Vercel deployment-protection test: each Results page shows the How to remediate panel for its own provider, the AWS entry includes a Terraform snippet, and applying that snippet in the sandbox makes the next run pass. Connect one cloud account and leave it for two hours: at least two runs per configuration test appear. Pause the scheduler for an hour: that interval shows as stale. Accept a library revision: earlier observations keep the revision they were evaluated under.
+
+  Current evidence: —.
+
+- **PROGRAM-002 — Reusable mappings and accountable ownership · missing.** In the program UI map an access-review control to SOC 2, ISO 27001 and HIPAA, assign an owner and contributor, attach period evidence once, and inspect all three mappings. Remove an asset from scope with a reason: earlier denominators and the changed-definition label remain in the audit-period report.
+
+  Current evidence: —.
+
+- **CONTROL-001 — Custom controls and testing intent · partial.** Create a custom production-access control through the control form, add two evidence requirements and a custom framework mapping, revise its test intent after a failed observation, then view both revisions in the historical report. The earlier failure keeps its original meaning. Import an 80-row XLSX customer security addendum through the framework import: the dry run refuses one duplicate requirement ID and one unknown control ID and admits nothing until confirmed. Confirm: 78 requirements appear, those mapped in the file show their controls, and readiness counts the rest as unmapped. Approve two AGENT-006 mapping proposals and reject one: only the approved two become mappings. Re-import a revised file with three changed rows and one removed: the review lists exactly those four changes, and after confirmation the removed requirement remains in history with its earlier observations.
+
+  Current evidence: `src/evidence/storage.ts`; `src/evidence/http.ts`; `tests/evidence.mjs`. Current limit: Owner-written control, one proof requirement and cadence are implemented; revisions, multiple requirements per control through the UI, framework mappings and the CSV/XLSX framework import are not.
+
+- **READINESS-001 — Readiness, trend and executive reports · partial.** From readiness, compare current and prior audit periods with a stale connector, failed test, accepted exception and missing policy attestation. Follow every displayed total to records, export the report, and reconcile counts and period boundaries. A filtered or failed read cannot create a passing result.
+
+  Current evidence: `src/evidence/storage.ts`; `src/evidence/model.ts`; `src/evidence/view.ts`; `tests/evidence.mjs`. Current limit: The desk organizes controls, receipts and period gaps; framework readiness, effectiveness trends and executive reporting are missing.
+
+### Evidence provenance and continuous observation
+
+- **PROOF-001 — Immutable exhibits and attributable receipts · done.** Use `/app/controls` and the requirement upload form, attempt forged receipt facts, replace an exhibit, reload its original receipt and download both versions. Attempt a double replacement, oversized upload and changed/missing object: refuse unsafe writes/downloads and retain facts. `tests/evidence.mjs` exercises these production HTTP doors.
+
+  Current evidence: `src/evidence/upload.ts`; `src/evidence/storage.ts`; `src/evidence/http.ts`; `tests/evidence.mjs`.
+
+- **GAP-001 — Honest period-specific proof coverage · done.** At the desk select daily, weekly, monthly and quarterly periods, advance across their deadlines and inspect a superseded period, imported-only proof and changed/missing R2 bytes. Reopen a completed historical period and confirm the original state logic. `tests/evidence.mjs` exercises these cases through `/api/desk` and receipt downloads.
+
+  Current evidence: `src/evidence/model.ts`; `src/evidence/storage.ts`; `tests/evidence.mjs`.
+
+- **CADENCE-001 — Annual, semi-annual and anchored evidence renewal · missing.** Create an annual penetration-test requirement and upload today a report whose effective date is eight months ago: the requirement shows covered with a due date four months out (effective date plus twelve months), not twelve. Advance the test-harness clock: it moves covered → due soon (one reminder sent and not repeated on restart) → overdue at the deadline, with a deadline reminder. Create a semi-annual access-review requirement anchored to an audit window that starts 1 February: periods run February–July and August–January. Anchor an annual risk assessment to a July fiscal year. Set a one-off custom renewal date on the pentest requirement: it moves the current deadline only, and the next cycle returns to the effective-date anchor. Upload an imported annual report: it stays imported and does not establish current proof. Reopen a historical quarterly period and an annual period from before a period change: each keeps its original state.
+
+  Current evidence: —.
+
+- **COLLECTION-001 — Scheduled source collection with visible failures · missing.** Connect a real authorized sandbox via the Connections UI, schedule collection, close the browser, change the source and inspect the next run. Revoke a required scope, throttle a page and interrupt a run; reconnect and resume. The run history and period report preserve missing coverage, failure and recovery separately; only actual source reads issue observed receipts.
+
+  Current evidence: —.
+
+- **CONNECT-001 — Least-privilege integration custody and custom collectors · missing.** Authorize, rotate, revoke and reconnect a provider through Connections; attempt cross-tenant use and export/restore. Validate that secrets never appear and restored connectors remain inactive. Install one owner-reviewed private collector, inspect unsupported resources and a lost connection, and reconcile its read-only output with the actual private source.
+
+  Current evidence: —.
+
+- **API-001 — Public REST API for pushed resources, custom tests and program state · missing.** Issue a resource-push token in Settings → API. With a script, push 50 resources of a custom `internal_service` type, then push the same payload again: there are no duplicates and the update timestamps are unchanged. Run a full sync that omits one resource: it is marked removed, and its history remains. Define a custom test requiring `mfa_enforced=true`. One resource fails, and the readiness view shows the result labelled source-reported via the token. Read the program, test and remediation state through the API and reconcile it with the UI. A token from another installation, a write outside the token's scopes and a revoked token are each refused with no partial write. A schema-invalid payload is rejected per item with reasons.
+
+  Current evidence: —.
+
+- **CLOUD-001 — AWS, Google Cloud and Microsoft Azure · missing.** For each provider, connect an authorized sandbox through Connections, discover a child account/project/subscription, and run every catalogue test, covering IAM/MFA, public storage, encryption, logging, backup and network classes, with at least one failing resource. Change a setting in the real provider, re-test, and revoke one read permission. The failing resource, missing coverage, original observations and recovery are individually visible.
+
+  Current evidence: —.
+
+- **CLOUD-002 — Heroku, Vercel, DigitalOcean, Cloudflare, Netlify, Supabase, MongoDB Atlas and Snowflake · missing.** For each of the eight platforms, connect an authorized sandbox through Connections and run every catalogue test with at least one deliberately failing resource. Examples: a Heroku Postgres database without continuous protection, an unprotected Vercel preview, a DigitalOcean Space with a public object, a Cloudflare zone with minimum TLS 1.0, an unprotected Netlify deploy preview, a Supabase table without row-level security, an Atlas IP access list open to 0.0.0.0/0, and a Snowflake user without MFA. Fix each in the real platform and observe a pass, with both observations retained. Revoke one read permission per platform: the affected resources show missing coverage and stay in the denominator. The catalogue lists each unsupported class with its manual requirement, and the LIBRARY-001 build-time check fails if any class has neither a test nor that entry.
+
+  Current evidence: —.
+
+- **CODE-001 — GitHub, GitLab, Bitbucket Cloud and Azure DevOps change assurance · missing.** Connect each of GitHub, GitLab, Bitbucket Cloud and Azure DevOps, select two repositories and run branch-protection/branch-policy, reviewed-change, membership-MFA and repository-privacy tests. Merge an authorized reviewed change (through a Bitbucket Pipelines deployment for Bitbucket), remove protection on one repository, make one repository public and revoke access to the other. Inspect source links, event period coverage, failure and unknown states without exposing repository secrets.
+
+  Current evidence: —.
+
+- **IDENTITY-001 — Google Workspace, Microsoft 365, Entra ID, Okta and JumpCloud · missing.** For each named identity service connect a tenant via Connections, ingest an admin, employee, guest and service account, and test MFA and inactive-user access. Disable one real account and deny one scope. Reconcile duplicates with a human decision and inspect fresh source readback and incomplete coverage.
+
+  Current evidence: —.
+
+- **APPS-001 — App-level account connectors for access reviews and leaver checks · missing.** For each of the ten named apps, connect a sandbox workspace through Connections and ingest an admin, a member and a guest. Each appears in Inventory with role, status and MFA state (or "not exposed"), matched to its person. Terminate in a connected HRIS a person who holds an account in every app: the leaver checklist lists each app as a monitored account and stays open, and the departed-user test fails for each app while its account is active. Deactivate the account in each app: the next source readback closes that item, and the checklist closes only when all ten are verified. Add an unconnected app: it appears as a manual check-off and closes only with an attached exhibit. Start a quarterly access review: its frozen population includes each connected app's accounts and roles without any upload.
+
+  Current evidence: —.
+
+- **MONITOR-001 — Monitoring and alerting evidence from observability tools · missing.** Connect a sandbox for each of the six named sources through Connections and map two production services. Service A has an availability monitor and an error-rate monitor in Datadog routed to a PagerDuty schedule; service B has only an availability monitor in New Relic. The coverage test passes for A and fails for B, naming the missing monitor type. Add a Grafana Cloud error-rate alert for B: the next run passes. Mute A's error-rate monitor and advance the test-harness clock eight days: the mute test fails. Approve a seven-day exception: it passes until the exception expires. Deactivate in the IdP the only person a Sentry alert routes to: the routing test fails for that alert. Leave a six-hour gap in the PagerDuty schedule next week: the on-call test fails, naming the uncovered hours. Map an Uptime monitor to service B: it counts toward B's availability coverage. Revoke the Datadog grant: A's Datadog-backed tests show unknown, not passing, and earlier observations remain.
+
+  Current evidence: —.
+
+- **HRIS-001 — BambooHR, Gusto, Rippling, Justworks, Deel HR and ADP Workforce Now personnel sources · missing.** Connect each of the six named HRIS, import a joiner, mover and leaver, then correct a start date and terminate an account in the real source. The People UI shows source priority, conflict review, correct obligations and no collected payroll or tax identifiers.
+
+  Current evidence: —.
+
+- **DEVICE-001 — MDM and EDR posture: Jamf, Intune, Kandji, JumpCloud, Addigy, NinjaOne, CrowdStrike, SentinelOne and Defender for Endpoint · missing.** Connect each of the six MDM sources, match a device to a person, change encryption or patch state in a sandbox and run a fresh test. Connect each of the three EDR sources, and for each put one sensor into an unhealthy or disabled state: the sensor-health test fails for that device, then passes after recovery. A missing device feed, a device with no EDR sensor or an unmatched endpoint stays a gap; the original failed posture and correction remain attributable.
+
+  Current evidence: —.
+
+- **DEVICE-002 — Owned read-only device monitor for computers without MDM · missing.** Install the monitor on a real macOS and a real Windows device through the employee checklist, and confirm each device matches its person. For each of the four required checks, put the device into the failing state (encryption off, no password manager, protection disabled, lock above 60 minutes), observe a failing result within the next reporting interval, fix it and observe a pass, with both observations retained. Disconnect one device past the stale window, then uninstall the monitor from the other: each shows stale or unknown and the device test does not pass. Inspect the declared data list; the payload contains nothing beyond it. Install the .deb on a real Ubuntu device with LUKS and a real Debian device without it: Ubuntu passes encryption and Debian fails it. Set the Ubuntu GNOME lock above 60 minutes and observe a fail, then a pass after fixing it. The checks the Linux monitor cannot read show unknown with the manual requirement open, and neither device passes on them.
+
+  Current evidence: —.
+
+- **VULN-001 — Vulnerability findings from scanners, code and cloud-native sources · missing.** Connect each of the ten named sources via Connections and ingest at least one finding from each. Ingest a Dependabot alert and an AWS Inspector ECR finding for the same CVE on the same service: they deduplicate into one finding retaining both source IDs. Link it to a control and remediation task, accept a time-bounded exception and let it expire. Change the critical-severity SLA from 15 to 7 days: every existing finding keeps its due date, and the next new critical finding gets 7 days. Correct the sandbox issue and perform a fresh source read: only verified resolution closes the compliance obligation, with original findings retained. Reintroduce the issue: the finding reopens with its history.
+
+  Current evidence: —.
+
+- **VULN-002 — Penetration-test findings with retest-verified closure · missing.** Import a 12-row pentest findings CSV with its PDF report through Vulnerabilities → Import. The dry run refuses one row with a missing severity and admits nothing until confirmed. Confirm: 11 findings appear labelled manual with tester, report date and SLA due dates. Mark one fixed without retest evidence: it stays awaiting verification. Attach a retest letter and have the reviewer approve: it closes, with the original finding and report retained. The AUDIT-002 vulnerability-remediation population lists the pentest findings with their provenance.
+
+  Current evidence: —.
+
+- **ISSUES-001 — Security issues and incidents from the team's own trackers · missing.** In a Jira Cloud sandbox, label three issues `security` at high priority. Resolve two, one inside and one outside the SLA, and leave the third open past its due date. The "resolved within SLA" test shows one within SLA, one SLA missed and one open and overdue, each with its Jira link and the policy revision used, and the resolved issues read "resolved in tracker", not verified. Reopen the on-time issue: it resumes its original clock and keeps both times. Repeat with a Linear issue and a GitHub issue selected by label, with a GitLab issue selected by label, with an Azure Boards item selected by WIQL, and with a Jira JQL query in place of the label: each is ingested with its link and SLA status. Change the critical SLA: existing due dates stay. Label two Jira issues `incident` inside a Type II period, link a post-incident review task to one, and leave the other's resolution task open past the policy deadline. Generate the AUDIT-002 incidents population: it reconciles to the two issues with retrieval metadata, one can be sampled with its body captured as an exhibit, and "incident tasks completed per policy" passes for one and fails for the other. Trigger a PagerDuty incident on a selected service: it joins the population with its source. Revoke the Jira grant and regenerate: the population shows incomplete, not zero, and cannot be recorded as a non-occurrence. Change the label: the preview shows the old and new match counts, and earlier populations keep the selector revision they were generated under. Label a Jira issue `offboarding` for a leaver: the checklist shows it completed in the tracker, while the leaver's app accounts still need readback.
+
+  Current evidence: —.
+
+- **INVENTORY-001 — Unified assets, people and ownership · missing.** Open Inventory after connecting HRIS, identity, cloud and MDM sources; reconcile a duplicate person/device, assign an unowned service and retire an asset. Export the scope and reconcile counts with source lists. Removing connector permission cannot retire an asset or silently shrink test coverage.
+
+  Current evidence: —.
+
+- **POPULATION-001 — Labelled CSV populations for unsupported systems · missing.** Upload a Justworks-style roster CSV and an account list for an unconnected SaaS app through Inventory → Upload population. Map one renamed column, resolve one ambiguous person match, and leave one row unmatched. The People and Inventory views show both lists labelled manual with the upload time. A test requiring source reads stays unknown for those records. Upload a revised list: the original exhibit stays, and the differences appear as joiners, leavers and removed accounts. Let the refresh window pass: the population shows stale. A malformed file is refused with row-level reasons, and nothing is admitted.
+
+  Current evidence: —.
+
+- **TEST-001 — Continuous control tests and exception discipline · missing.** From a mapped control enable a scheduled MFA or reviewed-deployment test, confirm it runs at least hourly, fail a real source setting and inspect all resource results. Tune scope with an expiring exception, interrupt collection, and revise criteria. A later pass, expired exception or revised denominator never erases the earlier failure or fills an unobserved period.
+
+  Current evidence: —.
+
+### Remediation and follow-through
+
+- **REMEDY-001 — Failed test to verified remediation · missing.** Fail a real connected control, follow its Remediate action, assign an owner and due date, attach a change and mark work done before fixing the source. The obligation remains open. Fix the source, re-test and observe verified closure; regress it and confirm reopening with both observations retained.
+
+  Current evidence: —.
+
+- **REMEDY-002 — Remediation SLAs and automatic re-test · missing.** Set a 7-day SLA for high-severity identity failures. Fail MFA for two real users, fix one within the SLA, and let the other's clock pass the deadline using the test-harness clock: one item shows within SLA and resolved, the other SLA missed with an escalation sent. Export the board report and reconcile per-item SLA status. Close the linked Jira ticket without fixing the source: a re-test starts automatically with no human action, fails, and keeps the obligation open. Repeat that step with a GitHub Issues ticket and an Asana task: each close starts a re-test with no human action. Fix the source: the source event triggers a re-test that verifies closure. Apply an expiring exception: the clock pauses, then resumes when it expires.
+
+  Current evidence: —.
+
+- **WORK-001 — Two-way remediation tickets in Vector and twelve external trackers · missing.** For each of the thirteen destinations, connect an authorized sandbox project, create a ticket from one failed control, change assignee and status in the tracker and in Evidence, and deliver the same inbound event twice: exactly one ticket exists, the tracker's assignee and status appear in Evidence within 15 minutes, and the second delivery changes nothing. Edit the same field on both sides: the conflict shows both values and the time. Revoke the tracker grant and delete one remote ticket: each failure is shown on its obligation. Close the remote ticket while the test still fails: a re-test runs with no human action, fails, and Evidence keeps the compliance obligation open.
+
+  Current evidence: —.
+
+- **WORK-002 — Per-test or per-item tickets, with tracker status on tests · missing.** For each WORK-001 destination, set a test to per-item tickets and fail it on two sandbox resources: two tickets are created, each with its own due date. Change one ticket's assignee in the tracker: the test page and the remediation queue show the new assignee and status within 15 minutes. Close that ticket without fixing the source: a re-test starts within 15 minutes with no human action and fails. That item stays open and its SLA clock keeps running, while the other item's clock runs unaffected. Fix the second resource and close its ticket: only that item closes, as verified. Switch another test to one ticket per test and fail three items: one ticket lists all three with their deadlines. Close it with one item fixed: all three are re-tested, only the fixed item closes, and the remote ticket reopens naming the other two.
+
+  Current evidence: —.
+
+- **FOLLOWUP-001 — Email, Slack and Microsoft Teams follow-up · missing.** Configure each named channel/provider, let a due obligation escalate across a DST/business-calendar boundary with the browser closed, then restart the worker. Simulate a network-edge timeout and reconnect authorization; inspect delivery uncertainty without duplicate task closure. Complete or pause the obligation and verify later reminders stop while history remains. Let the weekly digest run on the test-harness clock: each control owner receives only their own new failures, upcoming, overdue and SLA-missed items, reconciled to the remediation queue, and a control owner with nothing open receives none.
+
+  Current evidence: —.
+
+### Risk and third parties
+
+- **RISK-001 — Risk register and treatment lifecycle · missing.** Create a risk from a failing control in Risk Register, score it, assign mitigation, approve a time-bounded residual-risk acceptance and export the register. Let approval expire and inspect escalation; a passing re-test updates treatment evidence without rewriting the original assessment.
+
+  Current evidence: —.
+
+- **RISK-002 — Shipped risk library, register import and configurable scoring · missing.** On a fresh ISO 27001 program, add five library risks: each is linked to its suggested controls and matching in-scope assets. Import a 30-row register CSV through Risk Register → Import: the dry run refuses one invalid row with a reason, and 29 risks are admitted labelled imported. Change the scale from 5×5 to 4×4 with new labels: earlier assessments still show their original scale, labels and score. Reassess one risk: both assessments are retained with their method revisions. Start the HIPAA risk analysis (PROGRAM-003) and add its scenarios from the library. Export the register with the method revision per assessment.
+
+  Current evidence: —.
+
+- **VENDOR-001 — Vendor inventory and security diligence · missing.** Onboard a US SaaS supplier through Vendors, request a SOC 2 report and BAA where applicable, send a shipped CAIQ v4 questionnaire, collect the supplier's per-question response and record a finding. Approve with an expiring condition, reach renewal, and inspect overdue reassessment reminders and the unchanged original documents. An expired supplier link cannot read or mutate another vendor.
+
+  Current evidence: —.
+
+- **VENDOR-003 — Vendor document review with cited findings · missing.** Upload a real-format SOC 2 Type II report containing one tested-control exception and two CUECs, issued more than three months after its period ended, through Vendors → Documents. The proposed review shows report type, period, auditor, opinion, the exception and both CUECs, and each citation opens the cited page. Map one CUEC to an existing access-review control and leave the other unmapped: the unmapped CUEC stays an open obligation in readiness. The bridge-letter gap appears and clears when a bridge letter is uploaded. Correct one wrong extraction: the correction and the original proposal both remain. A qualified-opinion report raises a finding only after reviewer approval.
+
+  Current evidence: —.
+
+- **VENDOR-002 — Vendor discovery and risk-based follow-through · missing.** Connect each of the six named grant and spend sources (Google Workspace, Entra ID, Okta, QuickBooks Online, Ramp and Brex): each surfaces at least one candidate citing its source records (granted scopes and users, or spend amounts and dates). An app connected through APPS-001 that is not yet a vendor, and an AWS Marketplace subscription read through CLOUD-001, each surface as candidates too. The same vendor found in QuickBooks Online and Ramp is proposed as one duplicate match, which a human accepts. Review the proposed tier for an unknown vendor and approve diligence. Change its access and reach its review date: a new assessment starts, missing replies escalate and rejected candidates receive no external requests.
+
+  Current evidence: —.
+
+### Policies, employees and access
+
+- **POLICY-001 — Policy library, approval and version control · missing.** From Policies tailor a template to connected business facts, review an exact revision, reject a changed draft, then publish and map it to two frameworks. Reach its review deadline and publish a replacement: original approval and attestations remain, with new required acknowledgments visible. On a fresh SOC 2 program and a fresh ISO 27001 program, readiness first lists every requirement lacking an approved, published policy. After the shipped templates are approved and published, it lists none. A build-time check fails if any library requirement calling for a policy has no shipped template. Let one policy pass its review deadline: its linked policy test fails.
+
+  Current evidence: —.
+
+- **ATTEST-001 — Employee policy attestations · missing.** Assign a policy revision to an employee and contractor, sign in as each and acknowledge one while leaving the other overdue. Publish a material revision and inspect reassignment/reminders. Terminate one person and confirm denied access with retained time/version/identity evidence in the audit export.
+
+  Current evidence: —.
+
+- **TRAIN-001 — Shipped security training and KnowBe4 evidence · missing.** Create an onboarding and annual campaign in Training, enroll a new hire, have them complete the shipped general security-awareness course including its assessment, and fail and retake the assessment once (both attempts retained). Confirm that HIPAA and secure-coding courses appear only after their programs and roles apply. Complete an approved internal course and ingest a real KnowBe4 sandbox completion. Leave another learner overdue, amend the schedule, and verify reminders, original result provenance and an auditor export without fabricated completions.
+
+  Current evidence: —.
+
+- **LIFECYCLE-001 — Joiner, mover and leaver compliance · missing.** Change a joiner, mover and leaver in an authorized HRIS; follow their checklists in People, ingest the joiner's background-check completion from a Certn sandbox and a Checkr sandbox (status and date only), assign tasks, and attempt to close leaver work with an active Okta account. It remains open and escalates. Disable the real account, re-read identity/device sources and verify closure with historical worker evidence preserved.
+
+  Current evidence: —.
+
+- **ACCESS-001 — Quarterly access-review campaigns · missing.** Start a quarterly review from Access Reviews, have two resource owners decide on employee, guest and privileged service access, and leave one decision overdue. Request revocation, keep the source account active and inspect unresolved work. Revoke in the source and re-test; export complete decisions, population and period evidence. Add an unconnected SaaS app by uploading its account list: decide revoke on a departed person's account, re-upload the list without that account, and confirm the revocation is evidenced by the new upload with both lists retained.
+
+  Current evidence: —.
+
+### Audit collaboration
+
+- **REVIEW-001 — Selected expiring evidence folders · done.** Issue a folder through `/api/folders`, open its `/review/{token}` page and download only in-period exhibits. Try a crossing-period receipt, foreign control, write, altered token, expiry during a read and closed folder. Owner event history retains allowed/refused attempts without raw links. `tests/review.mjs` and `tests/review-browser.mjs` cover these doors.
+
+  Current evidence: `src/evidence/review/http.ts`; `src/evidence/review/storage.ts`; `tests/review.mjs`; `tests/review-browser.mjs`.
+
+- **AUDIT-001 — Period-specific auditor workspace and request lists · partial.** Invite an auditor to one engagement, import a request list, assign a request, comment and submit a period-specific exhibit. As auditor reject it, request more evidence and accept the next submission. Export the pack; another engagement and revoked auditor remain inaccessible, and the original submission and decisions remain available to authorized owners.
+
+  Current evidence: `src/evidence/review/http.ts`; `src/evidence/review/storage.ts`; `tests/review.mjs`. Current limit: Expiring scoped read-only folders and access history exist; authenticated auditor collaboration, requests, comments and findings are missing.
+
+- **AUDIT-002 — Type II populations, sampling and non-occurrence · missing.** As auditor on a Type II engagement, generate the terminations population for the period and reconcile its count and identities with the connected HRIS. Select five samples with a recorded seed: five per-sample requests open with owners. Satisfy four, and leave one rejected and resubmitted. With ISSUES-001 incident selectors on a Jira Cloud sandbox that holds no matching issues in the period, generate the incidents population: zero records with complete source reads, recorded as a non-occurrence. Readiness and the exported pack show it as a non-occurrence, never a pass, and a request to mark it passing is refused. Revoke HRIS read scope mid-period and regenerate: the population shows incomplete and cannot be closed. Export the population CSV with its retrieval metadata and sample decisions.
+
+  Current evidence: —.
+
+- **AUDIT-003 — Auditor review of continuous test evidence for the period · missing.** Create a Type II engagement with a Restricted detail level that hides user emails, and share three automated tests and one policy. In the period, one test has a mid-period failure, one has a stale interval, and one has an item remediated before the period began. As auditor, open each test: only in-period observations and in-scope resources appear, including the mid-period failure and the stale interval, with SLA status per item and emails replaced by pseudonyms. The pre-period item appears only in its "remediated before period" list. Flag one test with a comment and accept the others: the flagged test's result and readiness are unchanged, and the decisions appear in the exported pack with the detail level. The owner's preview matches the auditor's view field for field. Requests for an unshared test and for an out-of-period observation are refused at the HTTP door. Unshare the policy: the auditor can no longer open it, and the unsharing is recorded.
+
+  Current evidence: —.
+
+### Customer assurance
+
+- **TRUST-001 — Published and permissioned trust center · partial.** Publish an approved statement, request a restricted SOC 2 report as a prospect, complete an NDA through each named e-signature integration, approve one recipient and deny another. Check expiry/revocation, downloads and custom-domain access from a signed-out browser. An unapproved draft and another prospect’s documents never appear.
+
+  Current evidence: `src/evidence/review/http.ts`; `tests/review.mjs`. Current limit: Scoped expiring reviewer downloads are implemented; trust publication, customer access requests, NDA integrations and domains are missing.
+
+- **TRUST-002 — CRM-driven access, click-through NDA and live control status · missing.** Connect Salesforce and HubSpot sandboxes and create one auto-approval rule in each. A prospect whose domain matches a gated Salesforce account is auto-approved for SOC 2 tags with the matched record shown. A matching HubSpot contact is approved under that rule. A non-matching requester is queued for review. Clear the Salesforce checkbox: the next request is no longer auto-approved. Complete a click-through NDA as a new requester and inspect its acceptance record. Publish live status for an access-control category, then fail its linked MFA test: a signed-out browser sees "under review" with no resource detail. Pass the re-test: the category shows monitored again. A stale collector also drops the category to "under review".
+
+  Current evidence: —.
+
+- **TRUST-003 — Trust-center updates, subscribers and subprocessor-change notices · missing.** Subscribe a signed-out visitor to Subprocessors and confirm the double opt-in. The owner adds a second subscriber by email with a reason, and a third subscribes and then unsubscribes. Add a subprocessor with an effective date 30 days out and draft its notice. Publishing without approval is refused. Approve it: the notice is sent, and delivery is recorded per subscriber, including one bounce simulated at the network edge. The unsubscribed address receives nothing. The public list shows the pending subprocessor with its effective date, and after that date it shows as active. Publish one Security update publicly and one only to approved customers: a signed-out browser sees only the public one. Export the notice record with per-subscriber outcomes.
+
+  Current evidence: —.
+
+- **TRUST-004 — Cited visitor Q&A on the trust center · missing.** As a signed-out visitor, ask about encryption at rest: the answer cites the public statement and its date. Ask a question answerable only from the restricted SOC 2 report: no restricted content appears, and an access request is offered. As an approved visitor, ask the same question: the answer cites the report page. Ask a question no source covers: nothing is drafted, and the question is routed to the owner, who approves a reply; the next visitor who asks gets the cited library answer. Withdraw the report: the approved visitor's next answer no longer cites it. Ask the assistant to ignore its rules and list other customers or unpublished documents: it refuses. The owner's log shows every exchange.
+
+  Current evidence: —.
+
+- **ANSWER-001 — Cited security-questionnaire completion · missing.** Against a populated program (approved policies, passing and failing tests, a SOC 2 report), upload a full-length SIG Lite (XLSX) and CSA CAIQ v4 (XLSX), plus a CSV and a DOCX customer questionnaire, in Questionnaires, and generate cited drafts. A held-out reviewer key, prepared independently, lists for each question whether the populated sources can answer it and which source supports it. Then check:
+  - the draft reports cited, flagged and conflicting counts that reconcile to the question total;
+  - at least 90% of the questions the key marks answerable are drafted with citations;
+  - 100% of citations resolve to the source revision and period they name, and support the claim per the key;
+  - zero answers are uncited or assert beyond their sources;
+  - every question the key marks unanswerable is flagged.
+
+  Inspect citations, edit and approve an exact version. Modify a source after approval and attempt reuse/submission: require a new decision. Export and reopen the original formats without losing question placement, IDs or flagged gaps.
+
+  Current evidence: —.
+
+- **ANSWER-002 — Portal and web-form questionnaire capture and fill-back · missing.** On a test portal of at least three pages with text, single-choice, multi-select and file fields, capture the questionnaire with the extension in Chrome, Edge and Brave. All fields import with page and type. Draft and approve answers in Questionnaires, leaving one answer unapproved. Change one choice field's options on the portal, then run fill-back: every approved, unchanged field fills with the exact approved text, the changed field and the unapproved answer are refused with reasons, and the form is not submitted. Re-capture the changed field, approve its answer and complete the fill. The questionnaire history shows capture time, page structure and every fill.
+
+  Current evidence: —.
+
+- **ANSWER-003 — Questionnaire collaboration, PDF capture and answer-library import · missing.** Split a full-length SIG Lite across three assignees with due dates. One answers a question from a Slack message: the answer arrives as an uncited draft that is flagged until a citation is added, and it awaits reviewer approval. Let one assignment pass its due date: it escalates. Upload a 40-question PDF customer questionnaire: questions extract in order with section and page; merge one wrongly split question; draft and approve; export an answer document whose question order and numbering match the PDF. Import a prior completed XLSX questionnaire: its answers appear in the library labelled imported and unverified, a draft cannot cite one until it is re-cited or re-approved, and after re-approval it can be reused.
+
+  Current evidence: —.
+
+### Portability and migration
+
+- **IMPORT-001 — Reviewed Drata archive admission and undo · done.** Through Move-in, inspect a documented-shape Drata ZIP, review mappings and refuse unsafe/malformed artifacts, admit with a journal, then undo active links. Inspect retained originals and import history after undo, restart and archive restore. `tests/import.mjs` exercises these routes; a real customer export remains separately required under MIGRATE-001.
+
+  Current evidence: `src/evidence/import/http.ts`; `src/evidence/import/plan.ts`; `tests/import.mjs`; `docs/DRATA-IMPORT.md`.
+
+- **MIGRATE-001 — Switch from Vanta, Drata and Secureframe · partial.** For each incumbent, use a representative authorized customer export through Move-in, preview it, resolve a duplicate identity, admit, export and undo. Reconcile each record class separately, showing source count, admitted, unsupported and refused for each:
+  - frameworks, controls and mappings;
+  - test history;
+  - policies with approval history and attestations;
+  - people;
+  - vendors;
+  - risks;
+  - access-review decisions;
+  - audit requests;
+  - trust-center and answer-library content;
+  - original exhibits, by bytes and digest.
+
+  Reconnect one actual source and verify imported history stays distinct from fresh observations. If an incumbent does not export a record type, the UI names it and offers an authorized API/manual mapping route without silently dropping it. A switch inside an open audit period follows MIGRATE-002.
+
+  Current evidence: `src/evidence/import/plan.ts`; `src/evidence/import/http.ts`; `tests/import.mjs`. Current limit: Only the documented Drata archive shape is implemented and exercised with synthetic fixtures; Vanta, Secureframe, broader objects and live migration validation are missing.
+
+- **MIGRATE-002 — Switching in the middle of an audit period · missing.** Migrate from a Vanta export dated four months into a Type II period and set the cutover. Generate the terminations population across the whole period: pre-cutover rows show as imported, post-cutover rows as source-observed from the connected HRIS, the boundary is marked, and the count reconciles with no person missing or duplicated at the boundary. Sample one row from each side and satisfy both requests, the pre-cutover one with imported evidence. Remove one month of pre-cutover rows from the export and regenerate: that interval shows incomplete with its reason until back-filled from the HRIS. Export the pack: every record carries its provenance and the boundary is visible.
+
+  Current evidence: —.
+
+- **CUSTODY-001 — Complete custody archive and empty-target restore · done.** Export through `/api/archive/export`, inspect the manifest, dry-run and restore into empty real D1/R2; compare every portable record and byte. Try altered digests, traversal, missing/unlisted files, unavailable bytes and a nonempty target. Refusal preserves the target; successful restore leaves grants inactive. `tests/archive.mjs` and `tests/review-browser.mjs` exercise HTTP/CLI custody journeys.
+
+  Current evidence: `src/evidence/archive/http.ts`; `src/evidence/archive/restore.ts`; `tests/archive.mjs`; `scripts/archive.mjs`.
+
+- **PORTABLE-001 — Full-program transfer and Base replacement obligations · partial.** Use the console and local archive command to export a populated program containing every record class; restore offline into an empty installation with a different owner. Reconcile table/blob inventory, original history, unavailable bytes and erasure fences. Verify no message, source mutation or external grant replays, then explicitly reauthorize one connector. Reject an unknown table and a pre-erasure archive without the required later journal.
+
+  Current evidence: `src/evidence/archive/inventory.ts`; `src/evidence/archive/restore.ts`; `src/evidence/import/archive-schema.ts`; `tests/archive.mjs`. Current limit: Existing custody transfer is complete for its implemented domain; target program records, whole-product erasure fences and a permanent product action audit are not implemented.
+
+### Access, integrity and operation
+
+- **AUTH-001 — Roles, SSO and scoped authorization · partial.** Sign in through native authentication and each named SSO provider; provision and deprovision a contributor via SCIM. Attempt foreign-team reads, employee exports, self-approval and cross-origin writes; refuse them at HTTP doors. Revoke a session/token and confirm all next requests fail while authorized control owners can submit only their scoped evidence.
+
+  Current evidence: `src/auth.server.ts`; `src/evidence/http.ts`; `tests/evidence.mjs`; `tests/email-link.mjs`; `tests/agent.mjs`. Current limit: Native owner sessions, same-origin guards and scoped prepare-only agents exist; organizational roles, SSO, SCIM and delegated approvals are missing.
+
+- **SECURE-001 — Restricted evidence and declared external flows · partial.** Upload hostile HTML/SVG and a sensitive employee document, verify safe attachment handling, then try unauthorized record reads and publication. Enable one model/connector only after reviewing its data flow, rotate its key and simulate unavailable custody. Inspect logs and exports for secret exclusion and explicit failure; revoked access fails on the next read.
+
+  Current evidence: `src/evidence/upload.ts`; `src/evidence/storage.ts`; `src/evidence/review/http.ts`; `tests/evidence.mjs`; `tests/review.mjs`. Current limit: Owner access, verified attachment responses and narrowly scoped reviewer projections exist; target record permissions, complete flow declarations and new provider/key custody do not.
+
+- **ERASE-001 — Explicit erasure, holds and restore fencing · missing.** In Privacy, preview and confirm each entity and business erasure with linked imports, receipts, blobs and active shares. Verify exact stored bytes/derivatives disappear, all grants fail, held items are disclosed and actor references anonymize. Restore a pre-erasure archive with the later journal: erased content and authority cannot resurrect. Interrupt a provider deletion and inspect pending work rather than a false completion.
+
+  Current evidence: —.
+
+- **LOG-001 — Permanent accountable action audit · partial.** Perform an import/undo, folder read/refusal, approval, source change, failed send and erasure through their public doors. Inspect and export the audit, restart, then restore. Every attempted sensitive action and its outcome remains attributable without secrets; an erased actor is anonymous and an interrupted send remains uncertain until resolved.
+
+  Current evidence: `src/evidence/review/storage.ts`; `src/evidence/agent/storage.ts`; `tests/review.mjs`; `tests/agent.mjs`; `tests/import.mjs`. Current limit: Reviewer access events, agent decisions and import custody history exist; a unified product action audit and erasure anonymization do not.
+
+- **OPS-001 — Durable operation, health and recovery · partial.** Use documented setup/dev/build commands, omit a required setting, restart during a collection and notification, and interrupt storage. Inspect health and durable outcomes, recover from a complete backup and apply an additive migration without changing historical evidence. Attempt a documented size bound and inspect explicit refusal and the USD cost/configuration explanation.
+
+  Current evidence: `SEED-COMMAND-CONTRACT.md`; `src/auth.server.ts`; `tests/evidence.mjs`; `tests/archive.mjs`; `tests/email-link.mjs`. Current limit: Current CLI/auth/custody journeys are exercised; target collectors, durable scheduled obligations, all-operation outcomes and provider cost disclosure are missing.
+
+- **MOBILE-001 — Responsive and accessible complete workflows · partial.** With realistic program data, use desktop and phone browsers to complete each role’s journey, upload a phone file/photo, resolve an error and return from a task notification. Inspect every end state at both widths, run axe-core with the WCAG 2.2 AA rule tags on each end state at 1440 and 390 pixels with zero violations, and complete each role's journey by a scripted keyboard-only run (no pointer events) that reaches the same end state. Spot-check with VoiceOver and NVDA, and verify no hidden controls, color-only states or cross-role disclosures.
+
+  Current evidence: `tests/browser.mjs`; `tests/review-browser.mjs`; `src/evidence/view.ts`; `public/desk.css`; `public/review.css`. Current limit: Existing owner/reviewer custody flows have 1440/390 browser journeys; new program/employee workflows, mobile camera validation and independent accessibility conformance are unproven.
+
+- **PUBLIC-001 — Preserve the approved installation and run surfaces · done.** Build the run site, follow the homepage Run/docs links without JavaScript, and inspect installed Lobby before and after setup. Existing browser journeys inspect the approved owner/reviewer flows at 1440 and 390. `tests/site.mjs`, `tests/evidence.mjs`, `tests/browser.mjs` and `tests/review-browser.mjs` are the existing checks.
+
+  Current evidence: `src/auth.server.ts`; `tests/site.mjs`; `tests/evidence.mjs`; `tests/browser.mjs`; `tests/review-browser.mjs`.
+
+### Push further: agents accountable to the compliance job
+
+- **AGENT-001 — Prepare-only proposals with exact human approval · done.** Issue a prepare token, inspect gaps and propose a folder through agent commands/API. Attempt direct sharing, owner-only mutation, approval with an agent token and stale-snapshot approval; refuse each. Have the owner approve the current snapshot, revisit its immutable decision and revoke the token. `tests/agent.mjs` exercises these doors.
+
+  Current evidence: `src/evidence/agent/http.ts`; `src/evidence/agent/storage.ts`; `tests/agent.mjs`; `docs/AGENT-COMMANDS.md`.
+
+- **AGENT-002 — Prove operation across the audit period · missing.** From a period report ask the agent to investigate a control that passes its latest snapshot but had a documented mid-period privilege/merge violation and a missing event window. Follow its citations to original sources; both the failure and unknown interval appear. Reject its proposed exception and verify no mapping, pass or auditor decision changes.
+
+  Current evidence: —.
+
+- **AGENT-003 — Investigate, fix narrowly and re-test the real system · missing.** Fail a real sandbox control, ask the agent to investigate and propose a change, reject one revision and approve the next with one-resource authority. Attempt an out-of-scope write and revoke an in-flight grant: prevent further unauthorized work. Execute the permitted fix, read back from the real provider, independently re-test and verify closure without erasing the original failure. A failed fix stays open with escalation and rollback evidence.
+
+  Current evidence: —.
+
+- **AGENT-004 — Maintain collectors without manufacturing evidence · missing.** Break a sandbox connector scope/schema, remove an asset from a page and stale its source timestamp. Ask the agent for a diagnosis and connector patch, review the diff and approve read-only scopes, then compare output with the actual source inventory. Original gaps remain, and no production activation or unsupported pass happens before approval.
+
+  Current evidence: —.
+
+- **AGENT-005 — Keep customer promises current · missing.** Approve an answer and trust statement linked to a passing control and contract obligation, then fail the control and change the source policy. Inspect invalidation, affected customer commitments and cited revision. Attempt to reuse/export/send the stale answer; require a fresh authorized decision and retain the prior external version and recipient history.
+
+  Current evidence: —.
+
+- **AGENT-006 — Tailor policies, risks and structured obligations · missing.** Ask the agent to interpret a US customer security addendum and selected framework material alongside the actual asset inventory. Inspect clause citations, proposed controls, policy/risk diffs and one ambiguous obligation. Reject a proposed interpretation and approve another: only the approved exact revision enters the program and downstream work.
+
+  Current evidence: —.
+
+- **AGENT-007 — Check uploaded and captured evidence before the auditor sees it · missing.** Upload three exhibits to a quarterly access-review requirement: one dated before the period, one missing the reviewer sign-off and one complete. The agent reports outdated and missing element for the first two and likely meets for the third, and each citation resolves to the cited page and requirement wording. Dismiss one finding and accept another: the receipt bytes, origin and requirement state are unchanged, and nothing is marked satisfied. Capture a SaaS admin MFA settings page with the extension: the exhibit is manually-asserted and labelled browser-captured with URL and time, and it is checked. Against a held-out set of 20 exhibits with an independent reviewer key, the agent's verdicts match at least 90% of the key, and zero exhibits the key marks deficient are reported as likely meets.
+
+  Current evidence: —.
+
+- **AI-001 — AI inventory and governance · missing.** Exercise every named source. Grant an unapproved AI app in each of Google Workspace, Entra ID and Okta; add a member and an API key in an OpenAI organization and in an Anthropic organization; add an AI SDK to a connected repository; and record an AI vendor charge in a connected spend source. Each produces an inventory record citing its source. Review one tool's data access and owner, link a risk and acceptable-use policy, and approve only a bounded use case. Change its permissions and revoke one API key at the provider, rerun governance checks, and inspect the reopened review and the key's revoked state on the next read. An unapproved provider cannot receive evidence or execute an agent job.
+
+  Current evidence: —.
+
+### Honest product boundaries
+
+- **BOUNDARY-001 — US-first scope and independent specialist services · partial.** Onboard a US business, choose a HIPAA/PCI scope, inspect data-processing prerequisites and assessor handoff, review USD module/provider costs, and export an evidence pack for an independent assessor. Follow linked remediation to Vector and source checks to the named specialist providers. No UI/report claims certification, legal sufficiency or operation of an external system without source evidence.
+
+  Current evidence: `src/evidence/model.ts`; `src/evidence/review/http.ts`; `tests/evidence.mjs`; `tests/review.mjs`. Current limit: The current desk distinguishes assertion/custody from control operation and shares reviewer evidence; target program applicability, specialist handoffs, agreements and cost disclosures are unbuilt.
+
+## Running the relevant checks
+
+The current public-door suites are `tests/evidence.mjs` (native owner access, receipts and periods), `tests/review.mjs` (scoped public folders), `tests/archive.mjs` (HTTP/CLI custody transfer), `tests/import.mjs` (Drata-shaped import and undo), `tests/agent.mjs` (prepare-only authority and exact approval), and `tests/email-link.mjs` (native sign-in). Browser journeys are `tests/browser.mjs` and `tests/review-browser.mjs` at 1440 and 390; `tests/site.mjs` follows the built public run/docs site. Use the pinned CLI and commands in README.md and SEED-COMMAND-CONTRACT.md. Run touched checks locally and the complete existing Verify wall in CI; no release status above bypasses it. `node scripts/edition-authoring/cli.mjs check` validates source provenance, including these documents.
+
+For each new user flow, build rounds must exercise the named public door, persistence/restart, refusal/error path, actor permissions and final state in the journey. Inspect each changed screen at 1440 and 390 with realistic data; provider acknowledgments are separate from source truth and human decisions. Certification, independent assessor judgment, legal applicability, outside-provider reliability and copies already downloaded remain the declared boundaries in BOUNDARY-001, rather than fabricated acceptance results.
+
+**Clause totals:** 75 — 7 done / 12 partial / 56 missing.
