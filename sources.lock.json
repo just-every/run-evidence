@@ -2413,18 +2413,6 @@
       "sha256": "0d9c9d733f9b5c125b5bb38d6575fe3a8d18ca949d706eb431dd5a4d611878e7",
       "executable": false
     },
-    "evidence/gr-evidence-contract-1/CLAUSES.md": {
-      "sha256": "28f0b7977e7ddf69e0876f95fe363cd7455f0315bc9e7380d24e9d469dc86ff5",
-      "executable": false
-    },
-    "evidence/gr-evidence-contract-1/MIGRATION-PROOF.md": {
-      "sha256": "83952e33f37f17de59f97d17ebcebb0549cc7a4bbbe26b4273d924b876af7849",
-      "executable": false
-    },
-    "evidence/gr-evidence-contract-1/PAGES-1440-390.md": {
-      "sha256": "235fb10826974a4acbf53ff35f35cf6c0dd4d136b53207f9a4b8e62bc2295f69",
-      "executable": false
-    },
     "LICENSE": {
       "sha256": "2f5076ef027045b9e0e72df8aa61ca8551e54b1877d531656d6e7985b2c32324",
       "executable": false
