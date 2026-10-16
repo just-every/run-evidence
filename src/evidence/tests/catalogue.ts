@@ -1,6 +1,7 @@
 import type { Criterion } from './criteria'
 import { awsCatalogue } from '../cloud/catalogue'
 import { identityCatalogue } from '../identity/catalogue'
+import { attestationTest, policyTests } from '../policy/templates'
 // The published LIBRARY-001 test catalogue for connectors Evidence ships. Each
 // entry names criteria, the evaluated resource type, mapped library controls,
 // cadence and remediation per provider. Classes the provider cannot expose are
@@ -8,7 +9,7 @@ import { identityCatalogue } from '../identity/catalogue'
 export interface Remediation { console: string; api: string; terraform?: string; noTerraform?: string }
 export interface CatalogueEntry {
  id: string; name: string; providers: string[]; resourceType: string; evidenceClass: string
- criteria?: Criterion[]; cadence: 'hourly' | 'daily'; category: 'code' | 'identity' | 'vulnerability' | 'cloud'; severity: 'critical' | 'high' | 'medium' | 'low'
+ criteria?: Criterion[]; cadence: 'hourly' | 'daily'; category: 'code' | 'identity' | 'vulnerability' | 'cloud' | 'policy' | 'personnel'; severity: 'critical' | 'high' | 'medium' | 'low'
  controls: string[]; configuration: boolean; remediation: Record<string, Remediation>
  unsupported?: boolean; manualRequirement?: string
 }
@@ -71,5 +72,7 @@ export const catalogue: CatalogueEntry[] = [
   } } },
  ...awsCatalogue,
  ...identityCatalogue,
+ ...policyTests,
+ attestationTest,
 ]
 export const catalogueEntry = (id: string) => catalogue.find(e => e.id === id)

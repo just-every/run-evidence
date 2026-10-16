@@ -15,6 +15,8 @@ import { workHandler } from './evidence/work/http'
 import { hookHandler } from './evidence/work/hooks'
 import { followupHandler } from './evidence/followup/http'
 import { identityHandler } from './evidence/identity/http'
+import { attestHandler } from './evidence/attest/http'
+import { memberHandler } from './evidence/me/http'
 import { lobbyResponse } from './base/lobby'
 import { setupStateResponse } from './base/setup-state'
 import { identity } from './identity'
@@ -25,9 +27,10 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
  const evidence = evidenceHandler(clock)
  const review = reviewHandler(clock)
  const archive = archiveHandler(clock)
- const program = [programHandler(clock), testHandler(clock), remedyHandler(clock), connectHandler(clock), riskHandler(clock), policyHandler(clock), workHandler(clock), followupHandler(clock), identityHandler(clock)]
+ const program = [programHandler(clock), testHandler(clock), remedyHandler(clock), connectHandler(clock), riskHandler(clock), policyHandler(clock), workHandler(clock), followupHandler(clock), identityHandler(clock), attestHandler(clock)]
  const api = apiHandler(clock)
  const hooks = hookHandler(clock)
+ const member = memberHandler(clock)
  return async (request: Request, env: Bindings) => {
   const path = new URL(request.url).pathname
   // The public API takes Bearer tokens only, outside every owner door.
@@ -51,6 +54,8 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
   const custody = await archive(request,env)
   if (custody) return custody
   for (const handler of program) { const handled = await handler(request,env); if (handled) return handled }
+  const mine = await member(request,env)
+  if (mine) return mine
   const response = await evidence(request,env)
   if (response) return response
   return null

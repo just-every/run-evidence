@@ -2,7 +2,7 @@ import { day } from '../model'
 import { desk } from '../storage'
 import { done, json, ownerRoutes, readInput, uuid, type Route } from '../door'
 import { latestResults } from '../tests/storage'
-import { addPerson, people } from './people'
+import { addPerson, people, type Person } from './people'
 import { applicability, createProgram, decideApplicability, decideEdition, programHistory, programs, proposeEdition, recordReview, requireProgram, updateProgram } from './storage'
 import { readiness } from './readiness'
 import { addMapping, assignOwner, changeScope, controlMappings, ownership, periodReport, removeMapping, requireControl, scopeAt } from './control'
@@ -73,7 +73,7 @@ export function programHandler(clock: () => Date) {
    const control = await requireControl(c.env, m[1]), report = await periodReport(c.env, m[1], c.url.searchParams.get('from') ?? '', c.url.searchParams.get('to') ?? '')
    return c.isApi ? json(report) : reportPage(control.name, report, c.actor.name)
   } },
-  { method: 'GET', pattern: both('/people'), run: async c => c.isApi ? json({ people: await people(c.env) }) : peoplePage(await people(c.env), c.actor.name) },
+  { method: 'GET', pattern: both('/people'), run: async c => { const rows = (await c.env.DB.prepare('SELECT p.id,p.name,p.email,p.kind,p.created_at,d.departed_at,d.access_outcome FROM people p LEFT JOIN people_departures d ON d.person_id=p.id ORDER BY p.name,p.id').all<Person & { departed_at: string | null; access_outcome: string | null }>()).results; return c.isApi ? json({ people: rows }) : peoplePage(rows, c.actor.name) } },
   { method: 'POST', pattern: both('/people'), run: async c => done(c, '/app/people', await addPerson(c.env, c.actor, await readInput(c.request), c.now), 201) },
   { method: 'POST', pattern: both(`/requirements/${id}/schedule`), run: async (c, m) => { await scheduleRequirement(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/requirements/' + m[1], { scheduled: true }) } },
   { method: 'POST', pattern: both(`/requirements/${id}/renewal-date`), run: async (c, m) => { await overrideRenewal(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/requirements/' + m[1], { overridden: true }) } },

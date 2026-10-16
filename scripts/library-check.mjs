@@ -5,8 +5,8 @@
 import { createRequire } from 'node:module'
 const require = createRequire(import.meta.url)
 const { build } = createRequire(require.resolve('wrangler/package.json'))('esbuild')
-const bundled = await build({ stdin: { contents: "export * from './src/evidence/library/index.ts'; export { catalogue } from './src/evidence/tests/catalogue.ts'; export { riskLibrary } from './src/evidence/risk/library.ts'", resolveDir: process.cwd(), loader: 'ts' }, bundle: true, write: false, format: 'esm', platform: 'neutral' })
-const { frameworks, controlsFor, libraryControls, catalogue, riskLibrary } = await import('data:text/javascript;base64,' + Buffer.from(bundled.outputFiles[0].text).toString('base64'))
+const bundled = await build({ stdin: { contents: "export * from './src/evidence/library/index.ts'; export { catalogue } from './src/evidence/tests/catalogue.ts'; export { riskLibrary } from './src/evidence/risk/library.ts'; export { templates } from './src/evidence/policy/templates.ts'", resolveDir: process.cwd(), loader: 'ts' }, bundle: true, write: false, format: 'esm', platform: 'neutral' })
+const { frameworks, controlsFor, libraryControls, catalogue, riskLibrary, templates } = await import('data:text/javascript;base64,' + Buffer.from(bundled.outputFiles[0].text).toString('base64'))
 const failures = []
 let requirements = 0
 for (const framework of Object.values(frameworks)) for (const edition of framework.editions) for (const requirement of edition.requirements) {
@@ -33,7 +33,10 @@ for (const connector of new Set(catalogue.flatMap(entry => entry.providers))) {
  const classes = catalogue.filter(entry => entry.providers.includes(connector))
  for (const entry of classes) if (entry.unsupported && !entry.manualRequirement) failures.push(`${entry.id} is unsupported without a replacement evidence requirement`)
 }
+// POLICY-001: every policy a library control calls for ships as a template, and each template is linked to a control.
+for (const title of new Set(libraryControls.flatMap(c => c.policies))) if (!templates.some(t => t.title.toLowerCase() === title.toLowerCase())) failures.push(`policy "${title}" is called for but ships no template`)
+for (const t of templates) if (!libraryControls.some(c => c.policies.includes(t.title))) failures.push(`template ${t.id} is linked to no control`)
 if (riskLibrary.length < 100) failures.push(`risk library has ${riskLibrary.length} scenarios; at least 100 ship`)
 for (const scenario of riskLibrary) for (const control of scenario.controls) if (!ids.has(control)) failures.push(`risk ${scenario.id} suggests unknown control ${control}`)
 if (failures.length) { console.error(failures.join('\n')); process.exit(1) }
-console.log(`Library check: ${requirements} requirements across ${Object.keys(frameworks).length} frameworks map to ${libraryControls.length} controls; ${catalogue.length} catalogue tests; ${riskLibrary.length} risk scenarios.`)
+console.log(`Library check: ${requirements} requirements across ${Object.keys(frameworks).length} frameworks map to ${libraryControls.length} controls; ${catalogue.length} catalogue tests; ${templates.length} policy templates; ${riskLibrary.length} risk scenarios.`)

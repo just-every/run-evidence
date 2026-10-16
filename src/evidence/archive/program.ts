@@ -48,7 +48,7 @@ export const programColumns = {
  risk_links:['risk_id','kind','target','added_at'],
  risk_treatments:['id','risk_id','title','owner_person_id','due_date','verification_test_id','status','evidence','updated_at'],
  risk_acceptances:['id','risk_id','assessment_id','rationale','approver_name','approved_by','approved_at','expires_at','escalated_at'],
- policies:['id','title','owner_person_id','created_at','updated_at'],
+ policies:['id','title','owner_person_id','created_at','updated_at','template_id'],
  policy_revisions:['id','policy_id','version','body','body_sha256','status','drafted_by','drafted_at','decided_by','decided_at','decision_note','approved_sha256','published_at','effective_date','review_due'],
  tracker_destinations:['id','provider','label','api_base','account','project','project_name','mapping_json','hook_audience','status','created_by','created_name','created_at','rotated_at','revoked_at','last_success_at','last_error'],
  tickets:['id','obligation_id','destination_id','remote_id','remote_key','remote_url','created_at','created_name','sync_state','sync_error','remote_status','remote_closed','remote_assignee','remote_due','synced_due','last_synced_at','last_attempt_at'],
@@ -61,13 +61,17 @@ export const programColumns = {
  notify_preferences:['person_id','via','all_clear','updated_by','updated_at'],
  followup_pauses:['id','subject_id','reason','paused_by','paused_at','resumed_by','resumed_at'],
  identity_matches:['resource_id','person_id','state','basis','proposed_at','decided_by','decided_at','reason'],
+ policy_assignments:['id','policy_id','revision_id','person_id','assigned_by','assigned_at','due_date','state','closed_at'],
+ policy_acknowledgments:['id','assignment_id','person_id','operator_id','operator_email','revision_id','version','body_sha256','acknowledged_at'],
+ policy_exceptions:['id','policy_id','person_id','reason','approved_by','approved_at','expires_at'],
+ people_departures:['person_id','departed_at','recorded_by','reason','access_outcome'],
 } as const
 export type ProgramTable = keyof typeof programColumns
 export const programTables = Object.keys(programColumns) as ProgramTable[]
 // Tables first carried by archive version 4; a version 3 archive lists none of them.
-const addedInVersion4 = new Set<ProgramTable>(['tracker_destinations', 'tickets', 'ticket_events', 'ticket_comments', 'tracker_deliveries', 'readiness_snapshots', 'followup_settings', 'followup_channels', 'notify_preferences', 'followup_pauses', 'identity_matches'])
+const addedInVersion4 = new Set<ProgramTable>(['tracker_destinations', 'tickets', 'ticket_events', 'ticket_comments', 'tracker_deliveries', 'readiness_snapshots', 'followup_settings', 'followup_channels', 'notify_preferences', 'followup_pauses', 'identity_matches', 'policy_assignments', 'policy_acknowledgments', 'policy_exceptions', 'people_departures'])
 // Columns first carried by version 4 in tables that version 3 already listed, with the value older rows restore with.
-const addedColumns: Partial<Record<ProgramTable, Record<string, string>>> = { followups: { channel: 'email' }, connections: { config_json: '{}' } }
+const addedColumns: Partial<Record<ProgramTable, Record<string, string | null>>> = { followups: { channel: 'email' }, connections: { config_json: '{}' }, policies: { template_id: null } }
 const columnsOf = (table: ProgramTable, version: number) => programColumns[table].filter(c => version >= 4 || !Object.hasOwn(addedColumns[table] ?? {}, c))
 const tablesOf = (version: number) => programTables.filter(t => version >= 4 || !addedInVersion4.has(t))
 export interface ProgramArchive { rows: Record<ProgramTable, Row[]> }

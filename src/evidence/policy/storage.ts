@@ -7,7 +7,7 @@ import { libraryControls } from '../library'
 // deadline. Publishing needs the approved revision's exact text fingerprint.
 export const templateTitles = [...new Set(libraryControls.flatMap(c => c.policies))].sort()
 const digest = async (value: string) => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))), b => b.toString(16).padStart(2, '0')).join('')
-export interface PolicyRow { id: string; title: string; owner_person_id: string | null; created_at: string; updated_at: string }
+export interface PolicyRow { id: string; title: string; owner_person_id: string | null; created_at: string; updated_at: string; template_id: string | null }
 export interface RevisionRow { id: string; policy_id: string; version: number; body: string; body_sha256: string; status: string; drafted_by: string; drafted_at: string; decided_by: string | null; decided_at: string | null; decision_note: string | null; approved_sha256: string | null; published_at: string | null; effective_date: string | null; review_due: string | null }
 export async function draftPolicy(env: Bindings, actor: Actor, input: Input, now: Date) {
  const title = text(input, 'title', 200), body = text(input, 'body', 200000), at = now.toISOString()
