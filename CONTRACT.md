@@ -6,6 +6,14 @@ This is the product to build toward, not a description of today’s release. The
 
 `done` means the entire named clause has implementing code and cited public-door tests at the status baseline. `partial` means only the explicitly stated subset exists or acceptance is incomplete. `missing` means the target behavior has no implementing product path. Future acceptance journeys below are requirements, not claims that planned screens/routes exist. Current `seed.json` metadata and README first-release descriptions have not been changed in this documents-only round and do not narrow this target.
 
+## Product target
+
+| | |
+| --- | --- |
+| Category | Security compliance automation and customer trust (SOC 2, ISO 27001, HIPAA, PCI DSS) |
+| Incumbents a buyer switches from | Vanta, Drata, Secureframe, Comp AI, Sprinto, Delve |
+| First buyer | A US security or operations lead at a 20–250 person business preparing for SOC 2, ISO 27001, HIPAA or PCI DSS readiness, or moving its program off Vanta, Drata or Secureframe; one installation for the business, costs in USD |
+
 ## Target clauses
 
 ### Program and readiness
@@ -487,11 +495,11 @@ The cutover boundary is shown explicitly in each report, in population exports (
 
 **Acceptance evidence:** Build the run site, follow the homepage Run/docs links without JavaScript, and inspect installed Lobby before and after setup. Existing browser journeys inspect the approved owner/reviewer flows at 1440 and 390. `tests/site.mjs`, `tests/evidence.mjs`, `tests/browser.mjs` and `tests/review-browser.mjs` are the existing checks.
 
-### Push further: agents accountable to the compliance job
-
 **AGENT-001 — Prepare-only proposals with exact human approval.** Expiring/revocable prepare-only agent credentials read the permitted desk and prepare an evidence-folder proposal. Only an authenticated owner session approves the exact current proposal snapshot; changed or stale snapshots require a new decision. Immutable decisions survive restart and archive transfer without reviving agent authority. Preparation does not grant sharing or source-write power. See `docs/AGENT-COMMANDS.md`.
 
 **Acceptance evidence:** Issue a prepare token, inspect gaps and propose a folder through agent commands/API. Attempt direct sharing, owner-only mutation, approval with an agent token and stale-snapshot approval; refuse each. Have the owner approve the current snapshot, revisit its immutable decision and revoke the token. `tests/agent.mjs` exercises these doors.
+
+### Push further: agents accountable to the compliance job
 
 **AGENT-002 — Prove operation across the audit period.** An agent correlates cloud configuration changes, identity/security events, deployment history and control revisions across a selected audit period. It flags controls that pass now but failed earlier, missing windows, contradictory sources and unobserved assets, and proposes attributable findings rather than a fabricated pass. Compliance owners approve control meaning and exceptions; the auditor decides evidence sufficiency. Original observations, source times and periods remain inspectable.
 
@@ -587,86 +595,90 @@ The archive CLI is separate from Base's generic export/import. It provides a str
 Current practical limits: metadata is at most 8 MiB and 20,000 total rows; each exhibit is at most 10 MiB, matching the r1 upload limit. HTTP restore uses private local staging capped at 64 MiB total exhibit bytes. The local CLI uses disk staging and the same entry/metadata validators but has no aggregate archive-size cap. These limits are not a promise of unlimited archive size.
 
 
-## Implementation status
+## Status
 
-Baseline: `74d8dbbfd719403a4fd610518df257ee6e3851fb` (current `main` at authoring), matching the 16 October inventory code audit. No source changed since that audit. The round 1 buyer review added eleven clauses (PROGRAM-003, PROGRAM-004, LIBRARY-001, API-001, DEVICE-002, POPULATION-001, REMEDY-002, VENDOR-003, AUDIT-002, TRUST-002, ANSWER-002), all missing: no implementing path exists for any of them at the baseline. The round 2 buyer review added eight more (CADENCE-001, CLOUD-002, APPS-001, VULN-002, RISK-002, ANSWER-003, TRUST-003, MIGRATE-002), also all missing, and widened the named sources of CODE-001, DEVICE-001, VULN-001, VENDOR-002, AI-001 and PROGRAM-004, all already missing. GAP-001 stays done: its four calendar periods are unchanged, and the new periods belong to CADENCE-001. The round 3 buyer review added four more (WORK-002, AUDIT-003, TRUST-004, AGENT-007), all missing, retitled and widened WORK-001 to thirteen destinations, and widened REMEDY-001, REMEDY-002, FOLLOWUP-001 and DEVICE-002, all already missing; AUDIT-001 and TRUST-001 stay partial on the same implemented subsets, with only cross-references added. MIGRATE-001 stays partial on the same Drata subset; its sharpened per-class reconciliation is unbuilt. The round 4 buyer review added two more (ISSUES-001, MONITOR-001), both missing, added per-provider remediation steps to LIBRARY-001 and cross-references to VULN-001, WORK-001, REMEDY-001, REMEDY-002, AUDIT-002 and BOUNDARY-001; the clauses that were missing stay missing. CONTROL-001 stays partial on the same owner-written subset; its CSV/XLSX framework import is unbuilt. Inventory’s one done row (recorded period coverage) is retained in GAP-001; eight partial rows are reflected in CONTROL-001, READINESS-001, AUDIT-001, TRUST-001 and the existing custody/agent clauses. Splitting or combining requirements changes clause counts, not the audit’s capability findings. Source inspection and existing tests establish status; this table does not assert every test was rerun in this document round. A build round must execute each applicable acceptance journey before promoting status. `—` means no implementing path, never evidence of completion.
+Judged from the code and tests at commit `0b495fb9adc1bd062adb0356423d47dbf922a1e1` (17 October 2026).
 
-| Clause | Status | Evidence path and remaining gap |
-| --- | --- | --- |
-| PROGRAM-001 | missing | — |
-| PROGRAM-003 | missing | — |
-| PROGRAM-004 | missing | — |
-| LIBRARY-001 | missing | — |
-| PROGRAM-002 | missing | — |
-| CONTROL-001 | partial | `src/evidence/storage.ts`; `src/evidence/http.ts`; `tests/evidence.mjs` — Owner-written control, one proof requirement and cadence are implemented; revisions, multiple requirements per control through the UI, framework mappings and the CSV/XLSX framework import are not. |
-| READINESS-001 | partial | `src/evidence/storage.ts`; `src/evidence/model.ts`; `src/evidence/view.ts`; `tests/evidence.mjs` — The desk organizes controls, receipts and period gaps; framework readiness, effectiveness trends and executive reporting are missing. |
-| PROOF-001 | done | `src/evidence/upload.ts`; `src/evidence/storage.ts`; `src/evidence/http.ts`; `tests/evidence.mjs` |
-| GAP-001 | done | `src/evidence/model.ts`; `src/evidence/storage.ts`; `tests/evidence.mjs` |
-| CADENCE-001 | missing | — |
-| COLLECTION-001 | missing | — |
-| CONNECT-001 | missing | — |
-| API-001 | missing | — |
-| CLOUD-001 | missing | — |
-| CLOUD-002 | missing | — |
-| CODE-001 | missing | — |
-| IDENTITY-001 | missing | — |
-| APPS-001 | missing | — |
-| MONITOR-001 | missing | — |
-| HRIS-001 | missing | — |
-| DEVICE-001 | missing | — |
-| DEVICE-002 | missing | — |
-| VULN-001 | missing | — |
-| VULN-002 | missing | — |
-| ISSUES-001 | missing | — |
-| INVENTORY-001 | missing | — |
-| POPULATION-001 | missing | — |
-| TEST-001 | missing | — |
-| REMEDY-001 | missing | — |
-| REMEDY-002 | missing | — |
-| WORK-001 | missing | — |
-| WORK-002 | missing | — |
-| FOLLOWUP-001 | missing | — |
-| RISK-001 | missing | — |
-| RISK-002 | missing | — |
-| VENDOR-001 | missing | — |
-| VENDOR-003 | missing | — |
-| VENDOR-002 | missing | — |
-| POLICY-001 | missing | — |
-| ATTEST-001 | missing | — |
-| TRAIN-001 | missing | — |
-| LIFECYCLE-001 | missing | — |
-| ACCESS-001 | missing | — |
-| REVIEW-001 | done | `src/evidence/review/http.ts`; `src/evidence/review/storage.ts`; `tests/review.mjs`; `tests/review-browser.mjs` |
-| AUDIT-001 | partial | `src/evidence/review/http.ts`; `src/evidence/review/storage.ts`; `tests/review.mjs` — Expiring scoped read-only folders and access history exist; authenticated auditor collaboration, requests, comments and findings are missing. |
-| AUDIT-002 | missing | — |
-| AUDIT-003 | missing | — |
-| TRUST-001 | partial | `src/evidence/review/http.ts`; `tests/review.mjs` — Scoped expiring reviewer downloads are implemented; trust publication, customer access requests, NDA integrations and domains are missing. |
-| TRUST-002 | missing | — |
-| TRUST-003 | missing | — |
-| TRUST-004 | missing | — |
-| ANSWER-001 | missing | — |
-| ANSWER-002 | missing | — |
-| ANSWER-003 | missing | — |
-| IMPORT-001 | done | `src/evidence/import/http.ts`; `src/evidence/import/plan.ts`; `tests/import.mjs`; `docs/DRATA-IMPORT.md` |
-| MIGRATE-001 | partial | `src/evidence/import/plan.ts`; `src/evidence/import/http.ts`; `tests/import.mjs` — Only the documented Drata archive shape is implemented and exercised with synthetic fixtures; Vanta, Secureframe, broader objects and live migration validation are missing. |
-| MIGRATE-002 | missing | — |
-| CUSTODY-001 | done | `src/evidence/archive/http.ts`; `src/evidence/archive/restore.ts`; `tests/archive.mjs`; `scripts/archive.mjs` |
-| PORTABLE-001 | partial | `src/evidence/archive/inventory.ts`; `src/evidence/archive/restore.ts`; `src/evidence/import/archive-schema.ts`; `tests/archive.mjs` — Existing custody transfer is complete for its implemented domain; target program records, whole-product erasure fences and a permanent product action audit are not implemented. |
-| AUTH-001 | partial | `src/auth.server.ts`; `src/evidence/http.ts`; `tests/evidence.mjs`; `tests/email-link.mjs`; `tests/agent.mjs` — Native owner sessions, same-origin guards and scoped prepare-only agents exist; organizational roles, SSO, SCIM and delegated approvals are missing. |
-| SECURE-001 | partial | `src/evidence/upload.ts`; `src/evidence/storage.ts`; `src/evidence/review/http.ts`; `tests/evidence.mjs`; `tests/review.mjs` — Owner access, verified attachment responses and narrowly scoped reviewer projections exist; target record permissions, complete flow declarations and new provider/key custody do not. |
-| ERASE-001 | missing | — |
-| LOG-001 | partial | `src/evidence/review/storage.ts`; `src/evidence/agent/storage.ts`; `tests/review.mjs`; `tests/agent.mjs`; `tests/import.mjs` — Reviewer access events, agent decisions and import custody history exist; a unified product action audit and erasure anonymization do not. |
-| OPS-001 | partial | `SEED-COMMAND-CONTRACT.md`; `src/auth.server.ts`; `tests/evidence.mjs`; `tests/archive.mjs`; `tests/email-link.mjs` — Current CLI/auth/custody journeys are exercised; target collectors, durable scheduled obligations, all-operation outcomes and provider cost disclosure are missing. |
-| MOBILE-001 | partial | `tests/browser.mjs`; `tests/review-browser.mjs`; `src/evidence/view.ts`; `public/desk.css`; `public/review.css` — Existing owner/reviewer custody flows have 1440/390 browser journeys; new program/employee workflows, mobile camera validation and independent accessibility conformance are unproven. |
-| PUBLIC-001 | done | `src/auth.server.ts`; `tests/site.mjs`; `tests/evidence.mjs`; `tests/browser.mjs`; `tests/review-browser.mjs` |
-| AGENT-001 | done | `src/evidence/agent/http.ts`; `src/evidence/agent/storage.ts`; `tests/agent.mjs`; `docs/AGENT-COMMANDS.md` |
-| AGENT-002 | missing | — |
-| AGENT-003 | missing | — |
-| AGENT-004 | missing | — |
-| AGENT-005 | missing | — |
-| AGENT-006 | missing | — |
-| AGENT-007 | missing | — |
-| AI-001 | missing | — |
-| BOUNDARY-001 | partial | `src/evidence/model.ts`; `src/evidence/review/http.ts`; `tests/evidence.mjs`; `tests/review.mjs` — The current desk distinguishes assertion/custody from control operation and shares reviewer evidence; target program applicability, specialist handoffs, agreements and cost disclosures are unbuilt. |
+| Clauses | Done | Partial | Missing | Total |
+| --- | ---: | ---: | ---: | ---: |
+| Published | 6 | 1 | 1 | 8 |
+| Target and push further | 15 | 22 | 30 | 67 |
+| All | 21 | 23 | 31 | 75 |
 
-**Clause totals:** 75 — 7 done / 12 partial / 56 missing.
+| Clause | Title | Kind | Status | Evidence | Gap |
+| --- | --- | --- | --- | --- | --- |
+| `PROGRAM-001` | Framework programs and applicability | target | done | `tests/program.mjs` |  |
+| `PROGRAM-003` | Framework-required program documents | target | missing |  | No implementing path: system description, SoA, HIPAA risk analysis, SAQ worksheets |
+| `PROGRAM-004` | Extended and regulated programs | target | missing |  | No implementing path |
+| `LIBRARY-001` | Shipped control library, test catalogue and cadence | target | partial | `scripts/library-check.mjs`; `src/evidence/cloud/`; `src/evidence/identity/`; `src/evidence/policy/`; `tests/cloud.mjs`; `tests/clouds.mjs`; `tests/identity.mjs`; `tests/policy.mjs` | Missing: hosting (CLOUD-002), app-account (APPS-001), vulnerability, security-issue, monitoring, HRIS and device catalogues; library revisions as reviewable updates |
+| `PROGRAM-002` | Reusable mappings and accountable ownership | target | done | `src/evidence/program/control.ts`; `src/evidence/program/storage.ts`; `tests/program.mjs` |  |
+| `CONTROL-001` | Custom controls and testing intent | target | partial | `src/evidence/storage.ts`; `src/evidence/http.ts`; `tests/evidence.mjs` | Owner-written control, one proof requirement and cadence are implemented; revisions, multiple requirements per control through the UI, framework mappings and the CSV/XLSX framework import are not. |
+| `READINESS-001` | Readiness, trend and executive reports | target | partial | `src/evidence/program/board.ts`; `src/evidence/program/board-view.ts`; `src/evidence/program/readiness.ts`; `tests/report.mjs`; `tests/policy.mjs` | Missing: auditor decisions (AUDIT-003), filter by product |
+| `PROOF-001` | Immutable exhibits and attributable receipts | published | done | `src/evidence/upload.ts`; `src/evidence/storage.ts`; `src/evidence/http.ts`; `tests/evidence.mjs` |  |
+| `GAP-001` | Honest period-specific proof coverage | published | done | `src/evidence/model.ts`; `src/evidence/storage.ts`; `tests/evidence.mjs` |  |
+| `CADENCE-001` | Annual, semi-annual and anchored evidence renewal | target | done | `src/evidence/reviews/`; `tests/cadence.mjs`; `tests/training.mjs`; `tests/access.mjs` |  |
+| `COLLECTION-001` | Scheduled source collection with visible failures | published | partial | `src/evidence/connect/runs.ts` | Missing: source events/webhooks for collectors, cursors, audit-period stamping, schema-drift detection. Live acceptance needs an account |
+| `CONNECT-001` | Least-privilege integration custody and custom collectors | target | partial | `src/evidence/connect/custody.ts`; `src/evidence/connect/http.ts`; `tests/github.mjs`; `tests/cloud.mjs` | Missing: installable private-network collector |
+| `API-001` | Public REST API for pushed resources, custom tests and program state | target | done | `tests/api.mjs` |  |
+| `CLOUD-001` | AWS, Google Cloud and Microsoft Azure | target | done | `src/evidence/cloud/`; `tests/cloud.mjs`; `tests/clouds.mjs` | Live acceptance needs an account: AWS organization, GCP organization, Azure tenant sandboxes for live acceptance |
+| `CLOUD-002` | Heroku, Vercel, DigitalOcean, Cloudflare, Netlify, Supabase, MongoDB Atlas and Snowflake | target | missing |  | No implementing path |
+| `CODE-001` | GitHub, GitLab, Bitbucket Cloud and Azure DevOps change assurance | target | partial | `src/evidence/connect/github.ts`; `tests/github.mjs` | Remaining scope is not itemised in gr round 2 CLAUSES.md (unchanged since round 1). Live acceptance needs an account |
+| `IDENTITY-001` | Google Workspace, Microsoft 365, Entra ID, Okta and JumpCloud | target | done | `src/evidence/identity/`; `tests/identity.mjs`; `tests/access.mjs` | Live acceptance needs an account: tenants for each directory |
+| `APPS-001` | App-level account connectors for access reviews and leaver checks | target | missing |  | No implementing path |
+| `MONITOR-001` | Monitoring and alerting evidence from observability tools | target | missing |  | No implementing path |
+| `HRIS-001` | BambooHR, Gusto, Rippling, Justworks, Deel HR and ADP Workforce Now personnel sources | target | missing |  | No implementing path: a labelled CSV roster route exists under POPULATION-001 |
+| `DEVICE-001` | MDM and EDR posture: Jamf, Intune, Kandji, JumpCloud, Addigy, NinjaOne, CrowdStrike, SentinelOne and Defender for Endpoint | target | missing |  | No implementing path |
+| `DEVICE-002` | Owned read-only device monitor for computers without MDM | target | missing |  | No implementing path |
+| `VULN-001` | Vulnerability findings from scanners, code and cloud-native sources | target | missing |  | No implementing path |
+| `VULN-002` | Penetration-test findings with retest-verified closure | target | missing |  | No implementing path |
+| `ISSUES-001` | Security issues and incidents from the team's own trackers | target | missing |  | No implementing path |
+| `INVENTORY-001` | Unified assets, people and ownership | target | partial | `src/evidence/population/http.ts`; `tests/population.mjs` | Missing: cloud, hosting and code resources in one view, criticality, scope and lifecycle fields, reviewable dedupe/exclusion, scope export |
+| `POPULATION-001` | Labelled CSV populations for unsupported systems | target | partial | `src/evidence/population/`; `tests/population.mjs`; `tests/access.mjs` | Missing: lifecycle checklists (LIFECYCLE-001); population files are not yet carried in the custody archive (restored uploads report their bytes unavailable) |
+| `TEST-001` | Continuous control tests and exception discipline | target | done | `src/evidence/tests/engine.ts`; `src/evidence/tests/catalogue.ts`; `src/evidence/tests/http.ts`; `tests/api.mjs` |  |
+| `REMEDY-001` | Failed test to verified remediation | target | done | `tests/work.mjs` |  |
+| `REMEDY-002` | Remediation SLAs and automatic re-test | target | partial | `tests/report.mjs`; `tests/work.mjs` | Missing: security-issue clocks from ISSUES-001 and vulnerability findings from VULN-001. Live acceptance needs an account |
+| `WORK-001` | Two-way remediation tickets in Vector and twelve external trackers | target | partial | `src/evidence/work/`; `tests/work.mjs` | Missing: GitLab Issues, Azure Boards, Shortcut, ClickUp, monday.com, Basecamp, Freshservice, YouTrack; Asana webhooks. Live acceptance needs an account: sandboxes for each tracker |
+| `WORK-002` | Per-test or per-item tickets, with tracker status on tests | target | done | `src/evidence/work/granularity.ts`; `tests/work.mjs` | Live acceptance needs an account |
+| `FOLLOWUP-001` | Email, Slack and Microsoft Teams follow-up | target | done | `src/evidence/followup/`; `tests/followup.mjs`; `tests/policy.mjs`; `tests/cadence.mjs`; `tests/training.mjs`; `tests/access.mjs` | Live acceptance needs an account: Slack and Teams workspaces, production mail key |
+| `RISK-001` | Risk register and treatment lifecycle | target | done | `src/evidence/risk/storage.ts`; `src/evidence/risk/http.ts`; `tests/risk.mjs` |  |
+| `RISK-002` | Shipped risk library, register import and configurable scoring | target | partial | `src/evidence/risk/library.ts`; `src/evidence/risk/import.ts`; `tests/risk.mjs` | Remaining scope is not itemised in gr round 2 CLAUSES.md (unchanged since round 1) |
+| `VENDOR-001` | Vendor inventory and security diligence | target | partial | `src/evidence/risk/storage.ts`; `src/evidence/reviews/schedule.ts`; `tests/risk.mjs`; `tests/cadence.mjs` | Missing: diligence, questionnaires, supplier links, contracts/BAAs |
+| `VENDOR-003` | Vendor document review with cited findings | target | missing |  | No implementing path |
+| `VENDOR-002` | Vendor discovery and risk-based follow-through | target | missing |  | No implementing path |
+| `POLICY-001` | Policy library, approval and version control | target | done | `src/evidence/policy/`; `src/evidence/attest/`; `tests/policy.mjs`; `tests/cadence.mjs` |  |
+| `ATTEST-001` | Employee policy attestations | target | done | `src/evidence/attest/`; `src/evidence/me/http.ts`; `tests/policy.mjs` |  |
+| `TRAIN-001` | Shipped security training and KnowBe4 evidence | target | done | `src/evidence/training/`; `tests/training.mjs` | Live acceptance needs an account: KnowBe4 sandbox |
+| `LIFECYCLE-001` | Joiner, mover and leaver compliance | target | missing |  | No implementing path: departures end sign-in and close attestations; checklists, HRIS events and background checks not built |
+| `ACCESS-001` | Quarterly access-review campaigns | target | partial | `src/evidence/access/`; `tests/access.mjs` | Missing: app-level account connectors (APPS-001) and attached-exhibit revocation evidence |
+| `REVIEW-001` | Selected expiring evidence folders | published | done | `src/evidence/review/http.ts`; `src/evidence/review/storage.ts`; `tests/review.mjs`; `tests/review-browser.mjs` |  |
+| `AUDIT-001` | Period-specific auditor workspace and request lists | target | partial | `src/evidence/review/http.ts`; `src/evidence/review/storage.ts`; `tests/review.mjs` | Expiring scoped read-only folders and access history exist; authenticated auditor collaboration, requests, comments and findings are missing. |
+| `AUDIT-002` | Type II populations, sampling and non-occurrence | target | missing |  | No implementing path |
+| `AUDIT-003` | Auditor review of continuous test evidence for the period | target | missing |  | No implementing path |
+| `TRUST-001` | Published and permissioned trust center | target | partial | `src/evidence/review/http.ts`; `tests/review.mjs` | Scoped expiring reviewer downloads are implemented; trust publication, customer access requests, NDA integrations and domains are missing. |
+| `TRUST-002` | CRM-driven access, click-through NDA and live control status | target | missing |  | No implementing path |
+| `TRUST-003` | Trust-center updates, subscribers and subprocessor-change notices | target | missing |  | No implementing path |
+| `TRUST-004` | Cited visitor Q&A on the trust center | target | missing |  | No implementing path |
+| `ANSWER-001` | Cited security-questionnaire completion | published | missing |  | No implementing path |
+| `ANSWER-002` | Portal and web-form questionnaire capture and fill-back | target | missing |  | No implementing path |
+| `ANSWER-003` | Questionnaire collaboration, PDF capture and answer-library import | target | missing |  | No implementing path |
+| `IMPORT-001` | Reviewed Drata archive admission and undo | published | done | `src/evidence/import/http.ts`; `src/evidence/import/plan.ts`; `tests/import.mjs`; `docs/DRATA-IMPORT.md` |  |
+| `MIGRATE-001` | Switch from Vanta, Drata and Secureframe | target | partial | `src/evidence/import/plan.ts`; `src/evidence/import/http.ts`; `tests/import.mjs` | Only the documented Drata archive shape is implemented and exercised with synthetic fixtures; Vanta, Secureframe, broader objects and live migration validation are missing. |
+| `MIGRATE-002` | Switching in the middle of an audit period | target | missing |  | No implementing path |
+| `CUSTODY-001` | Complete custody archive and empty-target restore | published | done | `tests/archive.mjs` |  |
+| `PORTABLE-001` | Full-program transfer and Base replacement obligations | target | partial | `src/evidence/archive/inventory.ts`; `src/evidence/archive/restore.ts`; `src/evidence/import/archive-schema.ts`; `tests/archive.mjs` | Missing: population original files in the archive, erasure fences, offline DR guide, archives past 20,000 rows |
+| `AUTH-001` | Roles, SSO and scoped authorization | target | partial | `src/auth.server.ts`; `src/evidence/http.ts`; `tests/evidence.mjs`; `tests/email-link.mjs`; `tests/agent.mjs` | Missing: administrator, compliance manager, control owner, risk approver and auditor roles; SSO; SCIM |
+| `SECURE-001` | Restricted evidence and declared external flows | target | partial | `src/evidence/upload.ts`; `src/evidence/storage.ts`; `src/evidence/review/http.ts`; `tests/evidence.mjs`; `tests/review.mjs` | Owner access, verified attachment responses and narrowly scoped reviewer projections exist; target record permissions, complete flow declarations and new provider/key custody do not. |
+| `ERASE-001` | Explicit erasure, holds and restore fencing | target | missing |  | No implementing path |
+| `LOG-001` | Permanent accountable action audit | target | partial | `src/evidence/review/storage.ts`; `src/evidence/agent/storage.ts`; `tests/review.mjs`; `tests/agent.mjs`; `tests/import.mjs` | Reviewer access events, agent decisions and import custody history exist; a unified product action audit and erasure anonymization do not. |
+| `OPS-001` | Durable operation, health and recovery | target | partial | `SEED-COMMAND-CONTRACT.md`; `src/auth.server.ts`; `tests/evidence.mjs`; `tests/archive.mjs`; `tests/email-link.mjs` | Current CLI/auth/custody journeys are exercised; target collectors, durable scheduled obligations, all-operation outcomes and provider cost disclosure are missing. |
+| `MOBILE-001` | Responsive and accessible complete workflows | target | partial | `tests/browser.mjs`; `tests/review-browser.mjs`; `src/evidence/view.ts`; `public/desk.css`; `public/review.css` | Existing owner/reviewer custody flows have 1440/390 browser journeys; new program/employee workflows, mobile camera validation and independent accessibility conformance are unproven. |
+| `PUBLIC-001` | Preserve the approved installation and run surfaces | target | done | `tests/site.mjs`; `tests/browser.mjs` |  |
+| `AGENT-001` | Prepare-only proposals with exact human approval | published | done | `src/evidence/agent/http.ts`; `src/evidence/agent/storage.ts`; `tests/agent.mjs`; `docs/AGENT-COMMANDS.md` |  |
+| `AGENT-002` | Prove operation across the audit period | push-further | missing |  | No implementing path |
+| `AGENT-003` | Investigate, fix narrowly and re-test the real system | push-further | missing |  | No implementing path |
+| `AGENT-004` | Maintain collectors without manufacturing evidence | push-further | missing |  | No implementing path |
+| `AGENT-005` | Keep customer promises current | push-further | missing |  | No implementing path |
+| `AGENT-006` | Tailor policies, risks and structured obligations | push-further | missing |  | No implementing path |
+| `AGENT-007` | Check uploaded and captured evidence before the auditor sees it | push-further | missing |  | No implementing path |
+| `AI-001` | AI inventory and governance | push-further | missing |  | No implementing path |
+| `BOUNDARY-001` | US-first scope and independent specialist services | target | partial | `src/evidence/model.ts`; `src/evidence/review/http.ts`; `tests/evidence.mjs`; `tests/review.mjs` | The current desk distinguishes assertion/custody from control operation and shares reviewer evidence; target program applicability, specialist handoffs, agreements and cost disclosures are unbuilt. |
