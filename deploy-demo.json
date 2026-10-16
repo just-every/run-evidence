@@ -6,6 +6,5 @@
     "MAIL_FROM": "Evidence <auth@northstarstudio.example>",
     "MAIL_PROVIDER": "development"
   },
-  "instanceType": "basic",
   "ownerEmail": "maya@northstarstudio.example"
 }

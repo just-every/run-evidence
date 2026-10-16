@@ -23,7 +23,7 @@ export async function backchannelLogout({db,config,request,clock=Date.now,fetch:
   const events=Object.keys(c.events);insist(events.length>0 && events.every(k=>[LOGOUT_EVENT,FENCE_EVENT].includes(k) && c.events[k] && typeof c.events[k]==='object' && !Array.isArray(c.events[k]) && Object.keys(c.events[k]).length===0));
   for(const key of ['sub','sid']) if(Object.hasOwn(c,key)) insist(typeof c[key]==='string' && c[key].length>0 && c[key].length<=255);
   insist(c.sub || c.sid);
-  const fence=new Set(events).has(FENCE_EVENT);
+  const fence=Object.hasOwn(c.events,FENCE_EVENT);
   if(native) {
    const consumed=await native.consumeLogout({claims:c,link,now:clock(),fence});
    insist(consumed,'logout_already_used',409);
