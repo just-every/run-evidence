@@ -363,7 +363,7 @@
         ],
         "origin": {
           "repository": "https://github.com/runeditrun/base.git",
-          "revision": "1ee378e41142c673a9098f60af21664c6d8477d1",
+          "revision": "d320c1436aaeb95d2485c1a0e69afa00ac8fb51a",
           "path": ".",
           "paths": [
             "edition-authoring/README.md",
@@ -2195,7 +2195,6 @@
           "rer-project.json",
           "rer-setup.json",
           "scripts/archive.mjs",
-          "scripts/demo-quiet.mjs",
           "scripts/evidence-agent.mjs",
           "scripts/evidence-archive/local.mjs",
           "scripts/generate-edition.mjs",
