@@ -1,7 +1,8 @@
 import type { Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
 import { auditStatement, type Actor } from '../door'
-import { sendFollowup } from '../followup'
+import { sendFollowup, sent as delivered } from '../followup/send'
+import { settings } from '../followup/settings'
 import type { Observation, TestRow } from '../tests/storage'
 // REMEDY-001/002. Each failing item gets one durable obligation with its own SLA
 // clock from its first failing observation. Only a later passing observation
@@ -110,11 +111,19 @@ export async function escalate(env: Bindings, now: Date) {
  for (const o of (await env.DB.prepare("SELECT id FROM obligations WHERE state='risk accepted' AND accepted_until<=?").bind(at).all<{ id: string }>()).results)
   await env.DB.batch([env.DB.prepare("UPDATE obligations SET state='open',accepted_until=NULL WHERE id=? AND state='risk accepted'").bind(o.id), event(env, o.id, 'acceptance expired', system, at, 'Risk acceptance expired; the obligation is open again.')])
  let sent = 0
+ // Owner rules: a missed SLA can repeat every few days and, after a set number
+ // of days, escalate to the escalation contact (FOLLOWUP-001).
+ const rules = await settings(env), escalationTo = rules.escalation_person_id ? (await env.DB.prepare('SELECT email FROM people WHERE id=?').bind(rules.escalation_person_id).first<{ email: string }>())?.email ?? env.OWNER_EMAIL : env.OWNER_EMAIL
  for (const o of await obligations(env, now)) {
   if (o.state === 'verified' || o.state === 'risk accepted' || !['approaching', 'SLA missed'].includes(o.sla.status)) continue
-  const kind = o.sla.status === 'SLA missed' ? 'sla-missed' : 'sla-approaching'
-  const result = await sendFollowup(env, { kind, subject: o.id, cycle: String(o.cycles), recipient: o.owner_email ?? env.OWNER_EMAIL, title: `${o.sla.status === 'SLA missed' ? 'SLA missed' : 'SLA approaching'}: ${o.test_name} on ${o.resource_name}`, text: `${o.test_name} fails on ${o.resource_name}. Remediate by ${o.sla.due.slice(0, 10)} (${o.sla.status}).\n\nOpen the obligation in Evidence: ${env.AUTH_ORIGIN}/app/remediation/${o.id}\n\nA sent reminder is not proof that anyone acted; only a passing re-test closes this.` }, now)
-  if (result !== 'duplicate') { sent++; await event(env, o.id, 'escalated', system, at, `${kind} email to ${o.owner_email ? 'the assigned owner' : 'the installation owner'}: ${result}`).run() }
+  const missed = o.sla.status === 'SLA missed', kind = missed ? 'sla-missed' : 'sla-approaching', link = `${env.AUTH_ORIGIN}/app/remediation/${o.id}`
+  const late = now.getTime() - Date.parse(o.sla.due), repeat = missed && rules.repeat_days ? Math.floor(late / (rules.repeat_days * DAY)) : 0
+  const result = await sendFollowup(env, { kind, subject: o.id, cycle: String(o.cycles) + (repeat ? ':r' + repeat : ''), recipient: o.owner_email ?? env.OWNER_EMAIL, title: `${missed ? 'SLA missed' : 'SLA approaching'}: ${o.test_name} on ${o.resource_name}`, text: `${o.test_name} fails on ${o.resource_name}. Remediate by ${o.sla.due.slice(0, 10)} (${o.sla.status}).\n\nOpen the obligation in Evidence: ${link}\n\nA sent reminder is not proof that anyone acted; only a passing re-test closes this.`, link }, now)
+  if (delivered(result)) { sent++; await event(env, o.id, 'escalated', system, at, `${kind} ${repeat ? `reminder ${repeat + 1} ` : ''}to ${o.owner_email ? 'the assigned owner' : 'the installation owner'}: ${result}`).run() }
+  if (missed && rules.escalate_after_days && late >= rules.escalate_after_days * DAY) {
+   const up = await sendFollowup(env, { kind: 'sla-escalated', subject: o.id, cycle: String(o.cycles), recipient: escalationTo, title: `Escalation: ${o.test_name} on ${o.resource_name} is ${Math.floor(late / DAY)} days past its SLA`, text: `${o.test_name} still fails on ${o.resource_name}, owned by ${o.owner_name ?? 'nobody'}. It was due ${o.sla.due.slice(0, 10)}.\n\nOpen the obligation in Evidence: ${link}`, link }, now)
+   if (delivered(up)) { sent++; await event(env, o.id, 'escalated', system, at, `escalated to ${rules.escalation_person_id ? 'the escalation contact' : 'the installation owner'}: ${up}`).run() }
+  }
  }
  return sent
 }

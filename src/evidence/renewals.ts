@@ -1,7 +1,7 @@
 import type { Bindings } from '../auth.server'
 import { day } from './model'
 import { desk } from './storage'
-import { sendFollowup } from './followup'
+import { sendFollowup, sent as delivered } from './followup/send'
 // CADENCE-001 reminders: one at the reminder lead and one at the deadline per
 // renewal cycle, to the requirement owner, deduplicated across restarts.
 export async function renewalReminders(env: Bindings, now: Date) {
@@ -14,8 +14,8 @@ export async function renewalReminders(env: Bindings, now: Date) {
   if (!state.due || (r.gap !== 'due soon' && r.gap !== 'overdue')) continue
   const kind = r.gap === 'due soon' ? 'renewal-lead' : 'renewal-deadline'
   const recipient = owners.get(r.id) ?? controlOwners.get(r.control_id) ?? env.OWNER_EMAIL
-  const result = await sendFollowup(env, { kind, subject: r.id, cycle: state.due, recipient, title: `${r.gap === 'due soon' ? 'Due soon' : 'Overdue'}: ${r.name}`, text: `${r.control_name}\n${r.name} (${state.cadence}, ${state.anchor} anchor) ${r.gap === 'due soon' ? 'is due' : 'was due'} on ${state.due}.\n\nUpload the renewed proof in Evidence: ${env.AUTH_ORIGIN}/app/requirements/${r.id}\n\nThis reminder records that it was sent, not that anyone acted.` }, now)
-  if (result !== 'duplicate') sent++
+  const result = await sendFollowup(env, { kind, subject: r.id, cycle: state.due, recipient, link: `${env.AUTH_ORIGIN}/app/requirements/${r.id}`, title: `${r.gap === 'due soon' ? 'Due soon' : 'Overdue'}: ${r.name}`, text: `${r.control_name}\n${r.name} (${state.cadence}, ${state.anchor} anchor) ${r.gap === 'due soon' ? 'is due' : 'was due'} on ${state.due}.\n\nUpload the renewed proof in Evidence: ${env.AUTH_ORIGIN}/app/requirements/${r.id}\n\nThis reminder records that it was sent, not that anyone acted.` }, now)
+  if (delivered(result)) sent++
  }
  return sent
 }

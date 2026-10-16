@@ -3,7 +3,7 @@ import { validDate } from '../model'
 import { Refusal } from '../upload'
 import { auditStatement, list, oneOf, text, type Actor, type Input } from '../door'
 import { libraryControl } from '../library'
-import { sendFollowup } from '../followup'
+import { sendFollowup, sent as delivered } from '../followup/send'
 import { latestResults } from '../tests/storage'
 import { riskScenario } from './library'
 // RISK-001/002. Assessments are append-only and record the scoring-method
@@ -149,7 +149,8 @@ export async function escalateRiskAcceptances(env: Bindings, now: Date) {
  let count = 0
  const expired = (await env.DB.prepare('SELECT a.id,a.risk_id,a.expires_at,r.title,p.email FROM risk_acceptances a JOIN risks r ON r.id=a.risk_id LEFT JOIN people p ON p.id=r.owner_person_id WHERE a.expires_at<=? AND a.escalated_at IS NULL').bind(now.toISOString()).all<{ id: string; risk_id: string; expires_at: string; title: string; email: string | null }>()).results
  for (const a of expired) {
-  await sendFollowup(env, { kind: 'risk-acceptance-expired', subject: a.id, cycle: a.expires_at, recipient: a.email ?? env.OWNER_EMAIL, title: `Risk acceptance expired: ${a.title}`, text: `The residual-risk acceptance for "${a.title}" expired at ${a.expires_at}. Reassess, treat or approve a new acceptance: ${env.AUTH_ORIGIN}/app/risks/${a.risk_id}` }, now)
+  const result = await sendFollowup(env, { link: `${env.AUTH_ORIGIN}/app/risks/${a.risk_id}`, kind: 'risk-acceptance-expired', subject: a.id, cycle: a.expires_at, recipient: a.email ?? env.OWNER_EMAIL, title: `Risk acceptance expired: ${a.title}`, text: `The residual-risk acceptance for "${a.title}" expired at ${a.expires_at}. Reassess, treat or approve a new acceptance: ${env.AUTH_ORIGIN}/app/risks/${a.risk_id}` }, now)
+  if (!delivered(result) && result !== 'duplicate') continue
   await env.DB.prepare('UPDATE risk_acceptances SET escalated_at=? WHERE id=? AND escalated_at IS NULL').bind(now.toISOString(), a.id).run(); count++
  }
  const done = (await env.DB.prepare("SELECT t.id,t.verification_test_id,x.name FROM risk_treatments t JOIN tests x ON x.id=t.verification_test_id WHERE t.status='done'").all<{ id: string; verification_test_id: string; name: string }>()).results

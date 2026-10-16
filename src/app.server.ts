@@ -13,6 +13,7 @@ import { apiHandler } from './evidence/api/http'
 import { policyHandler } from './evidence/policy/http'
 import { workHandler } from './evidence/work/http'
 import { hookHandler } from './evidence/work/hooks'
+import { followupHandler } from './evidence/followup/http'
 import { lobbyResponse } from './base/lobby'
 import { setupStateResponse } from './base/setup-state'
 import { identity } from './identity'
@@ -23,7 +24,7 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
  const evidence = evidenceHandler(clock)
  const review = reviewHandler(clock)
  const archive = archiveHandler(clock)
- const program = [programHandler(clock), testHandler(clock), remedyHandler(clock), connectHandler(clock), riskHandler(clock), policyHandler(clock), workHandler(clock)]
+ const program = [programHandler(clock), testHandler(clock), remedyHandler(clock), connectHandler(clock), riskHandler(clock), policyHandler(clock), workHandler(clock), followupHandler(clock)]
  const api = apiHandler(clock)
  const hooks = hookHandler(clock)
  return async (request: Request, env: Bindings) => {

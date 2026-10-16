@@ -19,7 +19,7 @@ export const programColumns = {
  requirement_schedules:['id','requirement_id','cadence','anchor','fiscal_start_month','window_start','program_id','reminder_lead_days','owner_person_id','effective_from','actor_id','actor_name','reason'],
  receipt_effective_dates:['receipt_id','effective_date'],
  renewal_overrides:['id','requirement_id','cycle_due','due_date','reason','actor_id','actor_name','at'],
- followups:['id','kind','subject_id','cycle_key','recipient','state','detail','created_at','attempted_at'],
+ followups:['id','kind','subject_id','cycle_key','recipient','state','detail','created_at','attempted_at','channel'],
  product_audit:['id','actor_kind','actor_id','actor_name','action','subject','outcome','detail','at'],
  resource_types:['type','schema_json','declared_by','declared_at'],
  resources:['id','type','unique_id','display_name','source_kind','source_ref','source_label','attributes_json','attributes_hash','first_seen_at','updated_at','removed_at','observed_at'],
@@ -56,11 +56,18 @@ export const programColumns = {
  ticket_comments:['ticket_id','remote_comment_id','direction','at'],
  tracker_deliveries:['destination_id','delivery_id','ticket_ref','outcome','received_at'],
  readiness_snapshots:['program_id','day','totals_json','taken_at'],
+ followup_settings:['singleton','timezone','calendar_enabled','business_days','holidays','quiet_start','quiet_end','digest_enabled','digest_day','digest_time','repeat_days','escalate_after_days','escalation_person_id','updated_by','updated_at'],
+ followup_channels:['id','kind','label','account','target','status','created_by','created_name','created_at','rotated_at','revoked_at','last_success_at','last_error'],
+ notify_preferences:['person_id','via','all_clear','updated_by','updated_at'],
+ followup_pauses:['id','subject_id','reason','paused_by','paused_at','resumed_by','resumed_at'],
 } as const
 export type ProgramTable = keyof typeof programColumns
 export const programTables = Object.keys(programColumns) as ProgramTable[]
 // Tables first carried by archive version 4; a version 3 archive lists none of them.
-const addedInVersion4 = new Set<ProgramTable>(['tracker_destinations', 'tickets', 'ticket_events', 'ticket_comments', 'tracker_deliveries', 'readiness_snapshots'])
+const addedInVersion4 = new Set<ProgramTable>(['tracker_destinations', 'tickets', 'ticket_events', 'ticket_comments', 'tracker_deliveries', 'readiness_snapshots', 'followup_settings', 'followup_channels', 'notify_preferences', 'followup_pauses'])
+// Columns first carried by version 4 in tables that version 3 already listed, with the value older rows restore with.
+const addedColumns: Partial<Record<ProgramTable, Record<string, string>>> = { followups: { channel: 'email' } }
+const columnsOf = (table: ProgramTable, version: number) => programColumns[table].filter(c => version >= 4 || !Object.hasOwn(addedColumns[table] ?? {}, c))
 const tablesOf = (version: number) => programTables.filter(t => version >= 4 || !addedInVersion4.has(t))
 export interface ProgramArchive { rows: Record<ProgramTable, Row[]> }
 export async function exportProgramArchive(env: Pick<Bindings, 'DB'>): Promise<ProgramArchive> {
@@ -74,15 +81,17 @@ export function validateProgramExtension(value: unknown, version: number): asser
  if (!object(value) || Object.keys(value).join() !== 'rows' || !object(value.rows) || Object.keys(value.rows).length !== expected.length || expected.some(t => !Array.isArray((value.rows as Record<string, unknown>)[t]))) fail('Invalid program archive extension: every program table must be listed exactly.')
  let count = 0
  for (const table of expected) for (const row of (value.rows as Record<string, unknown[]>)[table]) {
-  if (++count > 20000 || !object(row) || Object.keys(row).length !== programColumns[table].length || programColumns[table].some(c => !Object.hasOwn(row, c))) fail(`Invalid ${table} row in the program archive.`)
+  const columns = columnsOf(table, version)
+  if (++count > 20000 || !object(row) || Object.keys(row).length !== columns.length || columns.some(c => !Object.hasOwn(row, c))) fail(`Invalid ${table} row in the program archive.`)
   for (const field of Object.values(row)) if (!(field === null || (typeof field === 'number' && Number.isFinite(field)) || (typeof field === 'string' && field.length <= 262144))) fail(`Invalid ${table} field in the program archive.`)
  }
 }
 // Restored grants hold no authority: tokens lack digests, and connections and
-// ticket destinations wait without credentials until an owner reconnects them.
+// ticket destinations and Slack or Teams channels wait without credentials
+// until an owner reconnects them.
 export function restoreProgramStatements(env: Pick<Bindings, 'DB'>, value: ProgramArchive) {
  return programTables.flatMap(table => (value.rows[table] ?? []).map(row => {
-  const columns = [...programColumns[table]], values = columns.map(c => (table === 'connections' || table === 'tracker_destinations') && c === 'status' ? 'inactive after restore' : table === 'connections' && c === 'next_attempt_at' ? null : row[c])
+  const columns = [...programColumns[table]], values = columns.map(c => (table === 'connections' || table === 'tracker_destinations' || table === 'followup_channels') && c === 'status' ? 'inactive after restore' : table === 'connections' && c === 'next_attempt_at' ? null : Object.hasOwn(row, c) ? row[c] : addedColumns[table]?.[c] ?? null)
   return env.DB.prepare(`INSERT INTO ${table}(${columns.join(',')}) VALUES(${columns.map(() => '?').join(',')})`).bind(...values)
  }))
 }

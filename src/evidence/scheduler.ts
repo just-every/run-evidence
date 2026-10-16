@@ -6,6 +6,7 @@ import { collectDue } from './connect/collect'
 import { escalateRiskAcceptances } from './risk/storage'
 import { syncDue } from './work/sync'
 import { snapshotReadiness } from './program/board'
+import { weeklyDigest } from './followup/digest'
 // The Worker's Cron Trigger (every five minutes): collect due connector reads,
 // read linked tracker tickets, run due tests, run queued re-tests, then send deduplicated follow-ups. Each
 // step records its own durable outcome; a failed step does not hide the others.
@@ -19,6 +20,7 @@ export async function scheduledWork(env: Bindings, now: Date) {
  await step('escalations', () => escalate(env, now))
  await step('renewals', () => renewalReminders(env, now))
  await step('risk acceptances', () => escalateRiskAcceptances(env, now))
+ await step('weekly digest', () => weeklyDigest(env, now))
  await step('readiness snapshots', () => snapshotReadiness(env, now))
  return outcome
 }

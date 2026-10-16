@@ -9,6 +9,7 @@ import { obligationPage, queuePage } from './view'
 import { destinations, ticketEvents, ticketsOf } from '../work/storage'
 import { mirrorComment } from '../work/sync'
 import { ticketPanel } from '../work/view'
+import { followupPanel } from '../followup/view'
 const id = `(${uuid})`
 const both = (path: string) => new RegExp(`^/(?:app|api)${path}$`)
 export function remedyHandler(clock: () => Date) {
@@ -34,9 +35,11 @@ export function remedyHandler(clock: () => Date) {
    const observations = (await c.env.DB.prepare('SELECT o.result,o.reason,o.observed_at,o.revision,o.source_kind,r.trigger AS run_trigger FROM observations o JOIN test_runs r ON r.id=o.run_id WHERE o.test_id=? AND o.resource_id=? ORDER BY o.observed_at DESC,o.rowid DESC LIMIT 200').bind(row.test_id, row.resource_id).all<{ result: string; reason: string; observed_at: string; revision: number; source_kind: string; run_trigger: string }>()).results
    const controls = (await c.env.DB.prepare('SELECT c.id,c.name,l.library_id FROM test_controls t JOIN controls c ON c.id=t.control_id LEFT JOIN library_adoptions l ON l.control_id=c.id WHERE t.test_id=? ORDER BY c.name').bind(row.test_id).all<{ id: string; name: string; library_id: string | null }>()).results
    const tickets = await ticketsOf(c.env, row.id), stale = (t: { last_synced_at: string | null; remote_id: string | null }) => !!t.remote_id && (!t.last_synced_at || c.now.getTime() - Date.parse(t.last_synced_at) > 15 * 60000)
-   if (c.isApi) return json({ obligation: row, controls, events, observations, tickets: tickets.map(t => ({ ...t, stale: stale(t) })) })
+   if (c.isApi) return json({ obligation: row, controls, events, observations, tickets: tickets.map(t => ({ ...t, stale: stale(t) })), followups: (await c.env.DB.prepare('SELECT kind,cycle_key,recipient,channel,state,detail,created_at FROM followups WHERE subject_id=? ORDER BY created_at,rowid').bind(row.id).all()).results, paused: !!await c.env.DB.prepare('SELECT 1 FROM followup_pauses WHERE subject_id=? AND resumed_at IS NULL').bind(row.id).first() })
    const ticketHistory = new Map(await Promise.all(tickets.map(async t => [t.id, await ticketEvents(c.env, t.id)] as const)))
-   return obligationPage(row, controls, events, observations, row.catalogue_id ? catalogueEntry(row.catalogue_id) : undefined, await people(c.env), ticketPanel(row.id, tickets, ticketHistory, await destinations(c.env), stale), c.actor.name)
+   const paused = await c.env.DB.prepare('SELECT reason,paused_by,paused_at FROM followup_pauses WHERE subject_id=? AND resumed_at IS NULL').bind(row.id).first<{ reason: string; paused_by: string; paused_at: string }>()
+   const deliveries = (await c.env.DB.prepare('SELECT kind,recipient,channel,state,detail,created_at FROM followups WHERE subject_id=? ORDER BY created_at DESC,rowid DESC LIMIT 50').bind(row.id).all<{ kind: string; recipient: string; channel: string; state: string; detail: string; created_at: string }>()).results
+   return obligationPage(row, controls, events, observations, row.catalogue_id ? catalogueEntry(row.catalogue_id) : undefined, await people(c.env), ticketPanel(row.id, tickets, ticketHistory, await destinations(c.env), stale) + followupPanel(row.id, paused, deliveries), c.actor.name)
   } },
   { method: 'POST', pattern: both(`/remediation/${id}/assign`), run: async (c, m) => { const input = await readInput(c.request); const owner = await requirePerson(c.env, input.owner_person_id, 'owner'); const target = typeof input.target_date === 'string' && input.target_date ? input.target_date : null
    if (target && !validDate(target)) throw new Refusal('The target date must be a real date.')
