@@ -6,8 +6,8 @@ export const anchors: readonly Anchor[] = ['calendar', 'effective-date', 'fiscal
 export interface Schedule { cadence: Cadence; anchor: Anchor; fiscal_start_month: number | null; window_start: string | null; reminder_lead_days: number | null; owner_person_id: string | null; effective_from: string; revision_id: string | null }
 export interface ScheduleRow extends Omit<Schedule, 'revision_id'> { id: string; requirement_id: string; program_id: string | null; actor_name: string; reason: string }
 export const renewalCadences: readonly Cadence[] = ['semi-annual', 'annual']
-const months = (cadence: Cadence) => cadence === 'annual' ? 12 : cadence === 'semi-annual' ? 6 : cadence === 'quarterly' ? 3 : 1
-const addMonths = (date: Date, count: number) => { const d = new Date(date); const dayOfMonth = d.getUTCDate(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() + count); d.setUTCDate(Math.min(dayOfMonth, new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate())); return d }
+export const months = (cadence: Cadence) => cadence === 'annual' ? 12 : cadence === 'semi-annual' ? 6 : cadence === 'quarterly' ? 3 : 1
+export const addMonths = (date: Date, count: number) => { const d = new Date(date); const dayOfMonth = d.getUTCDate(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() + count); d.setUTCDate(Math.min(dayOfMonth, new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate())); return d }
 
 // The schedule in force at an instant: the latest revision effective by then,
 // otherwise the requirement's own cadence (renewals default to effective date).

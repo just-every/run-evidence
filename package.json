@@ -48,6 +48,7 @@
     "test:cloud": "node tests/cloud.mjs",
     "test:identity": "node tests/identity.mjs",
     "test:policy": "node tests/policy.mjs",
+    "test:cadence": "node tests/cadence.mjs",
     "check:library": "node scripts/library-check.mjs"
   },
   "dependencies": {

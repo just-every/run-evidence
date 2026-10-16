@@ -65,11 +65,14 @@ export const programColumns = {
  policy_acknowledgments:['id','assignment_id','person_id','operator_id','operator_email','revision_id','version','body_sha256','acknowledged_at'],
  policy_exceptions:['id','policy_id','person_id','reason','approved_by','approved_at','expires_at'],
  people_departures:['person_id','departed_at','recorded_by','reason','access_outcome'],
+ review_schedules:['id','subject_kind','subject_id','cadence','anchor','fiscal_start_month','window_start','program_id','reminder_lead_days','owner_person_id','effective_from','actor_id','actor_name','reason'],
+ review_completions:['id','subject_kind','subject_id','completed_on','notes','recorded_by','recorded_at'],
+ review_overrides:['id','subject_kind','subject_id','cycle_due','due_date','reason','actor_name','at'],
 } as const
 export type ProgramTable = keyof typeof programColumns
 export const programTables = Object.keys(programColumns) as ProgramTable[]
 // Tables first carried by archive version 4; a version 3 archive lists none of them.
-const addedInVersion4 = new Set<ProgramTable>(['tracker_destinations', 'tickets', 'ticket_events', 'ticket_comments', 'tracker_deliveries', 'readiness_snapshots', 'followup_settings', 'followup_channels', 'notify_preferences', 'followup_pauses', 'identity_matches', 'policy_assignments', 'policy_acknowledgments', 'policy_exceptions', 'people_departures'])
+const addedInVersion4 = new Set<ProgramTable>(['tracker_destinations', 'tickets', 'ticket_events', 'ticket_comments', 'tracker_deliveries', 'readiness_snapshots', 'followup_settings', 'followup_channels', 'notify_preferences', 'followup_pauses', 'identity_matches', 'policy_assignments', 'policy_acknowledgments', 'policy_exceptions', 'people_departures', 'review_schedules', 'review_completions', 'review_overrides'])
 // Columns first carried by version 4 in tables that version 3 already listed, with the value older rows restore with.
 const addedColumns: Partial<Record<ProgramTable, Record<string, string | null>>> = { followups: { channel: 'email' }, connections: { config_json: '{}' }, policies: { template_id: null } }
 const columnsOf = (table: ProgramTable, version: number) => programColumns[table].filter(c => version >= 4 || !Object.hasOwn(addedColumns[table] ?? {}, c))

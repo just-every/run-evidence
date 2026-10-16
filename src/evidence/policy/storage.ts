@@ -3,6 +3,7 @@ import { validDate } from '../model'
 import { Refusal } from '../upload'
 import { auditStatement, oneOf, text, type Actor, type Input } from '../door'
 import { libraryControls } from '../library'
+import { reviewStates } from '../reviews/schedule'
 // Policies: drafts, exact-revision decisions, publication and an annual review
 // deadline. Publishing needs the approved revision's exact text fingerprint.
 export const templateTitles = [...new Set(libraryControls.flatMap(c => c.policies))].sort()
@@ -50,6 +51,7 @@ export async function publish(env: Bindings, actor: Actor, policy: string, revis
 export async function policyList(env: Bindings, now: Date) {
  const policies = (await env.DB.prepare('SELECT p.*,o.name AS owner_name FROM policies p LEFT JOIN people o ON o.id=p.owner_person_id ORDER BY p.title').all<PolicyRow & { owner_name: string | null }>()).results
  const revisions = (await env.DB.prepare('SELECT id,policy_id,version,status,body_sha256,drafted_by,drafted_at,decided_by,decided_at,decision_note,published_at,effective_date,review_due FROM policy_revisions ORDER BY version').all<Omit<RevisionRow, 'body' | 'approved_sha256'>>()).results
- const today = now.toISOString().slice(0, 10)
- return policies.map(p => { const own = revisions.filter(r => r.policy_id === p.id), published = own.find(r => r.status === 'published') ?? null; return { ...p, revisions: own, published, review_state: !published ? 'not published' : published.review_due! <= today ? 'review overdue' : 'current' } })
+ // CADENCE-001: the review cycle comes from the policy's review schedule (default annual from its last review).
+ const reviews = new Map((await reviewStates(env, now)).filter(s => s.kind === 'policy').map(s => [s.id, s.review]))
+ return policies.map(p => { const own = revisions.filter(r => r.policy_id === p.id), published = own.find(r => r.status === 'published') ?? null, review = reviews.get(p.id) ?? null; return { ...p, revisions: own, published: published ? { ...published, review_due: review?.due ?? published.review_due } : null, review, review_state: !published ? 'not published' : review?.state === 'overdue' ? 'review overdue' : 'current' } })
 }
