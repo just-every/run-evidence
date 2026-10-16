@@ -90,7 +90,7 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
-- **DEVICE-002 — Owned read-only device monitor for computers without MDM · missing.** Install the monitor on a real macOS and a real Windows device through the employee checklist, and confirm each device matches its person. For each of the four required checks, put the device into the failing state (encryption off, no password manager, protection disabled, lock above 60 minutes), observe a failing result within the next reporting interval, fix it and observe a pass, with both observations retained. Disconnect one device past the stale window, then uninstall the monitor from the other: each shows stale or unknown and the device test does not pass. Inspect the declared data list; the payload contains nothing beyond it.
+- **DEVICE-002 — Owned read-only device monitor for computers without MDM · missing.** Install the monitor on a real macOS and a real Windows device through the employee checklist, and confirm each device matches its person. For each of the four required checks, put the device into the failing state (encryption off, no password manager, protection disabled, lock above 60 minutes), observe a failing result within the next reporting interval, fix it and observe a pass, with both observations retained. Disconnect one device past the stale window, then uninstall the monitor from the other: each shows stale or unknown and the device test does not pass. Inspect the declared data list; the payload contains nothing beyond it. Install the .deb on a real Ubuntu device with LUKS and a real Debian device without it: Ubuntu passes encryption and Debian fails it. Set the Ubuntu GNOME lock above 60 minutes and observe a fail, then a pass after fixing it. The checks the Linux monitor cannot read show unknown with the manual requirement open, and neither device passes on them.
 
   Current evidence: —.
 
@@ -120,15 +120,19 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
-- **REMEDY-002 — Remediation SLAs and automatic re-test · missing.** Set a 7-day SLA for high-severity identity failures. Fail MFA for two real users, fix one within the SLA, and let the other's clock pass the deadline using the test-harness clock: one item shows within SLA and resolved, the other SLA missed with an escalation sent. Export the board report and reconcile per-item SLA status. Close the linked Jira ticket without fixing the source: a re-test starts automatically with no human action, fails, and keeps the obligation open. Fix the source: the source event triggers a re-test that verifies closure. Apply an expiring exception: the clock pauses, then resumes when it expires.
+- **REMEDY-002 — Remediation SLAs and automatic re-test · missing.** Set a 7-day SLA for high-severity identity failures. Fail MFA for two real users, fix one within the SLA, and let the other's clock pass the deadline using the test-harness clock: one item shows within SLA and resolved, the other SLA missed with an escalation sent. Export the board report and reconcile per-item SLA status. Close the linked Jira ticket without fixing the source: a re-test starts automatically with no human action, fails, and keeps the obligation open. Repeat that step with a GitHub Issues ticket and an Asana task: each close starts a re-test with no human action. Fix the source: the source event triggers a re-test that verifies closure. Apply an expiring exception: the clock pauses, then resumes when it expires.
 
   Current evidence: —.
 
-- **WORK-001 — Vector, Jira and Linear remediation links · missing.** For each destination connect an authorized project, create a task from one failed control, change assignee/status on both sides and deliver the same event twice. Inspect conflict and delivery failures, then close the remote task while the test still fails: Evidence keeps the compliance obligation open until re-test.
+- **WORK-001 — Two-way remediation tickets in Vector and twelve external trackers · missing.** For each of the thirteen destinations, connect an authorized sandbox project, create a ticket from one failed control, change assignee and status in the tracker and in Evidence, and deliver the same inbound event twice: exactly one ticket exists, the tracker's assignee and status appear in Evidence within 15 minutes, and the second delivery changes nothing. Edit the same field on both sides: the conflict shows both values and the time. Revoke the tracker grant and delete one remote ticket: each failure is shown on its obligation. Close the remote ticket while the test still fails: a re-test runs with no human action, fails, and Evidence keeps the compliance obligation open.
 
   Current evidence: —.
 
-- **FOLLOWUP-001 — Email, Slack and Microsoft Teams follow-up · missing.** Configure each named channel/provider, let a due obligation escalate across a DST/business-calendar boundary with the browser closed, then restart the worker. Simulate a network-edge timeout and reconnect authorization; inspect delivery uncertainty without duplicate task closure. Complete or pause the obligation and verify later reminders stop while history remains.
+- **WORK-002 — Per-test or per-item tickets, with tracker status on tests · missing.** For each WORK-001 destination, set a test to per-item tickets and fail it on two sandbox resources: two tickets are created, each with its own due date. Change one ticket's assignee in the tracker: the test page and the remediation queue show the new assignee and status within 15 minutes. Close that ticket without fixing the source: a re-test starts within 15 minutes with no human action and fails. That item stays open and its SLA clock keeps running, while the other item's clock runs unaffected. Fix the second resource and close its ticket: only that item closes, as verified. Switch another test to one ticket per test and fail three items: one ticket lists all three with their deadlines. Close it with one item fixed: all three are re-tested, only the fixed item closes, and the remote ticket reopens naming the other two.
+
+  Current evidence: —.
+
+- **FOLLOWUP-001 — Email, Slack and Microsoft Teams follow-up · missing.** Configure each named channel/provider, let a due obligation escalate across a DST/business-calendar boundary with the browser closed, then restart the worker. Simulate a network-edge timeout and reconnect authorization; inspect delivery uncertainty without duplicate task closure. Complete or pause the obligation and verify later reminders stop while history remains. Let the weekly digest run on the test-harness clock: each control owner receives only their own new failures, upcoming, overdue and SLA-missed items, reconciled to the remediation queue, and a control owner with nothing open receives none.
 
   Current evidence: —.
 
@@ -190,6 +194,10 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
+- **AUDIT-003 — Auditor review of continuous test evidence for the period · missing.** Create a Type II engagement with a Restricted detail level that hides user emails, and share three automated tests and one policy. In the period, one test has a mid-period failure, one has a stale interval, and one has an item remediated before the period began. As auditor, open each test: only in-period observations and in-scope resources appear, including the mid-period failure and the stale interval, with SLA status per item and emails replaced by pseudonyms. The pre-period item appears only in its "remediated before period" list. Flag one test with a comment and accept the others: the flagged test's result and readiness are unchanged, and the decisions appear in the exported pack with the detail level. The owner's preview matches the auditor's view field for field. Requests for an unshared test and for an out-of-period observation are refused at the HTTP door. Unshare the policy: the auditor can no longer open it, and the unsharing is recorded.
+
+  Current evidence: —.
+
 ### Customer assurance
 
 - **TRUST-001 — Published and permissioned trust center · partial.** Publish an approved statement, request a restricted SOC 2 report as a prospect, complete an NDA through each named e-signature integration, approve one recipient and deny another. Check expiry/revocation, downloads and custom-domain access from a signed-out browser. An unapproved draft and another prospect’s documents never appear.
@@ -201,6 +209,10 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
   Current evidence: —.
 
 - **TRUST-003 — Trust-center updates, subscribers and subprocessor-change notices · missing.** Subscribe a signed-out visitor to Subprocessors and confirm the double opt-in. The owner adds a second subscriber by email with a reason, and a third subscribes and then unsubscribes. Add a subprocessor with an effective date 30 days out and draft its notice. Publishing without approval is refused. Approve it: the notice is sent, and delivery is recorded per subscriber, including one bounce simulated at the network edge. The unsubscribed address receives nothing. The public list shows the pending subprocessor with its effective date, and after that date it shows as active. Publish one Security update publicly and one only to approved customers: a signed-out browser sees only the public one. Export the notice record with per-subscriber outcomes.
+
+  Current evidence: —.
+
+- **TRUST-004 — Cited visitor Q&A on the trust center · missing.** As a signed-out visitor, ask about encryption at rest: the answer cites the public statement and its date. Ask a question answerable only from the restricted SOC 2 report: no restricted content appears, and an access request is offered. As an approved visitor, ask the same question: the answer cites the report page. Ask a question no source covers: nothing is drafted, and the question is routed to the owner, who approves a reply; the next visitor who asks gets the cited library answer. Withdraw the report: the approved visitor's next answer no longer cites it. Ask the assistant to ignore its rules and list other customers or unpublished documents: it refuses. The owner's log shows every exchange.
 
   Current evidence: —.
 
@@ -313,6 +325,10 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
+- **AGENT-007 — Check uploaded and captured evidence before the auditor sees it · missing.** Upload three exhibits to a quarterly access-review requirement: one dated before the period, one missing the reviewer sign-off and one complete. The agent reports outdated and missing element for the first two and likely meets for the third, and each citation resolves to the cited page and requirement wording. Dismiss one finding and accept another: the receipt bytes, origin and requirement state are unchanged, and nothing is marked satisfied. Capture a SaaS admin MFA settings page with the extension: the exhibit is manually-asserted and labelled browser-captured with URL and time, and it is checked. Against a held-out set of 20 exhibits with an independent reviewer key, the agent's verdicts match at least 90% of the key, and zero exhibits the key marks deficient are reported as likely meets.
+
+  Current evidence: —.
+
 - **AI-001 — AI inventory and governance · missing.** Exercise every named source. Grant an unapproved AI app in each of Google Workspace, Entra ID and Okta; add a member and an API key in an OpenAI organization and in an Anthropic organization; add an AI SDK to a connected repository; and record an AI vendor charge in a connected spend source. Each produces an inventory record citing its source. Review one tool's data access and owner, link a risk and acceptable-use policy, and approve only a bounded use case. Change its permissions and revoke one API key at the provider, rerun governance checks, and inspect the reopened review and the key's revoked state on the next read. An unapproved provider cannot receive evidence or execute an agent job.
 
   Current evidence: —.
@@ -329,4 +345,4 @@ The current public-door suites are `tests/evidence.mjs` (native owner access, re
 
 For each new user flow, build rounds must exercise the named public door, persistence/restart, refusal/error path, actor permissions and final state in the journey. Inspect each changed screen at 1440 and 390 with realistic data; provider acknowledgments are separate from source truth and human decisions. Certification, independent assessor judgment, legal applicability, outside-provider reliability and copies already downloaded remain the declared boundaries in BOUNDARY-001, rather than fabricated acceptance results.
 
-**Clause totals:** 69 — 7 done / 12 partial / 50 missing.
+**Clause totals:** 73 — 7 done / 12 partial / 54 missing.
