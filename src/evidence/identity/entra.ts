@@ -16,8 +16,8 @@ async function all(access: string, url: string, limit = 50) {
  return { items: out, complete: !next }
 }
 export const entra: Directory = {
- name: 'Microsoft Entra ID', credential: 'An app registration client secret', permissions: ['User.Read.All', 'AuditLog.Read.All (sign-in activity and MFA registration; Entra ID P1)', 'RoleManagement.Read.Directory'],
- exposes: { mfa: true, admin: 'members of any directory role', signIn: true, population: 'userType Guest; employeeType Contractor; others are people' },
+ name: 'Microsoft Entra ID', credential: 'An app registration client secret', permissions: ['User.Read.All', 'GroupMember.Read.All', 'AuditLog.Read.All (sign-in activity and MFA registration; Entra ID P1)', 'RoleManagement.Read.Directory'],
+ exposes: { mfa: true, groups: true, admin: 'members of any directory role', signIn: true, population: 'userType Guest; employeeType Contractor; others are people' },
  fields: [{ key: 'tenant_id', label: 'Directory (tenant) ID', required: true, pattern: /^[0-9a-f-]{36}$/ }, { key: 'client_id', label: 'Application (client) ID', required: true, pattern: /^[0-9a-f-]{36}$/ }],
  async verify(config, secret) { const access = await token(config, secret); const org = (await call('https://graph.microsoft.com/v1.0/organization?$select=displayName', { headers: { authorization: 'Bearer ' + access } }, label)).body as { value?: { displayName?: string }[] }; return { account: org.value?.[0]?.displayName ?? config.tenant_id } },
  async read(config, secret) {
@@ -33,7 +33,10 @@ export const entra: Directory = {
   try { for (const role of (await all(access, 'https://graph.microsoft.com/v1.0/directoryRoles?$expand=members($select=id)')).items) for (const m of (role.members as { id: string }[] | undefined) ?? []) roles.set(m.id, [...(roles.get(m.id) ?? []), String(role.displayName)]) }
   catch (error) { if (!(error instanceof DirectoryFailure) || error.kind !== 'denied') throw error; roles = null; gaps.push('directory roles not readable (needs RoleManagement.Read.Directory)') }
   if (!users.complete) gaps.push('more users than were read')
-  const accounts: DirectoryAccount[] = users.items.map(u => ({ id: String(u.id), email: String(u.mail ?? u.userPrincipalName ?? ''), name: String(u.displayName ?? u.userPrincipalName), status: u.accountEnabled === false ? 'suspended' : 'active', population: u.userType === 'Guest' ? 'guest' : /contract/i.test(String(u.employeeType ?? '')) ? 'contractor' : 'person', admin: roles ? roles.has(String(u.id)) : null, roles: roles?.get(String(u.id)) ?? [], mfa: mfa ? mfa.get(String(u.id)) ?? null : null, lastSignIn: signIns ? String((u.signInActivity as { lastSignInDateTime?: string } | undefined)?.lastSignInDateTime ?? '') || null : null, created: typeof u.createdDateTime === 'string' ? u.createdDateTime : null }))
+  let groups: Map<string, string[]> | null = new Map()
+  try { for (const u of users.items.slice(0, 2000)) groups.set(String(u.id), (await all(access, `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(String(u.id))}/memberOf/microsoft.graph.group?$select=displayName`, 5)).items.map(g => String(g.displayName))) }
+  catch (error) { if (!(error instanceof DirectoryFailure) || error.kind !== 'denied') throw error; groups = null; gaps.push('group membership not readable (needs GroupMember.Read.All)') }
+  const accounts: DirectoryAccount[] = users.items.map(u => ({ id: String(u.id), email: String(u.mail ?? u.userPrincipalName ?? ''), name: String(u.displayName ?? u.userPrincipalName), status: u.accountEnabled === false ? 'suspended' : 'active', population: u.userType === 'Guest' ? 'guest' : /contract/i.test(String(u.employeeType ?? '')) ? 'contractor' : 'person', admin: roles ? roles.has(String(u.id)) : null, roles: roles?.get(String(u.id)) ?? [], groups: groups ? groups.get(String(u.id)) ?? [] : null, mfa: mfa ? mfa.get(String(u.id)) ?? null : null, lastSignIn: signIns ? String((u.signInActivity as { lastSignInDateTime?: string } | undefined)?.lastSignInDateTime ?? '') || null : null, created: typeof u.createdDateTime === 'string' ? u.createdDateTime : null }))
   return { accounts, complete: !gaps.length, gaps }
  },
 }

@@ -3026,31 +3026,31 @@
       "executable": false
     },
     "src/evidence/identity/collect.ts": {
-      "sha256": "904f8f7446bc9e5da9948a7c68ed65726239a16ffdf096f9810f3f84df400da2",
+      "sha256": "d0fefb65e5d4d101ae1bcd81197ba199becb758f7dc471924c030a0ee2f710e1",
       "executable": false
     },
     "src/evidence/identity/directory.ts": {
-      "sha256": "a8e8fa67f87a1081252f45ad4077f07ecd04b4c71bc8324ae6a37689225425a1",
+      "sha256": "b75c9863adb2ae0a3aeabb65f42e00572460d757b7c1e5444f97406d7a7423d7",
       "executable": false
     },
     "src/evidence/identity/entra.ts": {
-      "sha256": "759f2361089811dd609ab685d87802322970c3546f25445de15051cc8aad9130",
+      "sha256": "aa195d7ee7cb989c961260285a0de6d4dd57730f71ccc3a81d8099add6a98079",
       "executable": false
     },
     "src/evidence/identity/google.ts": {
-      "sha256": "541f0e4486c2c58b3045d8e76fadc47d4146c5cbd524fa3297831191bd357f02",
+      "sha256": "68c6d247d53dd5916e6798a13530678ad92f649dacb97b12e18a1f81a248b55c",
       "executable": false
     },
     "src/evidence/identity/http.ts": {
-      "sha256": "5fef4c8b4732f151a9c7f2021d16f8deb230f33e73b3a2ac0b4c1b3a68ede857",
+      "sha256": "59ac826c5d520fc7afabca346505086054e21fb08c93846c9a0b73c4822fed5a",
       "executable": false
     },
     "src/evidence/identity/jumpcloud.ts": {
-      "sha256": "2f9e08c1fda35b5b6adde7569c5825e312ccdebe6203068006f5e92af312335e",
+      "sha256": "474b0f886e01a1153cd4cb24e917dfde3c4b3e1480a16af7708e624559b9e60a",
       "executable": false
     },
     "src/evidence/identity/okta.ts": {
-      "sha256": "471f63ee39f98724f3f37e9790c16a4bf649f560b7f8d93bbc19b41db64f6431",
+      "sha256": "79bbc4c894ca74680c28dc6340a022538cffd06c861af6b310dff19bc0482041",
       "executable": false
     },
     "src/evidence/import/archive-schema.ts": {
@@ -4898,7 +4898,7 @@
       "executable": false
     },
     "tests/identity.mjs": {
-      "sha256": "7b2e3a28fa4eea049df228780687120d21a0d80cbb44cd9f9cb9f571b4153a14",
+      "sha256": "7e03cd11c2c429b1f3342c17dc71d4d8da9ce0f9b87df2049458c9d0e5fbd270",
       "executable": false
     },
     "tests/import.mjs": {

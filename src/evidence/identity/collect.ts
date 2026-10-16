@@ -16,7 +16,7 @@ import { jumpcloud } from './jumpcloud'
 export const directories: Record<string, Directory> = { okta, google, entra, jumpcloud }
 export const isDirectory = (provider: string) => Object.hasOwn(directories, provider)
 const DAY = 86400000
-const schema: ResourceSchema = { fields: { email: 'string', status: 'string', population: 'string', active: 'boolean', admin: 'boolean', roles: 'string', mfa_enrolled: 'boolean', last_sign_in: 'string', mfa_ok: 'boolean', admin_mfa_ok: 'boolean', guest_admin: 'boolean', inactive_days: 'number', readable: 'boolean' }, required: [] }
+const schema: ResourceSchema = { fields: { email: 'string', status: 'string', population: 'string', active: 'boolean', admin: 'boolean', roles: 'string', groups: 'string', mfa_enrolled: 'boolean', last_sign_in: 'string', mfa_ok: 'boolean', admin_mfa_ok: 'boolean', guest_admin: 'boolean', inactive_days: 'number', readable: 'boolean' }, required: [] }
 export const directoryConfig = (c: Pick<Connection, 'config_json'>): Record<string, string> => { try { return JSON.parse(c.config_json) } catch { return {} } }
 function parseConfig(directory: Directory, input: Input) {
  const config: Record<string, string> = {}
@@ -70,7 +70,7 @@ export async function runDirectoryCollection(env: Bindings, connection: Connecti
  const items = read.accounts.map(a => {
   const active = a.status === 'active', since = a.lastSignIn ?? a.created
   return { uniqueId: `${connection.provider}:${connection.id}:${a.id}`, displayName: `${a.name} <${a.email}>`, attributes: {
-   email: a.email.toLowerCase(), status: a.status, population: a.population, active, admin: a.admin, roles: a.roles.join(', '), mfa_enrolled: a.mfa, last_sign_in: a.lastSignIn, readable: true,
+   email: a.email.toLowerCase(), status: a.status, population: a.population, active, admin: a.admin, roles: a.roles.join(', '), groups: a.groups === null ? null : a.groups.join(', '), mfa_enrolled: a.mfa, last_sign_in: a.lastSignIn, readable: true,
    mfa_ok: !active ? true : a.mfa, admin_mfa_ok: !active || a.admin === false ? true : a.admin === null || a.mfa === null ? null : a.mfa,
    guest_admin: a.admin === null ? null : a.population === 'guest' && a.admin, inactive_days: !active ? 0 : directory.exposes.signIn && since ? Math.floor((now.getTime() - Date.parse(since)) / DAY) : null,
   } }

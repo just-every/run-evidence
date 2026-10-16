@@ -7,7 +7,7 @@ const base = (config: Record<string, string>) => `https://${config.domain}`
 const population = (type: unknown): Population => /contract/i.test(String(type ?? '')) ? 'contractor' : /guest|partner|external/i.test(String(type ?? '')) ? 'guest' : /service|bot|api/i.test(String(type ?? '')) ? 'service' : 'person'
 export const okta: Directory = {
  name: 'Okta', credential: 'An Okta API token created by a Read-Only Administrator', permissions: ['Read-Only Administrator role (users, factors, role assignments)'],
- exposes: { mfa: true, admin: 'users with any Okta admin role assignment', signIn: true, population: 'profile.userType: Contractor, Guest or Service; others are people' },
+ exposes: { mfa: true, groups: true, admin: 'users with any Okta admin role assignment', signIn: true, population: 'profile.userType: Contractor, Guest or Service; others are people' },
  fields: [{ key: 'domain', label: 'Okta domain (example.okta.com)', required: true, pattern: /^[a-z0-9-]+\.(okta|oktapreview|okta-emea)\.com$/ }],
  async verify(config, token) { const org = (await call(`${base(config)}/api/v1/org`, { headers: headers(token) }, label)).body; return { account: String(org.companyName ?? config.domain) } },
  async read(config, token) {
@@ -21,10 +21,12 @@ export const okta: Directory = {
   const accounts: DirectoryAccount[] = []
   for (const u of users.slice(0, 2000)) {
    const profile = (u.profile ?? {}) as Record<string, unknown>, status = String(u.status ?? '')
-   let mfa: boolean | null = null
+   let mfa: boolean | null = null, groups: string[] | null = null
+   try { groups = ((await call(`${base(config)}/api/v1/users/${encodeURIComponent(String(u.id))}/groups`, { headers: headers(token) }, label)).body as unknown as { profile?: { name?: string } }[]).map(g => String(g.profile?.name ?? '')).filter(Boolean) }
+   catch (error) { if (!(error instanceof DirectoryFailure) || error.kind !== 'denied') throw error; if (!gaps.includes('group membership not readable')) gaps.push('group membership not readable') }
    try { mfa = ((await call(`${base(config)}/api/v1/users/${encodeURIComponent(String(u.id))}/factors`, { headers: headers(token) }, label)).body as unknown as { status: string }[]).some(f => f.status === 'ACTIVE') }
    catch (error) { if (!(error instanceof DirectoryFailure) || error.kind !== 'denied') throw error }
-   accounts.push({ id: String(u.id), email: String(profile.email ?? profile.login ?? ''), name: `${profile.firstName ?? ''} ${profile.lastName ?? ''}`.trim() || String(profile.login ?? u.id), status: status === 'SUSPENDED' ? 'suspended' : status === 'DEPROVISIONED' ? 'deprovisioned' : status === 'STAGED' || status === 'PROVISIONED' ? 'staged' : 'active', population: population(profile.userType), admin: admins ? admins.has(String(u.id)) : null, roles: admins?.has(String(u.id)) ? ['Okta administrator'] : [], mfa, lastSignIn: typeof u.lastLogin === 'string' ? u.lastLogin : null, created: typeof u.created === 'string' ? u.created : null })
+   accounts.push({ id: String(u.id), email: String(profile.email ?? profile.login ?? ''), name: `${profile.firstName ?? ''} ${profile.lastName ?? ''}`.trim() || String(profile.login ?? u.id), status: status === 'SUSPENDED' ? 'suspended' : status === 'DEPROVISIONED' ? 'deprovisioned' : status === 'STAGED' || status === 'PROVISIONED' ? 'staged' : 'active', population: population(profile.userType), admin: admins ? admins.has(String(u.id)) : null, roles: admins?.has(String(u.id)) ? ['Okta administrator'] : [], groups, mfa, lastSignIn: typeof u.lastLogin === 'string' ? u.lastLogin : null, created: typeof u.created === 'string' ? u.created : null })
   }
   if (users.length > 2000) gaps.push('more than 2,000 users: factors were read for the first 2,000')
   return { accounts, complete: !gaps.length, gaps }

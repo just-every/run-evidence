@@ -16,7 +16,7 @@ const dir = {
  google: [{ id: 'g1', email: 'ana@northstar.test', name: 'Ana Ruiz', admin: true, mfa: true, last: ago(1), suspended: false }, { id: 'g2', email: 'cy@northstar.test', name: 'Cy Park', admin: false, mfa: false, last: '1970-01-01T00:00:00.000Z', created: ago(120), suspended: false }],
  entra: [{ id: 'e1', mail: 'ana@northstar.test', name: 'Ana Ruiz', enabled: true, type: 'Member', mfa: true, roles: ['Global Administrator'], last: ago(3) }, { id: 'e2', mail: 'partner@vendor.test', name: 'Partner', enabled: true, type: 'Guest', mfa: true, roles: ['User Administrator'], last: ago(4) }, { id: 'e3', mail: 'eve@northstar.test', name: 'Eve Moss', enabled: true, type: 'Member', mfa: false, roles: [], last: ago(5) }],
  jumpcloud: [{ _id: 'a'.repeat(24), email: 'frank@northstar.test', firstname: 'Frank', sudo: { enabled: true }, mfa: { configured: false }, state: 'ACTIVATED', activated: true }, { _id: 'b'.repeat(24), email: 'gina@northstar.test', firstname: 'Gina', sudo: { enabled: false }, mfa: { configured: true }, state: 'ACTIVATED', activated: true }],
- entraDenied: new Set(), calls: [],
+ entraDenied: new Set(), groupsDenied: new Set(), calls: [],
 }
 const b64url = value => Buffer.from(value, 'base64url')
 async function fakeDirectories(request) {
@@ -27,17 +27,20 @@ async function fakeDirectories(request) {
   if (url.pathname === '/api/v1/org') return Response.json({ companyName: 'Northstar' })
   if (url.pathname === '/api/v1/users') { const after = Number(url.searchParams.get('after') ?? 0), page = dir.okta.slice(after, after + 3); return Response.json(page.map(u => ({ id: u.id, status: u.status, created: ago(500), lastLogin: u.last, profile: { firstName: u.first, lastName: '', email: u.email, login: u.email, userType: u.type } })), { headers: after + 3 < dir.okta.length ? { link: `<https://northstar.okta.com/api/v1/users?limit=200&after=${after + 3}>; rel="next"` } : {} }) }
   if (url.pathname === '/api/v1/iam/assignees/users') return Response.json({ value: dir.okta.filter(u => u.admin).map(u => ({ id: u.id })) })
+  const groups = /^\/api\/v1\/users\/(\w+)\/groups$/.exec(url.pathname)
+  if (groups) return dir.groupsDenied.has('okta') ? Response.json({ errorCode: 'E0000006' }, { status: 403 }) : Response.json(dir.okta.find(u => u.id === groups[1]).admin ? [{ id: 'g1', profile: { name: 'Everyone' } }, { id: 'g2', profile: { name: 'Security admins' } }] : [{ id: 'g1', profile: { name: 'Everyone' } }])
   const factors = /^\/api\/v1\/users\/(\w+)\/factors$/.exec(url.pathname)
   if (factors) return Response.json(dir.okta.find(u => u.id === factors[1]).mfa ? [{ id: 'f1', factorType: 'token:software:totp', status: 'ACTIVE' }] : [])
  }
  if (url.hostname === 'oauth2.googleapis.com') {
   const form = new URLSearchParams(await request.text()), [header, claims, signature] = (form.get('assertion') ?? '').split('.')
   const body = JSON.parse(b64url(claims).toString())
-  const valid = verifySignature('RSA-SHA256', Buffer.from(`${header}.${claims}`), publicKey, b64url(signature)) && body.iss === 'evidence@service-account.test' && body.sub === 'admin@northstar.test' && body.scope === 'https://www.googleapis.com/auth/admin.directory.user.readonly' && body.aud === 'https://oauth2.googleapis.com/token'
+  const valid = verifySignature('RSA-SHA256', Buffer.from(`${header}.${claims}`), publicKey, b64url(signature)) && body.iss === 'evidence@service-account.test' && body.sub === 'admin@northstar.test' && body.scope === 'https://www.googleapis.com/auth/admin.directory.user.readonly https://www.googleapis.com/auth/admin.directory.group.readonly' && body.aud === 'https://oauth2.googleapis.com/token'
   return valid ? Response.json({ access_token: 'google-access', expires_in: 600 }) : Response.json({ error: 'invalid_grant' }, { status: 400 })
  }
  if (url.hostname === 'admin.googleapis.com') {
   if (auth !== 'Bearer google-access') return Response.json({}, { status: 401 })
+  if (url.pathname === '/admin/directory/v1/groups') return Response.json({ groups: url.searchParams.get('userKey') === 'ana@northstar.test' ? [{ email: 'admins@northstar.test', name: 'Workspace admins' }] : [] })
   return Response.json({ users: dir.google.map(u => ({ id: u.id, primaryEmail: u.email, name: { fullName: u.name }, isAdmin: u.admin, isDelegatedAdmin: false, isEnrolledIn2Sv: u.mfa, suspended: u.suspended, archived: false, lastLoginTime: u.last, creationTime: u.created ?? ago(400) })) })
  }
  if (url.hostname === 'login.microsoftonline.com') {
@@ -50,10 +53,14 @@ async function fakeDirectories(request) {
   if (url.pathname === '/v1.0/organization') return Response.json({ value: [{ displayName: 'Northstar Inc.' }] })
   if (url.pathname === '/v1.0/users') { if (url.searchParams.get('$select').includes('signInActivity') && dir.entraDenied.has('signin')) return Response.json({ error: { code: 'Authorization_RequestDenied' } }, { status: 403 }); return Response.json({ value: dir.entra.map(u => ({ id: u.id, displayName: u.name, userPrincipalName: u.mail.replace('@', '_') + '#EXT#', mail: u.mail, accountEnabled: u.enabled, userType: u.type, createdDateTime: ago(300), ...(dir.entraDenied.has('signin') ? {} : { signInActivity: { lastSignInDateTime: u.last } }) })) }) }
   if (url.pathname === '/v1.0/reports/authenticationMethods/userRegistrationDetails') return dir.entraDenied.has('mfa') ? Response.json({ error: { code: 'Authentication_RequestFromNonPremiumTenantOrB2CTenant' } }, { status: 403 }) : Response.json({ value: dir.entra.map(u => ({ id: u.id, isMfaRegistered: u.mfa, isAdmin: u.roles.length > 0 })) })
+  const memberOf = /^\/v1\.0\/users\/(\w+)\/memberOf\/microsoft\.graph\.group$/.exec(url.pathname)
+  if (memberOf) return dir.groupsDenied.has('entra') ? Response.json({ error: { code: 'Authorization_RequestDenied' } }, { status: 403 }) : Response.json({ value: memberOf[1] === 'e2' ? [{ displayName: 'Vendor partners' }] : [{ displayName: 'All staff' }] })
   if (url.pathname === '/v1.0/directoryRoles') { const names = [...new Set(dir.entra.flatMap(u => u.roles))]; return Response.json({ value: names.map(n => ({ id: n, displayName: n, members: dir.entra.filter(u => u.roles.includes(n)).map(u => ({ id: u.id })) })) }) }
  }
  if (url.hostname === 'console.jumpcloud.com') {
   if (request.headers.get('x-api-key') !== secrets.jumpcloud) return Response.json({ message: 'Unauthorized' }, { status: 401 })
+  if (url.pathname === '/api/v2/usergroups') return Response.json([{ id: 'ug1', name: 'Engineering' }])
+  if (/^\/api\/v2\/users\/\w+\/memberof$/.test(url.pathname)) return Response.json([{ id: 'ug1', type: 'user_group' }])
   const skip = Number(url.searchParams.get('skip') ?? 0), limit = Number(url.searchParams.get('limit'))
   return Response.json({ totalCount: dir.jumpcloud.length, results: dir.jumpcloud.slice(skip, skip + limit).map(u => ({ ...u, created: ago(100) })) })
  }
@@ -89,6 +96,8 @@ try {
   const ids = await get('/api/identities')
   assert.deepEqual(ids.populations, { person: 8, contractor: 1, guest: 1, service: 1, suspended: 1 })
   assert.deepEqual(ids.duplicates, ['ana@northstar.test'])
+  const groupsOf = (source, email) => ids.accounts.find(a => a.source.startsWith(source) && a.email === email).groups
+  assert.equal(groupsOf('Okta', 'ana@northstar.test'), 'Everyone, Security admins'); assert.equal(groupsOf('Google', 'ana@northstar.test'), 'Workspace admins'); assert.equal(groupsOf('Microsoft', 'partner@vendor.test'), 'Vendor partners'); assert.equal(groupsOf('JumpCloud', 'frank@northstar.test'), 'Engineering')
   const mfa = await results('idp.mfa')
   assert.equal(mfa['Ben'], 'fail'); assert.equal(mfa['Deploy'], 'fail'); assert.equal(mfa['Cy Park'], 'fail'); assert.equal(mfa['Eve Moss'], 'fail'); assert.equal(mfa['Frank'], 'fail'); assert.equal(mfa['Old'], 'pass'); assert.equal(mfa['Gina'], 'pass')
   const admins = await results('idp.admin-mfa')
@@ -112,10 +121,12 @@ try {
   assert.deepEqual(ids.accounts.filter(a => a.email === 'ana@northstar.test').map(a => a.match.state).sort(), ['approved', 'proposed', 'rejected'])
   assert.equal(ids.accounts.find(a => a.email === 'dana@contract.test').match.basis, 'owner choice')
   dir.okta.find(u => u.id === 'o2').status = 'SUSPENDED'
-  dir.entraDenied.add('mfa')
+  dir.entraDenied.add('mfa'); dir.groupsDenied.add('okta')
   await app.clock('2026-10-11T14:00:00Z'); await app.tick()
   ids = await get('/api/identities')
   assert.equal(ids.accounts.find(a => a.email === 'ben@northstar.test').status, 'suspended')
+  assert.equal(ids.accounts.find(a => a.source.startsWith('Okta') && a.email === 'ana@northstar.test').groups, null)
+  assert.match((await get('/api/connections/' + conn.okta.id)).runs[0].coverage_json, /group membership not readable/)
   assert.equal((await results('idp.mfa'))['Ben'], 'pass')
   const entraRun = (await get('/api/connections/' + conn.entra.id)).runs[0]
   assert.equal(entraRun.outcome, 'partial'); assert.match(entraRun.coverage_json, /MFA registration not readable/)
