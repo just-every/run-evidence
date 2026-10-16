@@ -83,7 +83,7 @@ Before was re-measured, not copied: every cited suite (`tests/evidence.mjs`,
 | ERASE-001 | missing | missing | — |
 | LOG-001 | partial | partial | Adds `product_audit` (append-only, no secrets) for program, control, test, remediation, connection, token, policy and risk actions, and per-call API audit; carried in archive v3. Erasure anonymization and unified export missing. |
 | OPS-001 | partial | partial | Adds the Cron Trigger scheduler with per-step outcomes, durable collection claims and interrupted-run closure. Cost disclosure, health surfaces and backup status missing. |
-| MOBILE-001 | partial | partial | Existing 1440/390 journeys pass; new pages use the same responsive primitives but have no browser journey or axe run yet. |
+| MOBILE-001 | partial | partial | Existing 1440/390 journeys pass; the 13 new owner pages were checked once at 1440 and 390 with no overflow or errors (`PAGES-1440-390.md`). No permanent browser journey, axe run or keyboard-only run for them yet. |
 | PUBLIC-001 | done | done | `tests/site.mjs`, `tests/browser.mjs` pass unchanged. |
 | AGENT-001 | done | done | `tests/agent.mjs`. |
 | AGENT-002 | missing | missing | — |

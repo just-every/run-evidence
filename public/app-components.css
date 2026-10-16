@@ -70,6 +70,14 @@
  .rer-themed dl.facts { grid-template-columns: minmax(80px, 100px) minmax(0, 1fr); gap: 16px; font-size: 15px; }
  .rer-themed code, .rer-themed pre { font-size: 13px; }
  .rer-themed .empty-state { min-height: 280px; }
+ /* Program tables stack each row as a labelled card on phones. */
+ .table-scroll table, .table-scroll tbody { display: block; min-width: 0; }
+ .table-scroll thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+ .table-scroll tr { display: block; padding: 12px 0; border-bottom: 1px solid var(--ev-line); }
+ .table-scroll td { display: grid; grid-template-columns: minmax(84px, 34%) minmax(0, 1fr); gap: 12px; padding: 6px 0; border: 0; }
+ .table-scroll td::before { content: attr(data-label); color: var(--ev-muted); font-size: 14px; }
+ .table-scroll td .cell { min-width: 0; }
+ .table-scroll td .state { justify-self: start; }
 }
 
 /* A little refracted light under the first panel; app slabs stay flat. */
