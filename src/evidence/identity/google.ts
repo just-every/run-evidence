@@ -1,28 +1,13 @@
 import { call, DirectoryFailure, type Directory, type DirectoryAccount } from './directory'
+import { googleToken, OAuthFailure } from '../oauth'
 // Google Workspace Admin SDK Directory API through a service account with
 // domain-wide delegation for one read-only scope, acting as a named admin.
 const label = 'Google Workspace'
 const scope = 'https://www.googleapis.com/auth/admin.directory.user.readonly'
-const b64url = (bytes: Uint8Array | string) => btoa(typeof bytes === 'string' ? bytes : String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-interface ServiceAccount { client_email: string; private_key: string; token_uri?: string }
-function parseKey(secret: string): ServiceAccount {
- let key: ServiceAccount
- try { key = JSON.parse(secret) } catch { throw new DirectoryFailure('unauthorized', 'Paste the service account key file (JSON).') }
- if (!key.client_email || !/-----BEGIN PRIVATE KEY-----/.test(key.private_key ?? '')) throw new DirectoryFailure('unauthorized', 'The key file needs client_email and a private_key.')
- return key
-}
-// OAuth 2.0 JWT bearer grant signed RS256 with the service account's key.
+// The directory read needs domain-wide delegation, acting as a named administrator.
 async function token(config: Record<string, string>, secret: string, now: Date) {
- const key = parseKey(secret), iat = Math.floor(now.getTime() / 1000)
- const der = Uint8Array.from(atob(key.private_key.replace(/-----[^-]+-----/g, '').replace(/\s+/g, '')), c => c.charCodeAt(0))
- const signer = await crypto.subtle.importKey('pkcs8', der, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign'])
- const unsigned = `${b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))}.${b64url(JSON.stringify({ iss: key.client_email, sub: config.admin_email, scope, aud: 'https://oauth2.googleapis.com/token', iat, exp: iat + 600 }))}`
- const signature = b64url(new Uint8Array(await crypto.subtle.sign('RSASSA-PKCS1-v1_5', signer, new TextEncoder().encode(unsigned))))
- let response: Response
- try { response = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: `${unsigned}.${signature}` }), signal: AbortSignal.timeout(20000) }) } catch { throw new DirectoryFailure('unavailable', 'Google could not be reached') }
- if (response.status === 400 || response.status === 401) throw new DirectoryFailure('unauthorized', 'Google refused the service account (check domain-wide delegation for the read-only directory scope)')
- if (response.status !== 200) throw new DirectoryFailure('unavailable', `Google answered ${response.status}`)
- return String((await response.json() as { access_token?: string }).access_token ?? '')
+ try { return await googleToken(secret, scope, config.admin_email, now, 'Google refused the service account (check domain-wide delegation for the read-only directory scope)') }
+ catch (error) { if (error instanceof OAuthFailure) throw new DirectoryFailure(error.kind, error.message); throw error }
 }
 export const google: Directory = {
  name: 'Google Workspace', credential: 'A service account key (JSON) with domain-wide delegation for the scope ' + scope, permissions: [scope + ' (delegated from a super administrator named below)'],

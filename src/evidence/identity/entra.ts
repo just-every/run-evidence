@@ -1,15 +1,13 @@
 import { call, DirectoryFailure, type Directory, type DirectoryAccount } from './directory'
+import { microsoftToken, OAuthFailure } from '../oauth'
 // Microsoft Entra ID (Microsoft 365) through Microsoft Graph with an app
 // registration's client credentials and read-only application permissions.
 // Sign-in activity and MFA registration need Entra ID P1; without it those
 // classes are recorded as unreadable, never as passing.
 const label = 'Microsoft Entra ID'
 async function token(config: Record<string, string>, secret: string) {
- let response: Response
- try { response = await fetch(`https://login.microsoftonline.com/${encodeURIComponent(config.tenant_id)}/oauth2/v2.0/token`, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ client_id: config.client_id, client_secret: secret, scope: 'https://graph.microsoft.com/.default', grant_type: 'client_credentials' }), signal: AbortSignal.timeout(20000) }) } catch { throw new DirectoryFailure('unavailable', 'Microsoft could not be reached') }
- if (response.status === 400 || response.status === 401) throw new DirectoryFailure('unauthorized', 'Microsoft refused the app credentials')
- if (response.status !== 200) throw new DirectoryFailure('unavailable', `Microsoft answered ${response.status}`)
- return String((await response.json() as { access_token?: string }).access_token ?? '')
+ try { return await microsoftToken(config.tenant_id, config.client_id, secret, 'https://graph.microsoft.com') }
+ catch (error) { if (error instanceof OAuthFailure) throw new DirectoryFailure(error.kind, error.message); throw error }
 }
 async function all(access: string, url: string, limit = 50) {
  const out: Record<string, unknown>[] = []

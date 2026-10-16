@@ -1,5 +1,7 @@
 import type { Criterion } from './criteria'
 import { awsCatalogue } from '../cloud/catalogue'
+import { gcpCatalogue } from '../cloud/gcp'
+import { azureCatalogue } from '../cloud/azure'
 import { identityCatalogue } from '../identity/catalogue'
 import { attestationTest, policyTests } from '../policy/templates'
 // The published LIBRARY-001 test catalogue for connectors Evidence ships. Each
@@ -71,6 +73,8 @@ export const catalogue: CatalogueEntry[] = [
    noTerraform: 'Membership removal is an operational action; github_membership resources can manage it if you hold membership in Terraform.',
   } } },
  ...awsCatalogue,
+ ...gcpCatalogue,
+ ...azureCatalogue,
  ...identityCatalogue,
  ...policyTests,
  attestationTest,
