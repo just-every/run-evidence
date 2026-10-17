@@ -2386,7 +2386,7 @@
       "executable": false
     },
     "docs/BACKUP-RESTORE.md": {
-      "sha256": "e92bfd785df59b822548f19e47b4e090af7aa57d508e2d072f4ef76f26b3761d",
+      "sha256": "789548f9adef487e552885cc4dafd26cf076417b165f8a983163cef20aba3235",
       "executable": false
     },
     "docs/DRATA-IMPORT.md": {
@@ -2394,7 +2394,7 @@
       "executable": false
     },
     "docs/GETTING-STARTED.md": {
-      "sha256": "64a15100e9c27a249f458973d9181d55c2546cf5db4521a7b70d8f731631d57d",
+      "sha256": "4837e27ca0cfe50861015c79d9a57e4d5615ab9f6f1bcb572afc5efdbf6f2e5b",
       "executable": false
     },
     "docs/MAIN-FLOWS.md": {
@@ -2634,7 +2634,7 @@
       "executable": false
     },
     "README.md": {
-      "sha256": "1d1c794d323bce1b2f7db25dd0b5d3caac4cc81af9ed19e7b0c372faf7e7ad84",
+      "sha256": "8c64bd0765a5b72f2379729c1262e9f0ea8f2022142493a251aa9e391420f568",
       "executable": false
     },
     "rer-project.json": {
@@ -2646,7 +2646,7 @@
       "executable": false
     },
     "RUN-LOCALLY.md": {
-      "sha256": "d9b761d7fa31f64f112fc3b44cb97ca497583f9f66752e5f7245b9af91d390aa",
+      "sha256": "5c575ebd3c92526a5747a76a5811ba0c101eaf782717da6e2f7ceca2273bd421",
       "executable": false
     },
     "scripts/archive.mjs": {
