@@ -2682,7 +2682,7 @@
       "executable": false
     },
     "docs/GETTING-STARTED.md": {
-      "sha256": "fc59b63d2b11f27a16c1a40248b7246b7a053f64f12dc013ee9230a00d51c992",
+      "sha256": "2c91ef27f124f7242eddfad47126a4039d5a1f883df55c0ce9141e1c4620f911",
       "executable": false
     },
     "docs/MAIN-FLOWS.md": {
@@ -3106,7 +3106,7 @@
       "executable": false
     },
     "README.md": {
-      "sha256": "9e711c799b0647d2dc6fc0432258eb617298098afa50654ddfbab8d8ba705da3",
+      "sha256": "b9f1a4552d2dc2ff70f0edeae0ef1af64433e1fc4f444e8c55779e6423b6fe8e",
       "executable": false
     },
     "rer-project.json": {

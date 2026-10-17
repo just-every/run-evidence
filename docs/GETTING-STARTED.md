@@ -12,12 +12,7 @@ One line installs the shared Run Edit Run command, gets Evidence and starts it:
 npx -y @runeditrun/rer dev just-every/run-evidence
 ```
 
-Without Node 22 or later, install rer first (it brings its own Node), then start Evidence:
-
-```sh
-curl -fsSL https://runeditrun.com/install.sh | sh
-rer dev just-every/run-evidence
-```
+Without Node, `curl -fsSL https://runeditrun.com/install.sh | sh -s -- dev just-every/run-evidence` brings its own and does the same.
 
 To start it again later, run `cd run-evidence && rer dev`.
 
