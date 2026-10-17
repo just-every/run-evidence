@@ -12,7 +12,7 @@ const rows: Row[] = [
  ['GOV-04','Security roles and accountabilities are assigned','Organization chart and named security owner','annual',{ soc2:['CC1.3','CC1.5'], iso27001:['5.3','A.5.2','A.5.4'], hipaa:['164.308(a)(2)'], pci:['12.4'] },[],['Information security policy']],
  ['GOV-05','Security objectives are set and measured','Security objectives with measured results','annual',{ soc2:['CC3.1'], iso27001:['6.2','9.1'] }],
  ['GOV-06','Program scope and context are documented','Scope statement, interested parties and system boundaries','annual',{ soc2:['CC2.1'], iso27001:['4.1','4.2','4.3','4.4'], pci:['12.5'] }],
- ['GOV-07','Internal audit programme runs on schedule','Internal audit report with findings','annual',{ soc2:['CC4.1'], iso27001:['9.2','A.5.35'], hipaa:['164.308(a)(8)'] }],
+ ['GOV-07','Internal audit program runs on schedule','Internal audit report with findings','annual',{ soc2:['CC4.1'], iso27001:['9.2','A.5.35'], hipaa:['164.308(a)(8)'] }],
  ['GOV-08','Nonconformities are corrected and the program improves','Corrective action log','quarterly',{ soc2:['CC4.2'], iso27001:['10.1','10.2'] }],
  ['GOV-09','Legal, regulatory and contractual requirements are tracked','Requirements register with owners','annual',{ soc2:['CC2.3'], iso27001:['A.5.31','A.5.32','A.5.33'] }],
  ['GOV-10','Compliance with security policies is reviewed','Policy compliance review record','annual',{ soc2:['CC4.1'], iso27001:['A.5.36'] }],

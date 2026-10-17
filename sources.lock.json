@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "0d9c9d733f9b5c125b5bb38d6575fe3a8d18ca949d706eb431dd5a4d611878e7",
+  "manifest": "997ac23a59209c853363790455ed852177dd02865f4613af1f2213665438ddf5",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -14,6 +14,11 @@
       "source": {
         "kind": "local",
         "paths": [
+          ".github/workflows/run-demo.yml",
+          ".node-version",
+          "LICENSE",
+          "RUN-LOCALLY.md",
+          "SEED-COMMAND-CONTRACT.md",
           "scripts/edition-authoring/README.md",
           "scripts/edition-authoring/base-copies.mjs",
           "scripts/edition-authoring/cli.mjs",
@@ -24,6 +29,9 @@
           "scripts/edition-authoring/release.mjs",
           "scripts/edition-authoring/sources.mjs",
           "scripts/edition-authoring/updates.mjs",
+          "scripts/installer/seed.mjs",
+          "scripts/installer/ui/background.svg",
+          "scripts/operations-config.mjs",
           "src/base/deployment-health.ts",
           "src/base/dispatch.ts",
           "src/base/font-response.ts",
@@ -40,8 +48,10 @@
           "src/base/setup.ts",
           "src/base/static-assets.ts",
           "src/base/theme-frame.ts",
+          "src/dev-personas.ts",
           "src/evidence/d1-transport/index.d.mts",
           "src/evidence/d1-transport/index.mjs",
+          "src/evidence/import/base/LICENSE",
           "src/evidence/import/base/d1/README.md",
           "src/evidence/import/base/d1/apply.ts",
           "src/evidence/import/base/d1/budget.ts",
@@ -185,6 +195,7 @@
           "src/evidence/import/base/storage/schema.ts",
           "src/evidence/import/base/storage/sqlite.ts",
           "src/evidence/import/base/types.ts",
+          "src/mail.server.d.mts",
           "src/modules/demo/README.md",
           "src/modules/demo/effects.mjs",
           "src/modules/demo/index.d.mts",
@@ -227,6 +238,7 @@
           "src/modules/mail/src/adapters/messaging/serialize.mjs",
           "src/modules/mail/src/adapters/rer/contract.mjs",
           "src/modules/mail/src/adapters/rer/index.mjs",
+          "src/modules/mail/src/adapters/rer/list-headers.mjs",
           "src/modules/mail/src/adapters/resend/README.md",
           "src/modules/mail/src/adapters/resend/index.mjs",
           "src/modules/mail/src/adapters/resend/response.mjs",
@@ -280,6 +292,7 @@
           "src/modules/operator-auth/accounts/native.d.mts",
           "src/modules/operator-auth/accounts/native.mjs",
           "src/modules/operator-auth/accounts/oa.mjs",
+          "src/modules/operator-auth/accounts/one-click.mjs",
           "src/modules/operator-auth/accounts/owner-signin.mjs",
           "src/modules/operator-auth/accounts/provider-control.mjs",
           "src/modules/operator-auth/accounts/provider-pin.mjs",
@@ -320,6 +333,7 @@
           "src/modules/operator-auth/identity/admission.mjs",
           "src/modules/operator-auth/identity/after-confirm.mjs",
           "src/modules/operator-auth/identity/email-link/confirmation.mjs",
+          "src/modules/operator-auth/identity/email-link/expiry.mjs",
           "src/modules/operator-auth/identity/email-link/index.d.mts",
           "src/modules/operator-auth/identity/email-link/index.mjs",
           "src/modules/operator-auth/identity/email-link/message.mjs",
@@ -345,12 +359,14 @@
           "src/modules/operator-auth/loopback.mjs",
           "src/modules/operator-auth/owner-signin-grant.mjs",
           "src/modules/operator-auth/page.mjs",
+          "src/modules/operator-auth/policy.d.mts",
           "src/modules/operator-auth/policy.mjs",
           "src/modules/operator-auth/rejected-response.mjs",
           "src/modules/operator-auth/routes.mjs",
           "src/modules/operator-auth/service.mjs",
           "src/modules/operator-auth/signin/index.d.mts",
           "src/modules/operator-auth/signin/index.mjs",
+          "src/modules/operator-auth/signin/one-click.mjs",
           "src/modules/owner-claim/README.md",
           "src/modules/owner-claim/idp.mjs",
           "src/modules/owner-claim/index.d.mts",
@@ -359,13 +375,19 @@
           "src/modules/owner-claim/schema/idp.sql",
           "src/modules/owner-claim/schema/owner-claim.sql",
           "src/modules/owner-claim/transaction.mjs",
-          "src/modules/owner-claim/verify.mjs"
+          "src/modules/owner-claim/verify.d.mts",
+          "src/modules/owner-claim/verify.mjs",
+          "src/router.tsx"
         ],
         "origin": {
           "repository": "https://github.com/runeditrun/base.git",
           "revision": "d320c1436aaeb95d2485c1a0e69afa00ac8fb51a",
           "path": ".",
           "paths": [
+            "LICENSE",
+            "default-seed/.node-version",
+            "default-seed/scripts/installer/ui/background.svg",
+            "default-seed/src/router.tsx",
             "edition-authoring/README.md",
             "edition-authoring/base-copies.mjs",
             "edition-authoring/cli.mjs",
@@ -376,6 +398,9 @@
             "edition-authoring/release.mjs",
             "edition-authoring/sources.mjs",
             "edition-authoring/updates.mjs",
+            "export/RUN-LOCALLY.md",
+            "export/SEED-COMMAND-CONTRACT.md",
+            "export/run-demo.yml",
             "foundation/runtime/deployment-health.ts",
             "foundation/runtime/dispatch.ts",
             "foundation/runtime/font-response.ts",
@@ -392,6 +417,10 @@
             "foundation/runtime/setup.ts",
             "foundation/runtime/static-assets.ts",
             "foundation/runtime/theme-frame.ts",
+            "foundation/template/scripts/installer/seed.mjs",
+            "foundation/template/scripts/operations-config.mjs",
+            "foundation/template/src/dev-personas.ts",
+            "foundation/template/src/mail.server.d.mts",
             "modules/d1-transport/index.d.mts",
             "modules/d1-transport/index.mjs",
             "modules/demo/README.md",
@@ -579,6 +608,7 @@
             "modules/mail/src/adapters/messaging/serialize.mjs",
             "modules/mail/src/adapters/rer/contract.mjs",
             "modules/mail/src/adapters/rer/index.mjs",
+            "modules/mail/src/adapters/rer/list-headers.mjs",
             "modules/mail/src/adapters/resend/README.md",
             "modules/mail/src/adapters/resend/index.mjs",
             "modules/mail/src/adapters/resend/response.mjs",
@@ -632,6 +662,7 @@
             "modules/operator-auth/accounts/native.d.mts",
             "modules/operator-auth/accounts/native.mjs",
             "modules/operator-auth/accounts/oa.mjs",
+            "modules/operator-auth/accounts/one-click.mjs",
             "modules/operator-auth/accounts/owner-signin.mjs",
             "modules/operator-auth/accounts/provider-control.mjs",
             "modules/operator-auth/accounts/provider-pin.mjs",
@@ -672,6 +703,7 @@
             "modules/operator-auth/identity/admission.mjs",
             "modules/operator-auth/identity/after-confirm.mjs",
             "modules/operator-auth/identity/email-link/confirmation.mjs",
+            "modules/operator-auth/identity/email-link/expiry.mjs",
             "modules/operator-auth/identity/email-link/index.d.mts",
             "modules/operator-auth/identity/email-link/index.mjs",
             "modules/operator-auth/identity/email-link/message.mjs",
@@ -697,12 +729,14 @@
             "modules/operator-auth/loopback.mjs",
             "modules/operator-auth/owner-signin-grant.mjs",
             "modules/operator-auth/page.mjs",
+            "modules/operator-auth/policy.d.mts",
             "modules/operator-auth/policy.mjs",
             "modules/operator-auth/rejected-response.mjs",
             "modules/operator-auth/routes.mjs",
             "modules/operator-auth/service.mjs",
             "modules/operator-auth/signin/index.d.mts",
             "modules/operator-auth/signin/index.mjs",
+            "modules/operator-auth/signin/one-click.mjs",
             "modules/owner-claim/README.md",
             "modules/owner-claim/idp.mjs",
             "modules/owner-claim/index.d.mts",
@@ -711,10 +745,27 @@
             "modules/owner-claim/schema/idp.sql",
             "modules/owner-claim/schema/owner-claim.sql",
             "modules/owner-claim/transaction.mjs",
+            "modules/owner-claim/verify.d.mts",
             "modules/owner-claim/verify.mjs"
           ]
         },
         "mappings": [
+          {
+            "path": ".github/workflows/run-demo.yml",
+            "originPath": "export/run-demo.yml"
+          },
+          {
+            "path": ".node-version",
+            "originPath": "default-seed/.node-version"
+          },
+          {
+            "path": "LICENSE",
+            "originPath": "LICENSE"
+          },
+          {
+            "path": "RUN-LOCALLY.md",
+            "originPath": "export/RUN-LOCALLY.md"
+          },
           {
             "path": "scripts/edition-authoring/base-copies.mjs",
             "originPath": "edition-authoring/base-copies.mjs"
@@ -754,6 +805,22 @@
           {
             "path": "scripts/edition-authoring/updates.mjs",
             "originPath": "edition-authoring/updates.mjs"
+          },
+          {
+            "path": "scripts/installer/seed.mjs",
+            "originPath": "foundation/template/scripts/installer/seed.mjs"
+          },
+          {
+            "path": "scripts/installer/ui/background.svg",
+            "originPath": "default-seed/scripts/installer/ui/background.svg"
+          },
+          {
+            "path": "scripts/operations-config.mjs",
+            "originPath": "foundation/template/scripts/operations-config.mjs"
+          },
+          {
+            "path": "SEED-COMMAND-CONTRACT.md",
+            "originPath": "export/SEED-COMMAND-CONTRACT.md"
           },
           {
             "path": "src/base/deployment-health.ts",
@@ -818,6 +885,10 @@
           {
             "path": "src/base/theme-frame.ts",
             "originPath": "foundation/runtime/theme-frame.ts"
+          },
+          {
+            "path": "src/dev-personas.ts",
+            "originPath": "foundation/template/src/dev-personas.ts"
           },
           {
             "path": "src/evidence/d1-transport/index.d.mts",
@@ -1328,6 +1399,10 @@
             "originPath": "modules/import-kit/src/journal/originals.ts"
           },
           {
+            "path": "src/evidence/import/base/LICENSE",
+            "originPath": "LICENSE"
+          },
+          {
             "path": "src/evidence/import/base/plan/budget.ts",
             "originPath": "modules/import-kit/src/plan/budget.ts"
           },
@@ -1398,6 +1473,10 @@
           {
             "path": "src/evidence/import/base/types.ts",
             "originPath": "modules/import-kit/src/types.ts"
+          },
+          {
+            "path": "src/mail.server.d.mts",
+            "originPath": "foundation/template/src/mail.server.d.mts"
           },
           {
             "path": "src/modules/demo/effects.mjs",
@@ -1566,6 +1645,10 @@
           {
             "path": "src/modules/mail/src/adapters/rer/index.mjs",
             "originPath": "modules/mail/src/adapters/rer/index.mjs"
+          },
+          {
+            "path": "src/modules/mail/src/adapters/rer/list-headers.mjs",
+            "originPath": "modules/mail/src/adapters/rer/list-headers.mjs"
           },
           {
             "path": "src/modules/mail/src/adapters/resend/index.mjs",
@@ -1776,6 +1859,10 @@
             "originPath": "modules/operator-auth/accounts/oa.mjs"
           },
           {
+            "path": "src/modules/operator-auth/accounts/one-click.mjs",
+            "originPath": "modules/operator-auth/accounts/one-click.mjs"
+          },
+          {
             "path": "src/modules/operator-auth/accounts/owner-signin.mjs",
             "originPath": "modules/operator-auth/accounts/owner-signin.mjs"
           },
@@ -1936,6 +2023,10 @@
             "originPath": "modules/operator-auth/identity/email-link/confirmation.mjs"
           },
           {
+            "path": "src/modules/operator-auth/identity/email-link/expiry.mjs",
+            "originPath": "modules/operator-auth/identity/email-link/expiry.mjs"
+          },
+          {
             "path": "src/modules/operator-auth/identity/email-link/index.d.mts",
             "originPath": "modules/operator-auth/identity/email-link/index.d.mts"
           },
@@ -2036,6 +2127,10 @@
             "originPath": "modules/operator-auth/page.mjs"
           },
           {
+            "path": "src/modules/operator-auth/policy.d.mts",
+            "originPath": "modules/operator-auth/policy.d.mts"
+          },
+          {
             "path": "src/modules/operator-auth/policy.mjs",
             "originPath": "modules/operator-auth/policy.mjs"
           },
@@ -2062,6 +2157,10 @@
           {
             "path": "src/modules/operator-auth/signin/index.mjs",
             "originPath": "modules/operator-auth/signin/index.mjs"
+          },
+          {
+            "path": "src/modules/operator-auth/signin/one-click.mjs",
+            "originPath": "modules/operator-auth/signin/one-click.mjs"
           },
           {
             "path": "src/modules/owner-claim/idp.mjs",
@@ -2096,15 +2195,23 @@
             "originPath": "modules/owner-claim/transaction.mjs"
           },
           {
+            "path": "src/modules/owner-claim/verify.d.mts",
+            "originPath": "modules/owner-claim/verify.d.mts"
+          },
+          {
             "path": "src/modules/owner-claim/verify.mjs",
             "originPath": "modules/owner-claim/verify.mjs"
+          },
+          {
+            "path": "src/router.tsx",
+            "originPath": "default-seed/src/router.tsx"
           }
         ]
       },
       "baseline": {
-        "key": "c3d333ab3d20f21c5e77de572497762308337cf60fcb4a8d4feac2aa38ccfef0",
-        "digest": "0678e630df4f9889b817ab564fbe20f32e4195c2e81ec114dac01eef9468fe46",
-        "sha256": "157ff5882cc7e3998acf6b0a4500c422e8fc4394142b1d16543feebdbdfdcfc8"
+        "key": "9d5577803d1316944658e1ad7b24a73513610772b25d10cfab14d9e696660567",
+        "digest": "80f2469f3bc56398b685c2aa178b6eee6c3254c4bbf1eb013fe6330caad3bc2a",
+        "sha256": "50b74de94518738c2493e8c4d1ddb55871b455081313bfa23d2d9ab129dbbf3e"
       }
     },
     {
@@ -2140,33 +2247,30 @@
       "source": {
         "kind": "local",
         "paths": [
-          ".github/workflows/run-demo.yml",
           ".github/workflows/run-site.yml",
           ".github/workflows/verify.yml",
           ".gitignore",
-          ".node-version",
           "ACCEPTANCE.md",
           "AGENTS.md",
           "CHANGELOG.md",
           "CONTRACT.md",
           "DEMO.md",
-          "LICENSE",
           "ONBOARDING.md",
           "OPERATIONS.json",
           "OPERATIONS.md",
           "README.md",
-          "RUN-LOCALLY.md",
-          "SEED-COMMAND-CONTRACT.md",
           "base-copies.json",
           "deploy-demo.json",
           "deploy-site.json",
           "deploy.json",
           "docs/AGENT-COMMANDS.md",
+          "docs/API.md",
           "docs/BACKUP-RESTORE.md",
           "docs/DRATA-IMPORT.md",
           "docs/GETTING-STARTED.md",
           "docs/MAIN-FLOWS.md",
           "docs/MOVE-IN.md",
+          "docs/PROGRAMS.md",
           "migrations/core/0001_owner.sql",
           "migrations/core/0002_outbox.sql",
           "migrations/core/0003_portability.sql",
@@ -2182,24 +2286,88 @@
           "migrations/core/0013_dependency_setup.sql",
           "migrations/core/0014_owner_claim.sql",
           "migrations/core/0015_owner_signin.sql",
+          "migrations/core/0016_program.sql",
+          "migrations/core/0017_tests.sql",
+          "migrations/core/0018_remediation.sql",
+          "migrations/core/0019_api.sql",
+          "migrations/core/0020_connections.sql",
+          "migrations/core/0021_risk.sql",
+          "migrations/core/0022_policies.sql",
+          "migrations/core/0023_work.sql",
+          "migrations/core/0024_reports.sql",
+          "migrations/core/0025_followup.sql",
+          "migrations/core/0026_cloud.sql",
+          "migrations/core/0027_identity.sql",
+          "migrations/core/0028_attest.sql",
+          "migrations/core/0029_reviews.sql",
+          "migrations/core/0030_population.sql",
+          "migrations/core/0031_access.sql",
+          "migrations/core/0032_training.sql",
+          "migrations/core/0033_ticket_groups.sql",
           "package.json",
           "pnpm-lock.yaml",
           "public/app-components.css",
           "public/app-shell.css",
+          "public/apple-touch-icon.png",
           "public/archive.css",
           "public/archive.js",
-          "public/brand/band.svg",
+          "public/brand/favicon-16.png",
+          "public/brand/favicon-16.svg",
+          "public/brand/favicon-32.png",
+          "public/brand/favicon-32.svg",
+          "public/brand/icon-192.png",
+          "public/brand/icon-512.png",
           "public/brand/mark.svg",
           "public/desk.css",
+          "public/favicon.ico",
           "public/fonts/README.md",
+          "public/fonts/caveat/OFL.txt",
+          "public/fonts/caveat/caveat-latin-600-normal.woff2",
           "public/fonts/fonts.css",
           "public/fonts/jetbrains-mono/OFL.txt",
           "public/fonts/jetbrains-mono/jetbrains-mono-latin-wght-normal.woff2",
           "public/fonts/onest/OFL.txt",
           "public/fonts/onest/onest-latin-wght-normal.woff2",
+          "public/fonts/schibsted-grotesk/LICENSE.txt",
+          "public/fonts/schibsted-grotesk/schibsted-grotesk-latin-ext-wght-normal.woff2",
+          "public/fonts/schibsted-grotesk/schibsted-grotesk-latin-wght-normal.woff2",
           "public/rer-theme.css",
           "public/review.css",
           "public/review.js",
+          "public/site/board-phone-640.avif",
+          "public/site/board-phone-640.webp",
+          "public/site/board-phone-960.avif",
+          "public/site/board-phone-960.webp",
+          "public/site/brands/README.md",
+          "public/site/brands/jamf.svg",
+          "public/site/brands/rippling.svg",
+          "public/site/closing-1152.avif",
+          "public/site/closing-1152.webp",
+          "public/site/closing-1536.avif",
+          "public/site/closing-1536.webp",
+          "public/site/closing-768.avif",
+          "public/site/closing-768.webp",
+          "public/site/closing-phone-640.avif",
+          "public/site/closing-phone-640.webp",
+          "public/site/closing-phone-960.avif",
+          "public/site/closing-phone-960.webp",
+          "public/site/hero-1152.avif",
+          "public/site/hero-1152.webp",
+          "public/site/hero-1536.avif",
+          "public/site/hero-1536.webp",
+          "public/site/hero-768.avif",
+          "public/site/hero-768.webp",
+          "public/site/interlude-1152.avif",
+          "public/site/interlude-1152.webp",
+          "public/site/interlude-1536.avif",
+          "public/site/interlude-1536.webp",
+          "public/site/interlude-768.avif",
+          "public/site/interlude-768.webp",
+          "public/site/interlude-phone-640.avif",
+          "public/site/interlude-phone-640.webp",
+          "public/site/interlude-phone-960.avif",
+          "public/site/interlude-phone-960.webp",
+          "public/site/share.jpg",
           "rer-project.json",
           "rer-setup.json",
           "scripts/archive.mjs",
@@ -2208,35 +2376,74 @@
           "scripts/generate-edition.mjs",
           "scripts/install.mjs",
           "scripts/installer/local.mjs",
-          "scripts/installer/seed.mjs",
-          "scripts/installer/ui/background.svg",
           "scripts/installer/ui/seed.mjs",
-          "scripts/operations-config.mjs",
+          "scripts/library-check.mjs",
+          "scripts/verify.mjs",
           "seed.json",
           "src/app.server.ts",
           "src/auth.server.ts",
           "src/branding.json",
           "src/demo-data.ts",
           "src/demo.ts",
-          "src/dev-personas.ts",
+          "src/evidence/access/http.ts",
+          "src/evidence/access/storage.ts",
           "src/evidence/agent/archive.ts",
           "src/evidence/agent/http.ts",
           "src/evidence/agent/input.ts",
           "src/evidence/agent/storage.ts",
           "src/evidence/agent/types.ts",
           "src/evidence/agent/view.ts",
+          "src/evidence/api/collections.ts",
+          "src/evidence/api/http.ts",
+          "src/evidence/api/openapi.ts",
+          "src/evidence/api/tokens.ts",
           "src/evidence/archive/export.ts",
           "src/evidence/archive/extensions.ts",
           "src/evidence/archive/format.ts",
           "src/evidence/archive/http.ts",
           "src/evidence/archive/inventory.ts",
+          "src/evidence/archive/program.ts",
           "src/evidence/archive/restore.ts",
           "src/evidence/archive/validate.ts",
           "src/evidence/archive/view.ts",
+          "src/evidence/attest/http.ts",
+          "src/evidence/attest/storage.ts",
+          "src/evidence/cadence.ts",
+          "src/evidence/cloud/aws.ts",
+          "src/evidence/cloud/azure.ts",
+          "src/evidence/cloud/catalogue.ts",
+          "src/evidence/cloud/clouds.ts",
+          "src/evidence/cloud/collect.ts",
+          "src/evidence/cloud/connect.ts",
+          "src/evidence/cloud/gcp.ts",
+          "src/evidence/cloud/scoped.ts",
+          "src/evidence/cloud/sigv4.ts",
+          "src/evidence/cloud/xml.ts",
+          "src/evidence/connect/collect.ts",
+          "src/evidence/connect/custody.ts",
+          "src/evidence/connect/github.ts",
+          "src/evidence/connect/http.ts",
+          "src/evidence/connect/runs.ts",
+          "src/evidence/connect/storage.ts",
+          "src/evidence/connect/view.ts",
+          "src/evidence/door.ts",
+          "src/evidence/followup/channels.ts",
+          "src/evidence/followup/digest.ts",
+          "src/evidence/followup/http.ts",
+          "src/evidence/followup/send.ts",
+          "src/evidence/followup/settings.ts",
+          "src/evidence/followup/view.ts",
           "src/evidence/http.ts",
+          "src/evidence/identity/catalogue.ts",
+          "src/evidence/identity/collect.ts",
+          "src/evidence/identity/directory.ts",
+          "src/evidence/identity/entra.ts",
+          "src/evidence/identity/google.ts",
+          "src/evidence/identity/http.ts",
+          "src/evidence/identity/jumpcloud.ts",
+          "src/evidence/identity/okta.ts",
           "src/evidence/import/archive-schema.ts",
           "src/evidence/import/archive.ts",
-          "src/evidence/import/base/LICENSE",
           "src/evidence/import/base/SOURCE.md",
           "src/evidence/import/context.ts",
           "src/evidence/import/html.ts",
@@ -2249,69 +2456,150 @@
           "src/evidence/import/types.ts",
           "src/evidence/import/view.ts",
           "src/evidence/import/zip.ts",
+          "src/evidence/library/controls.ts",
+          "src/evidence/library/hipaa.ts",
+          "src/evidence/library/index.ts",
+          "src/evidence/library/iso27001.ts",
+          "src/evidence/library/pci.ts",
+          "src/evidence/library/soc2.ts",
+          "src/evidence/library/types.ts",
+          "src/evidence/me/http.ts",
           "src/evidence/model.ts",
+          "src/evidence/net.ts",
+          "src/evidence/oauth.ts",
+          "src/evidence/policy/builder.ts",
+          "src/evidence/policy/http.ts",
+          "src/evidence/policy/storage.ts",
+          "src/evidence/policy/templates.ts",
+          "src/evidence/population/http.ts",
+          "src/evidence/population/storage.ts",
+          "src/evidence/program/board-view.ts",
+          "src/evidence/program/board.ts",
+          "src/evidence/program/control.ts",
+          "src/evidence/program/http.ts",
+          "src/evidence/program/people.ts",
+          "src/evidence/program/readiness.ts",
+          "src/evidence/program/schedule.ts",
+          "src/evidence/program/storage.ts",
+          "src/evidence/program/view.ts",
+          "src/evidence/remedy/http.ts",
+          "src/evidence/remedy/storage.ts",
+          "src/evidence/remedy/view.ts",
+          "src/evidence/renewals.ts",
+          "src/evidence/resources.ts",
           "src/evidence/review/frame.ts",
           "src/evidence/review/http.ts",
           "src/evidence/review/reviewer-view.ts",
           "src/evidence/review/storage.ts",
           "src/evidence/review/types.ts",
           "src/evidence/review/view.ts",
+          "src/evidence/reviews/http.ts",
+          "src/evidence/reviews/schedule.ts",
+          "src/evidence/risk/http.ts",
+          "src/evidence/risk/import.ts",
+          "src/evidence/risk/library.ts",
+          "src/evidence/risk/storage.ts",
+          "src/evidence/risk/view.ts",
+          "src/evidence/scheduler.ts",
           "src/evidence/shell.ts",
           "src/evidence/storage.ts",
+          "src/evidence/tabular.ts",
+          "src/evidence/tests/catalogue.ts",
+          "src/evidence/tests/criteria.ts",
+          "src/evidence/tests/engine.ts",
+          "src/evidence/tests/http.ts",
+          "src/evidence/tests/storage.ts",
+          "src/evidence/tests/view.ts",
+          "src/evidence/training/courses.ts",
+          "src/evidence/training/http.ts",
+          "src/evidence/training/knowbe4.ts",
+          "src/evidence/training/storage.ts",
           "src/evidence/ui.ts",
           "src/evidence/upload.ts",
           "src/evidence/view.ts",
           "src/evidence/visibility.ts",
+          "src/evidence/work/asana.ts",
+          "src/evidence/work/client.ts",
+          "src/evidence/work/github-issues.ts",
+          "src/evidence/work/granularity.ts",
+          "src/evidence/work/hooks.ts",
+          "src/evidence/work/http.ts",
+          "src/evidence/work/jira.ts",
+          "src/evidence/work/linear.ts",
+          "src/evidence/work/storage.ts",
+          "src/evidence/work/sync.ts",
+          "src/evidence/work/vector.ts",
+          "src/evidence/work/view.ts",
           "src/family/evidence-foundation/README.md",
           "src/identity.ts",
-          "src/mail.server.d.mts",
           "src/mail.server.mjs",
           "src/routeTree.gen.ts",
-          "src/router.tsx",
           "src/routes/__root.tsx",
           "src/server.dev.ts",
           "src/server.ts",
           "src/site/assets.d.ts",
-          "src/site/docs/Docs.tsx",
-          "src/site/docs/docs.css",
+          "src/site/docs/DocsArticle.tsx",
+          "src/site/docs/DocsIndex.tsx",
+          "src/site/docs/DocsNav.tsx",
           "src/site/docs/pages.ts",
           "src/site/document.tsx",
           "src/site/entry.ts",
-          "src/site/landing/Actions.tsx",
-          "src/site/landing/Closing.tsx",
-          "src/site/landing/FolderDrawing.tsx",
-          "src/site/landing/GapsDrawing.tsx",
           "src/site/landing/Hero.tsx",
-          "src/site/landing/HeroDrawing.tsx",
-          "src/site/landing/Icon.tsx",
-          "src/site/landing/Included.tsx",
           "src/site/landing/Landing.tsx",
-          "src/site/landing/LicenseDrawing.tsx",
-          "src/site/landing/ReceiptsDrawing.tsx",
-          "src/site/landing/Section.tsx",
-          "src/site/landing/Slab.tsx",
-          "src/site/landing/acrylic.css",
-          "src/site/landing/landing-responsive.css",
-          "src/site/landing/landing.css",
+          "src/site/landing/icons.tsx",
+          "src/site/landing/parts.tsx",
+          "src/site/landing/sections/Agent.tsx",
+          "src/site/landing/sections/Closing.tsx",
+          "src/site/landing/sections/Details.tsx",
+          "src/site/landing/sections/Frameworks.tsx",
+          "src/site/landing/sections/Interlude.tsx",
+          "src/site/landing/sections/Ownership.tsx",
+          "src/site/landing/sections/Remediation.tsx",
+          "src/site/landing/sections/Trust.tsx",
           "src/site/run.ts",
-          "src/site/shell/SiteChrome.tsx",
+          "src/site/shell/Actions.tsx",
+          "src/site/shell/Lockup.tsx",
+          "src/site/shell/SiteFooter.tsx",
+          "src/site/shell/SiteHeader.tsx",
+          "src/site/shell/links.ts",
+          "src/site/styles/cards.css",
+          "src/site/styles/docs.css",
+          "src/site/styles/hero.css",
+          "src/site/styles/sections.css",
+          "src/site/styles/site.css",
+          "tests/access.mjs",
           "tests/agent.mjs",
+          "tests/api.mjs",
           "tests/archive.mjs",
           "tests/browser.mjs",
+          "tests/cadence.mjs",
+          "tests/cloud.mjs",
+          "tests/clouds.mjs",
           "tests/email-link.mjs",
           "tests/evidence.mjs",
           "tests/fixtures/drata/evidence_manifest.html",
           "tests/fixtures/drata/fixture.mjs",
+          "tests/followup.mjs",
+          "tests/github.mjs",
           "tests/helpers/move-in-browser.mjs",
           "tests/helpers/review-browser-archive.mjs",
           "tests/helpers/review-browser-runtime.mjs",
           "tests/helpers/runtime.mjs",
           "tests/helpers/site-runtime.mjs",
           "tests/helpers/worker.ts",
+          "tests/helpers/xlsx.mjs",
+          "tests/identity.mjs",
           "tests/import.mjs",
+          "tests/policy.mjs",
+          "tests/population.mjs",
+          "tests/program.mjs",
+          "tests/report.mjs",
           "tests/review-browser.mjs",
           "tests/review.mjs",
+          "tests/risk.mjs",
           "tests/site.mjs",
+          "tests/training.mjs",
+          "tests/work.mjs",
           "tsconfig.json",
           "vite.config.ts",
           "wrangler.jsonc"
@@ -2386,7 +2674,7 @@
       "executable": false
     },
     "docs/BACKUP-RESTORE.md": {
-      "sha256": "e92bfd785df59b822548f19e47b4e090af7aa57d508e2d072f4ef76f26b3761d",
+      "sha256": "789548f9adef487e552885cc4dafd26cf076417b165f8a983163cef20aba3235",
       "executable": false
     },
     "docs/DRATA-IMPORT.md": {
@@ -2394,7 +2682,7 @@
       "executable": false
     },
     "docs/GETTING-STARTED.md": {
-      "sha256": "64a15100e9c27a249f458973d9181d55c2546cf5db4521a7b70d8f731631d57d",
+      "sha256": "fc59b63d2b11f27a16c1a40248b7246b7a053f64f12dc013ee9230a00d51c992",
       "executable": false
     },
     "docs/MAIN-FLOWS.md": {
@@ -2410,7 +2698,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "0d9c9d733f9b5c125b5bb38d6575fe3a8d18ca949d706eb431dd5a4d611878e7",
+      "sha256": "997ac23a59209c853363790455ed852177dd02865f4613af1f2213665438ddf5",
       "executable": false
     },
     "LICENSE": {
@@ -2577,6 +2865,10 @@
       "sha256": "5701d94af83ef6dcbfd1b62218d1b2033e9468e1389f0aacff2e59b87bb2e71d",
       "executable": false
     },
+    "public/apple-touch-icon.png": {
+      "sha256": "a692a9f2e482e81f19c95a3546c76f823e2119c6cdbcb356bcec7167a0aa25a0",
+      "executable": false
+    },
     "public/archive.css": {
       "sha256": "5e2f79edf36e5d8dfa60b4dbb154aed6c4968069f05db68fe2311f6148428315",
       "executable": false
@@ -2585,20 +2877,52 @@
       "sha256": "cb2fd9d65dcdab534bba2aaf0cf26bb66f78582a0b600f607e8818d9b8028d81",
       "executable": false
     },
-    "public/brand/band.svg": {
-      "sha256": "e2e9b39f9880d4c7489d55f75c49f04f72eff638fe2b177ba4e76e49296a96cf",
+    "public/brand/favicon-16.png": {
+      "sha256": "a4f0a298b33ef3537cd429a00cbe68d43a9dc615f171d36da6490247e11dfc74",
+      "executable": false
+    },
+    "public/brand/favicon-16.svg": {
+      "sha256": "da6bc565c1756c13b4da13afedaf07f845dd569c8895a0e7f38b793a52681fbf",
+      "executable": false
+    },
+    "public/brand/favicon-32.png": {
+      "sha256": "f503ad98de601c34e6963283a6070850eb21df3ee4c85bdcd027ed39faf5b50d",
+      "executable": false
+    },
+    "public/brand/favicon-32.svg": {
+      "sha256": "85b769d64c1d52a62b938be6d1afeb38a004a935f53f1014d7d6b63e2b0b5017",
+      "executable": false
+    },
+    "public/brand/icon-192.png": {
+      "sha256": "b89816f8fed9491141c29eab11e405759e019dd824f481118a52b6d18cadcef4",
+      "executable": false
+    },
+    "public/brand/icon-512.png": {
+      "sha256": "d3e50e88cf13df36f7f3a94a4882a26cfa34b987015c440ba3055942358c6b00",
       "executable": false
     },
     "public/brand/mark.svg": {
-      "sha256": "ca199f50bc6eaf99234ed21dbed41339e055fc0835cfc12e766ee5d95a77ca51",
+      "sha256": "ec5b55229d0420214e6fc3a519aec66e6c99f300d91094b3ae255d64016bafe7",
       "executable": false
     },
     "public/desk.css": {
       "sha256": "8794eecbe5d8199b30480ec73ad8bee4d8a00cc91c7d789ab34cc162665bd7dd",
       "executable": false
     },
+    "public/favicon.ico": {
+      "sha256": "ee62e0b676b67d754c9b3c915eca509ca1114baeaa1c04044784c241c6f67982",
+      "executable": false
+    },
+    "public/fonts/caveat/caveat-latin-600-normal.woff2": {
+      "sha256": "d51e2283010e661d9f3dafdc9ff4b82b2ebcb2f7aa43ca48a105f5f68d46cc32",
+      "executable": false
+    },
+    "public/fonts/caveat/OFL.txt": {
+      "sha256": "163a2b400e16916ad3196296c946c526d0efce6baf22a2164269ffc62fb9f671",
+      "executable": false
+    },
     "public/fonts/fonts.css": {
-      "sha256": "1eca84688447cf4b9de6373b00b1b9ccc5e32a3dc81e86cc118eb6f50a6a0aac",
+      "sha256": "8b01ba2a6695057dac41bd7d45e44c81d1a48ea23fb867d6d5d0769c72a1ddc5",
       "executable": false
     },
     "public/fonts/jetbrains-mono/jetbrains-mono-latin-wght-normal.woff2": {
@@ -2618,11 +2942,23 @@
       "executable": false
     },
     "public/fonts/README.md": {
-      "sha256": "1f325798b0db8f2d9647a2d4daef6b6ea3657627b1fb9e89895b140c34031aef",
+      "sha256": "4be54113df2c3eef808da6769d74e03b2e3fa92053702db53e42af9d01ecc53b",
+      "executable": false
+    },
+    "public/fonts/schibsted-grotesk/LICENSE.txt": {
+      "sha256": "15222412a95d70042e66e79bfb3b985653e0693e4d41703bc131bee9c5aa1aa7",
+      "executable": false
+    },
+    "public/fonts/schibsted-grotesk/schibsted-grotesk-latin-ext-wght-normal.woff2": {
+      "sha256": "ee9eeb232cc1fe7979dad813a570f4b19f1eb4496daf56c94ec9de63abdb2936",
+      "executable": false
+    },
+    "public/fonts/schibsted-grotesk/schibsted-grotesk-latin-wght-normal.woff2": {
+      "sha256": "4c8b93f431d462c696e12b9d6a033feb3394d36e66e781357c496b95d8a75e05",
       "executable": false
     },
     "public/rer-theme.css": {
-      "sha256": "78543d307f95a6f4d46402f10d8eb7dffc99f5ec9a2d1d46f547fa3804f1c42b",
+      "sha256": "5a198cb04ecfd449ccb158f46fece92cd2f3e5f159d9672837a1bcf68f229871",
       "executable": false
     },
     "public/review.css": {
@@ -2633,8 +2969,144 @@
       "sha256": "5613a053a098cd13037f400270d705a6dd7ba53f820257820f966c2f4f44855c",
       "executable": false
     },
+    "public/site/board-phone-640.avif": {
+      "sha256": "f7df38d95e64b65b3c74f453e2bc4c735823e3789d3ba36c7690102cdacc0cab",
+      "executable": false
+    },
+    "public/site/board-phone-640.webp": {
+      "sha256": "09d08984ae1d6f5dace7ed2d04ef0daa84c375636a407ee8be5406d2602c0e34",
+      "executable": false
+    },
+    "public/site/board-phone-960.avif": {
+      "sha256": "a694180127ae1d7f7eceb465baf0ea8e63b4025b3146a44949ceb624618f27fa",
+      "executable": false
+    },
+    "public/site/board-phone-960.webp": {
+      "sha256": "825a383a900885ac7c703bd4e52c436fcd84674f5257fd07b0f8a92dfadb6bf2",
+      "executable": false
+    },
+    "public/site/brands/jamf.svg": {
+      "sha256": "f9c2620de86f667803b1200ef3d07e336e9e078fcefe3d8e7cad891408032b2f",
+      "executable": false
+    },
+    "public/site/brands/README.md": {
+      "sha256": "4353b4140dc625c5340c1b86d9af894f9ff342e645be7ec40548e5c9b6ca867a",
+      "executable": false
+    },
+    "public/site/brands/rippling.svg": {
+      "sha256": "ffcf4ad5d82c128d6e030a728af8a39d2f60c731fe8ed404e8eb72c16e6deb7b",
+      "executable": false
+    },
+    "public/site/closing-1152.avif": {
+      "sha256": "ef4fde6884d38791fe35b1006059950c12bd0b2a43756550c153c55c9fe18325",
+      "executable": false
+    },
+    "public/site/closing-1152.webp": {
+      "sha256": "1474eb20aa5c613e93a41da494867830f262ad20cfbf814e07b18aec68a2f071",
+      "executable": false
+    },
+    "public/site/closing-1536.avif": {
+      "sha256": "3e0910db1d67ba385e609327b5486ef1e4dd67e6711a2a2181e0673f10212905",
+      "executable": false
+    },
+    "public/site/closing-1536.webp": {
+      "sha256": "f22944f0d1d5f81dee16eed01748a35a56c549f1e4ec56fce9447cab122df2e3",
+      "executable": false
+    },
+    "public/site/closing-768.avif": {
+      "sha256": "f20f3195fc09160499304f6d20f468f1ef8ec326185696173fce9d99dd904807",
+      "executable": false
+    },
+    "public/site/closing-768.webp": {
+      "sha256": "f50a148fc5161414aa89b17ec7b2bec66603262351b159f02d869117dcb9f96b",
+      "executable": false
+    },
+    "public/site/closing-phone-640.avif": {
+      "sha256": "e69c2529c016ea837cb1582dee656c8396734ba0511f8c0bd89fac9cecf81032",
+      "executable": false
+    },
+    "public/site/closing-phone-640.webp": {
+      "sha256": "bb03217296b875f6001af123c71ca6456fbe7227046a95c3f4b8541726f7bf86",
+      "executable": false
+    },
+    "public/site/closing-phone-960.avif": {
+      "sha256": "dda797e2e833fd595549aecc6400f06218e43601b93ecdf1106fe2f0bfea9a93",
+      "executable": false
+    },
+    "public/site/closing-phone-960.webp": {
+      "sha256": "56fc1f475746db863d23cce0f7415f4a0b8a0561b8e05c29f931a0ca0d71737a",
+      "executable": false
+    },
+    "public/site/hero-1152.avif": {
+      "sha256": "471a762f931ed909b0b068bf0cc61a2f790a9f01daf89e7e777d448d5029fca6",
+      "executable": false
+    },
+    "public/site/hero-1152.webp": {
+      "sha256": "9275f3d9b9928e5dbc09761f9a6c991acc8e8f9901e7f47e0bdc6fa52300b765",
+      "executable": false
+    },
+    "public/site/hero-1536.avif": {
+      "sha256": "18de4024658db448225c9f21aa27ae8c4c2ea812676f3e77c3e837c82a847855",
+      "executable": false
+    },
+    "public/site/hero-1536.webp": {
+      "sha256": "c0e866d486d6ab776c8ceddce95714820c8636d996b5c134610fce7ff80a524a",
+      "executable": false
+    },
+    "public/site/hero-768.avif": {
+      "sha256": "3cb322ecc82bc74838e5ccab71361517d5dfefa9ac4c5340d613c69b9f4bc0f4",
+      "executable": false
+    },
+    "public/site/hero-768.webp": {
+      "sha256": "3a7f6eefe07ba68d33f73f2d08f38055f0db86f5bc22f5b825a51ab57fc18c01",
+      "executable": false
+    },
+    "public/site/interlude-1152.avif": {
+      "sha256": "678cce0af475cd8d8529229e79a982a77acc1fd2eb525672ff1ec93fe750727a",
+      "executable": false
+    },
+    "public/site/interlude-1152.webp": {
+      "sha256": "dd1a48f584565ed680eb0160f07bb174cb228441f87ad7538ead2f464948430e",
+      "executable": false
+    },
+    "public/site/interlude-1536.avif": {
+      "sha256": "5ccccbe11aeed1dabc9fcc136fa572d53ac8f555d30576a083e2776281c6e1aa",
+      "executable": false
+    },
+    "public/site/interlude-1536.webp": {
+      "sha256": "ebdfb2a823a1ca5c5eb6d172d5b14550575c9718aa205eddeb0e6d020765ccf6",
+      "executable": false
+    },
+    "public/site/interlude-768.avif": {
+      "sha256": "ac77df0185caaf2ef50f5b03dac8db3e692017d36f3c66b729673cfd8957e3c0",
+      "executable": false
+    },
+    "public/site/interlude-768.webp": {
+      "sha256": "52949b4377af8439de57ac7c4e775c100c5ae460c4854297d7a9da4e7e6466d5",
+      "executable": false
+    },
+    "public/site/interlude-phone-640.avif": {
+      "sha256": "aade06ddd0506133ef7b65e902fbe187d0238d441436f504aecca222e545db4f",
+      "executable": false
+    },
+    "public/site/interlude-phone-640.webp": {
+      "sha256": "79996e9ae69c74028cf8796f06ce97a7b05842dd184d55cefc899d998f827557",
+      "executable": false
+    },
+    "public/site/interlude-phone-960.avif": {
+      "sha256": "5a46f36275d69837975bb1b0a25556059cf18299beadf4f2163d3b6525dadf0e",
+      "executable": false
+    },
+    "public/site/interlude-phone-960.webp": {
+      "sha256": "ce12c4a169188540a0bd82909ffc546f129101a1ebbdeb4c24e21b8019c3c1c2",
+      "executable": false
+    },
+    "public/site/share.jpg": {
+      "sha256": "b0d9ad4fff6b349bcb3466990e3c81c146db107a5c6d09709b25bff35d27712c",
+      "executable": false
+    },
     "README.md": {
-      "sha256": "1d1c794d323bce1b2f7db25dd0b5d3caac4cc81af9ed19e7b0c372faf7e7ad84",
+      "sha256": "9e711c799b0647d2dc6fc0432258eb617298098afa50654ddfbab8d8ba705da3",
       "executable": false
     },
     "rer-project.json": {
@@ -2646,7 +3118,7 @@
       "executable": false
     },
     "RUN-LOCALLY.md": {
-      "sha256": "d9b761d7fa31f64f112fc3b44cb97ca497583f9f66752e5f7245b9af91d390aa",
+      "sha256": "5c575ebd3c92526a5747a76a5811ba0c101eaf782717da6e2f7ceca2273bd421",
       "executable": false
     },
     "scripts/archive.mjs": {
@@ -3706,7 +4178,7 @@
       "executable": false
     },
     "src/evidence/library/controls.ts": {
-      "sha256": "c0f728589ddb5431c6ab612ab8bf8ce55e38b19826beb1ac207530ccdfc9bd12",
+      "sha256": "a4604196a7c6ebaa56e5804b971cdd0ced95acadb04cddfaa1becf3715a0b971",
       "executable": false
     },
     "src/evidence/library/hipaa.ts": {
@@ -4006,7 +4478,7 @@
       "executable": false
     },
     "src/identity.ts": {
-      "sha256": "9a7dbf06f4bee699e7d426a44a9b3d476a95eede7fb7ccf141a8d973d3b4a2b6",
+      "sha256": "81fcdbedee2120065d256ca8cfc9d7300c6fc80996048695f283e22868216c77",
       "executable": false
     },
     "src/mail.server.d.mts": {
@@ -4765,96 +5237,120 @@
       "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
       "executable": false
     },
-    "src/site/docs/docs.css": {
-      "sha256": "4d0ffdffb80e83feaea9445355e1b04034b605546635666c6c8b5d41b7fc317b",
+    "src/site/docs/DocsArticle.tsx": {
+      "sha256": "2782a02ddfbb75f5e235e5e339ce1c6e1de32fe58f73601d4a11216da9768d28",
       "executable": false
     },
-    "src/site/docs/Docs.tsx": {
-      "sha256": "fc7e9de417369728123f47e36c8e6925ee9403361631b3e2e3af0ac99b5b4215",
+    "src/site/docs/DocsIndex.tsx": {
+      "sha256": "2b01dc5ddfcb8a3e9778a4593e2c4ada44bac001070b35473012a2e61d39e0b3",
+      "executable": false
+    },
+    "src/site/docs/DocsNav.tsx": {
+      "sha256": "ed7260c06978ae0a63d0883b327fb8fde4929ac6cd96f875902e7e188fe83c22",
       "executable": false
     },
     "src/site/docs/pages.ts": {
-      "sha256": "4b616cdd22a61e42d3c43597cc434cbb07f788c9d57c2419b3489507525bde79",
+      "sha256": "61d3b797fa396fcc60772e9520cfaa9ebf9b5aaa85dd7dbd4b2447dfe1ed2f78",
       "executable": false
     },
     "src/site/document.tsx": {
-      "sha256": "54308acc286d24479928994d25eb8120f637b77e0029fed9c95a611000e9be50",
+      "sha256": "312ae3adce024f263390d0b469e9d2d7c9c5a46038e5c9401cff92181900217f",
       "executable": false
     },
     "src/site/entry.ts": {
-      "sha256": "5920c8df3d98ef04a4468a79668b4686e94dd1812cba777d847cfa614c89eff8",
-      "executable": false
-    },
-    "src/site/landing/acrylic.css": {
-      "sha256": "04b5ba0e2a89c4fc9a3903a8ac90d52c49d7240de4c3a9e6ba8412df1f1228f7",
-      "executable": false
-    },
-    "src/site/landing/Actions.tsx": {
-      "sha256": "3892f373c421d236d5d8cc252a30a5ffec2270241cf6b2aad2fb045bd508d914",
-      "executable": false
-    },
-    "src/site/landing/Closing.tsx": {
-      "sha256": "126082e6b2cea7d9c9156365bcbc47471e7e0c25f8dca6d90b693270b601c21b",
-      "executable": false
-    },
-    "src/site/landing/FolderDrawing.tsx": {
-      "sha256": "f65b624f6fd7f28b245810a207b5e59e5ca680e29937cf874f388868add1fba2",
-      "executable": false
-    },
-    "src/site/landing/GapsDrawing.tsx": {
-      "sha256": "61b01cedd6ea87cefffa8ea8c3002e1d5f325d1b54b8e121a56de0ca377c12ac",
+      "sha256": "5365c889610c4ad9d6d8ae2ed0796e067bfbff9e5ee53bc7b07077975fb7eaef",
       "executable": false
     },
     "src/site/landing/Hero.tsx": {
-      "sha256": "873cc10e605bfb6d69c8f89268f7c2642aca53c9b65c5218d11c901e197035c7",
+      "sha256": "bf5660751e638eeb68e7c50e1e68ddfdb504ece480f835efa3be0225ee23100a",
       "executable": false
     },
-    "src/site/landing/HeroDrawing.tsx": {
-      "sha256": "88598a4381b3ae616d5a7a73b0b1caf34e7dd0615b59d0ccc22af826682250ab",
-      "executable": false
-    },
-    "src/site/landing/Icon.tsx": {
-      "sha256": "c8093222c28f98e003d6b657fe7ba808e1bb15384898796bfd337c291e8bb5de",
-      "executable": false
-    },
-    "src/site/landing/Included.tsx": {
-      "sha256": "e6bcaba4d6f1f4401aca8072a1eb6194eed65c35bc7317923f7cebe02f9aef8e",
-      "executable": false
-    },
-    "src/site/landing/landing-responsive.css": {
-      "sha256": "655dfe40372b6dd3fc9d22df8ee69c21e52e5bdd133cae7780168cfd61c02952",
-      "executable": false
-    },
-    "src/site/landing/landing.css": {
-      "sha256": "c6c207f7905482a65c94c1c94e2eaa5f32930707f454156bee5f9459daf3241b",
+    "src/site/landing/icons.tsx": {
+      "sha256": "43c26eb2adf74d134b9c114d9cd0e09ba823a5b8976d09e4627b2d14c38cb232",
       "executable": false
     },
     "src/site/landing/Landing.tsx": {
-      "sha256": "73485bb8ef20a02705c63e4ecf095a141f4544e0bffd0d855048cee9bb974a89",
+      "sha256": "e5d48f8e8acc671c65ca534e27e915c071fae9dc0b7ebe493eeea318cf920b14",
       "executable": false
     },
-    "src/site/landing/LicenseDrawing.tsx": {
-      "sha256": "37c48ff2f03eee9eb540363524b41a4a56af1cfc4008c630112a5e5c34c9ffde",
+    "src/site/landing/parts.tsx": {
+      "sha256": "dd0c86c88080484f3b2a951aee294dfbf65b70c7a066075567816bf012fa7602",
       "executable": false
     },
-    "src/site/landing/ReceiptsDrawing.tsx": {
-      "sha256": "25213068dffd22e53149c7c9fe9d30871be4cbd1f7128d2c56a25adb91c9f5a2",
+    "src/site/landing/sections/Agent.tsx": {
+      "sha256": "0fe66783e8050bf4f3d396236662f6469d6a524430d70845b8fcecfd6651decb",
       "executable": false
     },
-    "src/site/landing/Section.tsx": {
-      "sha256": "f911d9ed677e27e2b3be374b3defe94fd6c07d4b5980b061b50f6940fd69687d",
+    "src/site/landing/sections/Closing.tsx": {
+      "sha256": "0ebf5ee000754d6d8a9197c02f36a7dace383e33eb3d24ddfe51a7ae71051754",
       "executable": false
     },
-    "src/site/landing/Slab.tsx": {
-      "sha256": "ca18527c2995a2daa408d2a952acdaa6fe1243c232e8682bcb92bb9cacd2dba2",
+    "src/site/landing/sections/Details.tsx": {
+      "sha256": "69456fb93a335caef3f60f409c0510681ee9238a6de01fa88ed0786f6765f3b2",
+      "executable": false
+    },
+    "src/site/landing/sections/Frameworks.tsx": {
+      "sha256": "7eecf08ac971c48f33ad8f6cf7199785a75462b362f3e975c25666e568b42cf1",
+      "executable": false
+    },
+    "src/site/landing/sections/Interlude.tsx": {
+      "sha256": "6fb60b4dcfba3ef0c6cab7c734665dba0b9f04561d20b72b7f14510cfa78700d",
+      "executable": false
+    },
+    "src/site/landing/sections/Ownership.tsx": {
+      "sha256": "d2d137871a09ff5ddebf7721b66f06fc37d372b0751dbfe7568291c4e53b79ec",
+      "executable": false
+    },
+    "src/site/landing/sections/Remediation.tsx": {
+      "sha256": "d21a3fb91dce7bec5d3c20c50dd3efa96d63fae411fac6c6ac5b0ed05b31c79f",
+      "executable": false
+    },
+    "src/site/landing/sections/Trust.tsx": {
+      "sha256": "4416d94738cb4e1c80884871a1d2378d79a79a6aedc1908179b10ac34861d15c",
       "executable": false
     },
     "src/site/run.ts": {
-      "sha256": "512cd6b3e3a3882a5d59c31692346f682004de733efbb5040d7303df1a2107e2",
+      "sha256": "a508a1911bc6dccb3d1652c32fd42f4a4e7ed7af13b8c9aca4f7700bb5ed6eb0",
       "executable": false
     },
-    "src/site/shell/SiteChrome.tsx": {
-      "sha256": "4a0219d884253820bf7a11dc7dfdbbcf690bbc44c260e8cd70deef4a8a71adc6",
+    "src/site/shell/Actions.tsx": {
+      "sha256": "34d793beefc5c636479bacb89093ed7f567c05d722f198d63010c7575ae0f9e2",
+      "executable": false
+    },
+    "src/site/shell/links.ts": {
+      "sha256": "be874ff7ee6b88e69925d176ac3dae228857b61f7ac2ad84df7fb04c797986d2",
+      "executable": false
+    },
+    "src/site/shell/Lockup.tsx": {
+      "sha256": "09a3e901350254350b30b1fa1a1d57cc4109bc0957fdd9986a29ea97f05f4890",
+      "executable": false
+    },
+    "src/site/shell/SiteFooter.tsx": {
+      "sha256": "126276038d89ff397bd94e45cbf1dd3c6ab2b5b13f15b2e53599f5c62c22a413",
+      "executable": false
+    },
+    "src/site/shell/SiteHeader.tsx": {
+      "sha256": "7fcc28ed78147ea9afb571b2f39b81888f0e52a230bb5ce898ef568e8520c009",
+      "executable": false
+    },
+    "src/site/styles/cards.css": {
+      "sha256": "8cdf9d945c0b63a357caf500e04aed01c3030398241038b34c3c5acb4c75199c",
+      "executable": false
+    },
+    "src/site/styles/docs.css": {
+      "sha256": "55aa669fef2803d75f80ff6ba8dcdfca7969580c81241c2c64ec186b7b894e4e",
+      "executable": false
+    },
+    "src/site/styles/hero.css": {
+      "sha256": "8d3513b8ef5b372e5186753d3dc2cfb20492560c9be93bf4fb8a11d46438a3ab",
+      "executable": false
+    },
+    "src/site/styles/sections.css": {
+      "sha256": "821a7d4fbde6f728439f2840965fcdb6b31cdb0613e37c30660b61e3326eb23a",
+      "executable": false
+    },
+    "src/site/styles/site.css": {
+      "sha256": "641551ee593e8f9777c0de5e1dd15b6f8b46e6173bcef0c7947674ff289fcbac",
       "executable": false
     },
     "tests/access.mjs": {

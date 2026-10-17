@@ -20,19 +20,53 @@
   --ev-spectrum: #c9e6ff, #e6dcff, #ffdcec, #fff0c7, #d8f6e3;
   --ev-font: Onest, Arial, sans-serif;
   --ev-mono: 'JetBrains Mono', monospace;
-  --rer-font-body: var(--ev-font);
-  --rer-font-heading: var(--ev-font);
-  --rer-font-mono: var(--ev-mono);
-  --rer-page: var(--ev-paper);
-  --rer-surface: var(--ev-surface);
-  --rer-text: var(--ev-ink);
-  --rer-muted: var(--ev-muted);
-  --rer-border: var(--ev-field);
-  --rer-focus: var(--ev-ink);
-  --rer-link: var(--ev-ink);
-  --rer-radius: 16px;
-  --rer-accent: var(--ev-ink-2);
-  --rer-accent-text: var(--ev-surface);
+  /* The run site's palette, sampled from the approved desk pages (16 Oct 2026). The Base frames
+     (Run page, not-found page, Lobby) read it through the --rer-* names below. */
+  --site-paper: #f4f9fe;
+  --site-sky: #e4f0fc;
+  --site-surface: #ffffff;
+  --site-ink: #080c1a;
+  --site-body: #5c667e;
+  --site-soft: #8691a6;
+  --site-line: #e5ebf2;
+  --site-eyebrow: #2d55e6;
+  --site-link: #2563e0;
+  --site-cta: #061729;
+  --site-green: #22a862;
+  --site-green-tint: #e9f8f0;
+  --site-red: #ef3b3f;
+  --site-red-tint: #fdeced;
+  --site-amber: #f2a516;
+  --site-amber-tint: #fff4dc;
+  --site-tile: #e6f1fd;
+  --site-violet: #6d5ce8;
+  --site-violet-tint: #efedfd;
+  --site-note: #fbf4d9;
+  --site-term: #101721;
+  --site-term-bar: #1d2430;
+  --site-accent: linear-gradient(92deg, #1650f0 0%, #0aa6ea 100%);
+  /* The mark's own colours (public/brand/mark.svg). */
+  --mark-ink: #020d1c;
+  --mark-red: #fc2f24;
+  --mark-blue: #00a4fd;
+  --font-head: 'Schibsted Grotesk', Onest, Arial, sans-serif;
+  --font-body: Onest, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-hand: Caveat, 'Segoe Print', cursive;
+  --rer-font-body: var(--font-body);
+  --rer-font-heading: var(--font-head);
+  --rer-font-mono: var(--font-mono);
+  --rer-page: var(--site-paper);
+  --rer-surface: var(--site-surface);
+  --rer-text: var(--site-ink);
+  --rer-muted: var(--site-body);
+  --rer-border: #c9d3e0;
+  --rer-focus: var(--site-eyebrow);
+  --rer-link: var(--site-link);
+  --rer-radius: 14px;
+  --rer-accent: var(--site-cta);
+  --rer-accent-text: #ffffff;
+  --rer-wordmark-tracking: -.03em;
   --rer-logo: url('/brand/mark.svg');
 }
 *, *::before, *::after { box-sizing: border-box; }
@@ -96,3 +130,8 @@ html.rer-themed #rer-dev-badge { position: static; width: fit-content; max-width
   .slab, html.rer-themed main:has(> :is(.brand, .rer-brand)) { background: var(--ev-surface); border: 1px solid var(--ev-field); box-shadow: none; }
   .slab::before, .slab::after { display: none; }
 }
+
+/* Base's Run and not-found pages on the run site: the homepage's heavy headline face. */
+body > header.bar + main h1 { font-weight: 800; letter-spacing: -.045em; }
+body > header.bar + main .step h2 { font-weight: 700; letter-spacing: -.03em; }
+body > header.bar .brand { font-weight: 600; }

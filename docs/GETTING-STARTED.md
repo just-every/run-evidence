@@ -12,7 +12,14 @@ One line installs the shared Run Edit Run command, gets Evidence and starts it:
 npx -y @runeditrun/rer dev just-every/run-evidence
 ```
 
-Without Node, `curl -fsSL https://runeditrun.com/install.sh | sh -s -- dev just-every/run-evidence` does the same. To start it again later, run `cd run-evidence && rer dev`.
+Without Node 22 or later, install rer first (it brings its own Node), then start Evidence:
+
+```sh
+curl -fsSL https://runeditrun.com/install.sh | sh
+rer dev just-every/run-evidence
+```
+
+To start it again later, run `cd run-evidence && rer dev`.
 
 `rer dev` installs the pinned dependencies, selects the required Node version, applies local migrations, prepares a local owner and starts the app. Open the private `RER_OPEN` link it prints on this computer. Keep this link private: it signs you in as the local owner.
 
