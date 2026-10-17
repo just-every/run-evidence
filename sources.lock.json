@@ -2638,7 +2638,7 @@
       "executable": false
     },
     "base-copies.json": {
-      "sha256": "1e0fd26fe575e905b8097895ffc148b1a924d550d69381e56b7f4ea3ac29768c",
+      "sha256": "d2289b46f914968ca8494c83cfa1b933ce8b57d1fdfff51af6c56a1c42a31766",
       "executable": false
     },
     "CHANGELOG.md": {
@@ -3234,7 +3234,7 @@
       "executable": false
     },
     "src/base/contract-style.ts": {
-      "sha256": "41afdf1cb60983b340283b13e414102387eb2a4af022d730220050a4384d0753",
+      "sha256": "4325f4eeabac2bef722808576605d7b657858b918729097c3412393fc6e4941f",
       "executable": false
     },
     "src/base/deployment-health.ts": {
