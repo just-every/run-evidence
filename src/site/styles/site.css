@@ -34,7 +34,8 @@ img { max-width: 100%; }
 
 /* Section type. */
 .eyebrow { color: var(--site-eyebrow); font: 600 15px/1 var(--font-body); letter-spacing: .3em; text-transform: uppercase; }
-.site h2 { font: 800 67px/.98 var(--font-head); letter-spacing: -.055em; color: var(--site-ink); text-wrap: balance; }
+/* Tight tracking narrows the space too; word-spacing gives the words back the desk's gap. */
+.site h2 { font: 800 67px/.98 var(--font-head); letter-spacing: -.055em; word-spacing: .05em; color: var(--site-ink); text-wrap: balance; }
 .lede { color: var(--site-body); font-size: 24px; line-height: 1.5; letter-spacing: -.005em; text-wrap: pretty; }
 .lede a { color: inherit; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); text-underline-offset: 5px; }
 .accent { background: var(--site-accent); -webkit-background-clip: text; background-clip: text; color: transparent; padding-right: .04em; }

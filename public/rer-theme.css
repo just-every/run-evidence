@@ -132,6 +132,6 @@ html.rer-themed #rer-dev-badge { position: static; width: fit-content; max-width
 }
 
 /* Base's Run and not-found pages on the run site: the homepage's heavy headline face. */
-body > header.bar + main h1 { font-weight: 800; letter-spacing: -.045em; }
+body > header.bar + main h1 { font-weight: 800; letter-spacing: -.045em; word-spacing: .05em; }
 body > header.bar + main .step h2 { font-weight: 700; letter-spacing: -.03em; }
 body > header.bar .brand { font-weight: 600; }
