@@ -6,6 +6,51 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
 ## Journeys by clause
 
+### Immutable proof and collection
+
+- **PROOF-001 — Immutable exhibits and attributable receipts · done.** Use `/app/controls` and the requirement upload form, attempt forged receipt facts, replace an exhibit, reload its original receipt and download both versions. Attempt a double replacement, oversized upload and changed/missing object: refuse unsafe writes/downloads and retain facts. `tests/evidence.mjs` exercises these production HTTP doors.
+
+  Current evidence: `src/evidence/upload.ts`; `src/evidence/storage.ts`; `src/evidence/http.ts`; `tests/evidence.mjs`.
+
+- **GAP-001 — Honest period-specific proof coverage · done.** At the desk select daily, weekly, monthly and quarterly periods, advance across their deadlines and inspect a superseded period, imported-only proof and changed/missing R2 bytes. Reopen a completed historical period and confirm the original state logic. `tests/evidence.mjs` exercises these cases through `/api/desk` and receipt downloads.
+
+  Current evidence: `src/evidence/model.ts`; `src/evidence/storage.ts`; `tests/evidence.mjs`.
+
+- **COLLECTION-001 — Scheduled source collection with visible failures · partial.** Connect a real authorized sandbox via the Connections UI, schedule collection, close the browser, change the source and inspect the next run. Revoke a required scope, throttle a page and interrupt a run; reconnect and resume. The run history and period report preserve missing coverage, failure and recovery separately; only actual source reads issue observed receipts.
+
+  Current evidence: —.
+
+### Audit folders and questionnaires
+
+- **REVIEW-001 — Selected expiring evidence folders · done.** Issue a folder through `/api/folders`, open its `/review/{token}` page and download only in-period exhibits. Try a crossing-period receipt, foreign control, write, altered token, expiry during a read and closed folder. Owner event history retains allowed/refused attempts without raw links. `tests/review.mjs` and `tests/review-browser.mjs` cover these doors.
+
+  Current evidence: `src/evidence/review/http.ts`; `src/evidence/review/storage.ts`; `tests/review.mjs`; `tests/review-browser.mjs`.
+
+- **ANSWER-001 — Cited security-questionnaire completion · missing.** Against a populated program (approved policies, passing and failing tests, a SOC 2 report), upload a full-length SIG Lite (XLSX) and CSA CAIQ v4 (XLSX), plus a CSV and a DOCX customer questionnaire, in Questionnaires, and generate cited drafts. A held-out reviewer key, prepared independently, lists for each question whether the populated sources can answer it and which source supports it. Then check:
+  - the draft reports cited, flagged and conflicting counts that reconcile to the question total;
+  - at least 90% of the questions the key marks answerable are drafted with citations;
+  - 100% of citations resolve to the source revision and period they name, and support the claim per the key;
+  - zero answers are uncited or assert beyond their sources;
+  - every question the key marks unanswerable is flagged.
+
+  Inspect citations, edit and approve an exact version. Modify a source after approval and attempt reuse/submission: require a new decision. Export and reopen the original formats without losing question placement, IDs or flagged gaps.
+
+  Current evidence: —.
+
+### Import, custody and approvals
+
+- **IMPORT-001 — Reviewed Drata archive admission and undo · done.** Through Move-in, inspect a documented-shape Drata ZIP, review mappings and refuse unsafe/malformed artifacts, admit with a journal, then undo active links. Inspect retained originals and import history after undo, restart and archive restore. `tests/import.mjs` exercises these routes; a real customer export remains separately required under MIGRATE-001.
+
+  Current evidence: `src/evidence/import/http.ts`; `src/evidence/import/plan.ts`; `tests/import.mjs`; `docs/DRATA-IMPORT.md`.
+
+- **CUSTODY-001 — Complete custody archive and empty-target restore · done.** Export through `/api/archive/export`, inspect the manifest, dry-run and restore into empty real D1/R2; compare every portable record and byte. Try altered digests, traversal, missing/unlisted files, unavailable bytes and a nonempty target. Refusal preserves the target; successful restore leaves grants inactive. `tests/archive.mjs` and `tests/review-browser.mjs` exercise HTTP/CLI custody journeys.
+
+  Current evidence: `src/evidence/archive/http.ts`; `src/evidence/archive/restore.ts`; `tests/archive.mjs`; `scripts/archive.mjs`.
+
+- **AGENT-001 — Prepare-only proposals with exact human approval · done.** Issue a prepare token, inspect gaps and propose a folder through agent commands/API. Attempt direct sharing, owner-only mutation, approval with an agent token and stale-snapshot approval; refuse each. Have the owner approve the current snapshot, revisit its immutable decision and revoke the token. `tests/agent.mjs` exercises these doors.
+
+  Current evidence: `src/evidence/agent/http.ts`; `src/evidence/agent/storage.ts`; `tests/agent.mjs`; `docs/AGENT-COMMANDS.md`.
+
 ### Program and readiness
 
 - **PROGRAM-001 — Framework programs and applicability · done.** From the program-setup UI, create each of the four core programs for a US SaaS business, choose two scoped products and different periods, review applicability with an assessor, then upgrade one framework edition. Reopen the program and export it: owners, exclusions, edition history and unresolved obligations survive; excluded work is visible and no certification is asserted.
@@ -38,19 +83,7 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
 ### Evidence provenance and continuous observation
 
-- **PROOF-001 — Immutable exhibits and attributable receipts · done.** Use `/app/controls` and the requirement upload form, attempt forged receipt facts, replace an exhibit, reload its original receipt and download both versions. Attempt a double replacement, oversized upload and changed/missing object: refuse unsafe writes/downloads and retain facts. `tests/evidence.mjs` exercises these production HTTP doors.
-
-  Current evidence: `src/evidence/upload.ts`; `src/evidence/storage.ts`; `src/evidence/http.ts`; `tests/evidence.mjs`.
-
-- **GAP-001 — Honest period-specific proof coverage · done.** At the desk select daily, weekly, monthly and quarterly periods, advance across their deadlines and inspect a superseded period, imported-only proof and changed/missing R2 bytes. Reopen a completed historical period and confirm the original state logic. `tests/evidence.mjs` exercises these cases through `/api/desk` and receipt downloads.
-
-  Current evidence: `src/evidence/model.ts`; `src/evidence/storage.ts`; `tests/evidence.mjs`.
-
 - **CADENCE-001 — Annual, semi-annual and anchored evidence renewal · done.** Create an annual penetration-test requirement and upload today a report whose effective date is eight months ago: the requirement shows covered with a due date four months out (effective date plus twelve months), not twelve. Advance the test-harness clock: it moves covered → due soon (one reminder sent and not repeated on restart) → overdue at the deadline, with a deadline reminder. Create a semi-annual access-review requirement anchored to an audit window that starts 1 February: periods run February–July and August–January. Anchor an annual risk assessment to a July fiscal year. Set a one-off custom renewal date on the pentest requirement: it moves the current deadline only, and the next cycle returns to the effective-date anchor. Upload an imported annual report: it stays imported and does not establish current proof. Reopen a historical quarterly period and an annual period from before a period change: each keeps its original state.
-
-  Current evidence: —.
-
-- **COLLECTION-001 — Scheduled source collection with visible failures · partial.** Connect a real authorized sandbox via the Connections UI, schedule collection, close the browser, change the source and inspect the next run. Revoke a required scope, throttle a page and interrupt a run; reconnect and resume. The run history and period report preserve missing coverage, failure and recovery separately; only actual source reads issue observed receipts.
 
   Current evidence: —.
 
@@ -198,10 +231,6 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
 ### Audit collaboration
 
-- **REVIEW-001 — Selected expiring evidence folders · done.** Issue a folder through `/api/folders`, open its `/review/{token}` page and download only in-period exhibits. Try a crossing-period receipt, foreign control, write, altered token, expiry during a read and closed folder. Owner event history retains allowed/refused attempts without raw links. `tests/review.mjs` and `tests/review-browser.mjs` cover these doors.
-
-  Current evidence: `src/evidence/review/http.ts`; `src/evidence/review/storage.ts`; `tests/review.mjs`; `tests/review-browser.mjs`.
-
 - **AUDIT-001 — Period-specific auditor workspace and request lists · partial.** Invite an auditor to one engagement, import a request list, assign a request, comment and submit a period-specific exhibit. As auditor reject it, request more evidence and accept the next submission. Export the pack; another engagement and revoked auditor remain inaccessible, and the original submission and decisions remain available to authorized owners. Link a second request to a continuously tested control: as auditor, the request opens the in-period test observations with their source connector and account and their observed times, and the receipts of its exhibits with their source, server receipt time and SHA-256. An observation or receipt outside the engagement's period is not shown.
 
   Current evidence: `src/evidence/review/http.ts`; `src/evidence/review/storage.ts`; `tests/review.mjs`. Current limit: Expiring scoped read-only folders and access history exist; authenticated auditor collaboration, requests, comments and findings are missing.
@@ -232,17 +261,6 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
-- **ANSWER-001 — Cited security-questionnaire completion · missing.** Against a populated program (approved policies, passing and failing tests, a SOC 2 report), upload a full-length SIG Lite (XLSX) and CSA CAIQ v4 (XLSX), plus a CSV and a DOCX customer questionnaire, in Questionnaires, and generate cited drafts. A held-out reviewer key, prepared independently, lists for each question whether the populated sources can answer it and which source supports it. Then check:
-  - the draft reports cited, flagged and conflicting counts that reconcile to the question total;
-  - at least 90% of the questions the key marks answerable are drafted with citations;
-  - 100% of citations resolve to the source revision and period they name, and support the claim per the key;
-  - zero answers are uncited or assert beyond their sources;
-  - every question the key marks unanswerable is flagged.
-
-  Inspect citations, edit and approve an exact version. Modify a source after approval and attempt reuse/submission: require a new decision. Export and reopen the original formats without losing question placement, IDs or flagged gaps.
-
-  Current evidence: —.
-
 - **ANSWER-002 — Portal and web-form questionnaire capture and fill-back · missing.** On a test portal of at least three pages with text, single-choice, multi-select and file fields, capture the questionnaire with the extension in Chrome, Edge and Brave. All fields import with page and type. Draft and approve answers in Questionnaires, leaving one answer unapproved. Change one choice field's options on the portal, then run fill-back: every approved, unchanged field fills with the exact approved text, the changed field and the unapproved answer are refused with reasons, and the form is not submitted. Re-capture the changed field, approve its answer and complete the fill. The questionnaire history shows capture time, page structure and every fill.
 
   Current evidence: —.
@@ -252,10 +270,6 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
   Current evidence: —.
 
 ### Portability and migration
-
-- **IMPORT-001 — Reviewed Drata archive admission and undo · done.** Through Move-in, inspect a documented-shape Drata ZIP, review mappings and refuse unsafe/malformed artifacts, admit with a journal, then undo active links. Inspect retained originals and import history after undo, restart and archive restore. `tests/import.mjs` exercises these routes; a real customer export remains separately required under MIGRATE-001.
-
-  Current evidence: `src/evidence/import/http.ts`; `src/evidence/import/plan.ts`; `tests/import.mjs`; `docs/DRATA-IMPORT.md`.
 
 - **MIGRATE-001 — Switch from Vanta, Drata and Secureframe · partial.** For each incumbent, use a representative authorized customer export through Move-in, preview it, resolve a duplicate identity, admit, export and undo. Reconcile each record class separately, showing source count, admitted, unsupported and refused for each:
   - frameworks, controls and mappings;
@@ -276,10 +290,6 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 - **MIGRATE-002 — Switching in the middle of an audit period · missing.** Migrate from a Vanta export dated four months into a Type II period and set the cutover. Generate the terminations population across the whole period: pre-cutover rows show as imported, post-cutover rows as source-observed from the connected HRIS, the boundary is marked, and the count reconciles with no person missing or duplicated at the boundary. Sample one row from each side and satisfy both requests, the pre-cutover one with imported evidence. Remove one month of pre-cutover rows from the export and regenerate: that interval shows incomplete with its reason until back-filled from the HRIS. Export the pack: every record carries its provenance and the boundary is visible.
 
   Current evidence: —.
-
-- **CUSTODY-001 — Complete custody archive and empty-target restore · done.** Export through `/api/archive/export`, inspect the manifest, dry-run and restore into empty real D1/R2; compare every portable record and byte. Try altered digests, traversal, missing/unlisted files, unavailable bytes and a nonempty target. Refusal preserves the target; successful restore leaves grants inactive. `tests/archive.mjs` and `tests/review-browser.mjs` exercise HTTP/CLI custody journeys.
-
-  Current evidence: `src/evidence/archive/http.ts`; `src/evidence/archive/restore.ts`; `tests/archive.mjs`; `scripts/archive.mjs`.
 
 - **PORTABLE-001 — Full-program transfer and Base replacement obligations · partial.** Use the console and local archive command to export a populated program containing every record class; restore offline into an empty installation with a different owner. Reconcile table/blob inventory, original history, unavailable bytes and erasure fences. Verify no message, source mutation or external grant replays, then explicitly reauthorize one connector. Reject an unknown table and a pre-erasure archive without the required later journal.
 
@@ -322,10 +332,6 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 - **OWN-001 — Run on your own computer or Cloudflare account, with your evidence in your own database · partial.** On a clean macOS and a clean Ubuntu machine, run the one-line start: Evidence opens its private link, first-run setup completes, and an uploaded receipt and a test result survive a stop and restart, held in the local D1 and R2 files under the checkout. With every connector off, record every outbound request for an hour of use: none goes to a host run by Evidence's authors. Deploy with `rer deploy` to a sandbox Cloudflare account: the D1 database and R2 bucket are in that account, and the deployment serves the restored archive of the local installation with every record and byte reconciled.
 
   Current evidence: `README.md`; `RUN-LOCALLY.md`; `wrangler.jsonc`; `tests/archive.mjs`. Current limit: The one-line start and `rer deploy` come from the pinned rer CLI and keep data in the installation's own D1 and R2; no check in this repository runs the one-line start on a clean machine, records outbound requests, or deploys to a sandbox account.
-
-- **AGENT-001 — Prepare-only proposals with exact human approval · done.** Issue a prepare token, inspect gaps and propose a folder through agent commands/API. Attempt direct sharing, owner-only mutation, approval with an agent token and stale-snapshot approval; refuse each. Have the owner approve the current snapshot, revisit its immutable decision and revoke the token. `tests/agent.mjs` exercises these doors.
-
-  Current evidence: `src/evidence/agent/http.ts`; `src/evidence/agent/storage.ts`; `tests/agent.mjs`; `docs/AGENT-COMMANDS.md`.
 
 ### Push further: agents accountable to the compliance job
 
