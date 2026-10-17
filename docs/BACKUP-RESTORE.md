@@ -14,7 +14,7 @@ Authentication credentials and access tokens are excluded. An archive is a backu
 
 Restore requires an empty Evidence database and exhibit bucket. Destination authentication may already exist. Never reset your only installation to test a backup.
 
-Clone Evidence into a separate directory and run `rer dev` there. The checkout gets separate local state and selects a free port. Open its private owner link and confirm setup. Keep your original installation and archive intact.
+Start Evidence in a separate directory with `npx -y @runeditrun/rer dev just-every/run-evidence --dir evidence-restore`. The checkout gets separate local state and selects a free port. Open its private owner link and confirm setup. Keep your original installation and archive intact.
 
 ## Dry-run and confirm restore
 

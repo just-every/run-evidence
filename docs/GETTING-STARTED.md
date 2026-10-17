@@ -4,7 +4,7 @@ Evidence keeps audit evidence for one business. You write the controls, add proo
 
 ## Run Evidence on your computer
 
-Install Node.js 22 or newer, Git and pnpm 10.12.4. These commands work on macOS, Linux or Windows with WSL2.
+Install Git. These commands work on macOS, Linux or Windows with WSL2.
 
 One line installs the shared Run Edit Run command, gets Evidence and starts it:
 
@@ -12,7 +12,7 @@ One line installs the shared Run Edit Run command, gets Evidence and starts it:
 npx -y @runeditrun/rer dev just-every/run-evidence
 ```
 
-To start it again later, run `cd run-evidence && rer dev`.
+Without Node, `curl -fsSL https://runeditrun.com/install.sh | sh -s -- dev just-every/run-evidence` does the same. To start it again later, run `cd run-evidence && rer dev`.
 
 `rer dev` installs the pinned dependencies, selects the required Node version, applies local migrations, prepares a local owner and starts the app. Open the private `RER_OPEN` link it prints on this computer. Keep this link private: it signs you in as the local owner.
 
@@ -20,7 +20,7 @@ To start it again later, run `cd run-evidence && rer dev`.
 
 On **Finish setup**, review the owner name and email. Select **I confirm this owner account is ready to use.**, then **Finish setup**. The **Proof desk** is the main workspace.
 
-No external email is sent during local development. Email sign-in uses the local development outbox. No provider account is needed to run locally. To use your own mailbox as the local owner, run this before the first launch:
+No external email is sent during local development. Email sign-in uses the local development outbox. No provider account is needed to run locally. To use your own mailbox as the local owner, run `npx -y @runeditrun/rer install just-every/run-evidence`, then this from the checkout before the first launch:
 
 ```sh
 rer setup --owner-email you@example.com
