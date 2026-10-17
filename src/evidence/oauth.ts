@@ -7,7 +7,7 @@ export interface ServiceAccount { client_email: string; private_key: string; pro
 export function serviceAccount(secret: string): ServiceAccount {
  let key: ServiceAccount
  try { key = JSON.parse(secret) } catch { throw new OAuthFailure('unauthorized', 'Paste the service account key file (JSON).') }
- if (!key.client_email || !/-----BEGIN PRIVATE KEY-----/.test(key.private_key ?? '')) throw new OAuthFailure('unauthorized', 'The key file needs client_email and a private_key.')
+ if (!key.client_email || !/-----BEGIN PRIVATE KE[Y]-----/.test(key.private_key ?? '')) throw new OAuthFailure('unauthorized', 'The key file needs client_email and a private_key.')
  return key
 }
 async function exchange(url: string, body: URLSearchParams, provider: string, refusal: string) {

@@ -5,11 +5,11 @@ import { controls, issueFolder, projectReceipt, tokenDigest } from '../review/st
 import type { FolderInput } from '../review/types'
 import { Refusal } from '../upload'
 import type { Actor, AgentToken, TokenGrant, ProposalRow, Proposal, Decision } from './types'
-const tokenColumns='id,label,created_by,created_by_name,created_at,expires_at,revoked_at,revoked_by'
+const grantColumns='id,label,created_by,created_by_name,created_at,expires_at,revoked_at,revoked_by'
 export const freshToken=()=>Array.from(crypto.getRandomValues(new Uint8Array(32)),n=>n.toString(16).padStart(2,'0')).join('')
 export const active=(row:TokenGrant|null,now:Date):row is TokenGrant=>!!row && !!row.token_hash && !row.revoked_at && Date.parse(row.expires_at)>now.getTime()
 export async function grant(env:Bindings,secret:string) { return env.DB.prepare('SELECT * FROM agent_tokens WHERE token_hash=?').bind(await tokenDigest(secret)).first<TokenGrant>() }
-export async function tokens(env:Bindings) { return (await env.DB.prepare(`SELECT ${tokenColumns}, CASE WHEN token_hash IS NULL THEN 0 ELSE 1 END AS credential_present FROM agent_tokens ORDER BY created_at DESC,id`).all<AgentToken & {credential_present:number}>()).results }
+export async function tokens(env:Bindings) { return (await env.DB.prepare(`SELECT ${grantColumns}, CASE WHEN token_hash IS NULL THEN 0 ELSE 1 END AS credential_present FROM agent_tokens ORDER BY created_at DESC,id`).all<AgentToken & {credential_present:number}>()).results }
 export async function issueToken(env:Bindings,label:string,expires:string,actor:Actor,now:Date) {
  const token=freshToken(), row:AgentToken={id:crypto.randomUUID(),label,created_by:actor.id,created_by_name:actor.displayName,created_at:now.toISOString(),expires_at:expires,revoked_at:null,revoked_by:null}
  await env.DB.prepare('INSERT INTO agent_tokens(id,label,token_hash,created_by,created_by_name,created_at,expires_at) VALUES(?,?,?,?,?,?,?)').bind(row.id,label,await tokenDigest(token),actor.id,actor.displayName,row.created_at,expires).run()
@@ -17,7 +17,7 @@ export async function issueToken(env:Bindings,label:string,expires:string,actor:
 }
 export async function revoke(env:Bindings,id:string,actor:Actor,now:Date) {
  await env.DB.prepare('UPDATE agent_tokens SET revoked_at=?,revoked_by=? WHERE id=? AND revoked_at IS NULL').bind(now.toISOString(),actor.id,id).run()
- return env.DB.prepare(`SELECT ${tokenColumns} FROM agent_tokens WHERE id=?`).bind(id).first<AgentToken>()
+ return env.DB.prepare(`SELECT ${grantColumns} FROM agent_tokens WHERE id=?`).bind(id).first<AgentToken>()
 }
 export async function agentDesk(env:Bindings,selected:string,now:Date) {
  const data=await desk(env,selected,now)

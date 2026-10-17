@@ -3350,7 +3350,7 @@
       "executable": false
     },
     "src/evidence/agent/storage.ts": {
-      "sha256": "2e91d33437ce5524f3781666f1ba79b2d899c18744ef2e694d2b049867fcbe3c",
+      "sha256": "908b2db7ead899a28f093d2c35a4e55410b1b89eef3ba46e5eda4ae301cf2a48",
       "executable": false
     },
     "src/evidence/agent/types.ts": {
@@ -4238,7 +4238,7 @@
       "executable": false
     },
     "src/evidence/oauth.ts": {
-      "sha256": "d119a9066558756a2a60a7bed206de6888c8766a5725372ab35138dd8a5071d6",
+      "sha256": "838330930989015355098fe8bd8a2abbfb503dd86ec750f0f0ef1c7303e938d4",
       "executable": false
     },
     "src/evidence/policy/builder.ts": {
@@ -5426,7 +5426,7 @@
       "executable": false
     },
     "tests/github.mjs": {
-      "sha256": "7f1a60feaf7521f75135b48f3915155cb09044b0da966d1201a5a6228d8adbb3",
+      "sha256": "04cc9d1409bb377044122930d6603f3196e425f84955bdc3b44f5566111696ea",
       "executable": false
     },
     "tests/helpers/move-in-browser.mjs": {
