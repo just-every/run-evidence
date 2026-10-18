@@ -5,6 +5,7 @@ import { parseCriteria } from './criteria'
 import { runTest } from './engine'
 import { addException, catalogueFor, defineTest, latestRevision, parseDefinition, requireTest, reviseTest, staleIntervals, testControls, type TestRow } from './storage'
 import { testPage, testsPage, type TestDetail } from './view'
+import { filterRows, openTest, state, workspaceRows, type Show } from './workspace'
 import type { Bindings } from '../../auth.server'
 import { obligations } from '../remedy/storage'
 import { ticketPanel } from '../work/granularity'
@@ -36,7 +37,12 @@ export function testHandler(clock: () => Date) {
    const rows = await testSummaries(c.env, c.now)
    if (c.isApi) return json({ tests: rows, catalogue })
    const types = [...new Set([...(await c.env.DB.prepare('SELECT type FROM resource_types ORDER BY type').all<{ type: string }>()).results.map(r => r.type), ...catalogue.map(e => e.resourceType)])]
-   return testsPage(rows, types, catalogue.filter(e => e.unsupported), c.actor.name, c.url.searchParams.get('controls') ?? '')
+   const q = c.url.searchParams, show: Show = (['failing', 'stale'] as const).find(v => v === q.get('show')) ?? 'all', integration = q.get('integration') ?? ''
+   const all = rows.length ? await workspaceRows(c.env, rows) : [], shown = filterRows(all, show, integration)
+   // The open test: the one asked for, else the first failing, else the first listed.
+   const pick = all.find(r => r.id === q.get('test')) ?? shown.find(r => state(r) === 'failing') ?? shown[0]
+   const workspace = all.length ? { rows: all, shown, show, integration, open: pick ? await openTest(c.env, pick, c.now) : null } : null
+   return testsPage(workspace, types, catalogue.filter(e => e.unsupported), c.actor.name, q.get('controls') ?? '', c.now)
   } },
   { method: 'POST', pattern: both('/tests'), run: async c => { const created = await defineTest(c.env, parseDefinition(await readInput(c.request)), 'custom', c.actor.id, c.actor, c.now); return done(c, '/app/tests/' + created.id, created, 201) } },
   { method: 'GET', pattern: both(`/tests/${id}`), run: async (c, m) => { const d = await testDetail(c.env, m[1], c.now), tickets = await ticketPanel(c.env, m[1], c.now); return c.isApi ? json({ ...d, tickets }) : testPage(d, c.actor.name, tickets) } },

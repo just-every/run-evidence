@@ -6,16 +6,16 @@
 .rer-themed .folders-layout { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 24px; align-items: start; }
 .rer-themed .folder-create h2,
 .rer-themed .folder-current h2 { margin-bottom: 16px; }
-.rer-themed .folder-create .card > p,
-.rer-themed .folder-current .card > p { margin: 0 0 24px; }
+.rer-themed .folder-create > p,
+.rer-themed .folder-current > p { margin: 0 0 24px; }
 .rer-themed .review-pages .control-checks { border: 0; padding: 0; gap: 12px; }
 .rer-themed .control-checks legend { padding: 0; margin-bottom: 12px; font-size: 15px; }
 .rer-themed .control-checks label { display: flex; align-items: flex-start; gap: 12px; font-weight: 400; line-height: 1.5; }
 .rer-themed .control-checks input { width: 20px; height: 20px; margin: 2px 0; flex: none; }
 .rer-themed .folder-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 16px; }
 .folder-expiry { grid-column: 1 / -1; }
-.rer-themed .folder-hint { margin: 0; font-size: 15px; color: var(--ev-muted); }
-.rer-themed .folder-row { padding: 24px 0; border-top: 1px solid var(--ev-line); }
+.rer-themed .folder-hint { margin: 0; font-size: 15px; color: var(--app-label); }
+.rer-themed .folder-row { padding: 24px 0; border-top: 1px solid var(--app-hairline); }
 .rer-themed .folder-row:first-child { padding-top: 0; border-top: 0; }
 .rer-themed .folder-heading { display: flex; align-items: flex-start; gap: 16px; }
 .rer-themed .folder-heading h3 { flex: 1; margin: 4px 0 12px; min-width: 0; }
@@ -23,41 +23,42 @@
 .rer-themed .folder-facts { padding-left: 72px; margin-top: -12px; }
 .rer-themed .folder-facts p { margin: 4px 0; font-size: 15px; }
 .rer-themed .folder-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-.rer-themed .folder-row .folder-actions { border-top: 1px solid var(--ev-line); margin-top: 20px; padding-top: 16px; }
+.rer-themed .folder-row .folder-actions { border-top: 1px solid var(--app-hairline); margin-top: 20px; padding-top: 16px; }
 .rer-themed .folder-actions form { display: contents; }
 .rer-themed .folder-actions .button,
 .rer-themed .folder-actions button { width: auto; flex: 0 1 auto; min-width: 140px; }
 .rer-themed .folder-current .folder-all-events { margin: 16px 0 0; }
-.rer-themed .issued-label { margin: -12px 0 32px; color: var(--ev-ink); font-size: 32px; line-height: 1.3; }
-.rer-themed .folder-once .card { padding: 32px; }
-.rer-themed .folder-once .card > p:first-child { margin-top: 0; color: var(--ev-ink); }
+.rer-themed .issued-label { margin: -4px 0 20px; color: var(--app-text); font-size: 20px; line-height: 1.3; }
+.rer-themed .folder-once { padding: 32px; }
+.rer-themed .folder-once > p:first-child { margin-top: 0; color: var(--site-ink); }
 .rer-themed .folder-once label { margin: 24px 0; }
 .rer-themed input.folder-link { font-family: var(--rer-font-mono); font-size: 14px; }
 .rer-themed .folder-once .folder-actions > * { min-width: 220px; }
 .rer-themed #copy-status { margin-bottom: 0; }
 .rer-themed #copy-status:empty { display: none; }
 .rer-themed .folder-return { margin-top: 32px; }
-.rer-themed .review-log { display: flex; gap: 20px; padding: 24px 0; border-bottom: 1px solid var(--ev-line); }
+.rer-themed .review-log { display: flex; gap: 20px; padding: 24px 0; border-bottom: 1px solid var(--app-hairline); }
 .rer-themed .review-log:first-child { padding-top: 0; }
 .rer-themed .review-log:last-child { padding-bottom: 0; border-bottom: 0; }
 .rer-themed .review-log h2 { font-size: 19px; margin: 0 0 8px; }
 .rer-themed .review-log p { margin: 4px 0; font-size: 15px; }
-.rer-themed .review-time { color: var(--ev-muted); }
+.rer-themed .review-time { color: var(--app-label); }
 /* The public bearer-link view deliberately has no account or app navigation. */
-html.rer-themed body.public-review { padding: 0; margin: 0; background: var(--ev-paper); color: var(--ev-ink); font-family: var(--rer-font-body); }
-.rer-themed .reviewer-header { max-width: 1440px; margin: 0 auto; padding: 24px 48px; }
+html.rer-themed body.public-review { padding: 0; margin: 0; background: var(--app-wash); background-attachment: fixed; color: var(--site-ink); font-family: var(--rer-font-body); }
+.rer-themed .reviewer-header { max-width: 1440px; margin: 0 auto; padding: 20px 48px; border-bottom: 1px solid var(--app-hairline); }
+.rer-themed .reviewer-header .app-brand { margin: 0; }
 html.rer-themed main.public-review-main { width: 100%; max-width: 1440px; margin: 0 auto; padding: 48px; border: 0; border-radius: 0; box-shadow: none; background: transparent; }
 .rer-themed .review-header { display: flex; align-items: flex-start; gap: 24px; margin: 8px 0 32px; }
-.rer-themed .review-header h1 { color: var(--ev-ink); font-size: 52px; font-weight: 800; line-height: 1.05; letter-spacing: -.035em; margin: 0 0 12px; }
+.rer-themed .review-header h1 { color: var(--site-ink); font-family: var(--font-head); font-size: 40px; font-weight: 800; line-height: 1.1; letter-spacing: -.03em; margin: 0 0 8px; }
 .rer-themed .review-folder-icon { flex: none; padding-top: 4px; }
 .rer-themed .review-folder-icon .icon { width: 48px; height: 48px; stroke-width: 1.8; }
-.rer-themed .review-subtitle { margin: 0; font-size: 20px; }
+.rer-themed .review-subtitle { margin: 0; font-size: 16px; }
 .rer-themed .review-period { margin-bottom: 16px; }
 .rer-themed .review-dates { display: flex; gap: 40px; margin: 0; }
-.rer-themed .review-dates .review-field + .review-field { border-left: 1px solid var(--ev-line); padding-left: 40px; }
+.rer-themed .review-dates .review-field + .review-field { border-left: 1px solid var(--app-hairline); padding-left: 40px; }
 .rer-themed .review-field dt,
-.rer-themed .review-label { font-size: 15px; font-weight: 400; color: var(--ev-muted); margin: 0 0 8px; }
-.rer-themed .review-field dd { color: var(--ev-ink); margin: 0; font-family: var(--rer-font-body); font-size: 18px; }
+.rer-themed .review-label { font-size: 15px; font-weight: 400; color: var(--app-label); margin: 0 0 8px; }
+.rer-themed .review-field dd { color: var(--site-ink); margin: 0; font-family: var(--rer-font-body); font-size: 18px; }
 .rer-themed .review-records { margin: 0; font-size: 15px; }
 .rer-themed .review-records th { font-size: 15px; font-weight: 500; padding: 12px 12px 16px; }
 .rer-themed .review-records td { padding: 24px 12px; }
@@ -77,8 +78,8 @@ html.rer-themed main.public-review-main { width: 100%; max-width: 1440px; margin
 .rer-themed .review-filename { font-family: var(--rer-font-mono); }
 .rer-themed .review-fingerprint { display: block; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
 .rer-themed .review-record .review-record-actions .button { font-size: 15px; min-height: 38px; padding: 8px 10px; margin-bottom: 12px; }
-.rer-themed .review-scope { margin: 24px 0; font-size: 15px; color: var(--ev-muted); }
-.rer-themed .review-receipt-name { margin: 24px 0; font-weight: 400; font-size: 32px; }
+.rer-themed .review-scope { margin: 24px 0; font-size: 15px; color: var(--app-label); }
+.rer-themed .review-receipt-name { margin: 12px 0 20px; color: var(--app-text); font-family: var(--font-mono); font-weight: 400; font-size: 15px; }
 .rer-themed .review-receipt-layout { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 24px; }
 .rer-themed .review-receipt-facts,
 .rer-themed .proposal-facts { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 16px 24px; margin: 0; }
@@ -92,7 +93,7 @@ html.rer-themed main.public-review-main { width: 100%; max-width: 1440px; margin
 .rer-themed .agent-grant { grid-template-columns: repeat(2, minmax(0,1fr)); }
 .rer-themed .agent-grant button { grid-column: 1 / -1; }
 .rer-themed .agent-access-row,
-.rer-themed .agent-proposal-row { display: flex; gap: 20px; align-items: center; padding: 20px 0; border-top: 1px solid var(--ev-line); }
+.rer-themed .agent-proposal-row { display: flex; gap: 20px; align-items: center; padding: 20px 0; border-top: 1px solid var(--app-hairline); }
 .rer-themed .agent-access-row:first-of-type,
 .rer-themed .agent-proposal-row:first-of-type { border-top: 0; padding-top: 0; }
 .rer-themed .agent-access-row:last-child,
@@ -108,10 +109,10 @@ html.rer-themed main.public-review-main { width: 100%; max-width: 1440px; margin
 .rer-themed .prepared-receipt { margin-top: 20px; }
 .rer-themed .prepared-receipt p { margin: 4px 0; }
 .rer-themed .proposal-actions { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
-.rer-themed .agent-secret pre { padding: 20px; border: 1px solid var(--ev-line); border-radius: 10px; }
+.rer-themed .agent-secret pre { padding: 20px; border: 1px solid var(--app-hairline); border-radius: 10px; }
 .rer-themed .import-upload { margin-top: 24px; }
 .rer-themed .import-history { margin-top: 48px; }
-.rer-themed .import-history-row { display: flex; gap: 20px; padding: 24px 0; border-bottom: 1px solid var(--ev-line); }
+.rer-themed .import-history-row { display: flex; gap: 20px; padding: 24px 0; border-bottom: 1px solid var(--app-hairline); }
 .rer-themed .import-history-row:first-child { padding-top: 0; }
 .rer-themed .import-history-row:last-child { padding-bottom: 0; border: 0; }
 .rer-themed .import-history-row .state { margin-top: 12px; white-space: normal; justify-content: flex-start; }
@@ -131,8 +132,7 @@ html.rer-themed main.public-review-main { width: 100%; max-width: 1440px; margin
  .rer-themed .review-evidence { padding: 0; border: 0; border-radius: 0; box-shadow: none; background: none; }
  .rer-themed .review-evidence::before,
  .rer-themed .review-evidence::after { display: none; }
- .rer-themed .review-evidence > .card { padding: 0; border: 0; border-radius: 0; background: transparent; }
- .rer-themed .review-record { display: block; margin-bottom: 16px; padding: 16px; border: 8px solid transparent; border-radius: 22px; background: linear-gradient(var(--ev-surface),var(--ev-surface)) padding-box, linear-gradient(135deg,#c9e6ffb3,#e6dcffb3,#ffdcecb3,#fff0c7b3,#d8f6e3b3) border-box; box-shadow: 0 1px 1px #10121608, 0 24px 48px -24px #1012162e; }
+ .rer-themed .review-record { display: block; margin-bottom: 12px; padding: 14px; border: 1px solid var(--app-hairline); border-radius: 12px; background: var(--site-surface); }
  .rer-themed .review-records td { display: block; padding: 0; margin: 0 0 20px; border: 0; }
  .rer-themed .review-records td::before { content: none; }
  .rer-themed .review-record h2 { font-size: 19px; font-weight: 600; }
@@ -154,17 +154,17 @@ html.rer-themed main.public-review-main { width: 100%; max-width: 1440px; margin
  .rer-themed .folder-hint { font-size: 14px; }
  .rer-themed .folder-actions > .button,
  .rer-themed .folder-actions button { flex: 1 1 auto; min-width: 0; }
- .rer-themed .issued-label { font-size: 24px; margin-top: -8px; }
- .rer-themed .folder-once .card { padding: 20px 16px; }
+ .rer-themed .issued-label { font-size: 17px; margin-top: 0; }
+ .rer-themed .folder-once { padding: 20px 16px; }
  .rer-themed .folder-once .folder-actions > * { width: 100%; min-width: 0; }
  .rer-themed .reviewer-header { padding: 24px 16px; }
  html.rer-themed main.public-review-main { padding: 24px 16px; }
  .rer-themed .review-header { gap: 16px; margin: 0 0 24px; }
- .rer-themed .review-header h1 { font-size: 32px; line-height: 1.1; }
+ .rer-themed .review-header h1 { font-size: 30px; line-height: 1.15; }
  .rer-themed .review-folder-icon .icon { width: 32px; height: 32px; }
  .rer-themed .review-subtitle { font-size: 16px; }
  .rer-themed .review-dates { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
- .rer-themed .review-dates .review-field + .review-field { padding: 20px 0 0; border-left: 0; border-top: 1px solid var(--ev-line); }
+ .rer-themed .review-dates .review-field + .review-field { padding: 20px 0 0; border-left: 0; border-top: 1px solid var(--app-hairline); }
  .rer-themed .review-field dd { font-size: 16px; }
  .rer-themed .review-label,
  .rer-themed .review-field dt,
@@ -174,7 +174,7 @@ html.rer-themed main.public-review-main { width: 100%; max-width: 1440px; margin
  .rer-themed .proposal-facts { grid-template-columns: minmax(0,1fr); gap: 4px; }
  .rer-themed .review-receipt-facts dd,
  .rer-themed .proposal-facts dd { margin-bottom: 16px; }
- .rer-themed .review-receipt-name { font-size: 26px; }
+ .rer-themed .review-receipt-name { font-size: 13px; }
  .rer-themed .agent-access-row,
  .rer-themed .agent-proposal-row { align-items: flex-start; gap: 12px; }
  .rer-themed .agent-access-row > div,
@@ -190,8 +190,8 @@ html.rer-themed main.public-review-main { width: 100%; max-width: 1440px; margin
  .rer-themed .import-evidence tr,
  .rer-themed .import-evidence td { display: block; }
  .rer-themed .import-evidence thead { display: none; }
- .rer-themed .import-evidence tr { padding: 16px 0; border-bottom: 1px solid var(--ev-line); }
+ .rer-themed .import-evidence tr { padding: 16px 0; border-bottom: 1px solid var(--app-hairline); }
  .rer-themed .import-evidence td { padding: 8px 0; border: 0; }
- .rer-themed .import-evidence td::before { content: attr(data-label); display: block; margin-bottom: 4px; color: var(--ev-muted); font-size: 14px; }
+ .rer-themed .import-evidence td::before { content: attr(data-label); display: block; margin-bottom: 4px; color: var(--app-label); font-size: 14px; }
 }
-.rer-themed .import-history-row .state-dot { background: var(--ev-due); border: 0; }
+.rer-themed .import-history-row .state-dot { background: var(--site-amber); border: 0; }

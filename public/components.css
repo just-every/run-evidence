@@ -1,0 +1,123 @@
+/* Shared panels, controls, chips, tables and facts for every owner and reviewer page. */
+/* The wordmark and the evidence caveat, on owner and reviewer pages alike. */
+.rer-themed .app-brand { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 26px 12px; color: var(--site-ink); font-family: var(--font-head); font-size: 25px; font-weight: 700; letter-spacing: -.035em; line-height: 1; text-decoration: none; }
+.rer-themed .app-brand span { min-width: 0; line-height: 1.05; }
+.evidence-mark { width: 36px; height: 36px; flex: none; display: block; }
+.rer-themed .app-caveat { margin: 40px 0 0; padding: 18px 0 0; border-top: 1px solid var(--app-hairline); color: var(--app-label); font-size: 13px; line-height: 1.5; }
+.rer-themed .panel { position: relative; min-width: 0; padding: 20px 22px; border: 1px solid var(--app-hairline); border-radius: 12px; background: var(--app-panel); box-shadow: var(--app-shadow); }
+.rer-themed .panel section { margin: 0; padding: 0; border: 0; }
+.rer-themed h2, .rer-themed .panel-title { margin: 0 0 14px; color: var(--site-ink); font-family: var(--font-body); font-size: 18px; font-weight: 600; line-height: 1.3; letter-spacing: -.015em; }
+.rer-themed h3 { margin: 0 0 6px; color: var(--site-ink); font-size: 15px; font-weight: 600; line-height: 1.35; }
+.rer-themed p { color: var(--app-text); font-size: 14px; line-height: 1.5; }
+.rer-themed a { color: var(--site-link); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.rer-themed .icon { display: block; width: 20px; height: 20px; flex: none; }
+.rer-themed .icon-tile { display: grid; place-items: center; width: 44px; height: 44px; flex: none; border-radius: 10px; background: var(--site-tile); color: var(--site-link); }
+.rer-themed .icon-tile .icon { width: 24px; height: 24px; }
+/* State chips: a tinted pill and a dot, coloured by meaning. */
+.rer-themed .state { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 26px; padding: 3px 10px; border-radius: 999px; background: #f1f4f8; color: #4d5b74; font-size: 13px; font-weight: 500; line-height: 1.25; white-space: nowrap; }
+.state-dot { display: inline-block; width: 8px; height: 8px; flex: none; border-radius: 50%; }
+.rer-themed .state-covered { background: var(--site-green-tint); color: #127a43; }
+.rer-themed .state-due { background: var(--site-amber-tint); color: #8f5600; }
+.rer-themed .state-overdue { background: var(--site-red-tint); color: #c4161c; }
+.state-covered .state-dot { background: var(--site-green); }
+.state-due .state-dot { background: var(--site-amber); }
+.state-overdue .state-dot { background: var(--site-red); }
+.state-missing .state-dot { border: 1.5px solid var(--site-soft); }
+/* Fields: hairline, rounded, with a cobalt focus ring. */
+.rer-themed form { display: grid; gap: 16px; margin: 0; max-width: none; }
+.rer-themed label { min-width: 0; display: grid; gap: 6px; color: var(--site-ink); font-size: 14px; font-weight: 500; line-height: 1.3; }
+.rer-themed .app-main input:not([type=checkbox]):not([type=radio]):not([type=hidden]), .rer-themed .public-review-main input:not([type=checkbox]):not([type=radio]):not([type=hidden]), .rer-themed select, .rer-themed .app-main textarea { width: 100%; max-width: 100%; min-width: 0; height: 42px; padding: 9px 12px; border: 1px solid var(--app-field); border-radius: 10px; background: var(--site-surface); color: var(--site-ink); font: inherit; font-size: 15px; font-weight: 400; }
+.rer-themed .app-main textarea { height: auto; min-height: 84px; line-height: 1.45; resize: vertical; }
+.rer-themed :is(input, select, textarea):hover { border-color: #bfcbdb; }
+.rer-themed :is(input:not([type=checkbox]):not([type=radio]), select, textarea):focus-visible { outline: 0; border-color: var(--site-link); box-shadow: 0 0 0 3px rgba(37, 99, 224, .18); }
+/* Every single-choice select draws its chevron 14 px in from the right border with room under it for the text. Two gradient strokes read --rer-select-ink, so the chevron follows the token and paints under img-src 'self'. Multiple and size>1 lists keep their native look. */
+.rer-themed select { display: block; }
+.rer-themed select:not([multiple], [size]:not([size="1"])) {
+  --rer-select-ink: var(--app-label);
+  -webkit-appearance: none;
+  appearance: none;
+  padding-inline-end: 40px;
+  text-overflow: ellipsis;
+  background-image:
+    linear-gradient(to top right, transparent calc(50% - 1.1px), var(--rer-select-ink) calc(50% - .55px), var(--rer-select-ink) calc(50% + .55px), transparent calc(50% + 1.1px)),
+    linear-gradient(to top left, transparent calc(50% - 1.1px), var(--rer-select-ink) calc(50% - .55px), var(--rer-select-ink) calc(50% + .55px), transparent calc(50% + 1.1px));
+  background-repeat: no-repeat;
+  background-position: right 20px center, right 14px center;
+  background-size: 6px 6px;
+}
+.rer-themed select:not([multiple], [size]:not([size="1"])):focus-visible { --rer-select-ink: var(--site-ink); }
+.rer-themed select:not([multiple], [size]:not([size="1"])):disabled { --rer-select-ink: color-mix(in srgb, var(--app-label) 55%, transparent); }
+.rer-themed input::placeholder, .rer-themed textarea::placeholder { color: var(--site-soft); opacity: 1; }
+.rer-themed input[type=date], .rer-themed input[type=datetime-local] { font-family: var(--font-body); }
+.rer-themed .app-main input[type=file] { height: auto; min-height: 42px; padding: 5px; font-size: 14px; }
+.rer-themed input[type=file]::file-selector-button { min-height: 30px; margin-right: 12px; padding: 4px 12px; background: var(--site-surface); color: var(--site-ink); border: 1px solid var(--app-field); border-radius: 999px; font: inherit; font-size: 13px; }
+.rer-themed input[type=checkbox], .rer-themed input[type=radio] { width: 16px; height: 16px; margin: 0; accent-color: var(--site-ink); }
+/* Primary actions are black pills; secondary actions are white pills with a hairline. */
+.rer-themed button, .rer-themed .button { display: inline-flex; justify-content: center; align-items: center; gap: 8px; justify-self: start; width: auto; min-width: 128px; max-width: 100%; min-height: 40px; padding: 9px 20px; border: 1px solid var(--site-ink); border-radius: 999px; background: linear-gradient(#1a2336, var(--site-ink)); color: #fff; font: inherit; font-size: 14.5px; font-weight: 600; line-height: 1.25; text-align: center; text-decoration: none; cursor: pointer; box-shadow: 0 4px 10px -6px rgba(8, 12, 26, .55); }
+.rer-themed button:hover, .rer-themed .button:hover { background: #222c41; }
+.rer-themed .button-secondary, .rer-themed button.button-secondary { background: var(--site-surface); border-color: #b9c5d6; color: var(--site-ink); box-shadow: none; }
+.rer-themed .button-secondary:hover { background: #f4f8fd; border-color: #95a5bb; }
+.rer-themed button:disabled, .rer-themed .button[aria-disabled=true] { background: #eef2f7; border-color: #eef2f7; color: var(--site-soft); box-shadow: none; cursor: default; }
+.rer-themed :focus-visible { outline: 2px solid var(--site-link); outline-offset: 2px; }
+.rer-themed .dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.rer-themed .panel-intro { margin: 0 0 18px; color: var(--app-label); font-size: 14px; }
+.rer-themed h2 + .panel-intro { margin-top: -6px; }
+.app-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; margin-bottom: 16px; }
+.app-main > .panel { margin-bottom: 16px; }
+/* A list beside its form: the table takes the wider column. */
+@media (min-width: 1101px) { .app-columns:has(> .panel:first-child .table-scroll):has(> .panel:last-child form) { grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr); } }
+.card-list { display: grid; gap: 10px; }
+.rer-themed dl.facts { display: grid; grid-template-columns: minmax(110px, 170px) minmax(0, 1fr); align-items: start; gap: 0; margin: 0 0 16px; font-size: 14px; }
+.rer-themed .facts dt { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--app-row); color: var(--app-label); font-weight: 400; }
+.rer-themed .facts dd { margin: 0; padding: 9px 0; border-bottom: 1px solid var(--app-row); color: var(--site-ink); }
+.rer-themed .facts :is(dt, dd):nth-last-child(-n + 2) { border-bottom: 0; }
+.rer-themed .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 300px; padding: 24px; text-align: center; }
+.rer-themed .empty-state h2, .rer-themed .empty-state p { margin: 0; }
+.rer-themed .empty-state p { max-width: 420px; color: var(--app-label); }
+.rer-themed .empty-copy { margin: 0; color: var(--app-label); }
+.rer-themed code, .rer-themed pre { font-family: var(--font-mono); font-size: 13px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.rer-themed pre { margin: 0 0 12px; padding: 12px 14px; border: 1px solid var(--app-hairline); border-radius: 10px; background: #f7fafd; }
+.rer-themed fieldset { min-width: 0; display: grid; gap: 12px; margin: 0; padding: 14px; border: 1px solid var(--app-hairline); border-radius: 10px; }
+.rer-themed legend { max-width: 100%; padding: 0 6px; color: var(--site-ink); font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
+/* Dense tables: quiet labels, hairline rows. */
+.rer-themed table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 14px; }
+.rer-themed th { padding: 10px 10px; color: var(--app-label); font-size: 13px; font-weight: 400; text-align: left; vertical-align: bottom; border-bottom: 1px solid var(--app-hairline); }
+.rer-themed td { padding: 11px 10px; color: var(--site-ink); text-align: left; vertical-align: top; border-bottom: 1px solid var(--app-row); overflow-wrap: anywhere; }
+.rer-themed tbody tr:last-child td { border-bottom: 0; }
+.rer-themed :is(th, td):first-child { padding-left: 2px; }
+.rer-themed label.check { display: flex; align-items: center; gap: 10px; font-weight: 400; }
+.rer-themed .panel section form + form, .rer-themed .panel section .table-scroll + form, .rer-themed .panel section form + .table-scroll { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--app-row); }
+.table-scroll { max-width: 100%; overflow-x: auto; }
+.table-scroll table { min-width: 0; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+/* Filter forms lay their fields out in a row above the list. */
+.rer-themed form.filters { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); align-items: end; gap: 12px 14px; margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid var(--app-row); }
+.rer-themed form.filters .dates { grid-column: span 2; }
+/* Filter pills: links that narrow a list, the current one filled. */
+.rer-themed .filter-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+.rer-themed .filter-row a, .rer-themed .pill { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 6px 14px; border: 1px solid var(--app-field); border-radius: 999px; background: var(--site-surface); color: #111b31; font-size: 14px; text-decoration: none; white-space: nowrap; }
+.rer-themed .filter-row a:hover, .rer-themed a.pill:hover { border-color: #b3c1d4; }
+.rer-themed .filter-row a[aria-current], .rer-themed .pill[aria-current] { border-color: var(--site-ink); background: var(--site-ink); color: #fff; }
+.rer-themed .actions-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0 0; }
+.rer-themed .issued-token { margin: 0 0 16px; padding: 14px; border: 1px solid var(--app-hairline); border-radius: 10px; background: #f7fafd; }
+.rer-themed td small, .rer-themed dd small { color: var(--app-label); font-size: 13px; }
+@media (max-width: 1100px) { .app-columns { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) {
+ .rer-themed .panel { padding: 16px 14px; }
+ .rer-themed h2, .rer-themed .panel-title { font-size: 17px; }
+ .rer-themed button, .rer-themed .button { width: 100%; justify-self: stretch; }
+ .rer-themed .filter-row a, .rer-themed .actions-row .button { width: auto; }
+ .rer-themed .dates { grid-template-columns: minmax(0, 1fr); }
+ .rer-themed dl.facts { grid-template-columns: minmax(88px, 34%) minmax(0, 1fr); font-size: 14px; }
+ .rer-themed .empty-state { min-height: 240px; }
+ /* Tables stack each row as a labelled card on phones. */
+ .table-scroll { overflow: visible; }
+ .table-scroll table, .table-scroll tbody { display: block; min-width: 0; }
+ .table-scroll thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+ .table-scroll tr { display: block; padding: 10px 0; border-bottom: 1px solid var(--app-row); }
+ .table-scroll tr:last-child { border-bottom: 0; }
+ .table-scroll td { display: grid; grid-template-columns: minmax(84px, 34%) minmax(0, 1fr); gap: 10px; padding: 5px 0; border: 0; }
+ .table-scroll td::before { content: attr(data-label); color: var(--app-label); font-size: 13px; }
+ .table-scroll td .cell { min-width: 0; }
+ .table-scroll td .state { justify-self: start; }
+}

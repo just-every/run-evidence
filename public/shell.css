@@ -1,0 +1,74 @@
+/* Private application chrome from the owner-picked Tests screen: a slim white rail,
+   a top bar naming the audit program and period, and the work on a pale sky wash. */
+html.rer-themed body.evidence-app { margin: 0; padding: 0; min-height: 100vh; background: var(--app-wash); background-attachment: fixed; color: var(--site-ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+.evidence-app *, .public-review * { box-sizing: border-box; }
+.app-frame { display: grid; grid-template-columns: 204px minmax(0, 1fr); min-height: 100vh; }
+.rer-themed .app-rail { min-width: 0; padding: 20px 10px 24px; border-right: 1px solid var(--app-hairline); background: rgba(255, 255, 255, .55); }
+.rer-themed .app-nav { display: flex; flex-direction: column; gap: 4px; }
+.rer-themed .app-nav a { display: flex; align-items: center; gap: 14px; min-height: 42px; padding: 9px 14px; border-radius: 9px; color: #4d6081; font-size: 15px; font-weight: 450; line-height: 1.25; letter-spacing: -.005em; text-decoration: none; white-space: nowrap; }
+.rer-themed .app-nav .icon { width: 20px; height: 20px; flex: none; color: #71819e; }
+.rer-themed .app-nav a:hover { background: #f2f7fd; color: var(--site-ink); }
+.rer-themed .app-nav a[aria-current=page] { background: var(--app-cobalt-wash); color: var(--site-link); font-weight: 500; }
+.rer-themed .app-nav a[aria-current=page] .icon { color: var(--site-link); }
+.rer-themed .nav-count { margin-left: auto; display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--site-link); color: #fff; font-size: 12px; font-weight: 600; }
+.rer-themed .nav-rule { display: block; height: 1px; margin: 10px 14px; background: var(--app-hairline); }
+.app-body { min-width: 0; display: flex; flex-direction: column; }
+.rer-themed .app-topbar { display: flex; align-items: center; gap: 20px; min-height: 76px; padding: 14px 28px; border-bottom: 1px solid var(--app-hairline); }
+.rer-themed .program-scope { display: flex; align-items: center; gap: 20px; min-width: 0; }
+.rer-themed .program-period { color: #465a7a; font-size: 15px; white-space: nowrap; }
+.rer-themed .program-switch { position: relative; }
+/* The summary draws Base's two-stroke chevron 14 px in from its right border. */
+.rer-themed .program-switch summary {
+  display: flex; align-items: center; min-width: 176px; min-height: 42px; padding: 8px 40px 8px 14px; border: 1px solid var(--app-field); border-radius: 10px; background: rgba(255, 255, 255, .8);
+  color: var(--site-ink); font-size: 17px; font-weight: 500; letter-spacing: -.01em; cursor: pointer; list-style: none; white-space: nowrap;
+  --rer-select-ink: var(--site-ink);
+  background-image:
+    linear-gradient(to top right, transparent calc(50% - 1.1px), var(--rer-select-ink) calc(50% - .55px), var(--rer-select-ink) calc(50% + .55px), transparent calc(50% + 1.1px)),
+    linear-gradient(to top left, transparent calc(50% - 1.1px), var(--rer-select-ink) calc(50% - .55px), var(--rer-select-ink) calc(50% + .55px), transparent calc(50% + 1.1px));
+  background-repeat: no-repeat; background-position: right 20px center, right 14px center; background-size: 6px 6px;
+}
+.rer-themed .program-switch summary::-webkit-details-marker { display: none; }
+.rer-themed .program-switch summary:focus-visible { outline: 2px solid var(--site-link); outline-offset: 2px; }
+.rer-themed .program-menu { position: absolute; z-index: 20; top: calc(100% + 6px); left: 0; width: 320px; max-width: calc(100vw - 32px); display: grid; gap: 2px; padding: 6px; border: 1px solid var(--app-hairline); border-radius: 12px; background: var(--site-surface); box-shadow: var(--app-shadow); }
+.rer-themed .program-menu a { display: grid; gap: 2px; padding: 10px 12px; border-radius: 8px; color: var(--site-ink); font-size: 14px; text-decoration: none; }
+.rer-themed .program-menu a span { color: var(--app-label); font-size: 13px; }
+.rer-themed .program-menu a:hover, .rer-themed .program-menu a[aria-current] { background: #f2f7fd; }
+.rer-themed .program-menu .program-new { color: var(--site-link); font-weight: 500; }
+.rer-themed .app-account { margin-left: auto; display: flex; align-items: center; gap: 10px; color: var(--site-ink); font-size: 15px; white-space: nowrap; }
+.rer-themed .account-initial { display: grid; place-items: center; width: 38px; height: 38px; flex: none; border-radius: 50%; background: linear-gradient(140deg, #e7f1fd, #d6e6fb); color: var(--site-link); font-weight: 600; font-size: 16px; box-shadow: inset 0 0 0 1px #cfe0f6; }
+html.rer-themed main.app-main { flex: 1; max-width: none; width: 100%; min-width: 0; margin: 0; padding: 24px 24px 32px; border: 0; border-radius: 0; box-shadow: none; background: transparent; overflow-wrap: anywhere; }
+.rer-themed .app-main h1 { margin: 0 0 6px; color: var(--site-ink); font-family: var(--font-head); font-size: 40px; font-weight: 800; line-height: 1.15; letter-spacing: -.03em; text-wrap: balance; }
+.rer-themed .app-main .page-intro { margin: 0 0 22px; color: var(--app-text); font-size: 15px; }
+.rer-themed .skip-link { position: absolute; z-index: 30; top: 8px; left: 8px; transform: translateY(-150%); padding: 10px 16px; background: var(--site-surface); color: var(--site-ink); border: 1px solid var(--app-field); border-radius: 10px; }
+.rer-themed .skip-link:focus { transform: none; }
+html.rer-themed #rer-dev-badge { position: static; width: fit-content; max-width: calc(100% - 32px); margin: 16px auto; }
+@media (max-width: 1180px) {
+ .app-frame { grid-template-columns: 188px minmax(0, 1fr); }
+ .rer-themed .app-nav a { gap: 10px; padding: 9px 10px; font-size: 14px; }
+ .rer-themed .app-brand { margin-left: 8px; font-size: 21px; }
+ .rer-themed .app-brand .evidence-mark { width: 30px; height: 30px; }
+ html.rer-themed main.app-main { padding: 24px 20px 28px; }
+ .rer-themed .app-topbar { padding: 12px 20px; }
+}
+@media (max-width: 860px) {
+ .app-frame { display: block; }
+ .rer-themed .app-rail { padding: 14px 16px 12px; border-right: 0; border-bottom: 1px solid var(--app-hairline); }
+ .rer-themed .app-brand { margin: 0 0 12px; font-size: 22px; }
+ .evidence-mark { width: 30px; height: 30px; }
+ .rer-themed .app-nav { flex-flow: row wrap; gap: 6px; }
+ .rer-themed .app-nav a { min-height: 34px; gap: 6px; padding: 6px 10px; border: 1px solid var(--app-hairline); border-radius: 999px; background: rgba(255, 255, 255, .7); font-size: 13px; }
+ .rer-themed .app-nav a[aria-current=page] { border-color: #cfe2fb; }
+ .rer-themed .app-nav .icon { width: 16px; height: 16px; }
+ .rer-themed .app-nav a:not([aria-current]) .icon { display: none; }
+ .rer-themed .nav-count { min-width: 18px; height: 18px; font-size: 11px; }
+ .rer-themed .nav-rule { display: none; }
+ .rer-themed .app-topbar { flex-wrap: wrap; gap: 12px; min-height: 0; padding: 12px 16px; }
+ .rer-themed .program-scope { flex-wrap: wrap; gap: 6px 14px; }
+ .rer-themed .program-switch summary { min-width: 0; font-size: 15px; min-height: 40px; }
+ .rer-themed .program-period { font-size: 13px; }
+ .account-name { display: none; }
+ .rer-themed .account-initial { width: 34px; height: 34px; font-size: 15px; }
+ html.rer-themed main.app-main { padding: 20px 16px 24px; }
+ .rer-themed .app-main h1 { font-size: 30px; line-height: 1.15; }
+ .rer-themed .app-caveat { margin-top: 28px; font-size: 12px; }
+}

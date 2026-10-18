@@ -2,6 +2,7 @@ import { themeFrame } from '../base/theme-frame'
 import { cadences, groups, period, type Receipt } from './model'
 import type { desk } from './storage'
 import { appShell, type PageOptions } from './shell'
+import { shellFacts } from './shell-context'
 import { escape, icon, iconTile, slab, stateChip, type IconName } from './ui'
 export { escape } from './ui'
 export type { PageOptions } from './shell'
@@ -9,9 +10,9 @@ export const headers = { 'cache-control': 'no-store', 'referrer-policy': 'strict
 
 export async function page(title: string, body: string, status = 200, options: PageOptions = {}) {
  const frame = await themeFrame({ href: '/rer-theme.css', productName: 'Evidence', accentColor: '#16181d' })
- const styles = ['/desk.css', ...(options.styles ?? [])].map(href=>`<link rel="stylesheet" href="${escape(href)}">`).join('')
+ const styles = ['/shell.css', '/components.css', '/desk.css', ...(options.styles ?? [])].map(href=>`<link rel="stylesheet" href="${escape(href)}">`).join('')
  const scripts = (options.scripts ?? []).map(src=>`<script src="${escape(src)}" defer></script>`).join('')
- return new Response(`<!doctype html><html lang="en"${frame.htmlClass}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(title)} · Evidence</title>${frame.head}${styles}${scripts}</head><body class="evidence-app">${appShell(title, body, options)}</body></html>`, { status, headers: { ...headers, 'content-type':'text/html; charset=utf-8', 'content-security-policy': `default-src 'none'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'; ${scripts ? "script-src 'self'; connect-src 'self'; " : ''}${frame.policy}` } })
+ return new Response(`<!doctype html><html lang="en"${frame.htmlClass}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(title)} · Evidence</title>${frame.head}${styles}${scripts}</head><body class="evidence-app">${appShell(title, body, options, await shellFacts())}</body></html>`, { status, headers: { ...headers, 'content-type':'text/html; charset=utf-8', 'content-security-policy': `default-src 'none'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'; ${scripts ? "script-src 'self'; connect-src 'self'; " : ''}${frame.policy}` } })
 }
 const options = (values: readonly string[]) => values.map(value => `<option>${escape(value)}</option>`).join('')
 const groupIcon = (group: string): IconName => group === 'Data' ? 'database' : group === 'People' ? 'people' : group === 'Change' ? 'change' : 'document'

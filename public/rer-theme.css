@@ -1,27 +1,9 @@
 @import url('/fonts/fonts.css');
 
-/* One palette and material, shared by the run site, app and Base frames. */
+/* One palette, defined once, shared by the run site, the app and Base's frames. */
 :root {
   color-scheme: light;
-  --ev-paper: #fbfaf7;
-  --ev-paper-hi: #fefdfb;
-  --ev-surface: #ffffff;
-  --ev-ink: #0f1012;
-  --ev-ink-2: #16181d;
-  --ev-muted: #5b606b;
-  --ev-faint: #8a8f99;
-  --ev-line: #e3e4e6;
-  --ev-field: #d9dbdf;
-  --ev-tile: #eff0f2;
-  --ev-covered: #1db53a;
-  --ev-due: #f5b000;
-  --ev-overdue: #e5322f;
-  --ev-missing: #8a8f99;
-  --ev-spectrum: #c9e6ff, #e6dcff, #ffdcec, #fff0c7, #d8f6e3;
-  --ev-font: Onest, Arial, sans-serif;
-  --ev-mono: 'JetBrains Mono', monospace;
-  /* The run site's palette, sampled from the approved desk pages (16 Oct 2026). The Base frames
-     (Run page, not-found page, Lobby) read it through the --rer-* names below. */
+  /* The run site's palette, sampled from the approved desk pages (16 Oct 2026). */
   --site-paper: #f4f9fe;
   --site-sky: #e4f0fc;
   --site-surface: #ffffff;
@@ -45,6 +27,18 @@
   --site-term: #101721;
   --site-term-bar: #1d2430;
   --site-accent: linear-gradient(92deg, #1650f0 0%, #0aa6ea 100%);
+  /* The app's materials from the owner-picked Tests screen (17 Oct 2026): a pale
+     sky wash, frosted white panels with hairlines, thin quiet fields. */
+  --app-wash: radial-gradient(ellipse 70% 420px at 46% -120px, #e3f3ff 0, transparent 100%), linear-gradient(110deg, #ffffff, #f7fbff 75%, #ffffff);
+  --app-panel: rgba(255, 255, 255, .78);
+  --app-hairline: #e3ebf4;
+  --app-field: #d4deea;
+  --app-row: #edf2f8;
+  --app-label: #72809b;
+  --app-text: #304262;
+  --app-alert-wash: linear-gradient(100deg, #fff0f1, #fff4f5);
+  --app-cobalt-wash: linear-gradient(100deg, #eef6ff, #e8f3ff);
+  --app-shadow: 0 1px 2px rgba(16, 28, 52, .04), 0 12px 32px -18px rgba(16, 28, 52, .18);
   /* The mark's own colours (public/brand/mark.svg). */
   --mark-ink: #020d1c;
   --mark-red: #fc2f24;
@@ -53,6 +47,7 @@
   --font-body: Onest, Arial, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
   --font-hand: Caveat, 'Segoe Print', cursive;
+  /* Base frames (Run page, not-found page, Lobby, sign-in, setup) read the --rer-* names. */
   --rer-font-body: var(--font-body);
   --rer-font-heading: var(--font-head);
   --rer-font-mono: var(--font-mono);
@@ -60,75 +55,52 @@
   --rer-surface: var(--site-surface);
   --rer-text: var(--site-ink);
   --rer-muted: var(--site-body);
-  --rer-border: #c9d3e0;
-  --rer-focus: var(--site-eyebrow);
+  --rer-border: var(--app-field);
+  --rer-focus: var(--site-link);
   --rer-link: var(--site-link);
   --rer-radius: 14px;
-  --rer-accent: var(--site-cta);
+  --rer-accent: var(--site-ink);
   --rer-accent-text: #ffffff;
   --rer-wordmark-tracking: -.03em;
   --rer-logo: url('/brand/mark.svg');
 }
 *, *::before, *::after { box-sizing: border-box; }
-:focus-visible { outline: 3px solid var(--ev-ink); outline-offset: 3px; }
-.slab {
-  position: relative;
-  min-width: 0;
-  padding: 10px;
-  border: 1px solid transparent;
-  border-radius: 22px;
-  background: linear-gradient(180deg, #ffffffcc, #f4f6f8cc) padding-box,
-    linear-gradient(125deg, #ffffffb3, var(--ev-spectrum), #ffffffb3) border-box;
-  box-shadow: inset 0 1px 0 #fff, 0 1px 1px #10121608, 0 24px 48px -24px #1012162e;
-}
-.slab > .card {
-  min-width: 0;
-  height: 100%;
-  border: 1px solid var(--ev-line);
-  border-radius: 16px;
-  background: var(--ev-surface);
-}
 
-/* Base's sign-in/setup retain their forms, markup and security policy. */
-html.rer-themed body:has(> main > :is(.brand, .rer-brand)) {
+/* Base's sign-in and first-run setup keep their forms, markup and security policy;
+   they wear the app's wash, one white panel and the black pill. */
+html body:has(> main > :is(.brand, .rer-brand)) {
   display: grid; align-content: center; justify-items: center; align-items: start; grid-template-rows: auto auto;
   min-height: 100dvh; padding: 64px 16px;
-  background: radial-gradient(ellipse at 50% 38%, var(--ev-paper-hi), transparent 55%), var(--ev-paper);
-  color: var(--ev-ink); font: 16px/1.5 var(--ev-font);
+  background: var(--app-wash); color: var(--site-ink); font: 16px/1.5 var(--font-body);
 }
-html.rer-themed main:has(> :is(.brand, .rer-brand)) {
-  position: relative; align-self: center; width: 100%; max-width: 520px; padding: 40px;
-  border: 10px solid transparent; border-radius: 22px;
-  background: linear-gradient(var(--ev-surface), var(--ev-surface)) padding-box,
-    linear-gradient(125deg, #ffffff, #edf5fc, #f2eff9, #fff3f0, #f3faef, #ffffff) border-box;
-  box-shadow: inset 0 0 0 1px var(--ev-line), 0 1px 1px #10121608, 0 24px 48px -24px #1012162e;
+html body > main:has(> :is(.brand, .rer-brand)) {
+  position: relative; align-self: center; width: 100%; max-width: 460px; padding: 36px 36px 32px;
+  border: 1px solid var(--app-hairline); border-radius: 16px; background: var(--site-surface); box-shadow: var(--app-shadow);
 }
-html.rer-themed main:has(> :is(.brand, .rer-brand)) :is(.brand, .rer-brand) {
-  justify-content: center; margin: 0 0 32px; color: var(--ev-ink); font-size: 28px; font-weight: 600;
+html body > main:has(> :is(.brand, .rer-brand)) :is(.brand, .rer-brand) {
+  justify-content: flex-start; gap: 10px; margin: 0 0 28px; color: var(--site-ink); font-family: var(--font-head); font-size: 24px; font-weight: 700; letter-spacing: -.03em;
 }
-html.rer-themed main:has(> .rer-brand) > .rer-brand { padding-bottom: 28px; border-bottom: 1px solid var(--ev-line); }
-html.rer-themed main:has(> :is(.brand, .rer-brand)) h1 { margin: 0 0 24px; font-size: 40px; font-weight: 800; line-height: 1.05; letter-spacing: -.035em; text-align: center; }
-html.rer-themed main:has(> :is(.brand, .rer-brand)) label { font-size: 15px; font-weight: 500; }
-html.rer-themed main:has(> :is(.brand, .rer-brand)) input:not([type=checkbox]):not([type=hidden]) { min-height: 52px; border: 1px solid var(--ev-field); border-radius: 10px; color: var(--ev-ink); background: var(--ev-surface); }
-html.rer-themed main:has(> :is(.brand, .rer-brand)) button { min-height: 48px; border-radius: 12px; font-size: 17px; font-weight: 600; }
-html.rer-themed main:has(> :is(.brand, .rer-brand)) button:hover { box-shadow: none; background: var(--ev-ink); }
-html.rer-themed main:has(> .rer-brand) dl { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 16px 0; }
-html.rer-themed main:has(> .rer-brand) dt { color: var(--ev-ink); font-size: 15px; font-weight: 500; padding: 12px 0 12px 14px; border: 1px solid var(--ev-field); border-right: 0; border-radius: 10px 0 0 10px; }
-html.rer-themed main:has(> .rer-brand) dd { margin: 0; padding: 12px 14px 12px 8px; border: 1px solid var(--ev-field); border-left: 0; border-radius: 0 10px 10px 0; }
-html.rer-themed main:has(> .rer-brand) label:has(input[type=checkbox]) { font-weight: 400; }
-html.rer-themed #rer-dev-badge { position: static; width: fit-content; max-width: 100%; margin: 16px auto; }
+html body > main:has(> :is(.brand, .rer-brand)) :is(.brand, .rer-brand)::before, html body > main > .brand img { width: 34px; height: 34px; }
+html body > main:has(> .rer-brand) > .rer-brand { padding-bottom: 24px; border-bottom: 1px solid var(--app-hairline); }
+html body > main:has(> :is(.brand, .rer-brand)) h1 { margin: 0 0 12px; font-family: var(--font-head); font-size: 32px; font-weight: 800; line-height: 1.1; letter-spacing: -.03em; text-align: left; }
+html body > main:has(> :is(.brand, .rer-brand)) p { color: var(--site-body); font-size: 15px; }
+html body > main:has(> :is(.brand, .rer-brand)) label { color: var(--site-ink); font-size: 14px; font-weight: 500; }
+html body > main:has(> :is(.brand, .rer-brand)) input:not([type=checkbox]):not([type=hidden]) { min-height: 46px; padding: 10px 14px; border: 1px solid var(--app-field); border-radius: 10px; color: var(--site-ink); background: var(--site-surface); font-size: 15px; }
+html body > main:has(> :is(.brand, .rer-brand)) input:not([type=checkbox]):not([type=hidden]):focus-visible { outline: 2px solid var(--site-link); outline-offset: 1px; border-color: var(--site-link); }
+html body > main:has(> :is(.brand, .rer-brand)) input[type=checkbox] { accent-color: var(--site-ink); }
+html body > main:has(> :is(.brand, .rer-brand)) button { min-height: 46px; border-radius: 999px; background: var(--site-ink); color: #fff; font-size: 15px; font-weight: 600; box-shadow: 0 6px 14px -8px rgba(8, 12, 26, .6); }
+html body > main:has(> :is(.brand, .rer-brand)) button:hover { background: #1b2336; }
+html body > main:has(> .rer-brand) dl { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 0; margin: 0 0 20px; border: 1px solid var(--app-hairline); border-radius: 12px; overflow: hidden; }
+html body > main:has(> .rer-brand) dt { padding: 12px 14px; color: var(--app-label); font-size: 14px; font-weight: 400; background: #f8fbfe; border-bottom: 1px solid var(--app-hairline); }
+html body > main:has(> .rer-brand) dd { margin: 0; padding: 12px 14px; color: var(--site-ink); font-size: 15px; border-bottom: 1px solid var(--app-hairline); }
+html body > main:has(> .rer-brand) :is(dt, dd):nth-last-child(-n + 2) { border-bottom: 0; }
+html body > main:has(> .rer-brand) label:has(input[type=checkbox]) { font-weight: 400; font-size: 15px; }
+html.rer-themed #rer-dev-badge { position: static; width: fit-content; max-width: calc(100% - 32px); margin: 16px auto; }
 @media (max-width: 600px) {
-  .slab { padding: 8px; }
-  html.rer-themed body:has(> main > :is(.brand, .rer-brand)) { padding: 48px 16px; }
-  html.rer-themed main:has(> :is(.brand, .rer-brand)) { padding: 28px 20px; border-width: 8px; }
-  html.rer-themed main:has(> :is(.brand, .rer-brand)) :is(.brand, .rer-brand) { font-size: 22px; }
-  html.rer-themed main:has(> :is(.brand, .rer-brand)) h1 { font-size: 32px; }
-  html.rer-themed main:has(> :is(.brand, .rer-brand)) input:not([type=checkbox]):not([type=hidden]) { min-height: 48px; }
-  html.rer-themed main:has(> :is(.brand, .rer-brand)) button { font-size: 16px; }
-}
-@media (prefers-reduced-transparency: reduce), (forced-colors: active) {
-  .slab, html.rer-themed main:has(> :is(.brand, .rer-brand)) { background: var(--ev-surface); border: 1px solid var(--ev-field); box-shadow: none; }
-  .slab::before, .slab::after { display: none; }
+  html body:has(> main > :is(.brand, .rer-brand)) { padding: 40px 16px; }
+  html body > main:has(> :is(.brand, .rer-brand)) { padding: 28px 20px 24px; }
+  html body > main:has(> :is(.brand, .rer-brand)) :is(.brand, .rer-brand) { font-size: 22px; }
+  html body > main:has(> :is(.brand, .rer-brand)) h1 { font-size: 28px; }
 }
 
 /* Base's Run and not-found pages on the run site: the homepage's heavy headline face. */

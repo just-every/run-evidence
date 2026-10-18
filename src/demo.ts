@@ -5,6 +5,7 @@ import { upload } from './evidence/upload'
 import { closeFolder, issueFolder, logEvent } from './evidence/review/storage'
 import { issueToken, revoke } from './evidence/agent/storage'
 import { sampleControls } from './demo-data'
+import { seedTests } from './demo-tests'
 
 // Use the same domain operations as the owner. Existing records make this hook
 // idempotent; sample files receive normal custody hashes and storage checks.
@@ -34,9 +35,9 @@ export async function seedDemo(env: Bindings, { ownerEmail, now }: { ownerEmail:
  }
  const quarter = period('quarterly', day(now))
  const folders = [
-  { label: 'Harbour Assurance · readiness review', expires: ago(-14), closed: false },
+  { label: 'Harbor Assurance · readiness review', expires: ago(-14), closed: false },
   { label: 'Elena Morris · finance diligence', expires: ago(-7), closed: true },
-  { label: 'Harbour Assurance · previous review', expires: ago(2), closed: false },
+  { label: 'Harbor Assurance · previous review', expires: ago(2), closed: false },
  ]
  for (const sample of folders) {
   if (await env.DB.prepare('SELECT id FROM review_folders WHERE reviewer_label=?').bind(sample.label).first()) continue
@@ -49,4 +50,5 @@ export async function seedDemo(env: Bindings, { ownerEmail, now }: { ownerEmail:
   const { grant } = await issueToken(env, label, ago(-14).toISOString(), actor, ago(10))
   if (index) await revoke(env, grant.id, actor, ago(1))
  }
+ await seedTests(env, { id: owner.id, name: actor.displayName }, now)
 }

@@ -24,6 +24,7 @@ import { trainingHandler } from './evidence/training/http'
 import { lobbyResponse } from './base/lobby'
 import { setupStateResponse } from './base/setup-state'
 import { identity } from './identity'
+import { withShellScope } from './evidence/shell-context'
 // The production Worker and workerd harness share this complete owner HTTP door.
 export function createAppResponse(clock: () => Date = () => new Date()) {
  const agents = agentHandler(clock)
@@ -35,7 +36,8 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
  const api = apiHandler(clock)
  const hooks = hookHandler(clock)
  const member = memberHandler(clock)
- return async (request: Request, env: Bindings) => {
+ return (request: Request, env: Bindings) => withShellScope(request, env, () => respond(request, env))
+ async function respond(request: Request, env: Bindings) {
   const path = new URL(request.url).pathname
   // The public API takes Bearer tokens only, outside every owner door.
   if (path.startsWith('/v1/')) return api(request,env)
