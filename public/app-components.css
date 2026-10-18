@@ -17,7 +17,23 @@
 .rer-themed form { display: grid; gap: 20px; margin: 0; max-width: none; }
 .rer-themed label { min-width: 0; display: grid; gap: 8px; color: var(--ev-ink); font-size: 15px; font-weight: 500; line-height: 1.3; }
 .rer-themed .app-main input:not([type=checkbox]):not([type=hidden]), .rer-themed .public-review-main input:not([type=checkbox]):not([type=hidden]), .rer-themed select { width: 100%; max-width: 100%; min-width: 0; height: 52px; padding: 12px 14px; border: 1px solid var(--ev-field); border-radius: 10px; background: var(--ev-surface); color: var(--ev-ink); font: inherit; font-size: 16px; font-weight: 400; }
-.rer-themed select { display: block; padding-right: 32px; }
+/* Every single-choice select draws its chevron 14 px in from the right border with room under it for the text. Two gradient strokes read --rer-select-ink, so the chevron follows the token and paints under img-src 'self'. Multiple and size>1 lists keep their native look. */
+.rer-themed select { display: block; }
+.rer-themed select:not([multiple], [size]:not([size="1"])) {
+  --rer-select-ink: var(--rer-muted);
+  -webkit-appearance: none;
+  appearance: none;
+  padding-inline-end: 40px;
+  text-overflow: ellipsis;
+  background-image:
+    linear-gradient(to top right, transparent calc(50% - 1.1px), var(--rer-select-ink) calc(50% - .55px), var(--rer-select-ink) calc(50% + .55px), transparent calc(50% + 1.1px)),
+    linear-gradient(to top left, transparent calc(50% - 1.1px), var(--rer-select-ink) calc(50% - .55px), var(--rer-select-ink) calc(50% + .55px), transparent calc(50% + 1.1px));
+  background-repeat: no-repeat;
+  background-position: right 20px center, right 14px center;
+  background-size: 6px 6px;
+}
+.rer-themed select:not([multiple], [size]:not([size="1"])):focus-visible { --rer-select-ink: var(--ev-ink); }
+.rer-themed select:not([multiple], [size]:not([size="1"])):disabled { --rer-select-ink: color-mix(in srgb, var(--rer-muted) 55%, transparent); }
 .rer-themed input::placeholder { color: var(--ev-faint); opacity: 1; }
 .rer-themed input[type=date], .rer-themed input[type=datetime-local] { font-family: var(--rer-font-body); }
 .rer-themed .app-main input[type=file] { height: auto; min-height: 52px; padding: 7px; font-size: 15px; }
