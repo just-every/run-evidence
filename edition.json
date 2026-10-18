@@ -32,6 +32,9 @@
           "scripts/installer/seed.mjs",
           "scripts/installer/ui/background.svg",
           "scripts/operations-config.mjs",
+          "src/base/contract-filter.ts",
+          "src/base/contract-page.ts",
+          "src/base/contract-style.ts",
           "src/base/deployment-health.ts",
           "src/base/dispatch.ts",
           "src/base/font-response.ts",
@@ -39,11 +42,15 @@
           "src/base/hydration/intro-guard.ts",
           "src/base/hydration/report.ts",
           "src/base/hydration/unit.tsx",
+          "src/base/icon-head.ts",
           "src/base/identity.ts",
           "src/base/lobby.ts",
           "src/base/page-style.ts",
           "src/base/rejected-response.ts",
           "src/base/run-site.ts",
+          "src/base/seed-contract.d.mts",
+          "src/base/seed-contract.mjs",
+          "src/base/select-style.ts",
           "src/base/setup-state.ts",
           "src/base/setup.ts",
           "src/base/static-assets.ts",
@@ -57,8 +64,10 @@
           "src/evidence/import/base/d1/budget.ts",
           "src/evidence/import/base/d1/compressed-plan.ts",
           "src/evidence/import/base/d1/creation.ts",
+          "src/evidence/import/base/d1/custody-fence.ts",
           "src/evidence/import/base/d1/custody-state-schema.ts",
           "src/evidence/import/base/d1/database.ts",
+          "src/evidence/import/base/d1/entry-locator.ts",
           "src/evidence/import/base/d1/erased-artifacts.ts",
           "src/evidence/import/base/d1/erased-custody.ts",
           "src/evidence/import/base/d1/erased-plan.ts",
@@ -79,6 +88,7 @@
           "src/evidence/import/base/d1/erasure-snapshot.ts",
           "src/evidence/import/base/d1/erasure-stage.ts",
           "src/evidence/import/base/d1/erasure-step.ts",
+          "src/evidence/import/base/d1/erasure-superseded.ts",
           "src/evidence/import/base/d1/erasure-values.ts",
           "src/evidence/import/base/d1/erasure-writes.ts",
           "src/evidence/import/base/d1/erasure.ts",
@@ -91,6 +101,7 @@
           "src/evidence/import/base/d1/integrity.ts",
           "src/evidence/import/base/d1/inventory-snapshot.ts",
           "src/evidence/import/base/d1/jobs.ts",
+          "src/evidence/import/base/d1/native-set.ts",
           "src/evidence/import/base/d1/native-staging-admission.ts",
           "src/evidence/import/base/d1/native-staging-context.ts",
           "src/evidence/import/base/d1/native-staging-lifecycle.ts",
@@ -126,8 +137,10 @@
           "src/evidence/import/base/d1/read-results.ts",
           "src/evidence/import/base/d1/redacted-custody.ts",
           "src/evidence/import/base/d1/redaction-step.ts",
+          "src/evidence/import/base/d1/referenced-plans.ts",
           "src/evidence/import/base/d1/retained-values.ts",
           "src/evidence/import/base/d1/retirement-bounded.ts",
+          "src/evidence/import/base/d1/retirement-door.ts",
           "src/evidence/import/base/d1/retirement-schema.ts",
           "src/evidence/import/base/d1/retirement-scope.ts",
           "src/evidence/import/base/d1/retirement-steps.ts",
@@ -285,6 +298,7 @@
           "src/modules/operator-auth/accounts/adapter.mjs",
           "src/modules/operator-auth/accounts/admin.mjs",
           "src/modules/operator-auth/accounts/credentials.mjs",
+          "src/modules/operator-auth/accounts/display-name.mjs",
           "src/modules/operator-auth/accounts/editor-owner.mjs",
           "src/modules/operator-auth/accounts/email-change.mjs",
           "src/modules/operator-auth/accounts/index.d.mts",
@@ -330,6 +344,8 @@
           "src/modules/operator-auth/docs/vite-spa.md",
           "src/modules/operator-auth/errors.mjs",
           "src/modules/operator-auth/http.mjs",
+          "src/modules/operator-auth/icon-head.d.mts",
+          "src/modules/operator-auth/icon-head.mjs",
           "src/modules/operator-auth/identity/admission.mjs",
           "src/modules/operator-auth/identity/after-confirm.mjs",
           "src/modules/operator-auth/identity/email-link/confirmation.mjs",
@@ -381,7 +397,7 @@
         ],
         "origin": {
           "repository": "https://github.com/runeditrun/base.git",
-          "revision": "d320c1436aaeb95d2485c1a0e69afa00ac8fb51a",
+          "revision": "9d371985250abd531495a9d8752e1c291a778308",
           "path": ".",
           "paths": [
             "LICENSE",
@@ -401,6 +417,9 @@
             "export/RUN-LOCALLY.md",
             "export/SEED-COMMAND-CONTRACT.md",
             "export/run-demo.yml",
+            "foundation/runtime/contract-filter.ts",
+            "foundation/runtime/contract-page.ts",
+            "foundation/runtime/contract-style.ts",
             "foundation/runtime/deployment-health.ts",
             "foundation/runtime/dispatch.ts",
             "foundation/runtime/font-response.ts",
@@ -408,11 +427,15 @@
             "foundation/runtime/hydration/intro-guard.ts",
             "foundation/runtime/hydration/report.ts",
             "foundation/runtime/hydration/unit.tsx",
+            "foundation/runtime/icon-head.ts",
             "foundation/runtime/identity.ts",
             "foundation/runtime/lobby.ts",
             "foundation/runtime/page-style.ts",
             "foundation/runtime/rejected-response.ts",
             "foundation/runtime/run-site.ts",
+            "foundation/runtime/seed-contract.d.mts",
+            "foundation/runtime/seed-contract.mjs",
+            "foundation/runtime/select-style.ts",
             "foundation/runtime/setup-state.ts",
             "foundation/runtime/setup.ts",
             "foundation/runtime/static-assets.ts",
@@ -451,8 +474,10 @@
             "modules/import-kit/src/d1/budget.ts",
             "modules/import-kit/src/d1/compressed-plan.ts",
             "modules/import-kit/src/d1/creation.ts",
+            "modules/import-kit/src/d1/custody-fence.ts",
             "modules/import-kit/src/d1/custody-state-schema.ts",
             "modules/import-kit/src/d1/database.ts",
+            "modules/import-kit/src/d1/entry-locator.ts",
             "modules/import-kit/src/d1/erased-artifacts.ts",
             "modules/import-kit/src/d1/erased-custody.ts",
             "modules/import-kit/src/d1/erased-plan.ts",
@@ -473,6 +498,7 @@
             "modules/import-kit/src/d1/erasure-snapshot.ts",
             "modules/import-kit/src/d1/erasure-stage.ts",
             "modules/import-kit/src/d1/erasure-step.ts",
+            "modules/import-kit/src/d1/erasure-superseded.ts",
             "modules/import-kit/src/d1/erasure-values.ts",
             "modules/import-kit/src/d1/erasure-writes.ts",
             "modules/import-kit/src/d1/erasure.ts",
@@ -485,6 +511,7 @@
             "modules/import-kit/src/d1/integrity.ts",
             "modules/import-kit/src/d1/inventory-snapshot.ts",
             "modules/import-kit/src/d1/jobs.ts",
+            "modules/import-kit/src/d1/native-set.ts",
             "modules/import-kit/src/d1/native-staging-admission.ts",
             "modules/import-kit/src/d1/native-staging-context.ts",
             "modules/import-kit/src/d1/native-staging-lifecycle.ts",
@@ -520,8 +547,10 @@
             "modules/import-kit/src/d1/read-results.ts",
             "modules/import-kit/src/d1/redacted-custody.ts",
             "modules/import-kit/src/d1/redaction-step.ts",
+            "modules/import-kit/src/d1/referenced-plans.ts",
             "modules/import-kit/src/d1/retained-values.ts",
             "modules/import-kit/src/d1/retirement-bounded.ts",
+            "modules/import-kit/src/d1/retirement-door.ts",
             "modules/import-kit/src/d1/retirement-schema.ts",
             "modules/import-kit/src/d1/retirement-scope.ts",
             "modules/import-kit/src/d1/retirement-steps.ts",
@@ -655,6 +684,7 @@
             "modules/operator-auth/accounts/adapter.mjs",
             "modules/operator-auth/accounts/admin.mjs",
             "modules/operator-auth/accounts/credentials.mjs",
+            "modules/operator-auth/accounts/display-name.mjs",
             "modules/operator-auth/accounts/editor-owner.mjs",
             "modules/operator-auth/accounts/email-change.mjs",
             "modules/operator-auth/accounts/index.d.mts",
@@ -700,6 +730,8 @@
             "modules/operator-auth/docs/vite-spa.md",
             "modules/operator-auth/errors.mjs",
             "modules/operator-auth/http.mjs",
+            "modules/operator-auth/icon-head.d.mts",
+            "modules/operator-auth/icon-head.mjs",
             "modules/operator-auth/identity/admission.mjs",
             "modules/operator-auth/identity/after-confirm.mjs",
             "modules/operator-auth/identity/email-link/confirmation.mjs",
@@ -823,6 +855,18 @@
             "originPath": "export/SEED-COMMAND-CONTRACT.md"
           },
           {
+            "path": "src/base/contract-filter.ts",
+            "originPath": "foundation/runtime/contract-filter.ts"
+          },
+          {
+            "path": "src/base/contract-page.ts",
+            "originPath": "foundation/runtime/contract-page.ts"
+          },
+          {
+            "path": "src/base/contract-style.ts",
+            "originPath": "foundation/runtime/contract-style.ts"
+          },
+          {
             "path": "src/base/deployment-health.ts",
             "originPath": "foundation/runtime/deployment-health.ts"
           },
@@ -851,6 +895,10 @@
             "originPath": "foundation/runtime/hydration/unit.tsx"
           },
           {
+            "path": "src/base/icon-head.ts",
+            "originPath": "foundation/runtime/icon-head.ts"
+          },
+          {
             "path": "src/base/identity.ts",
             "originPath": "foundation/runtime/identity.ts"
           },
@@ -869,6 +917,18 @@
           {
             "path": "src/base/run-site.ts",
             "originPath": "foundation/runtime/run-site.ts"
+          },
+          {
+            "path": "src/base/seed-contract.d.mts",
+            "originPath": "foundation/runtime/seed-contract.d.mts"
+          },
+          {
+            "path": "src/base/seed-contract.mjs",
+            "originPath": "foundation/runtime/seed-contract.mjs"
+          },
+          {
+            "path": "src/base/select-style.ts",
+            "originPath": "foundation/runtime/select-style.ts"
           },
           {
             "path": "src/base/setup-state.ts",
@@ -915,12 +975,20 @@
             "originPath": "modules/import-kit/src/d1/creation.ts"
           },
           {
+            "path": "src/evidence/import/base/d1/custody-fence.ts",
+            "originPath": "modules/import-kit/src/d1/custody-fence.ts"
+          },
+          {
             "path": "src/evidence/import/base/d1/custody-state-schema.ts",
             "originPath": "modules/import-kit/src/d1/custody-state-schema.ts"
           },
           {
             "path": "src/evidence/import/base/d1/database.ts",
             "originPath": "modules/import-kit/src/d1/database.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/entry-locator.ts",
+            "originPath": "modules/import-kit/src/d1/entry-locator.ts"
           },
           {
             "path": "src/evidence/import/base/d1/erased-artifacts.ts",
@@ -1003,6 +1071,10 @@
             "originPath": "modules/import-kit/src/d1/erasure-step.ts"
           },
           {
+            "path": "src/evidence/import/base/d1/erasure-superseded.ts",
+            "originPath": "modules/import-kit/src/d1/erasure-superseded.ts"
+          },
+          {
             "path": "src/evidence/import/base/d1/erasure-values.ts",
             "originPath": "modules/import-kit/src/d1/erasure-values.ts"
           },
@@ -1049,6 +1121,10 @@
           {
             "path": "src/evidence/import/base/d1/jobs.ts",
             "originPath": "modules/import-kit/src/d1/jobs.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/native-set.ts",
+            "originPath": "modules/import-kit/src/d1/native-set.ts"
           },
           {
             "path": "src/evidence/import/base/d1/native-staging-admission.ts",
@@ -1195,12 +1271,20 @@
             "originPath": "modules/import-kit/src/d1/redaction-step.ts"
           },
           {
+            "path": "src/evidence/import/base/d1/referenced-plans.ts",
+            "originPath": "modules/import-kit/src/d1/referenced-plans.ts"
+          },
+          {
             "path": "src/evidence/import/base/d1/retained-values.ts",
             "originPath": "modules/import-kit/src/d1/retained-values.ts"
           },
           {
             "path": "src/evidence/import/base/d1/retirement-bounded.ts",
             "originPath": "modules/import-kit/src/d1/retirement-bounded.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/retirement-door.ts",
+            "originPath": "modules/import-kit/src/d1/retirement-door.ts"
           },
           {
             "path": "src/evidence/import/base/d1/retirement-schema.ts",
@@ -1831,6 +1915,10 @@
             "originPath": "modules/operator-auth/accounts/credentials.mjs"
           },
           {
+            "path": "src/modules/operator-auth/accounts/display-name.mjs",
+            "originPath": "modules/operator-auth/accounts/display-name.mjs"
+          },
+          {
             "path": "src/modules/operator-auth/accounts/editor-owner.mjs",
             "originPath": "modules/operator-auth/accounts/editor-owner.mjs"
           },
@@ -2009,6 +2097,14 @@
           {
             "path": "src/modules/operator-auth/http.mjs",
             "originPath": "modules/operator-auth/http.mjs"
+          },
+          {
+            "path": "src/modules/operator-auth/icon-head.d.mts",
+            "originPath": "modules/operator-auth/icon-head.d.mts"
+          },
+          {
+            "path": "src/modules/operator-auth/icon-head.mjs",
+            "originPath": "modules/operator-auth/icon-head.mjs"
           },
           {
             "path": "src/modules/operator-auth/identity/admission.mjs",
