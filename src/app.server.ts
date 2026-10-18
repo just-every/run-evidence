@@ -24,9 +24,11 @@ import { trainingHandler } from './evidence/training/http'
 import { lobbyResponse } from './base/lobby'
 import { setupStateResponse } from './base/setup-state'
 import { identity } from './identity'
-import { withShellScope } from './evidence/shell-context'
+import { shellFacts, withShellScope } from './evidence/shell-context'
+import { provideShellFacts } from './evidence/shell'
 // The production Worker and workerd harness share this complete owner HTTP door.
 export function createAppResponse(clock: () => Date = () => new Date()) {
+ provideShellFacts(shellFacts)
  const agents = agentHandler(clock)
  const imports = importHandler(clock)
  const evidence = evidenceHandler(clock)

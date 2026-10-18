@@ -1,14 +1,13 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { runtimeBindings, type Bindings } from '../auth.server'
 import { frameworks, type FrameworkId } from './library'
+import type { ShellFacts } from './shell'
 // The app shell's top bar names the audit program and the rail counts failing
 // tests on every owner page; the request's database is scoped here once so the
 // many page renderers need not pass it.
 interface Scope { env: Bindings; url: URL }
 const scope = new AsyncLocalStorage<Scope>()
 export const withShellScope = <T>(request: Request, env: Bindings, run: () => Promise<T>) => scope.run({ env: runtimeBindings(env), url: new URL(request.url) }, run)
-export interface ShellProgram { id: string; label: string; name: string; from: string; to: string }
-export interface ShellFacts { programs: ShellProgram[]; selected: ShellProgram | null; failingTests: number }
 export async function shellFacts(): Promise<ShellFacts | null> {
  const s = scope.getStore()
  if (!s) return null

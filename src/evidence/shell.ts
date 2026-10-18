@@ -1,6 +1,12 @@
 import { escape, icon, type IconName } from './ui'
 import { usRange } from './format'
-import type { ShellFacts } from './shell-context'
+export interface ShellProgram { id: string; label: string; name: string; from: string; to: string }
+export interface ShellFacts { programs: ShellProgram[]; selected: ShellProgram | null; failingTests: number }
+// The request-scoped facts the top bar and rail show. The Worker entry registers
+// the reader (shell-context.ts), so page renderers stay free of runtime imports.
+let readFacts: () => Promise<ShellFacts | null> = async () => null
+export const provideShellFacts = (reader: typeof readFacts) => { readFacts = reader }
+export const shellFacts = () => readFacts()
 export type NavKey = 'desk' | 'programs' | 'tests' | 'remediation' | 'policies' | 'people' | 'risks' | 'connections' | 'folders' | 'agent' | 'import' | 'archive'
 export interface PageOptions {
  active?: NavKey
