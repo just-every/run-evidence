@@ -678,7 +678,7 @@ Every capability claim on the approved homepage (`src/site/landing/`, checked ag
 | 46 | "access reviews run from the same list" | ACCESS-001, INVENTORY-001 | partial |
 | 47 | "Export everything, any time" | CUSTODY-001, PORTABLE-001 | partial |
 | 48 | "SOC 2 Type II · 100% ready" | READINESS-001 | partial |
-| 49 | "Open source compliance for SOC 2, ISO 27001 and HIPAA" / "Free and open source, MIT licensed" | PROGRAM-001, OPEN-001 | partial |
+| 49 | "Open source compliance for SOC 2, ISO 27001 and HIPAA" / "Free and open source, MIT licensed" | PROGRAM-001, OPEN-001 | done |
 
 ## Status
 
