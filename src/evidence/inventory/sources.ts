@@ -31,7 +31,7 @@ export async function collectSources(env: Bindings, now: Date): Promise<SourceRe
   return { ...defaults(), source_key: key, canonical_key: key, kind: 'person', source_type: 'people', source_ref: 'people', source_label: 'People', source_id: p.id, name: p.name, provenance: 'owner-recorded', last_observation: p.created_at, collection_state: departure ? 'departed' : 'owner-recorded', collection_problem: null, latest: true, person_id: p.id, attributes: { email: p.email, kind: p.kind, role: p.role, departed_at: departure?.departed_at ?? null }, source_rows: [{ ...p }], source_history: departure ? [{...departure}] : [] }
  })
  for (const r of resources.results) {
-  const key = sourceKey('resource', r.source_kind, r.source_ref, r.type, r.unique_id)
+  const key = sourceKey('resource', r.source_kind, r.source_kind === 'source-observed' ? r.source_ref : `api-type:${r.type}`, r.type, r.unique_id)
   // Connection prefixes are provenance supplied by collectors; never infer an owner.
   const connection = connections.results.find(c => r.source_ref === c.id || r.source_ref.endsWith(':' + c.id))
   const attributes = JSON.parse(r.attributes_json) as Record<string, unknown>

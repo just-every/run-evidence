@@ -22,3 +22,6 @@ PRAGMA defer_foreign_keys=OFF;
 CREATE TRIGGER portable_generation_resources_insert AFTER INSERT ON resources BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
 CREATE TRIGGER portable_generation_resources_update AFTER UPDATE ON resources BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
 CREATE TRIGGER portable_generation_resources_delete AFTER DELETE ON resources BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
+
+-- Public API resource identity stays (type, uniqueId), independent of token rotation.
+CREATE UNIQUE INDEX resources_reported_identity ON resources(type,unique_id) WHERE source_kind='source-reported';
