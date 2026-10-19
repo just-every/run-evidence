@@ -1,0 +1,42 @@
+/* page-s1 page-07: the painted band. --u is one pixel of the 1536-wide plate; the record is type set at the
+   card's tilt over its blank face, and the status card lies flat. Below 1000 px the plate is cropped to the card and
+   magnifier (760 px of the plate from x 140, y 46), the record keeps 13 px or more, the status card stacks below. */
+.interlude { padding: 150px 0 164px; }
+.interlude-stage { --u: calc(100cqw / 1536); --x: 0; --y: 0; position: relative; container-type: inline-size; aspect-ratio: 1536 / 626; }
+.interlude picture, .interlude img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.exhibit-face { position: absolute; left: calc((247 - var(--x)) * var(--u)); top: calc((254 - var(--y)) * var(--u)); width: calc(560 * var(--u)); transform: rotate(-7.4deg); transform-origin: left top; color: #18233a; }
+.exhibit-title { margin-left: calc(172 * var(--u)); font: 700 calc(49 * var(--u))/1 var(--font-head); letter-spacing: -.02em; color: #10203a; }
+.exhibit-record { display: grid; gap: calc(6 * var(--u)); margin-top: calc(80 * var(--u)); font-size: calc(22 * var(--u)); line-height: 1.25; color: #3a4660; }
+.exhibit-record b { font-weight: 600; color: #18233a; }
+.exhibit-record span { display: flex; align-items: center; gap: calc(14 * var(--u)); }
+.exhibit-record .status { width: calc(22 * var(--u)); height: calc(22 * var(--u)); }
+.interlude-card { position: absolute; left: calc(911 * var(--u)); top: calc(108 * var(--u)); width: calc(471 * var(--u)); height: calc(246 * var(--u)); display: grid; grid-template-columns: auto 1fr; align-content: start; column-gap: calc(34 * var(--u)); padding: calc(39 * var(--u)) calc(39 * var(--u)) 0; border-radius: calc(18 * var(--u)); background: rgba(255, 255, 255, .97); box-shadow: 0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(20, 35, 70, .05), 0 calc(24 * var(--u)) calc(48 * var(--u)) calc(-18 * var(--u)) rgba(20, 35, 70, .22); }
+.interlude-card .tile { width: calc(82 * var(--u)); height: calc(82 * var(--u)); border-radius: calc(12 * var(--u)); }
+.interlude-card .tile svg { width: 56%; height: 56%; stroke-width: 2.2; }
+.interlude-card p { display: grid; align-content: center; font: 700 calc(32 * var(--u))/1.3 var(--font-body); letter-spacing: -.015em; color: var(--site-ink); }
+.interlude-card p span { color: var(--site-green); font-size: calc(30 * var(--u)); }
+.interlude-card .meter { grid-column: 1 / -1; margin-top: calc(36 * var(--u)); height: calc(15 * var(--u)); }
+.interlude-card small { grid-column: 1 / -1; margin-top: calc(26 * var(--u)); color: #4e5a70; font-size: max(11px, calc(19.5 * var(--u))); white-space: nowrap; }
+
+@media (max-width: 999px) {
+  .interlude { padding: 64px 0 72px; }
+  .interlude-stage { --u: calc(100cqw / 760); --x: 140; --y: 46; aspect-ratio: auto; display: grid; }
+  .interlude picture { aspect-ratio: 760 / 530; height: auto; }
+  .exhibit-record { font-size: max(13.5px, calc(22 * var(--u))); gap: 2px; }
+  .exhibit-record .status { width: max(15px, calc(22 * var(--u))); height: max(15px, calc(22 * var(--u))); }
+  .interlude-card { position: relative; left: auto; top: auto; width: min(520px, calc(100% - 2 * var(--gutter))); height: auto; margin: -40px auto 0; padding: 24px 24px 22px; column-gap: 20px; border-radius: 16px; }
+  .interlude-card .tile { width: 60px; height: 60px; border-radius: 11px; }
+  .interlude-card p { font-size: 23px; }
+  .interlude-card p span { font-size: 21px; }
+  .interlude-card .meter { margin-top: 20px; height: 12px; }
+  .interlude-card small { margin-top: 14px; font-size: 15px; white-space: normal; }
+}
+@media (max-width: 760px) {
+  .interlude { padding: 40px 0 52px; }
+  .interlude-card { width: auto; margin: -28px var(--gutter) 0; padding: 20px 20px 18px; column-gap: 18px; }
+  .interlude-card .tile { width: 54px; height: 54px; border-radius: 10px; }
+  .interlude-card p { font-size: 21px; }
+  .interlude-card p span { font-size: 20px; }
+  .interlude-card .meter { margin-top: 18px; height: 11px; }
+  .interlude-card small { margin-top: 12px; font-size: 14.5px; }
+}

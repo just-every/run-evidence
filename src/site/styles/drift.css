@@ -1,0 +1,67 @@
+/* page-s1 page-06: the agent's investigation of the Jul 14 drift. */
+.band-drift { padding: 100px 0 120px; }
+.band-drift > .wrap { grid-template-columns: minmax(0, 702fr) minmax(0, 560fr); column-gap: 70px; }
+.band-drift .lede { font-size: 20px; line-height: 1.6; max-width: 540px; }
+.drift-figure { position: relative; min-width: 0; }
+.drift-card { padding: 34px 24px 0; }
+.drift-card h3 { display: flex; align-items: center; gap: 20px; padding-left: 10px; font-size: 25px; letter-spacing: -.025em; }
+.sparkles { width: 40px; height: 40px; flex: none; color: #1f7cf0; }
+.drift-card ol { position: relative; margin-top: 26px; }
+.drift-card ol::before { content: ''; position: absolute; left: 44px; top: 30px; bottom: 60px; border-left: 2px solid #dfe5ee; }
+.drift-card li { position: relative; display: grid; grid-template-columns: 50px minmax(0, 1fr); column-gap: 34px; row-gap: 6px; align-items: center; padding: 16px 20px; border-radius: 14px; }
+.drift-card li > :first-child { grid-row: span 2; align-self: center; }
+.drift-card li.drift-single > :first-child { grid-row: span 1; }
+.drift-card li .status, .step-mark { position: relative; z-index: 1; width: 50px; height: 50px; }
+.drift-card li .status svg { stroke-width: 3; }
+.step-mark { display: grid; place-items: center; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1px #e3e8ef, 0 4px 10px -6px rgba(16, 24, 40, .3); }
+.step-mark .mark { width: 28px; height: 28px; }
+.step-mark.avatar { font-size: 18px; font-weight: 700; color: #1d4fb8; }
+.drift-card li p { font-size: 20.5px; line-height: 1.3; color: #5c667e; letter-spacing: -.005em; }
+.drift-card li p b { color: var(--site-ink); font-weight: 600; }
+.drift-done { margin-top: 6px; background: #e9f8f0; }
+.drift-foot { margin: 18px 16px 0; padding: 20px 0 24px; border-top: 1px solid var(--site-line); color: #5c667e; font-size: 15.5px; }
+.drift-diff { position: absolute; left: 75%; bottom: 12px; z-index: 2; padding: 22px 26px; border-radius: 12px; background: #fff; border: 1px solid var(--site-line); box-shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 22px 40px -22px rgba(16, 24, 40, .24); white-space: nowrap; }
+.drift-diff code { font: 450 16px/1 var(--font-mono); color: #1f2a3d; }
+.drift-diff ins { color: #1f9e5c; text-decoration: none; }
+.drift-diff del { color: #8a93a6; text-decoration: none; }
+
+@media (max-width: 1280px) {
+  .drift-card li { column-gap: 22px; }
+  .drift-card li p { font-size: 18.5px; }
+}
+@media (max-width: 1180px) {
+  .band-drift > .wrap { grid-template-columns: minmax(0, 600fr) minmax(0, 500fr); column-gap: 48px; }
+  .drift-card h3 { gap: 14px; padding-left: 4px; font-size: 21px; }
+  .sparkles { width: 32px; height: 32px; }
+  .drift-card li .status, .step-mark { width: 44px; height: 44px; }
+  .drift-card ol::before { left: 41px; }
+  .drift-card li p { font-size: 17px; }
+  .drift-diff code { font-size: 14.5px; }
+  .drift-diff { padding: 16px 18px; }
+  .drift-foot { padding-right: 30%; font-size: 14.5px; }
+}
+@media (max-width: 999px) {
+  .band-drift { padding: 64px 0 72px; }
+  .band-drift > .wrap { grid-template-columns: minmax(0, 1fr); }
+  .drift-figure { max-width: 680px; }
+  .drift-foot { padding-right: 0; }
+  .drift-diff { position: relative; left: auto; right: auto; bottom: auto; display: inline-block; margin: -18px 0 0 auto; float: right; }
+  .drift-figure::after { content: ''; display: block; clear: both; }
+}
+@media (max-width: 760px) {
+  .band-drift { padding: 48px 0 56px; }
+  .band-drift .lede { font-size: 17px; }
+  .drift-card { padding: 20px 12px 0; }
+  .drift-card h3 { gap: 12px; padding-left: 4px; font-size: 18px; }
+  .sparkles { width: 28px; height: 28px; }
+  .drift-card ol { margin-top: 14px; }
+  .drift-card ol::before { left: 29px; top: 26px; }
+  .drift-card li { grid-template-columns: 36px minmax(0, 1fr); column-gap: 14px; row-gap: 3px; padding: 11px 6px; }
+  .drift-card li .status, .step-mark { width: 36px; height: 36px; }
+  .step-mark .mark { width: 22px; height: 22px; }
+  .step-mark.avatar { font-size: 14px; }
+  .drift-card li p { font-size: 15px; }
+  .drift-foot { margin: 12px 4px 0; padding: 14px 0 16px; font-size: 13.5px; }
+  .drift-diff { float: none; display: block; margin: 12px 0 0; padding: 14px 16px; white-space: normal; }
+  .drift-diff code { font-size: 13px; line-height: 1.5; }
+}

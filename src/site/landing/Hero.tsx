@@ -38,7 +38,7 @@ function Board() {
     </div>
     <div className="pin-card board-exC" style={place({ x: 449, y: 512, w: 238, h: 163, r: 3.6 })}>
       <div className="board-head"><span className="tile tone-red"><Icon name="laptop" /></span><div><strong>Exhibit C</strong><span>Laptop disk encryption</span></div></div>
-      <div className="board-foot"><span className="when">1 failing → fixed, re-tested</span><Status kind="pass" label="Passing again" /></div>
+      <div className="board-foot"><span className="when">1 failing → fixed, <span className="nowrap">re-tested</span></span><Status kind="pass" label="Passing again" /></div>
     </div>
     <div className="pin-card board-list" style={place({ x: 722, y: 487, w: 164, h: 192, r: -1.4 })}>
       <Icon name="doc" className="list-doc" />

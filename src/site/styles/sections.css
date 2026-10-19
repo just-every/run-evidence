@@ -1,59 +1,25 @@
-/* Desk pages 02–09: section layout. Each desk page holds two sections side by side in turn;
-   sizes are the desk's at 1440 (x 0.9375 of the 1536 canvas). */
-.page-band { position: relative; padding: 24px 0; background: radial-gradient(42% 32% at 2% 60%, rgba(185, 215, 250, .32), transparent 70%), radial-gradient(36% 30% at 100% 8%, rgba(190, 220, 252, .28), transparent 70%); }
-.pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 80px; align-items: center; max-width: calc(var(--wrap) + 2 * var(--gutter)); margin: 0 auto; padding: 46px var(--gutter); }
-.pair-flip .pair-copy { order: 2; }
-/* Two headings run wider in this face than in the desk's; their copy columns take the room so the desk's line breaks hold. */
-#tests { grid-template-columns: minmax(0, 600fr) minmax(0, 672fr); column-gap: 48px; }
-#trust { grid-template-columns: minmax(0, 672fr) minmax(0, 600fr); column-gap: 48px; }
-#tests-title { font-size: 62px; }
-#trust-title { font-size: 60px; }
-.pair-copy .eyebrow { margin-bottom: 20px; }
-.pair-copy h2 { margin-bottom: 30px; }
-.pair-copy .lede { max-width: 620px; }
-.pair-figure { display: grid; gap: 16px; justify-items: start; min-width: 0; }
-.pair-figure > .card { width: 100%; }
+/* page-s1: the page's bands. Sizes are the desk's at 1440 (x 0.9375 of the 1536 drawings). Every section
+   heading takes one size, three quarters of the hero's: the hero is a stage scaled to the page width up to
+   1536, so the heading follows it there and holds above, where the bands keep their 1320 wrap. */
+.landing { --h2: min(4.3457vw, 66.75px); }
+.band { position: relative; padding: 92px 0; }
+.band::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(48% 42% at 100% 0%, rgba(200, 225, 252, .5), transparent 72%), radial-gradient(40% 36% at 0% 100%, rgba(214, 232, 252, .35), transparent 72%); }
+.landing main { position: relative; z-index: 0; }
+.wrap { max-width: calc(var(--wrap) + 2 * var(--gutter)); margin: 0 auto; padding: 0 var(--gutter); }
+.band h2 { font-size: var(--h2); line-height: 1.02; }
+.head .eyebrow { margin-bottom: 22px; }
+.head h2 { margin-bottom: 24px; }
+.head .lede { max-width: 640px; }
+.head-wide .lede { max-width: 920px; }
+/* Halves: a section's words beside its drawing (the drawing first when it leads). */
+.band-half > .wrap { display: grid; grid-template-columns: minmax(0, 640fr) minmax(0, 600fr); column-gap: 80px; align-items: center; }
+.band-fixing .head, .band-drift .head, .band-framework .head { order: 2; }
+.nowrap { white-space: nowrap; }
+/* A separator that gives way to a line break where its line would wrap (.split at 760, .narrow-split at 400). */
+.split { white-space: nowrap; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-/* Interlude: the painted band with its two pieces of type. */
-.interlude { padding: 150px 0 164px; }
-.interlude-stage { --u: calc(100cqw / 1536); position: relative; container-type: inline-size; aspect-ratio: 1536 / 626; }
-.interlude picture, .interlude img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.interlude-label { position: absolute; left: calc(421 * var(--u)); top: calc(196 * var(--u)); font: 700 calc(56 * var(--u))/1 var(--font-head); letter-spacing: -.035em; color: #10203a; transform: rotate(-8.4deg); transform-origin: left bottom; opacity: .94; }
-.interlude-card { position: absolute; left: calc(910 * var(--u)); top: calc(107 * var(--u)); width: calc(474 * var(--u)); height: calc(248 * var(--u)); display: grid; grid-template-columns: auto 1fr; align-content: start; column-gap: calc(32 * var(--u)); padding: calc(42 * var(--u)) calc(42 * var(--u)) 0; border-radius: calc(18 * var(--u)); background: rgba(255, 255, 255, .96); box-shadow: 0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(20, 35, 70, .05), 0 calc(24 * var(--u)) calc(48 * var(--u)) calc(-18 * var(--u)) rgba(20, 35, 70, .22); }
-.interlude-card .tile { width: calc(82 * var(--u)); height: calc(82 * var(--u)); border-radius: calc(12 * var(--u)); display: grid; place-items: center; }
-.interlude-card .tile svg { width: 58%; height: 58%; }
-.interlude-card p { display: grid; align-content: center; font: 700 calc(33 * var(--u))/1.25 var(--font-body); letter-spacing: -.015em; color: var(--site-ink); }
-.interlude-card p span { color: var(--site-green); }
-.interlude-card .meter { grid-column: 1 / -1; margin-top: calc(30 * var(--u)); height: calc(17 * var(--u)); }
-.interlude-card small { grid-column: 1 / -1; margin-top: calc(18 * var(--u)); color: var(--site-body); font-size: calc(20 * var(--u)); }
-
-/* Ownership: copy and facts beside the terminal. */
-.ownership { display: grid; grid-template-columns: minmax(0, 560fr) minmax(0, 680fr); column-gap: 72px; align-items: center; max-width: calc(var(--wrap) + 2 * var(--gutter)); margin: 0 auto; padding: 150px var(--gutter) 150px; }
-.ownership h2 { font-size: 86px; line-height: .94; margin-bottom: 36px; }
-.ownership .eyebrow { margin-bottom: 26px; }
-.ownership .facts { display: grid; gap: 12px; margin-top: 30px; }
-.ownership .facts li { display: flex; align-items: center; gap: 24px; color: var(--site-body); font-size: 23px; }
-.ownership .facts .tile { width: 78px; height: 72px; border-radius: 14px; display: grid; place-items: center; }
-.ownership .facts .tile svg { width: 36px; height: 36px; }
-.terminal { border-radius: 14px; overflow: hidden; background: var(--site-term); box-shadow: 0 30px 60px -28px rgba(8, 20, 40, .55), 0 2px 6px rgba(8, 20, 40, .12); }
-.terminal-bar { display: flex; gap: 10px; height: 50px; align-items: center; padding: 0 24px; background: var(--site-term-bar); }
-.terminal-bar i { width: 15px; height: 15px; border-radius: 50%; background: #ff5f57; }
-.terminal-bar i:nth-child(2) { background: #febc2e; } .terminal-bar i:nth-child(3) { background: #28c840; }
-.terminal pre { margin: 0; padding: 34px 26px 44px; overflow-x: auto; color: #e8edf5; font: 450 17.5px/2.4 var(--font-mono); white-space: pre-wrap; overflow-wrap: anywhere; }
-.terminal .prompt { color: #22c7e6; font-weight: 600; }
-.terminal .comment { color: #8b96a8; }
-
-/* The quiet details: six cards, three by two. */
-.details { max-width: calc(1210px + 2 * var(--gutter)); margin: 0 auto; padding: 120px var(--gutter) 150px; text-align: center; }
-.details h2 { margin-top: 26px; font-size: 80px; }
-.details ul { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 30px; margin-top: 54px; text-align: left; }
-.details li { padding: 26px 34px 34px; border-radius: 14px; background: #fff; border: 1px solid var(--site-line); box-shadow: 0 1px 2px rgba(16, 24, 40, .03), 0 18px 34px -24px rgba(16, 24, 40, .16); }
-.details .disc { display: grid; place-items: center; width: 76px; height: 76px; border-radius: 50%; }
-.details .disc svg { width: 34px; height: 34px; stroke-width: 1.8; }
-.details h3 { margin-top: 16px; font: 750 28px/1.2 var(--font-head); letter-spacing: -.035em; color: var(--site-ink); }
-.details li p { margin-top: 10px; color: var(--site-body); font-size: 22px; line-height: 1.45; }
-
-/* Closing over the auditor's desk. */
+/* Closing over the auditor's desk (page-s1 page-11, unchanged). */
 .closing { background: #f2f7fc; }
 .closing-stage { --u: calc(100cqw / 1536); position: relative; container-type: inline-size; aspect-ratio: 1536 / 914; }
 .closing picture, .closing img { display: block; width: 100%; height: 100%; object-fit: cover; }
@@ -66,61 +32,39 @@
 .closing .site-link { padding: 0 calc(32 * var(--u)); font-size: calc(23 * var(--u)); font-weight: 600; color: #1d64e0; }
 .closing .site-link::before { height: calc(44 * var(--u)); margin-top: calc(-22 * var(--u)); }
 .closing .site-pill + .site-link { margin-left: calc(32 * var(--u)); }
-.closing-note { margin-top: calc(32 * var(--u)) !important; color: #4e5a70 !important; font-size: calc(19.5 * var(--u)) !important; }
+.closing-note { margin-top: calc(32 * var(--u)) !important; color: #4e5a70 !important; font-size: max(11px, calc(19.5 * var(--u))) !important; }
 
 @media (max-width: 1180px) {
-  .pair, .pair-flip, #tests, #trust { column-gap: 48px; }
-  #tests-title, #trust-title { font-size: 54px; }
-  .site h2 { font-size: 58px; }
-  .ownership h2 { font-size: 66px; }
-  .details h2 { font-size: 64px; }
   .lede { font-size: 21px; }
+  .band-half > .wrap { column-gap: 52px; }
 }
-@media (max-width: 900px) {
-  .page-band { padding: 12px 0; }
-  .pair, .pair-flip, #tests, #trust { grid-template-columns: minmax(0, 1fr); row-gap: 30px; padding: 44px var(--gutter); }
-  .pair-flip .pair-copy { order: 0; }
-  .interlude { padding: 64px 0 72px; }
-  .ownership { grid-template-columns: minmax(0, 1fr); row-gap: 36px; padding: 80px var(--gutter); }
-  .details { padding: 72px var(--gutter) 96px; }
-  .details ul { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+@media (max-width: 999px) {
+  .landing { --h2: 48px; }
+  .band { padding: 72px 0; }
+  .band-half > .wrap { grid-template-columns: minmax(0, 1fr); row-gap: 36px; }
+  .band-half .head { order: -1; }
+  .head .lede { max-width: 680px; }
 }
 @media (max-width: 760px) {
-  .pair-copy .eyebrow { margin-bottom: 14px; }
-  .pair-copy h2 { margin-bottom: 18px; }
-  .interlude { padding: 48px 0 56px; }
-  .interlude-stage { --u: calc(100cqw / 1000); aspect-ratio: auto; display: grid; }
-  .interlude picture { aspect-ratio: 1000 / 626; height: auto; }
-  .interlude-label { left: calc(301 * var(--u)); top: calc(196 * var(--u)); font-size: calc(56 * var(--u)); }
-  .interlude-card { position: relative; left: auto; top: auto; width: auto; height: auto; margin: -36px var(--gutter) 0; padding: 22px 22px 20px; column-gap: 18px; border-radius: 16px; }
-  .interlude-card .tile { width: 56px; height: 56px; border-radius: 10px; }
-  .interlude-card p { font-size: 22px; }
-  .interlude-card .meter { margin-top: 18px; height: 12px; }
-  .interlude-card small { margin-top: 12px; font-size: 15px; }
-  .ownership { padding: 64px var(--gutter); }
-  .ownership h2 { font-size: 46px; margin-bottom: 20px; }
-  .ownership .eyebrow { margin-bottom: 14px; }
-  .ownership .facts { margin-top: 22px; gap: 10px; }
-  .ownership .facts li { font-size: 17px; gap: 16px; }
-  .ownership .facts .tile { width: 54px; height: 50px; border-radius: 12px; }
-  .ownership .facts .tile svg { width: 26px; height: 26px; }
-  .terminal-bar { height: 38px; padding: 0 16px; gap: 8px; }
-  .terminal-bar i { width: 11px; height: 11px; }
-  .terminal pre { padding: 18px 16px 22px; font-size: 13.5px; line-height: 1.8; }
-  .details { padding: 56px var(--gutter) 72px; }
-  .details h2 { margin-top: 16px; font-size: 44px; }
-  .details ul { grid-template-columns: minmax(0, 1fr); gap: 14px; margin-top: 32px; }
-  .details li { display: grid; grid-template-columns: 52px 1fr; column-gap: 16px; padding: 18px 18px 20px; }
-  .details .disc { grid-row: span 2; width: 52px; height: 52px; }
-  .details .disc svg { width: 24px; height: 24px; }
-  .details h3 { margin-top: 2px; font-size: 21px; }
-  .details li p { margin-top: 4px; font-size: 16.5px; }
+  .landing { --h2: 34.5px; }
+  .split-sep { display: none; }
+  .split { display: block; }
+}
+@media (max-width: 400px) {
+  .narrow-sep { display: none; }
+  .narrow-split { display: flex !important; }
+}
+@media (max-width: 760px) {
+  .band { padding: 52px 0; }
+  .head .eyebrow { margin-bottom: 14px; }
+  .head h2 { margin-bottom: 16px; }
+  .band-half > .wrap { row-gap: 26px; }
   .closing-stage { --u: 1px; aspect-ratio: auto; display: grid; container-type: normal; }
   .closing picture { order: 2; aspect-ratio: 1536 / 584; height: auto; }
   .closing-copy { position: static; padding: 56px var(--gutter) 28px; }
   .closing h2 { font-size: 44px; line-height: 1.02; text-wrap: balance; }
   .closing-copy > p { margin-top: 14px; font-size: 18px; }
-  .closing .site-actions { margin-top: 24px; flex-wrap: nowrap; }
+  .closing .site-actions { margin-top: 24px; justify-content: center; }
   .closing .site-pill { min-height: 54px; padding: 0 26px; font-size: 18px; border-radius: 10px; }
   .closing .site-pill svg { width: 22px; height: 22px; }
   .closing .site-link { font-size: 17px; padding: 0 0 0 18px; }

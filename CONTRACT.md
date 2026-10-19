@@ -666,59 +666,65 @@ Current practical limits: metadata is at most 8 MiB and 20,000 total rows; each 
 
 ## Homepage claims
 
-Every capability claim on the approved homepage (`src/site/landing/`, checked against br's claims truth table of 17 October 2026, rows 1–49 in page order) maps to the clauses that promise it. A claim's status is `done` when every mapped clause is done, `missing` when every one is missing, and `partial` otherwise. "Try the demo" links the hosted demo and is not a capability claim. 49 claims: 9 done, 34 partial, 6 missing.
+Every capability claim on the homepage (`src/site/landing/`, rebuilt on the owner-approved page-s1 structure of 17 October 2026, in page order) maps to the clauses that promise it and to the code that backs it today. A claim's status is `done` when every mapped clause is done, `missing` when every one is missing ("contract, not yet in code"), and `partial` otherwise ("partly", naming the code that exists). Names, companies, dates and counts inside the drawings are example data, not claims. "Try the demo" links the hosted demo and is not a capability claim. 55 claims: 17 done, 29 partial, 9 missing.
 
-| # | Claim | Clause(s) | Status |
-| --- | --- | --- | --- |
-| 1 | "tests your controls around the clock" | TEST-001, LIBRARY-001 | partial |
-| 2 | "collects the proof" | COLLECTION-001, CLOUD-001, IDENTITY-001, CODE-001, PROOF-001 | partial |
-| 3 | "fixes what drifts" | REMEDY-001, REMEDY-002, AGENT-003 | partial |
-| 4 | "hands your auditor everything they ask for" | AUDIT-001, AUDIT-003, REVIEW-001 | partial |
-| 5 | "100% free, open source alternative to Vanta, Drata and Secureframe" | OPEN-001, MIGRATE-001 | partial |
-| 6 | Hero board: SOC 2 criteria on controls (CC6.1 Logical access, CC7.2 Monitoring) | LIBRARY-001, PROGRAM-001 | partial |
-| 7 | Exhibit A: "MFA enforced for all 42 users · Okta" | IDENTITY-001, TEST-001 | done |
-| 8 | Exhibit B: "S3 buckets encrypted · AWS · 12 of 12" | CLOUD-001, TEST-001 | done |
-| 9 | Exhibit C: laptop disk encryption, 1 failing → fixed, re-tested | DEVICE-001, DEVICE-002, REMEDY-001 | partial |
-| 10 | "SOC 2 Type II 94% ready" | READINESS-001 | done |
-| 11 | Checklist: "Policies · Access reviews · Vendor risk · Trust center" | READINESS-001, POLICY-001, ACCESS-001, VENDOR-001, TRUST-001 | partial |
-| 12 | AWS, GitHub, Google Workspace and Okta connections | CLOUD-001, CODE-001, IDENTITY-001 | partial |
-| 13 | Jamf tile; "Device systems · Endpoints" | DEVICE-001 | missing |
-| 14 | "HR systems · People" | HRIS-001, POPULATION-001 | partial |
-| 15 | "SOC 2, ISO 27001, HIPAA and PCI DSS" programs with per-framework readiness | PROGRAM-001, READINESS-001 | done |
-| 16 | "share controls, so one passing test counts everywhere it applies" | PROGRAM-002, LIBRARY-001 | partial |
-| 17 | "Each control has an owner and a scope" | PROGRAM-002 | done |
-| 18 | "CC6.2 owner left → reassigned to Priya Shah" | LIFECYCLE-002, PROGRAM-002 | done |
-| 19 | "Connect AWS, GitHub, Google Workspace, Okta … once. Evidence runs every control test on a schedule" | CONNECT-001, COLLECTION-001, TEST-001 | partial |
-| 20 | "your HR system and your device manager" | HRIS-001, DEVICE-001 | missing |
-| 21 | "AWS root account has MFA · GitHub branch protection · Google Workspace 2-step verification" | CLOUD-001, CODE-001, IDENTITY-001 | partial |
-| 22 | Rippling: departed staff removed from Okta; Jamf: disk encryption; "FileVault off → task opened" | HRIS-001, LIFECYCLE-001, DEVICE-001, DEVICE-002, REMEDY-001 | partial |
-| 23 | "A failing test opens a task in Jira or Slack with an owner and a due date" | WORK-001, FOLLOWUP-002, REMEDY-001 | partial |
-| 24 | "Once it is fixed, Evidence tests it again on its own" | REMEDY-002, REMEDY-001 | done |
-| 25 | "The agent traces a failed control to its cause, asks for one narrow fix and tests the real system again" | AGENT-003 | missing |
-| 26 | "The original failure stays on record beside the proof" | TEST-001, PROOF-001, AGENT-003 | partial |
-| 27 | "Your auditor gets a workspace for the audit period" | AUDIT-001, AUDIT-003 | partial |
-| 28 | "Each request links to tested proof with its source and time" | AUDIT-001, AUDIT-002 | partial |
-| 29 | "Publish a trust center for your customers" | TRUST-001 | partial |
-| 30 | "Evidence answers security questionnaires from verified proof, and every answer cites its source" | ANSWER-001 | missing |
-| 31 | "Import controls, policies, evidence and vendors" | MIGRATE-001, IMPORT-001 | partial |
-| 32 | "from Vanta, Drata or Secureframe" | MIGRATE-001 | partial |
-| 33 | "check every count before you switch", "Undo import" | MIGRATE-001, IMPORT-001 | partial |
-| 34 | "Run Evidence on your own computer or server" (the one-line start) | OWN-001 | partial |
-| 35 | "keep every test result, policy and receipt" / "Your evidence, your database" | OWN-001, CUSTODY-001 | partial |
-| 36 | Vendor risk: "Vendors rated by risk, with reviews on time" | VENDOR-001, CADENCE-001 | partial |
-| 37 | Risk register: "Each risk tied to the controls that treat it" | RISK-001 | done |
-| 38 | Access reviews: "Quarterly reviews sent to each system owner" | ACCESS-001 | partial |
-| 39 | Joiners and leavers: "Accounts checked the day people start or leave" | LIFECYCLE-001 | missing |
-| 40 | Evidence receipts: "Every proof kept unchanged, with its source and time" | PROOF-001 | done |
-| 41 | Reviewer folders: "Shared proof that closes on the date you set" | REVIEW-001 | done |
-| 42 | "Start from templates, approve each policy once" | POLICY-001 | done |
-| 43 | "collect a signature from everyone" (41 of 42 signed, reminder sent) | ATTEST-001, FOLLOWUP-001 | done |
-| 44 | "Training" | TRAIN-001 | done |
-| 45 | "onboarding, offboarding" | LIFECYCLE-001 | missing |
-| 46 | "access reviews run from the same list" | ACCESS-001, INVENTORY-001 | partial |
-| 47 | "Export everything, any time" | CUSTODY-001, PORTABLE-001 | partial |
-| 48 | "SOC 2 Type II · 100% ready" | READINESS-001 | done |
-| 49 | "Open source compliance for SOC 2, ISO 27001 and HIPAA" / "Free and open source, MIT licensed" | PROGRAM-001, OPEN-001 | done |
+| # | Section | Claim | Clause(s) | Status | Backed by |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Hero | "tests your controls around the clock" | TEST-001, LIBRARY-001 | partial | partly: `src/evidence/tests/engine.ts`, `src/evidence/scheduler.ts` |
+| 2 | Hero | "collects the proof" | COLLECTION-001, CLOUD-001, IDENTITY-001, CODE-001, PROOF-001 | partial | partly: `src/evidence/cloud/`, `src/evidence/identity/`, `src/evidence/connect/github.ts`, `src/evidence/upload.ts` |
+| 3 | Hero | "fixes what drifts" | REMEDY-001, REMEDY-002, AGENT-003 | partial | partly: `src/evidence/remedy/` |
+| 4 | Hero | "hands your auditor everything they ask for" | AUDIT-001, AUDIT-003, REVIEW-001 | partial | partly: `src/evidence/review/` |
+| 5 | Hero | "100% free, open source alternative to Vanta, Drata and Secureframe" | OPEN-001, MIGRATE-001 | partial | partly: `LICENSE`, `src/evidence/import/` |
+| 6 | Hero | Board: SOC 2 criteria on controls (CC6.1 Logical access, CC7.2 Monitoring) | LIBRARY-001, PROGRAM-001 | partial | partly: `src/evidence/library/soc2.ts`, `src/evidence/library/controls.ts` |
+| 7 | Hero | Exhibit A: "MFA enforced for all 42 users · Okta" | IDENTITY-001, TEST-001 | done | `src/evidence/identity/okta.ts`, `src/evidence/identity/catalogue.ts` |
+| 8 | Hero | Exhibit B: "S3 buckets encrypted · AWS · 12 of 12" | CLOUD-001, TEST-001 | done | `src/evidence/cloud/aws.ts`, `src/evidence/cloud/catalogue.ts` |
+| 9 | Hero | Exhibit C: laptop disk encryption, 1 failing → fixed, re-tested | DEVICE-001, DEVICE-002, REMEDY-001 | partial | partly: `src/evidence/remedy/` (the loop); no device source |
+| 10 | Hero | "SOC 2 Type II 94% ready" | READINESS-001 | done | `src/evidence/program/readiness.ts` |
+| 11 | Hero | Checklist: "Policies · Access reviews · Vendor risk · Trust center" | READINESS-001, POLICY-001, ACCESS-001, VENDOR-001, TRUST-001 | partial | partly: `src/evidence/program/checklist.ts`, `src/evidence/policy/`, `src/evidence/access/` |
+| 12 | Hero | AWS, GitHub, Google Workspace and Okta connections | CLOUD-001, CODE-001, IDENTITY-001 | partial | partly: `src/evidence/cloud/aws.ts`, `src/evidence/connect/github.ts`, `src/evidence/identity/google.ts`, `src/evidence/identity/okta.ts` |
+| 13 | Hero | Jamf tile; "Device systems · Endpoints" | DEVICE-001 | missing | contract, not yet in code |
+| 14 | Hero | "HR systems · People" | HRIS-001, POPULATION-001 | partial | partly: `src/evidence/population/` (labeled CSV roster) |
+| 15 | First SOC 2 | The SOC 2 Type II year: an Apr 1 – Sep 30 observation window "every control tested daily", with readiness before and after | PROGRAM-001, READINESS-001, GAP-001, TEST-001 | done | `src/evidence/program/`, `src/evidence/tests/engine.ts` |
+| 16 | First SOC 2 | "rer setup · first scan: 31 gaps" (Evidence runs on your own computer) | OWN-001, READINESS-001 | partial | partly: `rer-setup.json`, `src/evidence/program/readiness.ts` |
+| 17 | First SOC 2 | "15,738 daily results kept" (86 controls × 183 days) | TEST-001, PROOF-001 | done | `src/evidence/tests/storage.ts`, `src/evidence/model.ts` |
+| 18 | First SOC 2 | "Fieldwork · Harbor & Lane CPAs"; "Report issued · no exceptions" (the auditor's work, from Evidence's workspace) | AUDIT-001, BOUNDARY-001 | partial | partly: `src/evidence/review/` |
+| 19 | Day one | "Connect your cloud, code, identity, HR and device systems once" | CONNECT-001, CLOUD-001, CODE-001, IDENTITY-001, HRIS-001, DEVICE-001 | partial | partly: `src/evidence/connect/`, `src/evidence/cloud/connect.ts`, `src/evidence/identity/` |
+| 20 | Day one | "The first scan tests every SOC 2 control and names what fails" (86 controls · 55 passing · 31 to fix) | TEST-001, LIBRARY-001, READINESS-001 | partial | partly: `src/evidence/tests/engine.ts`, `src/evidence/library/soc2.ts` |
+| 21 | Day one | Scan rows: AWS "CloudTrail off in 2 regions", Okta "MFA not enforced for 5 users" | CLOUD-001, IDENTITY-001 | done | `src/evidence/cloud/catalogue.ts`, `src/evidence/identity/catalogue.ts` |
+| 22 | Day one | Scan row: GitHub "No branch protection on 3 repos" | CODE-001 | partial | partly: `src/evidence/connect/github.ts` |
+| 23 | Day one | Scan row: Jamf "4 laptops unencrypted" | DEVICE-001 | missing | contract, not yet in code |
+| 24 | Day one | Scan row: Policies "Not yet written" | POLICY-001 | done | `src/evidence/policy/templates.ts` |
+| 25 | Day one | Scan row: Rippling "3 leavers still active in Okta" | HRIS-001, LIFECYCLE-001 | missing | contract, not yet in code |
+| 26 | Day one | "Connected in 11 minutes: AWS, GitHub, Okta, Jamf, Rippling, Google Workspace" | CONNECT-001, CLOUD-001, CODE-001, IDENTITY-001, DEVICE-001, HRIS-001 | partial | partly: `src/evidence/connect/` |
+| 27 | Fixing | "Each failing test becomes a task for the person who can fix it, in Slack or Jira" (owner and due date in #security) | WORK-001, FOLLOWUP-001, FOLLOWUP-002, REMEDY-001 | partial | partly: `src/evidence/work/`, `src/evidence/followup/channels.ts`, `src/evidence/remedy/` |
+| 28 | Fixing | "When the fix lands, Evidence runs the test again" ("Re-tested Mar 11 · 14 of 14 protected"; gaps 31 → 0) | REMEDY-001, REMEDY-002 | done | `src/evidence/remedy/`, `src/evidence/tests/engine.ts` |
+| 29 | Policies | "Start from templates, approve each policy once" (v1 approved by the CEO; 18 policies) | POLICY-001 | done | `src/evidence/policy/` |
+| 30 | Policies | "every person signs" (42 of 42 signed; RV reminded, then signed) | ATTEST-001, FOLLOWUP-001 | done | `src/evidence/attest/`, `src/evidence/followup/` |
+| 31 | Policies | "and finishes training" (42 of 42 trained) | TRAIN-001 | done | `src/evidence/training/` |
+| 32 | Policies | "New hires get the same list on day one" (JL signed and trained day one) | LIFECYCLE-001 | missing | contract, not yet in code |
+| 33 | Observation window | "Evidence tests every control around the clock and keeps each day's result with its time and source" | TEST-001, PROOF-001, LIBRARY-001 | partial | partly: `src/evidence/tests/engine.ts`, `src/evidence/scheduler.ts` |
+| 34 | Observation window | Day record: Okta CC6.1, AWS A1.2 and CC7.2, every day for 183 days | IDENTITY-001, CLOUD-001, TEST-001 | done | `src/evidence/identity/`, `src/evidence/cloud/` |
+| 35 | Observation window | Day record: GitHub CC8.1 change management | CODE-001, TEST-001 | partial | partly: `src/evidence/connect/github.ts` |
+| 36 | Observation window | Day record: Jamf CC6.7 laptop encryption | DEVICE-001 | missing | contract, not yet in code |
+| 37 | Observation window | "1 failure, fixed the same day · every result kept with its source" | TEST-001, PROOF-001, REMEDY-001 | done | `src/evidence/tests/storage.ts`, `src/evidence/remedy/` |
+| 38 | Evidence agent | "The agent traces a failed test to its cause, asks for one narrow fix and tests the real system again" (PR #482 → PR #487) | AGENT-003 | missing | contract, not yet in code |
+| 39 | Evidence agent | "The original failure stays on the record" ("Failure E-2291 kept · linked to its fix and re-test") | TEST-001, PROOF-001, AGENT-003 | partial | partly: `src/evidence/tests/storage.ts`, `src/evidence/model.ts` |
+| 40 | Interlude | "CC7.2 Monitoring · 183 of 183 days tested"; "SOC 2 Type II · 100% ready" | READINESS-001, GAP-001 | done | `src/evidence/program/readiness.ts` |
+| 41 | Fieldwork | "Your auditor gets a workspace for your audit period" | AUDIT-001, AUDIT-003 | partial | partly: `src/evidence/review/` (expiring scoped folders) |
+| 42 | Fieldwork | "Each request links to tested proof with its source and time" (121 of 121 provided) | AUDIT-001, AUDIT-002 | partial | partly: `src/evidence/review/`, `src/evidence/model.ts` |
+| 43 | Fieldwork | Requests from Okta, GitHub (25-PR sample) and the CC7.2 failure record | IDENTITY-001, CODE-001, AUDIT-002, PROOF-001 | partial | partly: `src/evidence/identity/okta.ts`, `src/evidence/connect/github.ts` |
+| 44 | Fieldwork | Requests from Rippling (period-end employee list) and Jamf (183 daily results) | HRIS-001, DEVICE-001, POPULATION-001 | partial | partly: `src/evidence/population/` (CSV roster) |
+| 45 | Fieldwork | Background checks from Checkr ("6 of 6 cleared") | LIFECYCLE-001 | missing | contract, not yet in code |
+| 46 | Fieldwork | Uploaded board minutes and penetration-test report as PDF | PROOF-001, VULN-002 | done | `src/evidence/upload.ts`, `src/evidence/vuln/` |
+| 47 | Trust center | "Publish your report in a trust center" (Larkspur Trust Center) | TRUST-001 | partial | partly: `src/evidence/review/` (scoped expiring downloads) |
+| 48 | Trust center | "Evidence answers security questionnaires from verified proof, and every answer cites its source"; "Every answer cites its proof." | ANSWER-001 | missing | contract, not yet in code |
+| 49 | Trust center | "209 answered from evidence · 3 sent to Dana Lee" | ANSWER-001, ANSWER-003 | missing | contract, not yet in code |
+| 50 | ISO 27001 | "SOC 2, ISO 27001 and HIPAA share controls, so one passing test counts everywhere it applies" | PROGRAM-002, LIBRARY-001 | partial | partly: `src/evidence/library/controls.ts`, `src/evidence/library/iso27001.ts` |
+| 51 | ISO 27001 | "Add framework · ISO 27001:2022 · 71 of 93 controls already tested", A.5.15 ← CC6.1, A.8.24 ← CC6.7, a new control with an owner | PROGRAM-001, PROGRAM-002, READINESS-001 | done | `src/evidence/program/`, `src/evidence/library/iso27001.ts` |
+| 52 | Moving in | "Coming from Vanta, Drata or Secureframe? Import controls, policies, evidence and vendors" | MIGRATE-001, IMPORT-001 | partial | partly: `src/evidence/import/` (Drata archive) |
+| 53 | Moving in | "check every count before you switch" (86 controls, 18 policies, 1,412 evidence files, 37 vendors) | MIGRATE-001, IMPORT-001 | partial | partly: `src/evidence/import/plan.ts` |
+| 54 | Limits | "Evidence is not an auditor. A licensed CPA firm still tests your controls and signs your report." | BOUNDARY-001 | partial | partly: `/contract#area-honest-product-boundaries` |
+| 55 | Closing | "Open source compliance for SOC 2, ISO 27001 and HIPAA"; "Free and open source, MIT licensed" | PROGRAM-001, OPEN-001 | done | `src/evidence/library/`, `LICENSE` |
 
 ## Status
 

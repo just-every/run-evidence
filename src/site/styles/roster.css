@@ -1,0 +1,89 @@
+/* page-s1 page-04: the policy roster. 42 faces at desk size; at 390 six faces and "+36" (phone-04). */
+.band-signed { padding: 56px 0 64px; }
+.roster-card { margin-top: 34px; overflow: hidden; }
+.roster-head { padding: 28px 32px 0; }
+.roster-head h3 { font: 700 31px/1.15 var(--font-head); letter-spacing: -.03em; word-spacing: .04em; }
+.roster-head p { margin-top: 6px; color: #5c667e; font-size: 19px; }
+.roster-body { display: grid; grid-template-columns: minmax(0, 716fr) minmax(0, 616fr); padding: 16px 0 22px; }
+.roster-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); row-gap: 16px; padding: 4px 28px 0 20px; }
+.face { position: relative; display: grid; place-items: center; justify-self: center; width: 54px; height: 54px; border-radius: 50%; font-size: 17.5px; font-weight: 500; letter-spacing: .01em; }
+.face .status { position: absolute; right: -3px; bottom: -3px; width: 19px; height: 19px; border: 2px solid #fff; }
+.face .status svg { stroke-width: 3.6; }
+.tone-blue.face { background: #e2ebfd; color: #1f47a8; }
+.tone-mint.face { background: #def5ea; color: #157a4a; }
+.tone-amber.face { background: #fdf0d9; color: #8a5a06; }
+.tone-violet.face { background: #ece8fd; color: #4b3aa8; }
+.tone-sky.face { background: #e0f2fc; color: #145f8c; }
+.tone-rose.face { background: #fde6ee; color: #a3284f; }
+.tone-green.face { background: #e2f3e1; color: #2d6b2a; }
+.face-new { background: #fff !important; box-shadow: inset 0 0 0 2px #2563e0; color: #1d4fb8 !important; }
+.face-reminded { background: #fff !important; box-shadow: inset 0 0 0 2px #f2a516; }
+.face-bell { position: absolute; right: -18px; top: 6px; width: 18px; height: 18px; color: var(--site-amber); }
+.face-bell svg { width: 100%; height: 100%; fill: currentColor; stroke-width: 1.6; }
+.roster-phone { display: none; }
+.roster-policies { padding: 4px 30px 0 34px; border-left: 1px solid var(--site-line); }
+.roster-policies ul { display: grid; gap: 9px; }
+.roster-policies li { display: flex; align-items: center; gap: 18px; min-height: 45px; padding: 0 18px; border: 1px solid #e3e9f1; border-radius: 8px; color: #1f2a3d; font-size: 17px; }
+.roster-policies svg { width: 24px; height: 24px; flex: none; color: #48526a; stroke-width: 1.7; }
+.roster-policies li.roster-more { display: none; }
+.roster-count { margin-top: 12px; color: #6b7488; font-size: 14.5px; }
+.roster-foot { padding: 18px 24px 22px; border-top: 1px solid var(--site-line); }
+.roster-totals { display: flex; gap: 46px; padding: 0 4px 12px; font-size: 17px; font-weight: 600; letter-spacing: -.01em; color: #2b3447; }
+.roster-totals span { display: inline-flex; align-items: center; gap: 14px; }
+.roster-totals .status { width: 25px; height: 25px; }
+.roster-notes { display: grid; gap: 8px; }
+.roster-notes li { display: grid; grid-template-columns: 22px 24px minmax(0, 1fr); column-gap: 18px; align-items: center; min-height: 39px; padding: 0 22px; border-radius: 8px; }
+.roster-notes p { display: flex; flex-wrap: wrap; column-gap: .5em; color: #4b5568; font-size: 15px; }
+.roster-notes p b { font-weight: 500; color: #2b3447; }
+.roster-notes p b::after { content: ' ·'; color: #8a93a6; }
+.roster-notes .status { width: 23px; height: 23px; }
+.roster-icon { display: grid; place-items: center; width: 22px; height: 22px; }
+.roster-icon svg { width: 20px; height: 20px; }
+.roster-reminded { background: #fff6e6; }
+.roster-reminded .roster-icon { color: var(--site-amber); }
+.roster-reminded .roster-icon svg { fill: currentColor; }
+.roster-joined { background: #eef4fe; }
+.roster-joined .roster-icon { visibility: hidden; }
+
+@media (max-width: 1180px) {
+  .roster-grid { padding: 4px 16px 0 12px; }
+  .face { width: 48px; height: 48px; font-size: 16px; }
+  .roster-policies { padding: 4px 22px 0 24px; }
+  .roster-policies li { font-size: 15.5px; gap: 12px; padding: 0 12px; }
+}
+@media (max-width: 999px) {
+  .roster-body { grid-template-columns: minmax(0, 1fr); row-gap: 22px; }
+  .roster-grid { padding: 4px 16px 0; }
+  .roster-policies { border-left: 0; border-top: 1px solid var(--site-line); padding: 22px 24px 0; }
+  .roster-policies ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+/* 390: title, signed, six faces, trained, the two people, then four policies and "+14 more". */
+@media (max-width: 760px) {
+  .roster-card { display: flex; flex-direction: column; margin-top: 24px; padding: 24px 18px 22px; }
+  .roster-body, .roster-foot { display: contents; }
+  .roster-head { order: 1; padding: 0; }
+  .roster-head h3 { font-size: 27px; line-height: 1.08; }
+  .roster-head p { font-size: 14.5px; }
+  .roster-grid, .roster-totals, .roster-count, .roster-desk-only { display: none !important; }
+  .roster-phone { display: block; order: 2; margin-top: 22px; }
+  .roster-total { display: flex; align-items: center; gap: 12px; font-size: 21px; font-weight: 600; letter-spacing: -.015em; }
+  .roster-total .status { width: 24px; height: 24px; }
+  .roster-faces { display: flex; margin: 14px 0 20px; }
+  .roster-faces .face { width: 38px; height: 38px; margin-right: -5px; font-size: 13.5px; box-shadow: 0 0 0 2px #fff; }
+  .roster-faces .face-more { margin-left: 12px; width: auto; padding: 0 12px; border-radius: 999px; background: #eef1f5; color: #4b5568; }
+  .roster-notes { order: 3; margin-top: 16px; padding-bottom: 18px; border-bottom: 1px solid var(--site-line); }
+  .roster-notes li { grid-template-columns: 40px minmax(0, 1fr) 24px; column-gap: 12px; padding: 10px 12px; }
+  .roster-notes .roster-icon { visibility: visible; width: 40px; height: 40px; border-radius: 8px; }
+  .roster-reminded .roster-icon { background: #fdeccb; }
+  .roster-joined .roster-icon { background: #dce9fd; color: #2d7cf0; }
+  .roster-notes .status { order: 3; }
+  .roster-notes p { display: grid; font-size: 13px; }
+  .roster-notes p b { font-size: 14.5px; }
+  .roster-notes p b::after { content: none; }
+  .roster-policies { order: 4; border: 0; padding: 18px 0 0; }
+  .roster-policies ul { display: flex; flex-wrap: wrap; gap: 7px; }
+  .roster-policies li { gap: 7px; min-height: 42px; padding: 0 10px 0 8px; font-size: 13px; white-space: nowrap; }
+  .roster-policies svg { width: 18px; height: 18px; color: #2563e0; }
+  .roster-policies li.roster-more { display: flex; background: #f1f4f8; color: #4b5568; }
+  .roster-policies li.roster-more svg { color: #6b7488; }
+}

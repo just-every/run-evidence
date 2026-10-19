@@ -1,30 +1,46 @@
-// The run site's homepage, built from the approved desk pages 01–09 in order.
+// The run site's homepage, built from the owner-approved page-s1 structure (17 Oct 2026): the hero, then
+// the buyer's first SOC 2 Type II from March to December, the interlude, fieldwork, the trust center and the close.
 import { Hero } from './Hero'
-import { Frameworks } from './sections/Frameworks'
-import { Remediation } from './sections/Remediation'
+import { Timeline } from './sections/Timeline'
+import { FirstScan, Fixing } from './sections/Scan'
+import { Signed } from './sections/Signed'
+import { DayRecord } from './sections/DayRecord'
+import { Drift } from './sections/Drift'
 import { Interlude } from './sections/Interlude'
-import { Agent } from './sections/Agent'
-import { Trust } from './sections/Trust'
-import { Ownership } from './sections/Ownership'
-import { Details } from './sections/Details'
+import { Fieldwork } from './sections/Fieldwork'
+import { TrustCenter, NextFramework } from './sections/TrustCenter'
+import { Notes } from './sections/Notes'
 import { Closing } from './sections/Closing'
 import { SiteFooter } from '../shell/SiteFooter'
 import '../styles/site.css'
 import '../styles/hero.css'
 import '../styles/sections.css'
 import '../styles/cards.css'
+import '../styles/timeline.css'
+import '../styles/scan.css'
+import '../styles/roster.css'
+import '../styles/record.css'
+import '../styles/drift.css'
+import '../styles/interlude.css'
+import '../styles/fieldwork.css'
+import '../styles/trust.css'
+import '../styles/notes.css'
 
 export function Landing() {
   return <div className="site landing">
     <main id="main">
       <Hero />
-      <div className="page-band"><Frameworks /></div>
-      <div className="page-band"><Remediation /></div>
+      <Timeline />
+      <FirstScan />
+      <Fixing />
+      <Signed />
+      <DayRecord />
+      <Drift />
       <Interlude />
-      <div className="page-band"><Agent /></div>
-      <div className="page-band"><Trust /></div>
-      <Ownership />
-      <Details />
+      <Fieldwork />
+      <TrustCenter />
+      <NextFramework />
+      <Notes />
       <Closing />
     </main>
     <SiteFooter />

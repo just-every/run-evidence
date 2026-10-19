@@ -1,0 +1,88 @@
+/* page-s1 page-03: the first scan (Mar 4), then the Slack thread and the gaps closing (Mar 4 – Mar 30). */
+.band-scan { padding: 50px 0 44px; }
+.scan-figure { display: grid; gap: 18px; min-width: 0; }
+.scan-card { padding: 24px 24px 8px 30px; }
+.scan-when { font-size: 20px; font-weight: 500; letter-spacing: -.01em; }
+.scan-total { margin-top: 4px; font-size: 22px; font-weight: 600; letter-spacing: -.015em; }
+.scan-total b { font-weight: 700; }
+.scan-total .pass { color: #1f9e5c; }
+.scan-total .fail { color: #e0283a; }
+.scan-card ul { margin-top: 12px; }
+.scan-card li { display: grid; grid-template-columns: 46px 82px 50px minmax(0, 1fr); column-gap: 16px; align-items: center; min-height: 46px; padding: 4px 0; border-top: 1px solid var(--site-line); }
+.scan-card li:first-child { border-top: 0; }
+.scan-mark { display: grid; place-items: center; width: 40px; height: 32px; color: #2b3447; }
+.scan-mark .mark { width: 32px; height: 32px; }
+.scan-mark svg { width: 28px; height: 28px; stroke-width: 1.7; }
+.scan-name { font-size: 15.5px; font-weight: 500; }
+.scan-count { display: grid; place-items: center; height: 27px; border-radius: 8px; background: #fde7e9; color: #e0283a; font-size: 14.5px; font-weight: 600; }
+.scan-note { color: #5c667e; font-size: 15px; }
+.scan-chip { justify-self: stretch; padding: 10px 18px; font-size: 14.5px; }
+.scan-chip b { font-weight: 600; letter-spacing: -.01em; }
+
+.band-fixing { padding: 44px 0 70px; }
+.fix-figure { position: relative; min-width: 0; }
+.slack-card { width: 92%; padding: 22px 28px 30px; }
+.slack-channel { display: flex; align-items: center; gap: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--site-line); font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
+.slack-channel .mark { width: 30px; height: 30px; }
+.slack-thread { position: relative; padding-top: 18px; }
+.slack-message { display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 18px; align-items: start; }
+.slack-message b { font-size: 16.5px; font-weight: 700; }
+.slack-message p { margin-top: 4px; color: #2b3447; font-size: 15.5px; line-height: 1.45; }
+.app-tile { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 10px; background: #fff; box-shadow: 0 0 0 1px #e1e7ef, 0 4px 10px -6px rgba(16, 24, 40, .35); }
+.app-tile img { width: 30px; height: 30px; }
+.slack-owner { display: flex; align-items: center; gap: 12px; margin-top: 12px !important; color: #5c667e !important; font-size: 15px !important; }
+.slack-owner .avatar { width: 30px; height: 30px; font-size: 12.5px; }
+.slack-reply { margin: 22px 0 0 58px; }
+.slack-reply::before { content: ''; position: absolute; left: 22px; top: 78px; width: 26px; height: 64px; border: 1.5px solid #d7dde6; border-top: 0; border-right: 0; border-radius: 0 0 0 10px; }
+.slack-pass { display: flex; align-items: center; gap: 10px; }
+.slack-pass .status { width: 22px; height: 22px; }
+.gaps-card { position: relative; width: 50%; margin: -26px 0 0 auto; padding: 22px 26px 18px; }
+.gaps-label { font-size: 16.5px; font-weight: 600; }
+.gaps-figure { display: flex; align-items: center; gap: 12px; margin-top: 2px; font: 700 38px/1.1 var(--font-body); letter-spacing: -.02em; }
+.gaps-figure svg { width: 28px; height: 28px; stroke-width: 2.4; }
+.gaps-card .meter { margin-top: 12px; height: 10px; }
+.gaps-card .meter i { background: linear-gradient(90deg, #22a862, #2bc07a); }
+.gaps-date { margin-top: 10px; color: #6b7488; font-size: 14.5px; }
+
+@media (max-width: 1180px) {
+  .scan-card { padding: 20px 20px 6px 22px; }
+  .scan-card li { grid-template-columns: 38px minmax(0, 1fr) 44px; grid-template-areas: 'mark name count' 'mark note count'; column-gap: 14px; row-gap: 1px; padding: 8px 0; }
+  .scan-mark { grid-area: mark; }
+  .scan-name { grid-area: name; }
+  .scan-count { grid-area: count; }
+  .scan-note { grid-area: note; font-size: 14.5px; }
+}
+@media (max-width: 999px) {
+  .band-scan { padding: 40px 0; }
+  .band-fixing { padding: 40px 0 60px; }
+  .scan-figure, .fix-figure { max-width: 680px; }
+}
+@media (max-width: 760px) {
+  .scan-card { padding: 16px 14px 4px; }
+  .scan-when { font-size: 16px; }
+  .scan-total { font-size: 17px; }
+  .scan-card li { grid-template-columns: 34px minmax(0, 1fr) 40px; grid-template-areas: 'mark name count' 'mark note count'; column-gap: 12px; row-gap: 2px; padding: 9px 0; }
+  .scan-mark { grid-area: mark; width: 34px; }
+  .scan-mark .mark { width: 28px; height: 28px; }
+  .scan-name { grid-area: name; font-size: 15px; }
+  .scan-count { grid-area: count; }
+  .scan-note { grid-area: note; font-size: 14px; }
+  .scan-chip { font-size: 13.5px; align-items: flex-start; }
+  .slack-card { width: auto; padding: 18px 16px 20px; }
+  .slack-channel { font-size: 16px; }
+  .slack-message { grid-template-columns: 36px minmax(0, 1fr); column-gap: 12px; }
+  .app-tile { width: 36px; height: 36px; }
+  .app-tile img { width: 25px; height: 25px; }
+  .slack-message b { font-size: 15px; }
+  .slack-message p { font-size: 14px; }
+  .slack-owner { font-size: 13.5px !important; gap: 8px; }
+  .slack-reply { margin-left: 32px; }
+  .slack-reply::before { left: 18px; width: 12px; top: 74px; height: 78px; }
+  .slack-pass { align-items: flex-start; }
+  .gaps-card { width: 62%; margin-top: -18px; padding: 16px 18px 14px; }
+  .gaps-figure { font-size: 30px; }
+}
+@container (max-width: 600px) {
+  .slack-pass .cq-sep { display: none; }
+  .slack-pass .cq-split { display: block; }
+}

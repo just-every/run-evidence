@@ -1,0 +1,83 @@
+/* page-s1 page-08: the auditor's request list. At 390 the header and each request become cards (phone-08). */
+.band-fieldwork { padding: 80px 0 64px; }
+.pbc-card { margin-top: 36px; padding: 0 20px 18px; }
+.pbc-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(120px, 257px) auto; column-gap: 18px; align-items: center; padding: 28px 12px 18px; }
+.pbc-head h3 { font-size: 20.5px; font-weight: 500; letter-spacing: -.01em; color: #2b3447; }
+.pbc-head h3 b { font-weight: 500; }
+.pbc-sep { color: #8a93a6; }
+.pbc-period { color: #5c667e; font-weight: 400; white-space: nowrap; }
+.pbc-head .meter { height: 11px; }
+.pbc-head .meter i { background: linear-gradient(90deg, #22a862, #2bc07a); }
+.pbc-count { color: #1a9a57; font-size: 17px; font-weight: 500; white-space: nowrap; }
+.pbc-card table { width: 100%; border-collapse: collapse; }
+.pbc-card thead th { height: 44px; padding: 0 12px; border-bottom: 1px solid var(--site-line); color: #6b7488; font-size: 12.5px; font-weight: 600; letter-spacing: .14em; text-align: left; text-transform: uppercase; }
+.pbc-card thead th:nth-child(1) { width: 33%; }
+.pbc-card thead th:nth-child(2) { width: 28%; }
+.pbc-card thead th:nth-child(3) { width: 22%; }
+.pbc-card thead th:nth-child(5) { width: 48px; }
+.pbc-card tbody th, .pbc-card tbody td { height: 53px; padding: 0 12px; border-bottom: 1px solid var(--site-line); text-align: left; font-size: 16.5px; font-weight: 400; color: #2b3447; }
+.pbc-card tbody tr:last-child > * { border-bottom: 0; }
+.pbc-card tbody th b { margin-right: 6px; font-weight: 500; color: var(--site-ink); }
+.pbc-proof { color: #4b5568 !important; }
+.source-tag { display: inline-flex; align-items: center; gap: 12px; vertical-align: middle; color: #2563e0; }
+.source-tag .mark, .source-tag svg { width: 26px; height: 26px; }
+.source-tag svg { color: #1f9e5c; stroke-width: 1.8; }
+.pbc-provided { color: #5c667e !important; white-space: nowrap; }
+.pbc-provided .status { width: 24px; height: 24px; margin: -4px 10px -4px 0; vertical-align: middle; }
+.pbc-phone-word { display: none; }
+.pbc-status { text-align: right !important; }
+.pbc-status .status { width: 26px; height: 26px; vertical-align: middle; }
+.pbc-drift > * { background: #eef4fe; }
+.pbc-drift > :first-child { border-radius: 10px 0 0 10px; }
+.pbc-drift > :last-child { border-radius: 0 10px 10px 0; }
+
+@media (max-width: 1180px) {
+  .pbc-card tbody th, .pbc-card tbody td { font-size: 15px; padding: 0 8px; }
+  .pbc-card thead th { padding: 0 8px; }
+  .source-tag { gap: 8px; }
+  .source-tag .mark, .source-tag svg { width: 22px; height: 22px; }
+}
+@media (max-width: 1240px) {
+  .pbc-period-sep { display: none; }
+  .pbc-period { display: block; }
+}
+@media (max-width: 999px) {
+  .pbc-head { grid-template-columns: minmax(0, 1fr) auto; row-gap: 12px; }
+  .pbc-head .meter { grid-row: 2; grid-column: 1 / -1; }
+  .pbc-head .pbc-count { grid-row: 1; grid-column: 2; }
+  .pbc-card thead th:nth-child(1) { width: 36%; }
+  .pbc-card tbody th, .pbc-card tbody td { height: auto; padding: 12px 8px; line-height: 1.35; }
+}
+/* Below 900 px: a header card, then one card per request: id and title, proof, a source tag and "Provided <date>" (phone-08). */
+@media (max-width: 899px) {
+  .pbc-card { margin-top: 24px; padding: 0; border: 0; background: none; box-shadow: none; }
+  .pbc-head { display: block; padding: 20px 18px; border: 1px solid var(--site-line); border-radius: 14px; background: #fff; box-shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 18px 30px -24px rgba(16, 24, 40, .2); }
+  .pbc-head h3 { font-size: 15px; }
+  .pbc-head h3 b { display: block; margin-bottom: 4px; font: 800 26px/1.1 var(--font-head); letter-spacing: -.035em; word-spacing: .04em; color: var(--site-ink); }
+  .pbc-head h3 > .pbc-sep { display: none; }
+  .pbc-period-sep { display: inline; }
+  .pbc-period { display: inline; }
+  .pbc-head .meter { margin-top: 14px; }
+  .pbc-head .pbc-count { margin-top: 10px; color: #4b5568; font-size: 15px; font-weight: 400; }
+  .pbc-card table, .pbc-card tbody { display: block; }
+  .pbc-card thead { display: none; }
+  .pbc-card tbody tr { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: 'title title title' 'proof proof proof' 'source date status'; align-items: center; column-gap: 10px; margin-top: 12px; padding: 16px 16px 14px; border: 1px solid var(--site-line); border-radius: 14px; background: #fff; box-shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 18px 30px -24px rgba(16, 24, 40, .2); }
+  .pbc-card tbody tr > * { height: auto !important; padding: 0 !important; border: 0 !important; background: none !important; border-radius: 0 !important; }
+  .pbc-card tbody tr.pbc-drift { background: #f2f7fe; border-color: #cfe1fb; }
+  .pbc-card tbody th { grid-area: title; font-size: 16px; font-weight: 700; color: var(--site-ink); letter-spacing: -.01em; }
+  .pbc-card tbody th b { margin-right: 4px; font-weight: 700; }
+  .pbc-proof { grid-area: proof; margin-top: 4px; font-size: 14.5px !important; }
+  .pbc-source { grid-area: source; margin-top: 12px; }
+  .source-tag { gap: 8px; padding: 6px 12px 6px 10px; border-radius: 8px; background: #eef4fe; color: var(--site-ink); font-size: 14px; }
+  .source-tag .mark, .source-tag svg { width: 20px; height: 20px; }
+  .pbc-provided { grid-area: date; justify-self: end; margin-top: 12px; font-size: 14px !important; }
+  .pbc-provided { display: flex; align-items: center; }
+  .pbc-phone-word { display: inline; margin-right: .3em; }
+  .pbc-provided .status { order: 2; margin: 0 0 0 8px; width: 22px; height: 22px; }
+  .pbc-status { grid-area: status; margin-top: 12px; }
+  .pbc-status .status { width: 26px; height: 26px; }
+}
+@media (min-width: 761px) and (max-width: 899px) {
+  .pbc-card tbody { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 12px; }
+  .pbc-card tbody tr { grid-template-rows: auto 1fr auto; }
+}

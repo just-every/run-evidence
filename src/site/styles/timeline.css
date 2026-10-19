@@ -1,0 +1,91 @@
+/* page-s1 page-02: the year on a true date scale. --at, --from and --to are fractions of Mar 1 – Dec 31. */
+.band-timeline { padding: 94px 0 96px; }
+.band-timeline .head h2 { margin-bottom: 18px; }
+.band-timeline .lede { font-size: 31px; line-height: 1.3; letter-spacing: -.012em; }
+.tl-card { margin-top: 54px; padding: 82px 54px 72px 0; }
+.tl-scale { --line: 172px; position: relative; height: 308px; margin-left: 276px; }
+.tl-line { position: absolute; left: 0; right: 0; top: var(--line); border-top: 2px solid #dde3ec; }
+.tl-band { position: absolute; left: calc(var(--from) * 100%); width: calc((var(--to) - var(--from)) * 100%); top: calc(var(--line) - 170px); height: 214px; border-radius: 12px; background: linear-gradient(180deg, #e8f1fe, #edf4fe); }
+.tl-band span { display: block; padding-top: 15px; text-align: center; color: #1f52d6; font-size: 17px; font-weight: 600; letter-spacing: -.005em; white-space: nowrap; }
+.tl-month { position: absolute; top: var(--line); left: calc(var(--at) * 100%); width: calc((var(--to) - var(--at)) * 100%); padding-top: 18px; text-align: center; color: #8a93a6; font-size: 16px; line-height: 1; }
+.tl-month i, .tl-end { position: absolute; left: 0; top: -5px; height: 11px; border-left: 1.5px solid #cdd4df; }
+.tl-end { left: 100%; top: calc(var(--line) - 5px); }
+.tl-mark { --c: 0px; position: absolute; left: calc(var(--at) * 100%); top: var(--line); width: 0; height: 0; z-index: 1; }
+.tl-pair-before { --c: -9px; }
+.tl-pair-after { --c: 9px; }
+.tl-dot { position: absolute; left: calc(var(--c) - 9px); top: -8px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; color: #fff; }
+.tl-dot svg { width: 13px; height: 13px; stroke-width: 3.2; }
+.tl-open { background: #fff; border: 2.5px solid #8a93a6; }
+.tl-fail { background: var(--site-red); }
+.tl-fail svg { stroke-width: 3.6; }
+.tl-pass { background: var(--site-green); }
+.tl-blue { width: 12px; height: 12px; left: calc(var(--c) - 6px); top: -5px; background: #1d5fe0; }
+.tl-drift { width: 13px; height: 13px; left: calc(var(--c) - 6.5px); top: -5.5px; background: var(--site-red); }
+.tl-fixed { position: absolute; left: 8px; top: -9px; display: grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; background: var(--site-green); border: 1.5px solid #fff; }
+.tl-fixed svg { width: 9px; height: 9px; stroke-width: 3.6; }
+.tl-report { width: 26px; height: 26px; left: calc(var(--c) - 13px); top: -12px; box-shadow: 0 0 0 7px rgba(34, 168, 98, .17); }
+.tl-report svg { width: 16px; height: 16px; }
+.tl-stem { position: absolute; left: calc(var(--c) - .75px); height: 54px; border-left: 1.5px solid #c8cfda; }
+.tl-up .tl-stem { bottom: 12px; }
+.tl-down .tl-stem { top: 12px; height: 62px; }
+.tl-label { position: absolute; display: grid; gap: 7px; white-space: nowrap; line-height: 1.1; }
+.tl-label b { font-size: 18px; font-weight: 700; letter-spacing: -.01em; color: var(--site-ink); }
+.tl-label span { font-size: 16.5px; color: #545e74; }
+.tl-up .tl-label { bottom: 72px; }
+.tl-down .tl-label { top: 78px; }
+.tl-al-end .tl-label { right: calc(8px - var(--c)); text-align: right; }
+.tl-al-start .tl-label { left: calc(var(--c) + 8px); }
+.tl-al-center .tl-label { left: var(--c); transform: translateX(-50%); text-align: center; }
+.tl-rail { display: none; }
+
+@media (max-width: 1440px) {
+  .tl-band span { font-size: 16px; }
+}
+@media (max-width: 1290px) {
+  .tl-card { padding-right: 56px; }
+  .tl-scale { margin-left: 240px; }
+  .tl-label b { font-size: 16px; }
+  .tl-label span { font-size: 15px; }
+  .tl-band span { font-size: 15px; }
+}
+/* Below 1180 px the year runs down a rail (phone-02): one dot per milestone, the window as a pale band. */
+@media (max-width: 1179px) {
+  .band-timeline .lede { font-size: 24px; }
+  .tl-card { max-width: 680px; margin-top: 36px; padding: 34px 36px 36px; }
+  .tl-scale { display: none; }
+  .tl-rail { display: grid; }
+  .tl-rail li { position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 18px; padding: 0 0 30px; }
+  .tl-rail li:last-child { padding-bottom: 0; }
+  .tl-rail li::before { content: ''; position: absolute; left: 21px; top: 22px; bottom: -2px; border-left: 2px solid #d5dce6; }
+  .tl-rail li:last-child::before { display: none; }
+  .tl-rail .tl-window::after { content: ''; position: absolute; left: 12px; width: 20px; top: 0; bottom: 0; background: #e3eefd; z-index: -1; }
+  .tl-rail .tl-window-opens::after { top: 11px; border-radius: 10px 10px 0 0; }
+  .tl-rail .tl-window-closes::after { bottom: auto; height: 11px; border-radius: 0 0 10px 10px; }
+  .tl-rail .tl-window::before { border-color: #8db9f6; }
+  .tl-rail .tl-window-closes::before { border-color: #d5dce6; }
+  .tl-rail { position: relative; z-index: 0; }
+  .tl-rail .tl-dot { position: relative; left: auto; top: auto; justify-self: center; margin-top: 2px; width: 22px; height: 22px; z-index: 1; }
+  .tl-rail .tl-dot svg { width: 14px; height: 14px; }
+  .tl-rail .tl-open { width: 20px; height: 20px; margin-top: 3px; }
+  .tl-rail .tl-blue { width: 20px; height: 20px; margin-top: 3px; border: 3px solid #fff; box-shadow: 0 0 0 1px #d5e3fa; }
+  .tl-rail .tl-drift { width: 22px; height: 22px; }
+  .tl-rail .tl-drift::before { content: '!'; color: #fff; font: 800 14px/22px var(--font-body); }
+  .tl-rail .tl-fixed { left: 13px; top: 8px; width: 15px; height: 15px; }
+  .tl-rail .tl-report { width: 30px; height: 30px; margin-top: -2px; box-shadow: 0 0 0 7px rgba(34, 168, 98, .17); }
+  .tl-rail .tl-report svg { width: 18px; height: 18px; }
+  .tl-rail p { display: grid; gap: 4px; }
+  .tl-rail b { font-size: 19px; font-weight: 700; letter-spacing: -.01em; }
+  .tl-rail p span { color: #545e74; font-size: 16.5px; line-height: 1.4; }
+  .tl-rail p.tl-window-label { display: block; grid-column: 2; justify-self: start; margin: 18px 0 0 -10px; padding: 6px 12px; border-radius: 8px; background: #e3eefd; color: #1f52d6; font-size: 15px; font-weight: 600; }
+}
+@media (max-width: 760px) {
+  .band-timeline { padding: 52px 0 48px; }
+  .band-timeline .lede { font-size: 19px; line-height: 1.4; }
+  .tl-card { margin-top: 26px; padding: 24px 18px 26px 12px; }
+  .tl-rail li { grid-template-columns: 40px minmax(0, 1fr); column-gap: 12px; padding-bottom: 24px; }
+  .tl-rail li::before { left: 19px; }
+  .tl-rail .tl-window::after { left: 10px; }
+  .tl-rail b { font-size: 17px; }
+  .tl-rail p span { font-size: 15px; }
+  .tl-rail p.tl-window-label { font-size: 13.5px; margin-left: -6px; }
+}
