@@ -1,3 +1,4 @@
+import {decodeArchive} from './helpers/portable-format.mjs'
 // Risk register, shipped library, spreadsheet import and versioned scoring
 // through the owner's doors and the Cron Trigger. Only the mail edge is faked.
 process.env.RER_SERVER_JOURNEY = '1'
@@ -166,7 +167,7 @@ try {
   const bytes = await archive.arrayBuffer(), restored = await runtime()
   try {
    await restored.signin()
-   const result = await restored.fetch('/api/archive/restore', {method:'POST', headers:{origin:restored.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore'}, body:bytes})
+   const result = await restored.fetch('/api/archive/restore', {method:'POST', headers:{origin:restored.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore', 'x-evidence-erasure-history':'unverified acknowledged'}, body:bytes})
    assert.equal(result.status, 200, await result.text())
    const copy = await (await restored.fetch('/api/risks/' + risk.id)).json()
    assert.deepEqual(copy.risk, detail.risk); assert.deepEqual(copy.assessments, detail.assessments); assert.deepEqual(copy.methods, detail.methods)
@@ -187,18 +188,17 @@ try {
    assert.deepEqual(detail.methods[0].likelihood_definitions,[])
    assert.match(await (await prior.fetch('/app/risks/'+id)).text(), /legacy, not recorded/)
    const exported = Buffer.from(await (await prior.fetch('/api/archive/export')).arrayBuffer())
-   const magic = Buffer.from('EVIDENCE-ARCHIVE\n'), length = exported.readUInt32BE(magic.length)
-   const envelope = JSON.parse(exported.subarray(magic.length+4,magic.length+4+length))
-   const manifest = JSON.parse(envelope.manifest)
+   const magic = Buffer.from('EVIDENCE-ARCHIVE\n'), decoded = decodeArchive(exported), manifest = decoded.manifest
    manifest.version = 4; delete manifest.extensions.program.files; delete manifest.extensions.program.rows.handover_events; delete manifest.extensions.program.rows.handover_settings; for (const t of ['vuln_imports','vuln_findings','vuln_documents','vuln_events','control_revisions','requirement_revisions','run_control_definitions','custom_frameworks','custom_framework_requirements','custom_framework_revisions','custom_framework_mappings']) delete manifest.extensions.program.rows[t]; manifest.extensions.program.rows.risk_methods = []
    for (const row of manifest.extensions.program.rows.risks) delete row.library_revision
    const text = JSON.stringify(manifest), legacyEnvelope = Buffer.from(JSON.stringify({manifest:text,sha256:createHash('sha256').update(text).digest('hex')}))
    const size = Buffer.alloc(4); size.writeUInt32BE(legacyEnvelope.length)
-   const legacy = Buffer.concat([magic,size,legacyEnvelope,exported.subarray(magic.length+4+length)])
+   const u32=n=>{const b=Buffer.alloc(4);b.writeUInt32BE(n);return b}
+   const legacy = Buffer.concat([magic,size,legacyEnvelope,...decoded.entries.flatMap(e=>[u32(Buffer.byteLength(e.path)),Buffer.from(e.path),u32(e.bytes.length),e.bytes])])
    const target = await runtime()
    try {
     await target.signin()
-    const restored = await target.fetch('/api/archive/restore',{method:'POST',headers:{origin:target.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore'},body:legacy})
+    const restored = await target.fetch('/api/archive/restore',{method:'POST',headers:{origin:target.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore', 'x-evidence-erasure-history':'unverified acknowledged'},body:legacy})
     assert.equal(restored.status,200,await restored.text())
     const copy = await (await target.fetch('/api/risks/'+id)).json()
     assert.equal(copy.assessments[0].score,6);assert.deepEqual(copy.methods[0].likelihood_definitions,[])

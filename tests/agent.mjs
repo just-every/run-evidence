@@ -111,7 +111,7 @@ try {
   const destination=await runtime()
   try {
    await destination.signin()
-   const restored=await destination.fetch('/api/archive/restore',{method:'POST',headers:{origin:destination.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore'},body:bytes})
+   const restored=await destination.fetch('/api/archive/restore',{method:'POST',headers:{origin:destination.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore', 'x-evidence-erasure-history':'unverified acknowledged'},body:bytes})
    assert.equal(restored.status,200)
    const after=await (await destination.fetch('/api/agent')).json()
    assert.deepEqual(after.proposals,before.proposals)

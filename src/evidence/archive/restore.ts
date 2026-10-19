@@ -1,3 +1,4 @@
+import { barrierStatements } from './capabilities'
 /// <reference types="node" />
 import { mkdtemp,writeFile,readFile,rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -73,7 +74,7 @@ export async function restoreArchive(env:Store, body:ReadableStream<Uint8Array>,
   statements.push(...extensionStatements(env,manifest))
   // Self-referential receipt foreign keys are checked at transaction completion.
   statements.splice(1,0,env.DB.prepare('PRAGMA defer_foreign_keys=ON'))
-  statements.push(env.DB.prepare('DELETE FROM custody_admission'))
+  statements.push(...barrierStatements(env),env.DB.prepare('DELETE FROM custody_admission'))
   await env.DB.batch(statements)
   written.length=0
   return {...summary(manifest),manifest_sha256:envelope.sha256,dry_run:false,folders_closed:manifest.rows.review_folders.length}

@@ -64,7 +64,7 @@ try{
  })
  await scenario('Full owner archive carries import journal and source originals into inert restored history',async()=>{
   const response=await app.fetch('/api/archive/export');assert.equal(response.status,200);const archive=await response.arrayBuffer()
-  target=await runtime();await target.signin();const restored=await target.fetch('/api/archive/restore',{method:'POST',headers:{origin:target.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore'},body:archive});assert.equal(restored.status,200)
+  target=await runtime();await target.signin();const restored=await target.fetch('/api/archive/restore',{method:'POST',headers:{origin:target.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore', 'x-evidence-erasure-history':'unverified acknowledged'},body:archive});assert.equal(restored.status,200)
   assert.deepEqual(await rows(target,'import_reviews'),await rows(app,'import_reviews'));assert.deepEqual(await rows(target,'ik_provenance'),await rows(app,'ik_provenance'));assert.deepEqual(await rows(target,'import_active'),await rows(app,'import_active'))
   const r=await(await target.mf.getR2Bucket('EXHIBITS')).get(review.object_key);assert.ok(r);assert.equal(await digest(await r.arrayBuffer()),review.archive_sha256)
   assert.equal((await post(target,'/api/import/'+review.id+'/resume',{})).status,403)

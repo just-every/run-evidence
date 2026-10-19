@@ -1,3 +1,4 @@
+import { requireCapability } from '../archive/capabilities'
 import type { Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
 import { auditStatement, oneOf, text, type Actor, type Input } from '../door'
@@ -33,7 +34,7 @@ export function mappingOf(row: Pick<DestinationRow, 'mapping_json' | 'provider'>
  return { issue_type: value.issue_type ?? '', labels: value.labels ?? ['evidence', 'compliance'], priorities: { ...adapters[row.provider].defaultPriorities, ...(value.priorities ?? {}) }, assignees: value.assignees ?? {} }
 }
 export const reference = (row: DestinationRow): DestinationRef => ({ provider: row.provider, api_base: row.api_base, account: row.account, project: row.project, mapping: mappingOf(row) })
-export const secretOf = (env: Bindings, row: DestinationRow) => row.secret_ciphertext && row.secret_iv ? unseal(env, row.secret_ciphertext, row.secret_iv, row.id) : Promise.reject(new TrackerFailure('unauthorized', 0, 'No credential is held for this destination; reconnect it.'))
+export const secretOf = async (env: Bindings, row: DestinationRow) => { await requireCapability(env,'writes',row.id); return row.secret_ciphertext && row.secret_iv ? unseal(env, row.secret_ciphertext, row.secret_iv, row.id) : Promise.reject(new TrackerFailure('unauthorized', 0, 'No credential is held for this destination; reconnect it.')) }
 export const hookSecretOf = (env: Bindings, row: DestinationRow) => row.hook_ciphertext && row.hook_iv ? unseal(env, row.hook_ciphertext, row.hook_iv, row.id + ':hook') : Promise.resolve(null)
 // Mapping form: issue type, labels, one priority per severity and assignee lines.
 function parseMapping(provider: Provider, input: Input): Mapping {

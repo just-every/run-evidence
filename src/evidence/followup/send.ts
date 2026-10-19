@@ -1,3 +1,4 @@
+import { capabilityAllowed } from '../archive/capabilities'
 import type { Bindings } from '../../auth.server'
 import { operatorMail } from '../../mail.server.mjs'
 import { escape } from '../ui'
@@ -19,6 +20,7 @@ async function email(env: Bindings, id: string, message: Followup): Promise<Outc
  } catch (error) { return { state: 'uncertain', detail: 'Send failed before a provider answer: ' + (error instanceof Error ? error.message : 'unknown').slice(0, 120) } }
 }
 export async function sendFollowup(env: Bindings, message: Followup, now: Date): Promise<SendResult> {
+ if (!await capabilityAllowed(env,'mail')) return 'paused'
  if (message.scheduled !== false && !inBusinessWindow(await settings(env), now)) return 'deferred'
  if (await env.DB.prepare('SELECT 1 FROM followup_pauses WHERE subject_id=? AND resumed_at IS NULL').bind(message.subject).first()) return 'paused'
  const via = (await env.DB.prepare('SELECT n.via FROM notify_preferences n JOIN people p ON p.id=n.person_id WHERE p.email=?').bind(message.recipient).first<{ via: 'email' | 'slack' | 'teams' }>())?.via ?? 'email'

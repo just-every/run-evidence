@@ -1,3 +1,4 @@
+import {decodeArchive} from './helpers/portable-format.mjs'
 // Labelled CSV populations and Inventory through the owner's doors: dry runs,
 // whole-or-nothing admission, reviewable matches, differences between lists,
 // staleness and custody of the original file. Only mail is faked.
@@ -93,7 +94,7 @@ try {
   const destination = await runtime()
   try {
    await destination.signin(); await destination.clock('2026-12-01T12:00:00Z')
-   const restore = (bytes, dry = false) => destination.fetch('/api/archive/restore' + (dry ? '?dry-run=1' : ''), { method: 'POST', headers: { origin: destination.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore' }, body: bytes })
+   const restore = (bytes, dry = false) => destination.fetch('/api/archive/restore' + (dry ? '?dry-run=1' : ''), { method: 'POST', headers: { origin: destination.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore', 'x-evidence-erasure-history':'unverified acknowledged' }, body: bytes })
    assert.equal((await restore(raw, true)).status, 200)
    assert.equal((await (await destination.fetch('/api/populations')).json()).uploads.length, 0)
    const restored = await restore(raw); assert.equal(restored.status, 200, await restored.clone().text())
@@ -108,7 +109,7 @@ try {
   const bucket = await app.mf.getR2Bucket('EXHIBITS')
   const key = (await app.db.prepare('SELECT object_key FROM population_uploads WHERE id=?').bind(first.id).first()).object_key
   await bucket.put(key, 'changed original')
-  const manifest = (await get('/api/archive/manifest')).manifest
+  const manifest = decodeArchive(Buffer.from(await(await app.fetch('/api/archive/export')).arrayBuffer())).manifest
   const file = manifest.extensions.program.files.find(f => f.path.endsWith(first.id))
   assert.equal(file.available, false); assert.match(file.reason, /changed/)
   assert.equal((await app.fetch(`/app/populations/${first.id}/file`)).status, 410)
@@ -116,7 +117,7 @@ try {
   const unavailable = await runtime()
   try {
    await unavailable.signin()
-   const restored = await unavailable.fetch('/api/archive/restore', { method: 'POST', headers: { origin: unavailable.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore' }, body: missingRaw })
+   const restored = await unavailable.fetch('/api/archive/restore', { method: 'POST', headers: { origin: unavailable.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore', 'x-evidence-erasure-history':'unverified acknowledged' }, body: missingRaw })
    assert.equal(restored.status, 200, await restored.clone().text())
    assert.equal((await unavailable.fetch(`/app/populations/${first.id}/file`)).status, 410)
    assert.equal((await (await unavailable.fetch('/api/populations/' + first.id)).json()).upload.id, first.id)

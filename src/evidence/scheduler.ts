@@ -1,3 +1,4 @@
+import { capabilityAllowed } from './archive/capabilities'
 import type { Bindings } from '../auth.server'
 import { runDueTests, runTest } from './tests/engine'
 import { escalate, runRetests } from './remedy/storage'
@@ -22,6 +23,7 @@ export async function scheduledWork(env: Bindings, now: Date) {
  const step = async (name: string, work: () => Promise<number>) => { try { outcome[name] = await work() } catch (error) { console.error('Scheduled step failed', name, error instanceof Error ? error.message : ''); outcome[name] = 'failed' } }
  await step('collections', () => collectDue(env, now))
  await step('tickets', () => syncDue(env, now))
+ if (!await capabilityAllowed(env,'schedules')) return outcome
  await step('policies', async () => (await syncPolicies(env, now)) + (await syncAttestations(env, now)))
  await step('tests', () => runDueTests(env, now))
  await step('access reviews', () => accessReviewWork(env, now))

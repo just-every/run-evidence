@@ -1,3 +1,4 @@
+import { capabilityAllowed } from '../archive/capabilities'
 import { Refusal } from '../upload'
 import type { Bindings } from '../../auth.server'
 import { backoffUpdate, reconnectUpdate, startRun } from './runs'
@@ -18,6 +19,7 @@ const repositorySchema: ResourceSchema = { fields: { private: 'boolean', archive
 const organizationSchema: ResourceSchema = { fields: { login: 'string', two_factor_requirement_enabled: 'boolean', readable: 'boolean' }, required: [] }
 const HOUR = 3600000
 export async function runCollection(env: Bindings, connection: Connection, trigger: 'schedule' | 'manual', now: Date): Promise<{ run: string | null; outcome: string }> {
+ if (!await capabilityAllowed(env,'collections',connection.id)) return {run:null,outcome:'inactive after restore'}
  if (connection.provider === 'private-git') throw new Refusal('Run the installed read-only collector on its private computer.', 409)
  if (connection.provider === 'aws') return runAwsCollection(env, connection, trigger, now)
  if (connection.provider === 'knowbe4') return runKnowBe4(env, connection, trigger, now)

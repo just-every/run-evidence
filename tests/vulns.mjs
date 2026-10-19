@@ -133,7 +133,7 @@ try {
   const destination = await runtime()
   try {
    await destination.signin(); await destination.clock('2026-10-20T12:00:00Z')
-   const restored = await destination.fetch('/api/archive/restore', { method: 'POST', headers: { origin: destination.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore' }, body: raw })
+   const restored = await destination.fetch('/api/archive/restore', { method: 'POST', headers: { origin: destination.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore', 'x-evidence-erasure-history':'unverified acknowledged' }, body: raw })
    assert.equal(restored.status, 200, await restored.clone().text())
    assert.deepEqual(await (await destination.fetch('/api/vulnerabilities')).json(), await get('/api/vulnerabilities'))
    assert.deepEqual(await (await destination.fetch('/api/vulnerabilities/' + sqli.id)).json(), await get('/api/vulnerabilities/' + sqli.id))

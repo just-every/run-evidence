@@ -27,10 +27,8 @@ export async function installation(root) {
  }
  const stop=async()=>{
   if(!server)return
-  try {await run(['dev','--stop'])} finally {
-   if(server.exitCode===null&&server.signalCode===null)server.kill('SIGTERM')
-   await new Promise(done=>server.exitCode!==null||server.signalCode!==null?done():server.once('close',done));server=null
-  }
+  if(server.exitCode===null&&server.signalCode===null)server.kill('SIGTERM')
+  await new Promise(done=>server.exitCode!==null||server.signalCode!==null?done():server.once('close',done));server=null
  }
  try {
   await cp(root,dir,{recursive:true,filter:path=>!['node_modules','.git','.wrangler','.rer','.seed','.cache','dist','.tanstack','.dev.vars'].includes(basename(path))&&!basename(path).startsWith('.env')})

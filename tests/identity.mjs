@@ -134,7 +134,7 @@ try {
   assert.equal(ids.accounts.filter(a => a.match?.state === 'approved').length, 2)
   const exported = Buffer.from(await (await app.fetch('/api/archive/export')).arrayBuffer())
   const target = await runtime(); await target.signin()
-  assert.equal((await target.fetch('/api/archive/restore', { method: 'POST', headers: { origin: target.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore' }, body: exported })).status, 200)
+  assert.equal((await target.fetch('/api/archive/restore', { method: 'POST', headers: { origin: target.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore', 'x-evidence-erasure-history':'unverified acknowledged' }, body: exported })).status, 200)
   assert.deepEqual((await target.db.prepare('SELECT * FROM identity_matches ORDER BY rowid').all()).results, (await app.db.prepare('SELECT * FROM identity_matches ORDER BY rowid').all()).results)
   assert.deepEqual([...new Set((await target.db.prepare('SELECT status,secret_ciphertext FROM connections').all()).results.map(r => JSON.stringify(r)))], [JSON.stringify({ status: 'inactive after restore', secret_ciphertext: null })])
   await target.close()

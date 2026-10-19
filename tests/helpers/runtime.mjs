@@ -8,11 +8,11 @@ const dependency = createRequire(require.resolve('wrangler/package.json'))
 const { unstable_splitSqlQuery } = dependency('wrangler')
 const { Miniflare, convertV4MiniflareOptions } = dependency('miniflare')
 const { build } = dependency('esbuild')
-export async function runtime({ migrationThrough, outbound } = {}) {
+export async function runtime({ migrationThrough, outbound, ownerEmail = 'owner@example.test' } = {}) {
  const dir = await mkdtemp(join(tmpdir(),'evidence-http-'))
  const bundled = await build({ entryPoints:['tests/helpers/worker.ts'], bundle:true, write:false, format:'esm', platform:'neutral', target:'es2022', external:['cloudflare:*','node:*'] })
  const origin = 'http://127.0.0.1:8787'
- const vars = { AUTH_LOCAL:'true',AUTH_ORIGIN:origin,OWNER_EMAIL:'owner@example.test',SESSION_SECRET:randomBytes(32).toString('hex'),SETUP_TOKEN:randomBytes(32).toString('hex'),MAIL_PROVIDER:'resend',MAIL_API_KEY:randomBytes(32).toString('hex'),MAIL_FROM:'auth@localhost.test',RER_DEV_KEY:randomBytes(32).toString('base64url'),HARNESS_NOW:'2026-10-11T12:00:00Z' }
+ const vars = { AUTH_LOCAL:'true',AUTH_ORIGIN:origin,OWNER_EMAIL:ownerEmail,SESSION_SECRET:randomBytes(32).toString('hex'),SETUP_TOKEN:randomBytes(32).toString('hex'),MAIL_PROVIDER:'resend',MAIL_API_KEY:randomBytes(32).toString('hex'),MAIL_FROM:'auth@localhost.test',RER_DEV_KEY:randomBytes(32).toString('base64url'),HARNESS_NOW:'2026-10-11T12:00:00Z' }
  const messages = []
  // Fake only the paid mail-provider edge; authentication and D1/R2 remain real.
  // A suite may add another provider's fake at the same network edge (outbound).
