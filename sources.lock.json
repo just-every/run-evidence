@@ -2809,7 +2809,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "93fdbe53ad4ccdf5af20ca17be36b46c50a4c907d0ff63ad68528c88d53256b9",
+      "sha256": "9c213c717baca52e238295d2edfd7fdd5204500dcf3920fe30da9a248cf7712e",
       "executable": false
     },
     "AGENTS.md": {
@@ -2825,7 +2825,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "6d590c510cdd08846a0fd53085bb7fe07dd4f1f70ed3445ee768b85edf23c8ab",
+      "sha256": "66b5cdbb1ac64197f67ee9e286e95ad14040d1bb61c3c882339357e341b58153",
       "executable": false
     },
     "DEMO.md": {
@@ -2853,7 +2853,7 @@
       "executable": false
     },
     "docs/BACKUP-RESTORE.md": {
-      "sha256": "b4686a67d5da8948685000f9a3b34cb8cb440d837e1430b568835ef9aa23869d",
+      "sha256": "77fc92f4b6094919a0c5bc3ba31b85194e772260c78fd4e98ed6762125433544",
       "executable": false
     },
     "docs/DRATA-IMPORT.md": {
@@ -3729,7 +3729,7 @@
       "executable": false
     },
     "src/evidence/attest/storage.ts": {
-      "sha256": "fccf3c806ea4206764a2b111105c81348e0494ed7f42c746fb690e9aac2b539f",
+      "sha256": "1fac147fdd68f725a0d7670c3bb741918fe9b6d675797a27b3f6c3c7e9e40e24",
       "executable": false
     },
     "src/evidence/cadence.ts": {

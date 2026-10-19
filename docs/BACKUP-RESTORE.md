@@ -18,7 +18,7 @@ An archive from before an erasure cannot reveal an erasure performed afterward. 
 
 Open **Yours**, then **Evidence archive**. Inspect record counts, available bytes and unavailable entries. Download the archive and the latest erasure journal. Preserve both in your recovery set.
 
-The archive streams records and file parts. It does not stop at the former 20,000-record or 64 MiB aggregate boundaries. Each frame is bounded; large transfers use multiple parts. Every portable table and blob is accounted for, and unknown tables, columns or object namespaces refuse export. A concurrent source mutation or changed file aborts the export rather than claiming a complete snapshot. Retain only completed exports.
+The current v10 archive has no total-archive ceiling: archives of any total size stream through bounded record pages, frames and file parts. The former 20,000-record and 64 MiB aggregate boundaries do not apply. Individual original files retain their public-door size limits. Every portable table and blob is accounted for, and unknown tables, columns or object namespaces refuse export. A concurrent source mutation or changed file aborts the export rather than claiming a complete snapshot. Retain only completed exports.
 
 ## Prepare a separate empty destination
 

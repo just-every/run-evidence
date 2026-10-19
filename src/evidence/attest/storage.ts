@@ -28,12 +28,12 @@ export async function assign(env: Bindings, actor: Actor, policy: string, input:
  if (!people.length) throw new Refusal('Nobody matches that audience.')
  const at = now.toISOString()
  const results = await env.DB.batch([
-  ...people.map(p => env.DB.prepare("INSERT INTO policy_assignments(id,policy_id,revision_id,person_id,assigned_by,assigned_at,due_date,state) VALUES(?,?,?,?,?,?,?,'pending') ON CONFLICT(revision_id,person_id) DO NOTHING").bind(crypto.randomUUID(), policy, revision.id, p.id, actor.name, at, due)),
+  ...people.map(p => env.DB.prepare("INSERT INTO policy_assignments(id,policy_id,revision_id,person_id,assigned_by,assigned_at,due_date,state) VALUES(?,?,?,?,?,?,?,'pending') ON CONFLICT(revision_id,person_id) DO NOTHING RETURNING id").bind(crypto.randomUUID(), policy, revision.id, p.id, actor.name, at, due)),
   auditStatement(env, actor, 'policy.assigned', 'policy:' + policy, now, 'succeeded', `version ${revision.version} to ${audience} (${people.length}) due ${due}`),
   ...await catalogueStatements(env, 'attestations', actor, now),
  ])
  await syncAttestations(env, now)
- return { assigned: results.slice(0, people.length).reduce((n, r) => n + r.meta.changes, 0) }
+ return { assigned: results.slice(0, people.length).reduce((n, r) => n + r.results.length, 0) }
 }
 // A material revision replaces open and completed assignments of earlier
 // revisions with new ones for the same people; earlier acknowledgments stay.
