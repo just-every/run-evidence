@@ -76,7 +76,7 @@ try {
   const recovered = await get('/api/tests/' + supported)
   assert.equal(recovered.latest[0].result, 'pass'); assert.ok(recovered.runs.some(r => r.unknown === 1))
  })
- await scenario('credentials bind one installation and connection, rotate/revoke immediately, stay secret in custody, and missed reads become stale without invented observations', async () => {
+ await scenario('PORTABLE-001 / credentials bind one installation and connection, rotate/revoke immediately, stay secret in custody, and missed reads become stale without invented observations', async () => {
   const second = await post('/api/collectors', { label: 'Second private service', reviewed: 'yes' })
   assert.equal((await cli(issued.token, repo, second.id, 'Second private service')).code, 1)
   const rotated = await post(`/api/collectors/${issued.id}/rotate`, {}, 200)

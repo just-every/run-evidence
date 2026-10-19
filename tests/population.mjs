@@ -74,7 +74,7 @@ try {
   assert.equal(manualDevice.encrypted, true); assert.equal(manualDevice.tests, 'unknown: needs a source read')
   assert.equal(manualDevice.provenance, 'manually-asserted')
  })
- await scenario('POPULATION-001: a revised roster keeps the original file and shows joiners, leavers and removed rows; past its refresh window a population is stale', async () => {
+ await scenario('PORTABLE-001 / POPULATION-001: a revised roster keeps the original file and shows joiners, leavers and removed rows; past its refresh window a population is stale', async () => {
   const revised = roster([['ana@northstar.test', 'Ana Ruiz', 'W-2', '2024-01-02', ''], ['ben@northstar.test', 'Ben Ode', 'W-2', '2023-05-01', '2026-10-20'], ['cy@northstar.test', 'Cy Park', 'W-2', '2026-10-21', '']])
   const fields = { ...rosterFields, as_of: '2026-10-22', filename: 'justworks-oct22.csv' }
   const dry = (await upload(fields, revised, 200)).body

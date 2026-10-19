@@ -128,7 +128,7 @@ try {
   assert.ok(lines.slice(1).every(l => l.includes(',manual,Bishop Fox,2026-10-01,bishop-fox-2026.pdf,2026-10-01,')))
   assert.match(lines.find(l => l.startsWith(sqli.id)), /,closed,closed after SLA,.*Evidence owner$/)
  })
- await scenario('VULN-002: findings, retest decisions and the retest letter survive custody export and restore', async () => {
+ await scenario('PORTABLE-001 / VULN-002: findings, retest decisions and the retest letter survive custody export and restore', async () => {
   const raw = new Uint8Array(await (await app.fetch('/api/archive/export')).arrayBuffer())
   const destination = await runtime()
   try {

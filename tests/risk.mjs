@@ -129,7 +129,7 @@ try {
   assert.equal((await (await v1(push.token, 'POST', '/v1/risks', { title: 'Pushed risk from GRC sheet', scenario: 'Imported via script', likelihood: 3, impact: 2 })).json()).origin, 'api')
   assert.match((await get('/api/risks')).risks.find(r => r.title === 'Pushed risk from GRC sheet').source_label, /API token Service inventory/)
  })
- await scenario('RISK-002: Reviewed library provenance, editable risk links, matrix definitions and archive restore preserve earlier assessments', async () => {
+ await scenario('PORTABLE-001 / RISK-002: Reviewed library provenance, editable risk links, matrix definitions and archive restore preserve earlier assessments', async () => {
   const risk = (await get('/api/risks')).risks.find(r => r.origin === 'library')
   const before = await get('/api/risks/' + risk.id)
   const control = before.links.find(l => l.kind === 'control')

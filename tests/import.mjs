@@ -62,7 +62,7 @@ try{
   assert.equal((await rows(app,'ik_provenance')).length,4);assert.ok((await rows(app,'ik_originals')).length>=2)
   const again=await post(app,'/api/import/'+review.id+'/commit',{approve:'commit',fingerprint:plan.review.fingerprint});assert.equal(again.status,200);assert.equal((await rows(app,'receipts')).length,2)
  })
- await scenario('Full owner archive carries import journal and source originals into inert restored history',async()=>{
+ await scenario('PORTABLE-001 / Full owner archive carries import journal and source originals into inert restored history',async()=>{
   const response=await app.fetch('/api/archive/export');assert.equal(response.status,200);const archive=await response.arrayBuffer()
   target=await runtime();await target.signin();const restored=await target.fetch('/api/archive/restore',{method:'POST',headers:{origin:target.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore', 'x-evidence-erasure-history':'unverified acknowledged'},body:archive});assert.equal(restored.status,200)
   assert.deepEqual(await rows(target,'import_reviews'),await rows(app,'import_reviews'));assert.deepEqual(await rows(target,'ik_provenance'),await rows(app,'ik_provenance'));assert.deepEqual(await rows(target,'import_active'),await rows(app,'import_active'))

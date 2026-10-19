@@ -107,7 +107,7 @@ try {
   assert.equal(inactive['Ben'], 'fail'); assert.equal(inactive['Cy Park'], 'fail'); assert.equal(inactive['Ana'], 'pass'); assert.equal(inactive['Frank'], 'unknown')
   assert.ok((await get('/api/remediation')).open.some(o => o.resource_name.startsWith('Partner')))
  })
- await scenario('Matches are proposed by email and decided by a person; a duplicate is reconciled by human decisions, and a disabled account and a denied scope stay visible', async () => {
+ await scenario('PORTABLE-001 / Matches are proposed by email and decided by a person; a duplicate is reconciled by human decisions, and a disabled account and a denied scope stay visible', async () => {
   const ana = await owner('/api/people', { name: 'Ana Ruiz', email: 'ana@northstar.test', kind: 'employee' }), dana = await owner('/api/people', { name: 'Dana Fox', email: 'dana@northstar.test', kind: 'contractor' })
   await app.clock('2026-10-11T13:00:00Z'); await app.tick()
   let ids = await get('/api/identities')

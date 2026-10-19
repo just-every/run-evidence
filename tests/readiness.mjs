@@ -158,7 +158,7 @@ try {
   assertReadiness(historic,47,94);assert.equal(historic.exceptions.length,0)
   await reconcileCsv('',current)
  })
- await scenario('unrun and unsupported work cannot pass, and an empty applicability denominator has no percentage', async () => {
+ await scenario('PORTABLE-001 / unrun and unsupported work cannot pass, and an empty applicability denominator has no percentage', async () => {
   const unsupported = await post('/api/tests',{name:'Hosted review policy is observed',resourceType:'private.git.repository',criteria:JSON.stringify([{attribute:'branch_protection',op:'equals',value:true}]),cadence:'hourly',category:'code',severity:'high',controls:['GOV-09']})
   let current = await fixture.getReady()
   assert.equal(current.requirements.find(r => r.ref === 'CC2.3').ready,false)

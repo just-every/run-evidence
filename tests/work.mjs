@@ -322,7 +322,7 @@ try {
   const group = (await get('/api/tests/' + test.id)).tickets.groups[0]
   assert.equal(group.state, 'open'); assert.equal(group.item_list.split(',').length, 4)
  })
- await scenario('Tickets and their sync history travel in the archive; restored destinations hold no credentials', async () => {
+ await scenario('PORTABLE-001 / Tickets and their sync history travel in the archive; restored destinations hold no credentials', async () => {
   const exported = Buffer.from(await (await app.fetch('/api/archive/export')).arrayBuffer())
   for (const secret of [...Object.values(tracker.tokens), dest.jira.webhook.secret]) assert.ok(!exported.includes(secret))
   const target = await runtime(); await target.signin()
