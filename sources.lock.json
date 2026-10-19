@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "d905c93cd82659c13f9296e5d47f9f04310938da9452ec508a89cfd8bcbb158a",
+  "manifest": "cf324ae42a8e359da6fa2c4f57f8e686301529b4c3c7f117ae588aae7792d203",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2412,6 +2412,7 @@
           "migrations/core/0041_portable.sql",
           "migrations/core/0042_resource_sources.sql",
           "migrations/core/0043_inventory.sql",
+          "migrations/core/0044_access_cadence.sql",
           "package.json",
           "pnpm-lock.yaml",
           "public/apple-touch-icon.png",
@@ -2498,6 +2499,7 @@
           "src/demo-data.ts",
           "src/demo-tests.ts",
           "src/demo.ts",
+          "src/evidence/access/exhibit.ts",
           "src/evidence/access/http.ts",
           "src/evidence/access/storage.ts",
           "src/evidence/agent/archive.ts",
@@ -2822,7 +2824,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "9cfa242702bb01202658dad12c8f62d9f4e055fc1588a3c26eb5d406abfea97c",
+      "sha256": "148f5c2eede774533042ba3e9362b13a55f6216a94780b16820f9afef03653dc",
       "executable": false
     },
     "AGENTS.md": {
@@ -2838,7 +2840,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "9ba647662b08f0d4485dc51e01e82323ba35ba24b3ff9fba7cfb046c585a65e6",
+      "sha256": "827a4163ed74b92f2acebe929bb214cc8a4abc97928d500ef6b25863a812acd6",
       "executable": false
     },
     "DEMO.md": {
@@ -2898,7 +2900,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "d905c93cd82659c13f9296e5d47f9f04310938da9452ec508a89cfd8bcbb158a",
+      "sha256": "cf324ae42a8e359da6fa2c4f57f8e686301529b4c3c7f117ae588aae7792d203",
       "executable": false
     },
     "LICENSE": {
@@ -3075,6 +3077,10 @@
     },
     "migrations/core/0043_inventory.sql": {
       "sha256": "8b8392fca401018bcdeb014ccf89d0330635bd629a035897dede47f00eb78d60",
+      "executable": false
+    },
+    "migrations/core/0044_access_cadence.sql": {
+      "sha256": "7bd8b2538b19b76e64edf3964d6ca5242215443c2c30841f6e15ce3e08efebaf",
       "executable": false
     },
     "ONBOARDING.md": {
@@ -3597,12 +3603,16 @@
       "sha256": "7d24cb83de4302472d944adeb1b0467a54cd1f50112223fded8302c34163fdf6",
       "executable": false
     },
+    "src/evidence/access/exhibit.ts": {
+      "sha256": "08c5790e42cd1a7b545abc209a683a47618d63dba0e1c1d8c60da372d3ab86ca",
+      "executable": false
+    },
     "src/evidence/access/http.ts": {
-      "sha256": "c31b24be96804678d9aa97221b4298b4346474a681fa9076fb8fc078ba9e6308",
+      "sha256": "03571c14a92c23c92b834ecbbab0239dab88ae19c167d79fff9e8f10590c0240",
       "executable": false
     },
     "src/evidence/access/storage.ts": {
-      "sha256": "950cd91590634aa8ffd210ba73fc972eb7826211cac6b3c1e0d8ca4032eb5199",
+      "sha256": "8593ac1c709b7c4966a2e0aee1f6bb2f3ae0598483d2ef97181080459c74ae40",
       "executable": false
     },
     "src/evidence/agent/archive.ts": {
@@ -3722,7 +3732,7 @@
       "executable": false
     },
     "src/evidence/archive/schema.json": {
-      "sha256": "791f3797c5825009fdf12f8c5ef142aba901281a6f091ccad3b9d8e683013d9a",
+      "sha256": "9cfa25b8a6b78d844f6357d7e4df7f13e57a6b191a088b981209650cc1296ba0",
       "executable": false
     },
     "src/evidence/archive/service.ts": {
@@ -5898,7 +5908,7 @@
       "executable": false
     },
     "tests/access.mjs": {
-      "sha256": "78cc81a4632e9c7c3d176580088d86fd01a10da803a90bdedf7b33aeb0c6169e",
+      "sha256": "33c17d06af9a9e1fc0d2719d9890d3fb9b02a0d8c9766fee7f4b3d712a01d1f8",
       "executable": false
     },
     "tests/agent.mjs": {

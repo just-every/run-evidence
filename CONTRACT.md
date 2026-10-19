@@ -433,6 +433,11 @@ Before shipping, identity-source and CSV-roster leavers record their departure t
 
 **ACCESS-001 — Quarterly access-review campaigns.** Schedule quarterly, semi-annual, annual (CADENCE-001) and owner-configured access reviews using a frozen source population of users, service identities, privileges and resources, drawn from identity connectors and from app-level account connectors (APPS-001) with in-app roles and MFA. Apps that are not connected or not behind SSO join a review through an uploaded account list (POPULATION-001), reconciled to people in Inventory and labeled manual provenance. Revocation in such an app is evidenced by a re-uploaded list or an attached exhibit, never by the reviewer's decision alone. Resource owners decide retain/revoke/change with reasons; self-review restrictions and delegated approvals are explicit. Track overdue decisions, reminders, exclusions and actual revocation readback; late discovered accounts become visible supplemental work.
 
+- **Owner-configured cadence.** An owner-configured campaign either runs once over owner-chosen dates (one-off) or repeats every N whole calendar months, N from 1 to 24. When a recurring campaign's period has ended (the UTC date is after its last day), the next one starts with the same sources and resource owners: its start and decision due date move N months (day of month kept, clamped to the month's last day) and its period ends the day before the month-shifted day after the previous end (30 September plus three months ends 31 December).
+- **Revocation evidence.** A connected directory account is verified revoked only by a source read after the request that shows it removed or not active. An uploaded-list account is verified by a newer upload of that app's list without the account (or with it inactive), or by an exhibit the owner attaches; the exhibit is kept as an immutable, digested receipt (PROOF-001) on the adopted access-review control's requirement (AC-04) covering the campaign period, and the revocation names that receipt. A decision alone, a still-listed account or an exhibit on a directory account never closes a revocation. Until AUTH-001 adds roles, the owner acts for the access-review administrator: starts campaigns, excludes, delegates and attaches exhibits.
+- **People reconciliation.** Each frozen account shows the person it is matched to (from the population or identity match, proposed or approved, never a rejected one) and that person's recorded departure; an account with no match says so.
+- **Carried by later clauses.** Done covers every source that exists today (directory connectors and uploaded account lists). APPS-001 inherits the obligation before it ships: its app-level account connectors join campaigns as source-observed populations with in-app roles and MFA, and their revocations close only on source readback; LIFECYCLE-001 and HRIS-001 carry departures from their own sources.
+
 **Acceptance evidence:** Start a quarterly review from Access Reviews, have two resource owners decide on employee, guest and privileged service access, and leave one decision overdue. Request revocation, keep the source account active and inspect unresolved work. Revoke in the source and re-test; export complete decisions, population and period evidence. Add an unconnected SaaS app by uploading its account list: decide revoke on a departed person's account, re-upload the list without that account, and confirm the revocation is evidenced by the new upload with both lists retained.
 
 ### Audit collaboration
@@ -689,7 +694,7 @@ Legacy v1–v9 archives retain their bounded metadata validators: at most 8 MiB 
 
 ## Homepage claims
 
-Every capability claim on the approved homepage (`src/site/landing/`, checked against br's claims truth table of 17 October 2026, rows 1–49 in page order) maps to the clauses that promise it. A claim's status is `done` when every mapped clause is done, `missing` when every one is missing, and `partial` otherwise. "Try the demo" links the hosted demo and is not a capability claim. 49 claims: 10 done, 33 partial, 6 missing.
+Every capability claim on the approved homepage (`src/site/landing/`, checked against br's claims truth table of 17 October 2026, rows 1–49 in page order) maps to the clauses that promise it. A claim's status is `done` when every mapped clause is done, `missing` when every one is missing, and `partial` otherwise. "Try the demo" links the hosted demo and is not a capability claim. 49 claims: 18 done, 25 partial, 6 missing.
 
 | # | Claim | Clause(s) | Status |
 | --- | --- | --- | --- |
@@ -730,7 +735,7 @@ Every capability claim on the approved homepage (`src/site/landing/`, checked ag
 | 35 | "keep every test result, policy and receipt" / "Your evidence, your database" | OWN-001, CUSTODY-001 | partial |
 | 36 | Vendor risk: "Vendors rated by risk, with reviews on time" | VENDOR-001, CADENCE-001 | partial |
 | 37 | Risk register: "Each risk tied to the controls that treat it" | RISK-001 | done |
-| 38 | Access reviews: "Quarterly reviews sent to each system owner" | ACCESS-001 | partial |
+| 38 | Access reviews: "Quarterly reviews sent to each system owner" | ACCESS-001 | done |
 | 39 | Joiners and leavers: "Accounts checked the day people start or leave" | LIFECYCLE-001 | missing |
 | 40 | Evidence receipts: "Every proof kept unchanged, with its source and time" | PROOF-001 | done |
 | 41 | Reviewer folders: "Shared proof that closes on the date you set" | REVIEW-001 | done |
@@ -738,7 +743,7 @@ Every capability claim on the approved homepage (`src/site/landing/`, checked ag
 | 43 | "collect a signature from everyone" (41 of 42 signed, reminder sent) | ATTEST-001, FOLLOWUP-001 | done |
 | 44 | "Training" | TRAIN-001 | done |
 | 45 | "onboarding, offboarding" | LIFECYCLE-001 | missing |
-| 46 | "access reviews run from the same list" | ACCESS-001, INVENTORY-001 | partial |
+| 46 | "access reviews run from the same list" | ACCESS-001, INVENTORY-001 | done |
 | 47 | "Export everything, any time" | CUSTODY-001, PORTABLE-001 | done |
 | 48 | "SOC 2 Type II · 100% ready" | READINESS-001 | done |
 | 49 | "Open source compliance for SOC 2, ISO 27001 and HIPAA" / "Free and open source, MIT licensed" | PROGRAM-001, OPEN-001 | done |
@@ -749,13 +754,13 @@ Judged from the code and tests at commit `752e0d4a6dea5f6f5f97c23fb00b5e4bb6ce86
 
 The earlier statuses were judged at `0b495fb9adc1bd062adb0356423d47dbf922a1e1`. Between it and the commit above, `src/evidence` changed only in one library control's wording (GOV-07) and a deterministic sort order in the remediation queue, and `src/identity.ts` only in its tagline; the rest is the run site (`src/site`), docs and source locks, so every earlier status stands. Revised 17 October 2026 so every capability claim on the approved homepage has a clause (see [Homepage claims](#homepage-claims)): FOLLOWUP-002, LIFECYCLE-002, OPEN-001 and OWN-001 were added and judged from the commit above, and LIBRARY-001, READINESS-001, HRIS-001, DEVICE-001, INVENTORY-001, LIFECYCLE-001 and AUDIT-001 were sharpened without changing their statuses.
 
-INVENTORY-001 updated 20 October 2026 with clause-named source isolation, grouping, metadata, People-consumer and 1440/390 console journeys; the complete archive now carries 150 tables and reads the published pre-inventory v10 registry. POPULATION-001 updated with clause-named population, original-file archive/restore and browser journeys; lifecycle checklist consumption remains required by LIFECYCLE-001. OPEN-001 and RISK-002 updated 19 October 2026 with clause-named public-door and clean-checkout browser journeys; LIFECYCLE-002 updated 19 October 2026 with clause-named handover public-door journeys; other baselines below remain historical. PORTABLE-001 updated 20 October 2026 with clause-named HTTP/offline CLI transfers of 20,206 resources, 75,499,612 original bytes and 148 tables, plus 1440/390 installed-browser restore states. CONTROL-001 updated 20 October 2026 with clause-named HTTP, archive and 1440/390 installed-browser journeys; archive version 9 retains definitions, evaluated runs, custom framework revisions and original files. VULN-002 updated 19 October 2026 to done with clause-named public-door scenarios (tests/vulns.mjs), archive version 8 and 1440/390 browser proof.
+ACCESS-001 updated 20 October 2026 with clause-named campaign, revocation-evidence, attached-exhibit receipt, People reconciliation and owner-configured cadence journeys through public doors. INVENTORY-001 updated 20 October 2026 with clause-named source isolation, grouping, metadata, People-consumer and 1440/390 console journeys; the complete archive now carries 150 tables and reads the published pre-inventory v10 registry. POPULATION-001 updated with clause-named population, original-file archive/restore and browser journeys; lifecycle checklist consumption remains required by LIFECYCLE-001. OPEN-001 and RISK-002 updated 19 October 2026 with clause-named public-door and clean-checkout browser journeys; LIFECYCLE-002 updated 19 October 2026 with clause-named handover public-door journeys; other baselines below remain historical. PORTABLE-001 updated 20 October 2026 with clause-named HTTP/offline CLI transfers of 20,206 resources, 75,499,612 original bytes and 148 tables, plus 1440/390 installed-browser restore states. CONTROL-001 updated 20 October 2026 with clause-named HTTP, archive and 1440/390 installed-browser journeys; archive version 9 retains definitions, evaluated runs, custom framework revisions and original files. VULN-002 updated 19 October 2026 to done with clause-named public-door scenarios (tests/vulns.mjs), archive version 8 and 1440/390 browser proof.
 
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 6 | 1 | 1 | 8 |
-| Target and push further | 26 | 16 | 29 | 71 |
-| All | 32 | 17 | 30 | 79 |
+| Target and push further | 27 | 15 | 29 | 71 |
+| All | 33 | 16 | 30 | 79 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -803,7 +808,7 @@ INVENTORY-001 updated 20 October 2026 with clause-named source isolation, groupi
 | `TRAIN-001` | Shipped security training and KnowBe4 evidence | target | done | `src/evidence/training/`; `tests/training.mjs` | Live acceptance needs an account: KnowBe4 sandbox |
 | `LIFECYCLE-001` | Joiner, mover and leaver compliance | target | missing |  | No implementing path: departures end sign-in and close attestations; checklists, HRIS events and background checks not built |
 | `LIFECYCLE-002` | Ownership handover when a person leaves | target | done | `src/evidence/handover/`; `src/evidence/attest/storage.ts`; `src/evidence/program/readiness.ts`; `src/evidence/program/control.ts`; `tests/handover.mjs` | Current departure door and every holder kind that exists today are asserted; HRIS-001 and LIFECYCLE-001 (departure sources), AUDIT-001, ANSWER-003 and AUTH-001 (assignments, approvers, manager role) carry handover before they ship. |
-| `ACCESS-001` | Quarterly access-review campaigns | target | partial | `src/evidence/access/`; `tests/access.mjs` | Missing: app-level account connectors (APPS-001) and attached-exhibit revocation evidence |
+| `ACCESS-001` | Quarterly access-review campaigns | target | done | `src/evidence/access/`; `migrations/core/0044_access_cadence.sql`; `tests/access.mjs` | Current directory and uploaded-list sources, owner-configured cadence, People reconciliation and exhibit-evidenced revocation asserted; APPS-001 carries app-level connector populations before it ships. |
 | `REVIEW-001` | Selected expiring evidence folders | published | done | `src/evidence/review/http.ts`; `src/evidence/review/storage.ts`; `tests/review.mjs`; `tests/review-browser.mjs` |  |
 | `AUDIT-001` | Period-specific auditor workspace and request lists | target | partial | `src/evidence/review/http.ts`; `src/evidence/review/storage.ts`; `tests/review.mjs` | Expiring scoped read-only folders and access history exist; authenticated auditor collaboration, requests, comments and findings are missing. |
 | `AUDIT-002` | Type II populations, sampling and non-occurrence | target | missing |  | No implementing path |
