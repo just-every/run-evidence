@@ -43,7 +43,7 @@ const testByCatalogue = async id => (await get('/api/tests')).tests.find(t => t.
 const results = async id => Object.fromEntries((await get('/api/tests/' + (await testByCatalogue(id)).id)).latest.map(o => [o.display_name, o.result]))
 let connection
 try {
- await scenario('A GitHub credential is kept only after a real read check, encrypted, and never shown again', async () => {
+ await scenario('CONNECT-001: a GitHub credential is kept only after a real read check, encrypted, and never shown again', async () => {
   await app.signin()
   await owner('/api/connections', { account: 'northstar', token: 'github_pat_wrong' }, 400)
   for (const api_base of ['https://169.254.169.254', 'https://ghe.internal', 'http://ghe.example.test/api/v3']) await owner('/api/connections', { account: 'northstar', token: 'github_pat_good', api_base }, 400)
@@ -57,7 +57,7 @@ try {
   assert.deepEqual(tests.map(t => t.catalogue_id).sort(), ['github.branch-protection', 'github.dependabot-critical', 'github.org-two-factor', 'github.repository-private', 'github.required-checks', 'github.required-review', 'github.secret-scanning-open'])
   assert.ok((await get('/api/tests')).catalogue.find(e => e.id === 'github.departed-members').manualRequirement)
  })
- await scenario('The scheduler reads only selected repositories and catalogue tests fail with per-provider remediation steps', async () => {
+ await scenario('CONNECT-001: The scheduler reads only selected repositories and catalogue tests fail with per-provider remediation steps', async () => {
   await owner(`/api/connections/${connection.id}/repositories`, { repositories: ['northstar/web', 'northstar/site'] }, 200)
   await app.tick()
   const detail = await get('/api/connections/' + connection.id)
@@ -74,7 +74,7 @@ try {
   assert.ok((await get('/api/remediation')).open.some(o => o.resource_name === 'northstar/site' && o.test_name === 'Default branch is protected'))
   assert.ok(github.methods.length > 0 && github.methods.every(m => m === 'GET'))
  })
- await scenario('A source fix verifies on the next hourly read; revoked repository access stays in the denominator as unknown', async () => {
+ await scenario('CONNECT-001: A source fix verifies on the next hourly read; revoked repository access stays in the denominator as unknown', async () => {
   github.repos['northstar/site'].protection = { reviews: 2, checks: ['ci'] }
   await at('2026-10-11T13:00:00Z'); await app.tick()
   assert.deepEqual(await results('github.branch-protection'), { 'northstar/site': 'pass', 'northstar/web': 'pass' })
@@ -88,7 +88,7 @@ try {
   assert.deepEqual(await results('github.branch-protection'), { 'northstar/site': 'pass', 'northstar/web': 'unknown' })
   github.hidden.delete('northstar/web')
  })
- await scenario('Throttling backs off without fabricated runs; rotation and revocation never resurrect old authority; stale reads go unknown', async () => {
+ await scenario('CONNECT-001: Throttling backs off without fabricated runs; rotation and revocation never resurrect old authority; stale reads go unknown', async () => {
   github.throttleUntil = Date.parse('2026-10-11T15:30:00Z')
   await at('2026-10-11T15:00:00Z'); await app.tick()
   let runs = (await get('/api/connections/' + connection.id)).runs
@@ -115,7 +115,7 @@ try {
   const latest = (await get('/api/tests/' + (await testByCatalogue('github.branch-protection')).id)).latest
   assert.ok(latest.every(o => /stale/.test(o.reason)))
  })
- await scenario('A custody archive carries every program record; restored tokens and connections hold no authority', async () => {
+ await scenario('CONNECT-001: a custody archive carries every program record; restored tokens and connections hold no authority', async () => {
   const program = await owner('/api/programs', { framework: 'soc2', name: 'SOC 2', legal_entity: 'Northstar', report_type: 'Type I', audit_from: '2026-10-01', audit_to: '2026-10-01' })
   const token = await owner('/api/api-tokens', { name: 'Restore probe', scopes: ['read'], expires_at: '2027-04-01' })
   await owner('/api/policies', { title: 'Information security policy', body: 'Security is everyone\'s job.' })

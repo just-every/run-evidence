@@ -11,7 +11,7 @@ import { connectKnowBe4 } from '../training/knowbe4'
 const id = `(${uuid})`
 const both = (path: string) => new RegExp(`^/(?:app|api)${path}$`)
 // Connection listings never include ciphertext; tokens appear once at issue.
-const safe = <T extends { secret_ciphertext?: unknown; secret_iv?: unknown }>(row: T) => { const { secret_ciphertext: _c, secret_iv: _i, ...rest } = row; return rest }
+const safe = <T extends { secret_ciphertext?: unknown; secret_iv?: unknown; collector_token_hash?: unknown }>(row: T) => { const { secret_ciphertext: _c, secret_iv: _i, collector_token_hash: _h, ...rest } = row; return rest }
 export function connectHandler(clock: () => Date) {
  const routes: Route[] = [
   { method: 'GET', pattern: both('/connections'), run: async c => { const rows = await connections(c.env), tokens = await apiTokens(c.env); return c.isApi ? json({ connections: rows.map(safe), api_tokens: tokens }) : connectionsPage(rows, tokens, null, c.actor.name) } },

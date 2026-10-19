@@ -87,9 +87,9 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
-- **CONNECT-001 — Least-privilege integration custody and custom collectors · partial.** Authorize, rotate, revoke and reconnect a provider through Connections; attempt cross-tenant use and export/restore. Validate that secrets never appear and restored connectors remain inactive. Install one owner-reviewed private collector, inspect unsupported resources and a lost connection, and reconcile its read-only output with the actual private source.
+- **CONNECT-001 — Least-privilege integration custody and custom collectors · done.** Authorize, rotate, revoke and reconnect a provider through Connections; attempt cross-tenant use and export/restore. Validate that secrets never appear and restored connectors remain inactive. Install one owner-reviewed private collector, inspect unsupported resources and a lost connection, and reconcile its read-only output with the actual private source.
 
-  Current evidence: —.
+  Current evidence: `src/evidence/collector/`; `scripts/private-collector.mjs`; `tests/private-collector.mjs`; `tests/github.mjs`; `tests/helpers/collector-browser.mjs`; `tests/browser.mjs`. Private Git profile is owner-reviewed, fixed and read-only; receiving credentials are one-time, connection-bound SHA-256 fingerprints, rotate/revoke, and restore inactive. Source loss and stale intervals remain unknown; unsupported hosted checks require manual evidence or their native provider.
 
 - **API-001 — Public REST API for pushed resources, custom tests and program state · done.** Issue a resource-push token in Settings → API. With a script, push 50 resources of a custom `internal_service` type, then push the same payload again: there are no duplicates and the update timestamps are unchanged. Run a full sync that omits one resource: it is marked removed, and its history remains. Define a custom test requiring `mfa_enforced=true`. One resource fails, and the readiness view shows the result labeled source-reported via the token. Read the program, test and remediation state through the API and reconcile it with the UI. A token from another installation, a write outside the token's scopes and a revoked token are each refused with no partial write. A schema-invalid payload is rejected per item with reasons.
 

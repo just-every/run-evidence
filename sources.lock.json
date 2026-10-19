@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "1e55be1748cb34e4aff083f19bbddbb562420af8fb66f10a84f22e046b05754e",
+  "manifest": "242df2feaba1e6320bdaa420908f838a0e2470be5f3857e34eb7845264a0c569",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2366,6 +2366,7 @@
           "docs/GETTING-STARTED.md",
           "docs/MAIN-FLOWS.md",
           "docs/MOVE-IN.md",
+          "docs/PRIVATE-COLLECTOR.md",
           "docs/PROGRAMS.md",
           "docs/PROVIDER-COSTS.md",
           "migrations/core/0001_owner.sql",
@@ -2403,6 +2404,7 @@
           "migrations/core/0033_ticket_groups.sql",
           "migrations/core/0034_test_remediation.sql",
           "migrations/core/0035_risk_details.sql",
+          "migrations/core/0036_private_collectors.sql",
           "package.json",
           "pnpm-lock.yaml",
           "public/apple-touch-icon.png",
@@ -2478,6 +2480,8 @@
           "scripts/installer/local.mjs",
           "scripts/installer/ui/seed.mjs",
           "scripts/library-check.mjs",
+          "scripts/private-collector.mjs",
+          "scripts/private-collector/git.mjs",
           "scripts/verify.mjs",
           "seed.json",
           "src/app.server.ts",
@@ -2521,6 +2525,11 @@
           "src/evidence/cloud/scoped.ts",
           "src/evidence/cloud/sigv4.ts",
           "src/evidence/cloud/xml.ts",
+          "src/evidence/collector/http.ts",
+          "src/evidence/collector/ingest.ts",
+          "src/evidence/collector/profile.ts",
+          "src/evidence/collector/storage.ts",
+          "src/evidence/collector/view.ts",
           "src/evidence/connect/collect.ts",
           "src/evidence/connect/custody.ts",
           "src/evidence/connect/github.ts",
@@ -2691,6 +2700,7 @@
           "tests/fixtures/drata/fixture.mjs",
           "tests/followup.mjs",
           "tests/github.mjs",
+          "tests/helpers/collector-browser.mjs",
           "tests/helpers/move-in-browser.mjs",
           "tests/helpers/open-browser.mjs",
           "tests/helpers/population-browser.mjs",
@@ -2706,6 +2716,7 @@
           "tests/open.mjs",
           "tests/policy.mjs",
           "tests/population.mjs",
+          "tests/private-collector.mjs",
           "tests/program.mjs",
           "tests/report.mjs",
           "tests/review-browser.mjs",
@@ -2744,7 +2755,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "3fec7609e41223b649318497ab598771e8ef287173a500a674e5acb4fe81307e",
+      "sha256": "f451100729b0b87f0f9cfe61344d1c4071934c17392c31dd14a9908228e5efe3",
       "executable": false
     },
     "AGENTS.md": {
@@ -2760,7 +2771,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "b82380ab6dcc012b88b344e97bca2e35d8d47d3010aca73ae8f91c4d390bd540",
+      "sha256": "3dae2b31e7e0ccd5a0018a38eefc1f8e57546f614d4b76eb556696109f1a68eb",
       "executable": false
     },
     "DEMO.md": {
@@ -2807,6 +2818,10 @@
       "sha256": "fa4153420d4c3b3f0d34f03e1e91368e95fd851b19f03d25c0d368f2219596af",
       "executable": false
     },
+    "docs/PRIVATE-COLLECTOR.md": {
+      "sha256": "55b27ecf1c55fd7d8b32568e8c2bc4ec77221721f974ec82ef334b6cd543ff2e",
+      "executable": false
+    },
     "docs/PROGRAMS.md": {
       "sha256": "139bc9700119016ef220755a7cc7e4e923bfa6d0f39887dde0403baa62e79b21",
       "executable": false
@@ -2816,7 +2831,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "1e55be1748cb34e4aff083f19bbddbb562420af8fb66f10a84f22e046b05754e",
+      "sha256": "242df2feaba1e6320bdaa420908f838a0e2470be5f3857e34eb7845264a0c569",
       "executable": false
     },
     "LICENSE": {
@@ -2961,6 +2976,10 @@
     },
     "migrations/core/0035_risk_details.sql": {
       "sha256": "a552d6360ba007ff8354305773a832a51a4179f8402c2357581907280ec7f3aa",
+      "executable": false
+    },
+    "migrations/core/0036_private_collectors.sql": {
+      "sha256": "44864936b2a061fc15356202a5a6947a9c765099d9db81389cde990ed4524a60",
       "executable": false
     },
     "ONBOARDING.md": {
@@ -3335,8 +3354,16 @@
       "sha256": "decbd8619e40c741708b49639d54282bd19edc4581a782b240d96a423ad47f01",
       "executable": false
     },
+    "scripts/private-collector.mjs": {
+      "sha256": "ae0f8d5bdbc32d2bbf38dc2db7c09c7fa2649af1620126ee939f652855713a13",
+      "executable": false
+    },
+    "scripts/private-collector/git.mjs": {
+      "sha256": "1be7d52ce43a64753f5923aaeb3817753a9db18e20c36d4268513ea1eeea9dd3",
+      "executable": false
+    },
     "scripts/verify.mjs": {
-      "sha256": "a38ca62f7fbcf0ecad84679b525ea223eb4e45b7a5ea68eacbb6d1d53213040e",
+      "sha256": "4519193a2aabc7f985961661dde1f87b97caf2e34891bcfd2f546f05a94df225",
       "executable": false
     },
     "SEED-COMMAND-CONTRACT.md": {
@@ -3348,7 +3375,7 @@
       "executable": false
     },
     "src/app.server.ts": {
-      "sha256": "51dbed5289b31b68afca2dba953ed53f09843c46c117d52c2089d7c539fccc49",
+      "sha256": "c22215ffaa50478f40943757a5f712222c9d46f65a98916704bd4b47b88cd3bd",
       "executable": false
     },
     "src/auth.server.ts": {
@@ -3611,8 +3638,28 @@
       "sha256": "4296d511b9ed380173c8a0a2683f35b909516744612c500ab6c858d66a9cee81",
       "executable": false
     },
+    "src/evidence/collector/http.ts": {
+      "sha256": "d017bf2a0aa18accba2cd2272cf1071c21f72e2ba4ea695f539a947a6ddcfe93",
+      "executable": false
+    },
+    "src/evidence/collector/ingest.ts": {
+      "sha256": "979258e685827f3c9ea832ab9cef36c951137f24a4be18f3ac2f12d389af1ab2",
+      "executable": false
+    },
+    "src/evidence/collector/profile.ts": {
+      "sha256": "5f94a60b67889e8456062fe683c2ebd2acecbad132f039213de2a912db21c823",
+      "executable": false
+    },
+    "src/evidence/collector/storage.ts": {
+      "sha256": "4f6bbc9cd1697bd3260ddd6523a7e57fae74a5db8dfa28ca839185c0057a0d8d",
+      "executable": false
+    },
+    "src/evidence/collector/view.ts": {
+      "sha256": "a1b49484a71832d9ac1cf01a83ce2da0c515a14c92ee84d387ccea633469f7c8",
+      "executable": false
+    },
     "src/evidence/connect/collect.ts": {
-      "sha256": "40a3a8ebb8050062f474d90fcddd6ae2f24090b6e0f188e7b0b97d7a88b786a8",
+      "sha256": "9011a875422bf6f644024ba9e46ae8d69a28f1f2fd3f0f2eace9684d6691cfe9",
       "executable": false
     },
     "src/evidence/connect/custody.ts": {
@@ -3624,7 +3671,7 @@
       "executable": false
     },
     "src/evidence/connect/http.ts": {
-      "sha256": "1aaab122b609f13431055a43986cae7af4b58ef224c9ae085d0d5c8cbadea166",
+      "sha256": "d3e3f761e26ede09fcd8d151b412296123fe30645a0afa18566329cd368432d1",
       "executable": false
     },
     "src/evidence/connect/runs.ts": {
@@ -3632,11 +3679,11 @@
       "executable": false
     },
     "src/evidence/connect/storage.ts": {
-      "sha256": "6d4c8cdcac3882db396e4201cffd084f47b06d76c0d5bfd8d3a1cd58a229fc69",
+      "sha256": "7ced8cc6ec96ce4b37a825a4b6d89a2aa790086370420144f84eec0590a34999",
       "executable": false
     },
     "src/evidence/connect/view.ts": {
-      "sha256": "cc6c21cffbb068a804b43335f5eb2e471976cd1f7f5406a820da9b25279f119b",
+      "sha256": "e14c7ca720e087371bd473f36c1764e2d3deb7b6d8be169ce9c63548fe5fe151",
       "executable": false
     },
     "src/evidence/costs.ts": {
@@ -5604,7 +5651,7 @@
       "executable": false
     },
     "tests/browser.mjs": {
-      "sha256": "87287efe2168ef7749345dd9a3bda004584d7111f9273ae9c6defc0574461e42",
+      "sha256": "94383ef2d7f945ebb3385b80c2621a0e67bbf2f56ee07ffecd3a47c602c88146",
       "executable": false
     },
     "tests/cadence.mjs": {
@@ -5640,7 +5687,11 @@
       "executable": false
     },
     "tests/github.mjs": {
-      "sha256": "b36cfe59d88cd3bca5bf14fe5c41dbba6221ba05a835fa93f453d2fbdb9788c3",
+      "sha256": "a428fdf7608f6558d23b1174930de7e8b636c29e4c521225f324555d8c5a3726",
+      "executable": false
+    },
+    "tests/helpers/collector-browser.mjs": {
+      "sha256": "45020e85fac34a8ac895de2a8d8626ee62f0d06afda033739e4d74f586d523a9",
       "executable": false
     },
     "tests/helpers/move-in-browser.mjs": {
@@ -5701,6 +5752,10 @@
     },
     "tests/population.mjs": {
       "sha256": "fb6039805495cb562e7f38f68a93ec653edf38f8c9aa88b7b845ed895b68bc54",
+      "executable": false
+    },
+    "tests/private-collector.mjs": {
+      "sha256": "55682c6856d717710bd5ab47ca8d3ba71cc6ebb0dbaad283818ecac6a0cac4fa",
       "executable": false
     },
     "tests/program.mjs": {

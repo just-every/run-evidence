@@ -10,7 +10,7 @@ import { isScopedCloud, scopedClouds } from '../cloud/clouds'
 import { rotateScoped } from '../cloud/scoped'
 import { rotateKnowBe4 } from '../training/knowbe4'
 import { githubClient, listRepositories, readOrganization, Throttled, Unauthorized } from './github'
-export interface Connection { id: string; provider: string; config_json: string; label: string; account: string; api_base: string; secret_ciphertext: string | null; secret_iv: string | null; granted_scopes: string; status: 'active' | 'revoked' | 'needs reconnect' | 'inactive after restore'; created_by: string; created_name: string; created_at: string; rotated_at: string | null; revoked_at: string | null; last_success_at: string | null; last_attempt_at: string | null; next_attempt_at: string | null; backoff_seconds: number; last_error: string }
+export interface Connection { id: string; provider: string; config_json: string; label: string; account: string; api_base: string; secret_ciphertext: string | null; secret_iv: string | null; collector_token_hash?: string | null; granted_scopes: string; status: 'active' | 'revoked' | 'needs reconnect' | 'inactive after restore'; created_by: string; created_name: string; created_at: string; rotated_at: string | null; revoked_at: string | null; last_success_at: string | null; last_attempt_at: string | null; next_attempt_at: string | null; backoff_seconds: number; last_error: string }
 export const connections = async (env: Bindings) => (await env.DB.prepare('SELECT * FROM connections ORDER BY created_at').all<Connection>()).results
 export async function requireConnection(env: Bindings, id: string) { const row = await env.DB.prepare('SELECT * FROM connections WHERE id=?').bind(id).first<Connection>(); if (!row) throw new Refusal('Connection not found.', 404); return row }
 // GitHub Enterprise Server is supported by its /api/v3 base; only public HTTPS hosts.
@@ -47,6 +47,7 @@ export async function connectGithub(env: Bindings, actor: Actor, input: Input, n
 // reconnects a revoked or broken connection with new authority only.
 export async function rotateCredential(env: Bindings, actor: Actor, id: string, input: Input, now: Date) {
  const row = await requireConnection(env, id)
+ if (row.provider === 'private-git') throw new Refusal('Use the collector token rotation door.', 409)
  if (row.provider === 'aws') return rotateAws(env, actor, row, input, now)
  if (row.provider === 'knowbe4') return rotateKnowBe4(env, actor, row, input, now)
  if (isDirectory(row.provider)) return rotateDirectory(env, actor, row, input, now)
@@ -62,7 +63,7 @@ export async function rotateCredential(env: Bindings, actor: Actor, id: string, 
 // Revocation destroys the stored credential; nothing can resurrect it.
 export async function revokeConnection(env: Bindings, actor: Actor, id: string, now: Date) {
  await requireConnection(env, id)
- await env.DB.batch([env.DB.prepare("UPDATE connections SET status='revoked',secret_ciphertext=NULL,secret_iv=NULL,revoked_at=? WHERE id=?").bind(now.toISOString(), id), auditStatement(env, actor, 'connection.revoked', 'connection:' + id, now)])
+ await env.DB.batch([env.DB.prepare("UPDATE connections SET status='revoked',secret_ciphertext=NULL,secret_iv=NULL,collector_token_hash=NULL,revoked_at=? WHERE id=?").bind(now.toISOString(), id), auditStatement(env, actor, 'connection.revoked', 'connection:' + id, now)])
 }
 export async function selectRepositories(env: Bindings, actor: Actor, id: string, input: Input, now: Date) {
  await requireConnection(env, id)

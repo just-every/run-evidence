@@ -1,3 +1,4 @@
+import { Refusal } from '../upload'
 import type { Bindings } from '../../auth.server'
 import { backoffUpdate, reconnectUpdate, startRun } from './runs'
 import { runAwsCollection } from '../cloud/collect'
@@ -17,6 +18,7 @@ const repositorySchema: ResourceSchema = { fields: { private: 'boolean', archive
 const organizationSchema: ResourceSchema = { fields: { login: 'string', two_factor_requirement_enabled: 'boolean', readable: 'boolean' }, required: [] }
 const HOUR = 3600000
 export async function runCollection(env: Bindings, connection: Connection, trigger: 'schedule' | 'manual', now: Date): Promise<{ run: string | null; outcome: string }> {
+ if (connection.provider === 'private-git') throw new Refusal('Run the installed read-only collector on its private computer.', 409)
  if (connection.provider === 'aws') return runAwsCollection(env, connection, trigger, now)
  if (connection.provider === 'knowbe4') return runKnowBe4(env, connection, trigger, now)
  if (isDirectory(connection.provider)) return runDirectoryCollection(env, connection, trigger, now)
@@ -74,7 +76,7 @@ export async function runCollection(env: Bindings, connection: Connection, trigg
 }
 // Hourly collection per active connection, honoring throttling backoff.
 export async function collectDue(env: Bindings, now: Date) {
- const { results } = await env.DB.prepare("SELECT * FROM connections WHERE status='active' AND (next_attempt_at IS NULL OR next_attempt_at<=?) AND (last_attempt_at IS NULL OR last_attempt_at<=?)").bind(now.toISOString(), new Date(now.getTime() - HOUR + 5 * 60000).toISOString()).all<Connection>()
+ const { results } = await env.DB.prepare("SELECT * FROM connections WHERE status='active' AND provider!='private-git' AND (next_attempt_at IS NULL OR next_attempt_at<=?) AND (last_attempt_at IS NULL OR last_attempt_at<=?)").bind(now.toISOString(), new Date(now.getTime() - HOUR + 5 * 60000).toISOString()).all<Connection>()
  for (const connection of results) await runCollection(env, connection, 'schedule', now)
  return results.length
 }
