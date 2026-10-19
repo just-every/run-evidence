@@ -1,5 +1,5 @@
 import { operatorAuth,runtimeBindings,type Bindings } from '../../auth.server'
-import { headers,page } from '../view'
+import { headers,page,signedOutPage } from '../view'
 import { ArchiveError } from './format'
 import { inventory,summary } from './inventory'
 import { exportArchive } from './export'
@@ -14,7 +14,7 @@ export function archiveHandler(clock:()=>Date=()=>new Date()) {
   if(url.origin!==env.AUTH_ORIGIN || (request.headers.has('host') && request.headers.get('host')?.toLowerCase()!==url.host.toLowerCase())) return json({error:'Invalid host.'},403)
   if(request.headers.get('sec-fetch-site')==='cross-site' || (request.headers.has('origin') && request.headers.get('origin')!==env.AUTH_ORIGIN) || (!['GET','HEAD'].includes(request.method) && request.headers.get('origin')!==env.AUTH_ORIGIN)) return json({error:'Same-origin request required.'},403)
   const session=await operatorAuth(env).getSession(request)
-  if(!session) return path.startsWith('/api/') ? json({error:'Owner sign-in required.'},401) : page('Owner sign-in required','<p><a href="/signin">Sign in</a></p>',401)
+  if(!session) return path.startsWith('/api/') ? json({error:'Owner sign-in required.'},401) : signedOutPage(request)
   if(session.operator.role!=='owner') return json({error:'Owner access required.'},403)
   try {
    if(request.method==='GET' && path==='/app/archive') return archivePage(await inventory(env,clock()),session.operator.displayName)

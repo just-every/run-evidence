@@ -9,7 +9,7 @@ export const categories = ['cloud', 'identity', 'code', 'device', 'vulnerability
 export const severities = ['critical', 'high', 'medium', 'low'] as const
 export type Category = typeof categories[number]
 export type Severity = typeof severities[number]
-export interface TestRow { id: string; catalogue_id: string | null; name: string; resource_type: string; criteria_json: string; cadence: 'hourly' | 'daily'; category: Category; severity: Severity; origin: 'catalogue' | 'custom' | 'api'; defined_by: string; revision: number; enabled: number; created_at: string }
+export interface TestRow { id: string; catalogue_id: string | null; name: string; resource_type: string; criteria_json: string; cadence: 'hourly' | 'daily'; category: Category; severity: Severity; origin: 'catalogue' | 'custom' | 'api'; defined_by: string; revision: number; enabled: number; created_at: string; remediation: string | null }
 export interface Exclusion { resource_id: string; rationale: string }
 export interface Observation { id: string; run_id: string; test_id: string; revision: number; resource_id: string; result: 'pass' | 'fail' | 'unknown' | 'not applicable'; expected_json: string; actual_json: string; reason: string; source_kind: string; source_ref: string; observed_at: string; exception_id: string | null; interval_from: string | null }
 export const CADENCE_MS = { hourly: 3600000, daily: 86400000 } as const
@@ -49,7 +49,7 @@ export async function catalogueStatements(env: Bindings, provider: string, actor
  }
  return statements.length ? [...statements, auditStatement(env, actor, 'tests.catalogue-enabled', 'provider:' + provider, now)] : []
 }
-export interface TestDefinition { name: string; resourceType: string; criteria: Criterion[]; cadence: 'hourly' | 'daily'; category: Category; severity: Severity; controls: string[] }
+export interface TestDefinition { name: string; resourceType: string; criteria: Criterion[]; cadence: 'hourly' | 'daily'; category: Category; severity: Severity; controls: string[]; remediation: string | null }
 export function parseDefinition(value: Record<string, unknown>): TestDefinition {
  const name = typeof value.name === 'string' ? value.name.trim() : ''
  if (!name || name.length > 200) throw new Refusal('Name the test (up to 200 characters).')
@@ -59,13 +59,19 @@ export function parseDefinition(value: Record<string, unknown>): TestDefinition 
  const category = String(value.category ?? 'cloud') as Category, severity = String(value.severity ?? 'high') as Severity
  if (!categories.includes(category) || !severities.includes(severity)) throw new Refusal('Choose a listed category and severity.')
  const controls = Array.isArray(value.controls) ? value.controls.map(String) : typeof value.controls === 'string' && value.controls ? value.controls.split(/[\s,]+/).filter(Boolean) : []
- return { name, resourceType, criteria: parseCriteria(value.criteria), cadence, category, severity, controls }
+ return { name, resourceType, criteria: parseCriteria(value.criteria), cadence, category, severity, controls, remediation: remediationStep(value.remediation) }
+}
+// How to bring a failing item back within the test, in the owner's words.
+export function remediationStep(value: unknown) {
+ const step = typeof value === 'string' ? value.trim() : ''
+ if (step.length > 500) throw new Refusal('Keep the fix step to 500 characters.')
+ return step || null
 }
 export async function defineTest(env: Bindings, definition: TestDefinition, origin: 'custom' | 'api', definedBy: string, actor: Actor & { kind?: 'owner' | 'token' }, now: Date) {
  if (!await env.DB.prepare('SELECT 1 FROM resource_types WHERE type=?').bind(definition.resourceType).first() && !catalogue.some(e => e.resourceType === definition.resourceType)) throw new Refusal('Declare the resource type before defining a test over it.')
  const id = crypto.randomUUID(), at = now.toISOString()
  await env.DB.batch([
-  env.DB.prepare('INSERT INTO tests(id,catalogue_id,name,resource_type,criteria_json,cadence,category,severity,origin,defined_by,created_at) VALUES(?,NULL,?,?,?,?,?,?,?,?,?)').bind(id, definition.name, definition.resourceType, JSON.stringify(definition.criteria), definition.cadence, definition.category, definition.severity, origin, definedBy, at),
+  env.DB.prepare('INSERT INTO tests(id,catalogue_id,name,resource_type,criteria_json,cadence,category,severity,origin,defined_by,created_at,remediation) VALUES(?,NULL,?,?,?,?,?,?,?,?,?,?)').bind(id, definition.name, definition.resourceType, JSON.stringify(definition.criteria), definition.cadence, definition.category, definition.severity, origin, definedBy, at, definition.remediation),
   env.DB.prepare("INSERT INTO test_revisions(id,test_id,revision,criteria_json,excluded_json,cadence,actor,reason,at) VALUES(?,?,1,?,'[]',?,?,?,?)").bind(crypto.randomUUID(), id, JSON.stringify(definition.criteria), definition.cadence, actor.name, 'Test defined', at),
   ...await controlStatements(env, id, definition.controls, now),
   auditStatement(env, actor, 'test.defined', 'test:' + id, now, 'succeeded', definition.name),
@@ -73,13 +79,13 @@ export async function defineTest(env: Bindings, definition: TestDefinition, orig
  return { id }
 }
 // A revision applies to later runs only; earlier observations keep theirs.
-export async function reviseTest(env: Bindings, id: string, change: { criteria?: Criterion[]; excluded?: Exclusion[]; cadence?: 'hourly' | 'daily' }, actor: Actor, reason: string, now: Date) {
+export async function reviseTest(env: Bindings, id: string, change: { criteria?: Criterion[]; excluded?: Exclusion[]; cadence?: 'hourly' | 'daily'; remediation?: string | null }, actor: Actor, reason: string, now: Date) {
  const row = await requireTest(env, id), prior = (await latestRevision(env, id))!
  const criteria = change.criteria ? JSON.stringify(change.criteria) : prior.criteria_json, excluded = change.excluded ? JSON.stringify(change.excluded) : prior.excluded_json, cadence = change.cadence ?? row.cadence
  const revision = row.revision + 1
  await env.DB.batch([
   env.DB.prepare('INSERT INTO test_revisions(id,test_id,revision,criteria_json,excluded_json,cadence,actor,reason,at) VALUES(?,?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), id, revision, criteria, excluded, cadence, actor.name, reason, now.toISOString()),
-  env.DB.prepare('UPDATE tests SET revision=?,criteria_json=?,cadence=? WHERE id=? AND revision=?').bind(revision, criteria, cadence, id, row.revision),
+  env.DB.prepare('UPDATE tests SET revision=?,criteria_json=?,cadence=?,remediation=? WHERE id=? AND revision=?').bind(revision, criteria, cadence, change.remediation === undefined ? row.remediation : change.remediation, id, row.revision),
   auditStatement(env, actor, 'test.revised', 'test:' + id, now, 'succeeded', reason),
  ])
  return revision

@@ -3,6 +3,7 @@ import { obligations } from '../remedy/storage'
 import { catalogueFor, CADENCE_MS, type TestRow } from './storage'
 import type { CatalogueEntry } from './catalogue'
 import type { TestSummary } from './view'
+import { explain } from './criteria'
 // The Tests screen: every test with its mapped control, the integration that
 // supplies its items, the control's accountable owner and its latest run; one
 // test opened beside the list with its failure, remediation and run history.
@@ -47,17 +48,17 @@ export function filterRows(rows: WorkspaceRow[], show: Show, integration: string
 }
 export async function openTest(env: Bindings, row: WorkspaceRow, now: Date): Promise<OpenTest> {
  const [latest, runs, retests] = await env.DB.batch([
-  env.DB.prepare("SELECT o.resource_id,r.display_name,o.reason,o.observed_at FROM observations o JOIN resources r ON r.id=o.resource_id WHERE o.test_id=? AND o.result='fail' AND r.removed_at IS NULL AND o.rowid=(SELECT x.rowid FROM observations x WHERE x.test_id=o.test_id AND x.resource_id=o.resource_id ORDER BY x.observed_at DESC,x.rowid DESC LIMIT 1) ORDER BY o.observed_at,r.display_name").bind(row.id),
+  env.DB.prepare("SELECT o.resource_id,r.display_name,o.result,o.reason,o.expected_json,o.actual_json,o.observed_at FROM observations o JOIN resources r ON r.id=o.resource_id WHERE o.test_id=? AND o.result='fail' AND r.removed_at IS NULL AND o.rowid=(SELECT x.rowid FROM observations x WHERE x.test_id=o.test_id AND x.resource_id=o.resource_id ORDER BY x.observed_at DESC,x.rowid DESC LIMIT 1) ORDER BY o.observed_at,r.display_name").bind(row.id),
   env.DB.prepare('SELECT id,started_at,trigger,population,passed,failed,unknown,not_applicable FROM test_runs WHERE test_id=? ORDER BY started_at DESC,rowid DESC LIMIT 4').bind(row.id),
   env.DB.prepare('SELECT q.obligation_id,q.queued_at FROM retests q JOIN obligations o ON o.id=q.obligation_id WHERE o.test_id=? AND q.done_at IS NULL').bind(row.id),
  ])
  const queued = new Map((retests.results as { obligation_id: string; queued_at: string }[]).map(q => [q.obligation_id, q.queued_at]))
  const own = (await obligations(env, now)).filter(o => o.test_id === row.id && o.state !== 'verified')
  // A failure is shown from the observation that first opened it, which later passes never rewrite.
- const failing = await Promise.all((latest.results as Omit<FailingItem, 'obligation'>[]).map(async item => {
+ const failing = await Promise.all((latest.results as (Omit<FailingItem, 'obligation'> & { result: string; expected_json: string; actual_json: string })[]).map(async ({ result, expected_json, actual_json, ...item }) => {
   const ob = own.find(o => o.resource_id === item.resource_id)
   const opened = ob ? await env.DB.prepare('SELECT observed_at FROM observations WHERE id=?').bind(ob.opened_observation_id).first<{ observed_at: string }>() : null
-  return { ...item, observed_at: opened?.observed_at ?? item.observed_at, obligation: ob ? { id: ob.id, state: ob.state, next_action: ob.next_action, target_date: ob.target_date, owner_name: ob.owner_name, sla_status: ob.sla.status, sla_due: ob.sla.due, retest_queued_at: queued.get(ob.id) ?? null } : null }
+  return { ...item, reason: explain({ result, reason: item.reason, expected_json, actual_json }), observed_at: opened?.observed_at ?? item.observed_at, obligation: ob ? { id: ob.id, state: ob.state, next_action: ob.next_action, target_date: ob.target_date, owner_name: ob.owner_name, sla_status: ob.sla.status, sla_due: ob.sla.due, retest_queued_at: queued.get(ob.id) ?? null } : null }
  }))
  const nextRun = row.last_run ? new Date(Date.parse(row.last_run) + CADENCE_MS[row.cadence]).toISOString() : null
  return { row, entry: catalogueFor(row), failing, runs: runs.results as LatestRun[], nextRun }

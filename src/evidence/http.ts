@@ -2,7 +2,7 @@ import { operatorAuth, runtimeBindings, type Bindings } from '../auth.server'
 import { day, validDate, groups, cadences } from './model'
 import { createControl, desk, receipt, storedBytes } from './storage'
 import { boundedBody, Refusal, textField, upload } from './upload'
-import { deskPage, requirementPage, receiptPage, page, headers, escape } from './view'
+import { deskPage, requirementPage, receiptPage, page, headers, escape, signedOutPage } from './view'
 const json = (data: unknown, status = 200) => Response.json(data, { status, headers })
 const redirect = (location: string) => new Response(null, { status: 303, headers: { ...headers, location } })
 // Only the harness supplies a clock function. No header, URL or runtime binding sets time.
@@ -14,7 +14,7 @@ export function evidenceHandler(clock: () => Date = () => new Date()) {
   if (url.origin !== env.AUTH_ORIGIN || (request.headers.has('host') && request.headers.get('host')?.toLowerCase() !== url.host.toLowerCase())) return json({ error:'Invalid host.' },403)
   if (request.headers.get('sec-fetch-site') === 'cross-site' || (request.headers.has('origin') && request.headers.get('origin') !== env.AUTH_ORIGIN) || (!['GET','HEAD'].includes(request.method) && request.headers.get('origin') !== env.AUTH_ORIGIN)) return json({ error:'Same-origin request required.' },403)
   const session = await operatorAuth(env).getSession(request)
-  if (!session) return isApi ? json({ error:'Owner sign-in required.' },401) : page('Owner sign-in required','<p><a href="/signin">Sign in to the proof desk</a></p>',401)
+  if (!session) return isApi ? json({ error:'Owner sign-in required.' },401) : signedOutPage(request)
   if (session.operator.role !== 'owner') return json({ error:'Owner access required.' },403)
   try {
    const now = clock(), selected = url.searchParams.get('date') || day(now)

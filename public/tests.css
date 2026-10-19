@@ -107,7 +107,41 @@
 .rer-themed .run-outcome { font-size: 13px; font-weight: 500; }
 .run-fail .run-outcome { color: #e0282d; } .run-pass .run-outcome { color: #0f8a4a; } .run-unknown .run-outcome { color: #b26c00; }
 .rer-themed .run p { color: var(--app-label); font-size: 13px; }
-.rer-themed .tests-more { margin-top: 16px; }
+.rer-themed .tests-more { display: grid; gap: 12px; margin-top: 24px; }
+/* References folded under the list: a labelled row that opens in place, with the select chevron turned down. */
+.rer-themed .tests-disclosure { padding: 0; }
+.rer-themed .tests-disclosure > summary { display: grid; gap: 2px; padding: 16px 52px 16px 22px; cursor: pointer; list-style: none; --rer-select-ink: var(--site-ink);
+  background-image:
+    linear-gradient(to top right, transparent calc(50% - 1.1px), var(--rer-select-ink) calc(50% - .55px), var(--rer-select-ink) calc(50% + .55px), transparent calc(50% + 1.1px)),
+    linear-gradient(to top left, transparent calc(50% - 1.1px), var(--rer-select-ink) calc(50% - .55px), var(--rer-select-ink) calc(50% + .55px), transparent calc(50% + 1.1px));
+  background-repeat: no-repeat; background-position: right 26px center, right 20px center; background-size: 6px 6px; }
+.rer-themed .tests-disclosure > summary::-webkit-details-marker { display: none; }
+.rer-themed .tests-disclosure > summary:focus-visible { outline: 2px solid var(--site-link); outline-offset: 2px; border-radius: 12px; }
+.rer-themed .tests-disclosure > summary h2 { margin: 0; font-size: 16px; }
+.rer-themed .tests-disclosure > summary span { color: var(--app-label); font-size: 14px; }
+.rer-themed .tests-disclosure[open] > summary { border-bottom: 1px solid var(--app-row); }
+.rer-themed .tests-disclosure > :not(summary) { margin-inline: 22px; }
+.rer-themed .tests-disclosure > :last-child { margin-bottom: 20px; }
+.rer-themed .tests-disclosure > .panel-intro { margin-top: 16px; }
+.rer-themed .unsupported-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 0 28px; margin-block: 0; padding: 0; list-style: none; }
+.rer-themed .unsupported-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 12px 0; border-top: 1px solid var(--app-row); }
+.rer-themed .unsupported-list strong { font-size: 14px; font-weight: 600; }
+.rer-themed .unsupported-list span { color: var(--app-label); font-size: 13px; text-align: right; }
+.rer-themed .unsupported-list p { grid-column: 1 / -1; margin: 0; color: var(--app-text); font-size: 13.5px; overflow-wrap: break-word; }
+/* The test's own page opens like the panel: icon, name, control and integration, status, then the failure. */
+.rer-themed .test-page-head { display: flex; align-items: center; gap: 16px; margin: 0 0 16px; }
+.rer-themed .test-page-head h1 { margin: 0 0 4px; font-size: 34px; line-height: 1.15; }
+.rer-themed .test-page-head .detail-title p { font-size: 15px; }
+.rer-themed .test-page-head > .state { flex: none; }
+.rer-themed .test-page > .detail-alert { margin: 0 0 16px; }
+.rer-themed .test-remedy .detail-card { margin-bottom: 12px; }
+.rer-themed .test-remedy .footnote { margin: 0; color: var(--app-label); font-size: 13px; }
+/* Results at the list's density: one line per item, the source said once above. */
+.rer-themed .results-slab table { font-size: 13.5px; }
+.rer-themed .results-slab td { padding-block: 7px; vertical-align: middle; overflow-wrap: normal; }
+.rer-themed .results-slab td .state { min-height: 24px; padding: 2px 9px; font-size: 12px; }
+.rer-themed .source-chip { display: inline-block; padding: 1px 8px; border: 1px solid var(--app-hairline); border-radius: 999px; color: var(--app-label); font-size: 12px; white-space: nowrap; }
+@media (min-width: 761px) { .rer-themed .results-slab td:not(:nth-child(1)):not(:nth-child(3)) { white-space: nowrap; } }
 .rer-themed .tests-empty { margin-bottom: 16px; }
 @media (max-width: 1500px) {
  .tests-workspace { grid-template-columns: minmax(0, 1fr) 432px; }
@@ -155,4 +189,10 @@
  .rer-themed .task-meta { grid-template-columns: minmax(0, 1fr); gap: 10px; }
  .rer-themed .task-meta > div { padding: 0; border: 0; }
  .rer-themed .detail-actions { grid-template-columns: minmax(0, 1fr); }
+ .rer-themed .test-page-head { flex-wrap: wrap; gap: 12px; }
+ .rer-themed .test-page-head h1 { font-size: 26px; }
+ .rer-themed .test-page-head .detail-title { flex-basis: calc(100% - 64px); }
+ .rer-themed .test-page-head > .state { margin-left: 60px; }
+ .rer-themed .tests-disclosure > summary { padding: 14px 48px 14px 16px; }
+ .rer-themed .tests-disclosure > :not(summary) { margin-inline: 16px; }
 }

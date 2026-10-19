@@ -1,3 +1,4 @@
+import { usDate } from '../format'
 import type { Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
 import { parseList, type Actor } from '../door'
@@ -22,7 +23,7 @@ export async function factsFor(env: Bindings, programId: string, ownerName: stri
  const sla = await Promise.all((['critical', 'high', 'medium', 'low'] as const).map(async s => `${s} ${(await slaFor(env, 'vulnerability', s, now)).days} days`))
  return {
   company: p.legal_entity, products: listed(parseList(p.products), 'the company\'s products'), systems: listed(parseList(p.systems), 'the production systems'), regions: listed(parseList(p.regions), 'the regions where the company operates'),
-  owner: lead ?? ownerName, effective: now.toISOString().slice(0, 10),
+  owner: lead ?? ownerName, effective: usDate(now.toISOString().slice(0, 10)),
   identity: listed(connections.filter(c => names[c.provider]).map(c => names[c.provider]), 'the company identity provider'), cloud: listed(connections.filter(c => c.provider === 'aws').map(c => `AWS (account ${c.account})`), 'the cloud provider'),
   code: listed(connections.filter(c => c.provider === 'github').map(c => `the GitHub organization ${c.account}`), 'the code host'), trackers: listed(trackers, 'the issue tracker'), sla: sla.join(', '), timezone: (await settings(env)).timezone,
  }

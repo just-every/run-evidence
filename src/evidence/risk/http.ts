@@ -6,7 +6,7 @@ import { validDate } from '../model'
 import { people } from '../program/people'
 import { acceptResidual, addFromLibrary, addTreatment, assess, completeTreatment, createRisk, currentMethod, link, methods, requireRisk, setMethod } from './storage'
 import { confirmImport, dryRun, readImport } from './import'
-import { dryRunPage, registerPage, riskPage, type RiskRow, type Vendor } from './view'
+import { dryRunPage, registerPage, riskPage, type RiskRow, type Vendor, vendorsPage } from './view'
 const id = `(${uuid})`
 const both = (path: string) => new RegExp(`^/(?:app|api)${path}$`)
 const register = async (env: Bindings) => (await env.DB.prepare(`SELECT r.id,r.title,r.origin,r.source_label,p.name AS owner_name,r.treatment,r.review_due,
@@ -21,7 +21,7 @@ export function riskHandler(clock: () => Date) {
   { method: 'GET', pattern: both('/risks'), run: async c => {
    const risks = await register(c.env), history = await methods(c.env), method = history.at(-1)!
    const prefill = Object.fromEntries(['title', 'scenario', 'controls', 'test_id'].map(k => [k, c.url.searchParams.get(k) ?? '']))
-   return c.isApi ? json({ risks, method, methods: history }) : registerPage(risks, await vendors(c.env), await people(c.env), method, history as never, prefill, c.actor.name)
+   return c.isApi ? json({ risks, method, methods: history }) : registerPage(risks, await people(c.env), method, history as never, prefill, c.actor.name)
   } },
   { method: 'POST', pattern: both('/risks'), run: async c => {
    const input = await readInput(c.request), created = await createRisk(c.env, c.actor, input, 'form', c.now)
@@ -69,9 +69,9 @@ export function riskHandler(clock: () => Date) {
    const vendor = crypto.randomUUID(), owner = typeof input.owner_person_id === 'string' && input.owner_person_id ? input.owner_person_id : null
    if (owner && !await c.env.DB.prepare('SELECT 1 FROM people WHERE id=?').bind(owner).first()) throw new Refusal('Choose a business owner from People.')
    await c.env.DB.batch([c.env.DB.prepare('INSERT INTO vendors(id,name,owner_person_id,data_access,criticality,review_due,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)').bind(vendor, name, owner, text(input, 'data_access', 500, true), criticality, due, c.now.toISOString(), c.now.toISOString()), auditStatement(c.env, c.actor, 'vendor.added', 'vendor:' + vendor, c.now)])
-   return done(c, '/app/risks#vendors-title', { id: vendor }, 201)
+   return done(c, '/app/vendors', { id: vendor }, 201)
   } },
-  { method: 'GET', pattern: both('/vendors'), run: async c => json({ vendors: await vendors(c.env) }) },
+  { method: 'GET', pattern: both('/vendors'), run: async c => c.isApi ? json({ vendors: await vendors(c.env) }) : vendorsPage(await vendors(c.env), await people(c.env), c.actor.name) },
  ]
  return ownerRoutes(routes, clock)
 }

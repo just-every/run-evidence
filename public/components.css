@@ -121,3 +121,6 @@
  .table-scroll td .cell { min-width: 0; }
  .table-scroll td .state { justify-self: start; }
 }
+/* Follow-ups: one row per person, the controls in fitted columns, addresses unbroken. */
+.rer-themed .followups-page .email { overflow-wrap: normal; word-break: keep-all; }
+@media (min-width: 761px) { .rer-themed .followups-page [aria-labelledby="prefs-title"] select { min-width: 0; width: 100%; } .rer-themed .followups-page [aria-labelledby="prefs-title"] td form { margin: 0; } }

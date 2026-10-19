@@ -1,7 +1,8 @@
 import { escape, icon, stateChip, type IconName } from '../ui'
 import { ago, usDate, usDateTime, usDayTime, usTime } from '../format'
 import { providerNames, state, type OpenTest, type Show, type TestState, type WorkspaceRow, type LatestRun } from './workspace'
-const categoryIcon: Record<string, IconName> = { cloud: 'cloud', identity: 'key', code: 'code', device: 'laptop', vulnerability: 'bug', 'security issue': 'alert', personnel: 'people', policy: 'document', vendor: 'plug' }
+import type { CatalogueEntry } from './catalogue'
+export const categoryIcon: Record<string, IconName> = { cloud: 'cloud', identity: 'key', code: 'code', device: 'laptop', vulnerability: 'bug', 'security issue': 'alert', personnel: 'people', policy: 'document', vendor: 'plug' }
 const dotLabel: Record<TestState, string> = { failing: 'Failing', stale: 'Stale', passing: 'Passing', unknown: 'Unknown', 'never run': 'Never run', 'no resources': 'No items' }
 const dot = (s: TestState) => `<span class="test-dot test-dot-${s.replace(' ', '-')}" role="img" aria-label="${dotLabel[s]}"></span>`
 const initial = (name: string) => `<span class="avatar" aria-hidden="true">${escape(Array.from(name)[0]?.toLocaleUpperCase() ?? '')}</span>`
@@ -24,15 +25,35 @@ function runLine(run: LatestRun, unit: string) {
  const detail = failed ? `${run.failed} failing of ${run.population} ${unit}` : run.unknown ? `${run.unknown} unknown of ${run.population} ${unit}` : run.population ? `All ${run.population - run.not_applicable} ${unit} passed` : 'No items in scope'
  return `<li class="run run-${failed ? 'fail' : run.unknown ? 'unknown' : 'pass'}"><div class="run-top"><span>${escape(usDateTime(run.started_at))}</span><span class="run-outcome">${label}</span></div><p>${escape(detail)} · ${escape(run.trigger)} run</p></li>`
 }
+// The opened test's header: its category icon, name, control and integration, and status.
+export function testHead(r: WorkspaceRow, title: string) {
+ const s = state(r)
+ return `<div class="detail-icon${s === 'failing' ? ' is-failing' : ''}">${icon(categoryIcon[r.category] ?? 'pulse')}</div><div class="detail-title">${title}<p>${escape([r.control?.ref, r.integration].filter(Boolean).join(' · '))}</p></div>${stateChip(s)}`
+}
+// The first failure, from the observation that opened it, with what was found in words.
+export function failureAlert(open: OpenTest) {
+ const r = open.row, first = open.failing[0], ob = first?.obligation
+ return first ? `<div class="detail-alert" role="status"><span class="alert-dot" aria-hidden="true"></span><div><strong>Failed on ${escape(usDate(first.observed_at))} at ${escape(usTime(first.observed_at))}</strong><p>${escape(first.reason)} on ${escape(first.display_name)}.${open.failing.length > 1 ? ` ${open.failing.length - 1} more failing.` : ''}</p></div><a class="button button-secondary button-small" href="${ob ? `/app/remediation/${ob.id}` : `/app/tests/${r.id}#results-title`}">View result ${icon('external')}</a></div>` : ''
+}
+// The remediation obligation of the first failing item: next action, owner, target and re-test.
+export function remediationCard(open: OpenTest, now: Date) {
+ const r = open.row, first = open.failing[0], ob = first?.obligation
+ if (!ob) return ''
+ const retest = ob.retest_queued_at ? `Queued<small>${escape(usDayTime(ob.retest_queued_at))}</small>` : open.nextRun ? (Date.parse(open.nextRun) > now.getTime() ? `Next run<small>${escape(usDayTime(open.nextRun))}</small>` : `Overdue<small>since ${escape(usDayTime(open.nextRun))}</small>`) : 'Not scheduled'
+ return `<section class="detail-card" aria-labelledby="task-title"><div class="card-top">${icon('task')}<h3 id="task-title">Remediation</h3>${stateChip(ob.state)}</div><p class="task-action">${escape(ob.next_action || `Bring ${first.display_name} back within the test's criteria`)}</p><p>${escape(first.display_name)} · ${escape(r.severity)} severity · SLA ${escape(ob.sla_status)}</p><dl class="task-meta"><div><dt>Owner</dt><dd>${ob.owner_name ? `<span class="owner">${initial(ob.owner_name)}<span>${escape(ob.owner_name)}</span></span>` : 'Unassigned'}</dd></div><div><dt>${ob.target_date ? 'Target date' : 'Remediate by'}</dt><dd>${icon('calendar')}<span>${escape(usDate(ob.target_date ?? ob.sla_due))}</span></dd></div><div><dt>Re-test</dt><dd>${icon('clock')}<span>${retest}</span></dd></div></dl></section>`
+}
+// The test's own fix step: the catalogue's console step, or the step written with a custom test.
+export function fixStep(r: WorkspaceRow, entry?: CatalogueEntry) {
+ if (entry) return Object.entries(entry.remediation).slice(0, 1).map(([provider, step]) => `<div class="fix"><h4>${escape(providerNames[provider] ?? provider)}</h4><p>${escape(step.console)}</p></div>`).join('')
+ if (r.remediation) return `<div class="fix"><h4>${escape(r.integration)}</h4><p>${escape(r.remediation)}</p></div>`
+ return `<div class="fix"><p>No fix step is written for this test. <a href="/app/tests/${r.id}#tune-title">Write one under Tune</a> and every failure will carry it.</p></div>`
+}
 function detailPanel(open: OpenTest, now: Date) {
- const r = open.row, s = state(r), first = open.failing[0], ob = first?.obligation
+ const r = open.row, s = state(r), ob = open.failing[0]?.obligation
  const tabs = [['Overview', ''], ['Results', `/app/tests/${r.id}#results-title`], ['Run history', `/app/tests/${r.id}#runs-title`], ...(r.control ? [['Control', `/app/controls/${r.control.id}`]] : []), ['Tune', `/app/tests/${r.id}#tune-title`]]
- const head = `<div class="detail-head"><span class="detail-icon${s === 'failing' ? ' is-failing' : ''}">${icon(categoryIcon[r.category] ?? 'pulse')}</span><div class="detail-title"><h2 id="detail-title"><a href="/app/tests/${r.id}">${escape(r.name)}</a></h2><p>${escape([r.control?.ref, r.integration].filter(Boolean).join(' · '))}</p></div>${stateChip(s)}</div>`
+ const head = `<div class="detail-head">${testHead(r, `<h2 id="detail-title"><a href="/app/tests/${r.id}">${escape(r.name)}</a></h2>`)}</div>`
  const nav = `<nav class="detail-tabs" aria-label="Test views">${tabs.map(([label, href]) => href ? `<a href="${href}">${label}</a>` : `<a aria-current="page" href="#detail-title">${label}</a>`).join('')}</nav>`
- const alert = first ? `<div class="detail-alert" role="status"><span class="alert-dot" aria-hidden="true"></span><div><strong>Failed on ${escape(usDate(first.observed_at))} at ${escape(usTime(first.observed_at))}</strong><p>${escape(first.display_name)}: ${escape(first.reason)}.${open.failing.length > 1 ? ` ${open.failing.length - 1} more failing.` : ''}</p></div><a class="button button-secondary button-small" href="${ob ? `/app/remediation/${ob.id}` : `/app/tests/${r.id}#results-title`}">View result ${icon('external')}</a></div>` : ''
- const retest = ob?.retest_queued_at ? `Queued<small>${escape(usDayTime(ob.retest_queued_at))}</small>` : open.nextRun ? (Date.parse(open.nextRun) > now.getTime() ? `Next run<small>${escape(usDayTime(open.nextRun))}</small>` : `Overdue<small>since ${escape(usDayTime(open.nextRun))}</small>`) : 'Not scheduled'
- const task = ob ? `<section class="detail-card" aria-labelledby="task-title"><div class="card-top">${icon('task')}<h3 id="task-title">Remediation</h3>${stateChip(ob.state)}</div><p class="task-action">${escape(ob.next_action || `Bring ${first.display_name} back within the test's criteria`)}</p><p>${escape(first.display_name)} · ${escape(r.severity)} severity · SLA ${escape(ob.sla_status)}</p><dl class="task-meta"><div><dt>Owner</dt><dd>${ob.owner_name ? `<span class="owner">${initial(ob.owner_name)}<span>${escape(ob.owner_name)}</span></span>` : 'Unassigned'}</dd></div><div><dt>${ob.target_date ? 'Target date' : 'Remediate by'}</dt><dd>${icon('calendar')}<span>${escape(usDate(ob.target_date ?? ob.sla_due))}</span></dd></div><div><dt>Re-test</dt><dd>${icon('clock')}<span>${retest}</span></dd></div></dl></section>` : ''
- const steps = open.entry ? Object.entries(open.entry.remediation).slice(0, 1).map(([provider, step]) => `<div class="fix"><h4>${escape(providerNames[provider] ?? provider)}</h4><p>${escape(step.console)}</p></div>`).join('') : `<div class="fix"><p>Bring the item back within the test's criteria at its source. The next passing observation closes this obligation.</p></div>`
+ const alert = failureAlert(open), task = remediationCard(open, now), steps = fixStep(r, open.entry)
  const fix = s === 'failing' ? `<section class="detail-card" aria-labelledby="fix-title"><div class="card-top">${icon('spark')}<h3 id="fix-title">How to remediate</h3></div>${steps}<div class="detail-actions"><form method="post" action="/app/tests/${r.id}/run"><button>Run now</button></form><a class="button button-secondary" href="${ob ? `/app/remediation/${ob.id}` : `/app/tests/${r.id}`}">Remediate</a></div><p class="footnote">Run now re-tests every item. This failure stays in the run history after any later pass.</p></section>` : `<section class="detail-card" aria-labelledby="fix-title"><div class="card-top">${icon('pulse')}<h3 id="fix-title">Latest run</h3></div><p>${r.run ? escape(`${usDateTime(r.run.started_at)} · ${r.run.population} ${r.unit} evaluated`) : 'This test has not run yet.'}</p><div class="detail-actions"><form method="post" action="/app/tests/${r.id}/run"><button>Run now</button></form><a class="button button-secondary" href="/app/tests/${r.id}">Open test</a></div></section>`
  const history = `<section class="detail-card detail-history" aria-labelledby="history-title"><h3 id="history-title">Run history</h3>${open.runs.length ? `<ol class="runs">${open.runs.map(run => runLine(run, r.unit)).join('')}</ol>` : '<p>No runs yet.</p>'}</section>`
  return `<aside class="test-detail${s === 'failing' ? ' is-failing' : ''}" aria-labelledby="detail-title">${s === 'failing' ? '<span class="pushpin" aria-hidden="true"></span>' : ''}${head}${nav}<div class="detail-body">${alert}${task}${fix}${history}</div></aside>`

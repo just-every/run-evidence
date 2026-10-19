@@ -45,11 +45,13 @@ export async function readiness(env: Bindings, row: ProgramRow, now: Date) {
  // Remediation counted here is the program's own: obligations of tests mapped to its in-scope controls.
  const programTests = new Set((await env.DB.prepare('SELECT test_id,control_id FROM test_controls').all<{ test_id: string; control_id: string }>()).results.filter(l => programControls.has(l.control_id)).map(l => l.test_id))
  const open = queue.filter(o => o.state !== 'verified' && programTests.has(o.test_id))
+ // Failing tests are counted as tests, as on the Tests screen; tests_failing counts requirements.
+ const failingTests = (await env.DB.prepare("SELECT DISTINCT o.test_id FROM observations o JOIN test_runs r ON r.id=o.run_id JOIN tests t ON t.id=o.test_id WHERE t.enabled=1 AND o.result='fail' AND r.started_at=(SELECT MAX(started_at) FROM test_runs x WHERE x.test_id=o.test_id)").all<{ test_id: string }>()).results.filter(r => programTests.has(r.test_id)).length
  const totals = {
   requirements: requirements.length, excluded: requirements.length - included.length, included: included.length,
   unmapped: included.filter(r => r.proof === 'unmapped').length,
   proof_current: included.filter(r => r.proof === 'current').length, proof_missing: included.filter(r => r.proof === 'not current').length,
-  tests_failing: included.filter(r => r.testing === 'failing').length, tests_unknown: included.filter(r => r.testing === 'unknown').length, tests_passing: included.filter(r => r.testing === 'passing').length, untested: included.filter(r => r.testing === 'untested').length,
+  tests_failing: included.filter(r => r.testing === 'failing').length, failing_tests: failingTests, tests_unknown: included.filter(r => r.testing === 'unknown').length, tests_passing: included.filter(r => r.testing === 'passing').length, untested: included.filter(r => r.testing === 'untested').length,
   policy_missing: included.filter(r => r.policy === 'missing').length,
   controls: programControls.size, open_obligations: open.length,
   sla_within: open.filter(o => o.sla.status === 'within SLA').length, sla_approaching: open.filter(o => o.sla.status === 'approaching').length, sla_missed: open.filter(o => o.sla.status === 'SLA missed').length,

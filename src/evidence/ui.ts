@@ -28,6 +28,7 @@ const paths = {
  task: '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/>',
  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4m8-4v4"/>',
  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ building: '<path d="M4 21V9l8-6 8 6v12M3 21h18M9 21v-6h6v6M9 10h.01M15 10h.01"/>',
  external: '<path d="M14 4h6v6m0-6-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
 } as const
 export type IconName = keyof typeof paths
