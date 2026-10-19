@@ -91,7 +91,7 @@ export async function syncTicket(env: Bindings, ticket: TicketRow, trigger: stri
  if (remote.closed && !ticket.remote_closed) {
   statements.push(ticketEvent(env, ticket.id, 'closed in tracker', trigger, at, 'Re-test queued; closing a ticket is never a verified fix', remote.status),
    obligationEvent(env, ticket.obligation_id, 'closed in tracker', system, at, `${name} closed (${remote.status}). A re-test is queued; only a passing re-test closes this obligation.`),
-   env.DB.prepare("INSERT INTO retests(id,obligation_id,reason,queued_at) SELECT ?,?,?,? WHERE EXISTS(SELECT 1 FROM obligations WHERE id=? AND state!='verified') ON CONFLICT DO NOTHING").bind(crypto.randomUUID(), ticket.obligation_id, `${name} closed in the tracker`, at, ticket.obligation_id),
+   env.DB.prepare("INSERT INTO retests(id,obligation_id,reason,queued_at) VALUES(?,?,?,?) ON CONFLICT DO NOTHING").bind(crypto.randomUUID(), ticket.obligation_id, `${name} closed in the tracker`, at),
    env.DB.prepare("UPDATE obligations SET state='awaiting verification' WHERE id=? AND state='open'").bind(ticket.obligation_id))
  } else if (!remote.closed && ticket.remote_closed) statements.push(ticketEvent(env, ticket.id, 'reopened in tracker', trigger, at, '', remote.status), obligationEvent(env, ticket.obligation_id, 'reopened in tracker', system, at, `${name} reopened (${remote.status})`))
  // Due date: Evidence owns it. Push local changes; show tracker edits as conflicts.

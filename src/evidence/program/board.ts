@@ -85,13 +85,13 @@ export type BoardReport = Awaited<ReturnType<typeof boardReport>>
 const cell = (value: unknown) => { const text = value === null || value === undefined ? '' : String(value); return /[",\n\r]/.test(text) || /^[=+\-@\t]/.test(text) ? `"${(/^[=+\-@\t]/.test(text) ? "'" : '') + text.replace(/"/g, '""')}"` : text }
 // One flat CSV whose rows reconcile to the JSON report section by section.
 export function boardCsv(r: BoardReport) {
- const rows: unknown[][] = [['section', 'reference', 'name', 'state', 'sla', 'due_or_time', 'owner', 'severity', 'detail']]
+ const rows: unknown[][] = [['section', 'reference', 'name', 'state', 'sla', 'due_or_time', 'owner', 'severity', 'detail', 'hours_to_remediate']]
  for (const [k, v] of Object.entries(r.readiness)) rows.push(['readiness', k, k, String(v), '', '', '', '', ''])
  for (const q of r.filtered_requirements) rows.push(['requirement', q.ref, q.title, q.state === 'excluded' ? 'excluded' : q.ready ? 'ready' : 'not ready', '', r.snapshot_day ?? r.generated_at, '', '', JSON.stringify({proof:q.proof, testing:q.testing, policy:q.policy, controls:q.controls})])
  for (const c of r.checklist) rows.push(['checklist', c.area, c.area, c.available ? `${c.ready} of ${c.total}` : 'unavailable', '', '', '', '', c.refs.join('; ')])
  for (const [name, p] of Object.entries(r.periods)) rows.push(['period', name, `${p.from} through ${p.to}`, p.detail_available ? 'denominator recorded' : p.note, '', p.snapshot_day ?? '', '', '', JSON.stringify(p.totals)])
  for (const [key,value] of Object.entries(r.filters)) rows.push(['filter',key,key,value,'','','','',''])
- for (const i of r.items) rows.push(['remediation', i.obligation, `${i.test} — ${i.item}`, i.state, i.sla, i.due, i.owner ?? '', `${i.category} ${i.severity}`, i.tickets.map(t => `${t.label} ${t.remote_key ?? ''} ${t.remote_status} ${t.sync_state}`).join('; ')])
+ for (const i of r.items) rows.push(['remediation', i.obligation, `${i.test} — ${i.item}`, i.state, i.sla, i.due, i.owner ?? '', `${i.category} ${i.severity}`, i.tickets.map(t => `${t.label} ${t.remote_key ?? ''} ${t.remote_status} ${t.sync_state}`).join('; '), i.hours_to_remediate ?? ''])
  for (const t of r.tests) rows.push(['test', t.id, t.name, t.status, '', t.last_run ?? 'never', '', t.cadence, `${t.failing} failing`])
  for (const f of r.freshness) rows.push(['freshness', f.provider, f.label, f.status, '', f.last_success_at ?? 'never', '', f.kind, f.stale ? 'stale' : f.last_error])
  for (const e of r.exceptions) rows.push(['exception', e.id, e.test, 'approved', '', e.expires_at, e.approved_name, '', e.reason])
@@ -100,7 +100,7 @@ export function boardCsv(r: BoardReport) {
  for (const a of r.personnel.attestations) rows.push(['attestation', a.id, a.name, a.state, '', a.due_date, a.person_id, '', `${a.policy_id} ${a.revision_id}`])
  for (const a of r.personnel.training) rows.push(['training', a.id, a.name, a.state, '', a.due_date, a.person_id, '', `${a.course_id} revision ${a.revision}`])
  for (const s of r.trend) rows.push(['trend', s.day, 'snapshot', '', '', s.taken_at, '', '', JSON.stringify(s.totals)])
- return rows.map(row => row.map(cell).join(',')).join('\r\n') + '\r\n'
+ return rows.map(row => [...row, ...Array(Math.max(0, rows[0].length - row.length)).fill('')].map(cell).join(',')).join('\r\n') + '\r\n'
 }
 // Daily snapshots: the first scheduler tick of each UTC day records each program's readiness.
 export async function snapshotReadiness(env: Bindings, now: Date) {

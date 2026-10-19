@@ -6,10 +6,11 @@ import { activeExceptions, CADENCE_MS, exclusions, latestRevision, requireTest, 
 type Trigger = 'schedule' | 'source-change' | 'manual' | 'retest'
 // One run evaluates the declared population under the latest revision and
 // appends immutable observations. Remediation follows in the same transaction.
-export async function runTest(env: Bindings, testId: string, trigger: Trigger, now: Date, only?: string) {
+export async function runTest(env: Bindings, testId: string, trigger: Trigger, now: Date, only?: string | string[]) {
  const row = await requireTest(env, testId), revision = (await latestRevision(env, testId))!
  const criteria = parseCriteria(revision.criteria_json), excluded = exclusions(revision.excluded_json)
- const population = (await env.DB.prepare('SELECT * FROM resources WHERE type=? AND removed_at IS NULL' + (only ? ' AND id=?' : '') + ' ORDER BY unique_id').bind(...(only ? [row.resource_type, only] : [row.resource_type])).all<Resource>()).results
+ const selected = typeof only === 'string' ? [only] : only
+ const population = (await env.DB.prepare('SELECT * FROM resources WHERE type=? AND removed_at IS NULL' + (selected ? ' AND id IN (SELECT value FROM json_each(?))' : '') + ' ORDER BY unique_id').bind(...(selected ? [row.resource_type, JSON.stringify(selected)] : [row.resource_type])).all<Resource>()).results
  const exceptions = (await activeExceptions(env, now)).filter(e => e.test_id === testId)
  const run = crypto.randomUUID(), at = now.toISOString(), observations: Observation[] = []
  const previous = (await env.DB.prepare('SELECT MAX(started_at) AS at FROM test_runs WHERE test_id=?').bind(testId).first<{ at: string | null }>())?.at ?? null

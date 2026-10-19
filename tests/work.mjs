@@ -75,7 +75,7 @@ async function fakeTrackers(request) {
   if (!i || i.deleted) return reply(404, { errors: [{ message: 'Unknown object' }] })
   if (m[2] && request.method === 'POST') { const gid = String(9000 + (++sequence)); i.comments.push({ id: gid, author: 'IT', body: body.data.text, at: tracker.clock }); return reply(201, { data: { gid } }) }
   if (m[2]) return reply(200, { data: [{ gid: '1', resource_subtype: 'added_to_project', text: 'added', created_at: tracker.clock }, ...i.comments.map(c => ({ gid: c.id, resource_subtype: 'comment_added', text: c.body, created_at: c.at, created_by: { name: c.author } }))] })
-  if (request.method === 'PUT') { i.due = body.data.due_on; return reply(200, { data: {} }) }
+  if (request.method === 'PUT') { if (Object.hasOwn(body.data, 'due_on')) i.due = body.data.due_on; if (Object.hasOwn(body.data, 'completed')) i.closed = body.data.completed; return reply(200, { data: {} }) }
   return reply(200, { data: { gid: i.id, completed: i.closed, assignee: i.assignee ? { name: i.assignee } : null, due_on: i.due } })
  }
  return null
@@ -139,10 +139,11 @@ try {
   assert.equal([...tracker.issues.values()].filter(i => i.provider === 'vector').length, 1)
   assert.ok((await detail(ob2)).events.some(e => e.kind === 'tracker assignee' && /Dana Lee/.test(e.body)))
  })
- await scenario('Closing tickets in Jira, GitHub Issues and Asana while the item still fails queues a re-test with no human action; the obligation stays open', async () => {
+ await scenario('REMEDY-002: Closing Vector, Jira, GitHub Issues and Asana tickets automatically re-tests within 15 minutes; failure keeps the original item clock', async () => {
   const jira = await owner(`/api/remediation/${ob2}/tickets`, { destination_id: dest.jira.id }), github = await owner(`/api/remediation/${ob2}/tickets`, { destination_id: dest.github.id }), asana = await owner(`/api/remediation/${ob2}/tickets`, { destination_id: dest.asana.id })
   assert.deepEqual(find('jira', jira.key).labels, ['evidence', 'compliance']); assert.ok(find('github', github.url.split('/').pop()).labels.includes('priority: high'))
-  const retests = async () => (await app.db.prepare('SELECT COUNT(*) AS n FROM test_runs WHERE trigger=?').bind('retest').first()).n
+  const original = (await detail(ob2)).obligation
+  const retests = async () => (await get('/api/tests/' + original.test_id)).runs.filter(r => r.trigger === 'retest')
   for (const [provider, closeIt] of [['jira', async () => {
    const i = find('jira', jira.key); i.closed = true; i.status = 'Done'
    const body = JSON.stringify({ webhookEvent: 'jira:issue_updated', issue: { key: jira.key } })
@@ -152,29 +153,44 @@ try {
    const body = JSON.stringify({ action: 'closed', issue: { number: Number(number) }, repository: { full_name: 'northstar/web' } })
    assert.equal((await hook(dest.github.id, body, { 'x-hub-signature-256': 'sha256=' + sign(dest.github.webhook.secret, 'tampered' + body), 'x-github-delivery': 'gh-1' })).status, 401)
    assert.equal((await hook(dest.github.id, body, { 'x-hub-signature-256': 'sha256=' + sign(dest.github.webhook.secret, body), 'x-github-delivery': 'gh-1' })).status, 202)
-  }], ['asana', async () => { find('asana', asana.key).closed = true; await at('2026-10-11T12:15:00Z') }]]) {
-   const before = await retests()
+  }], ['vector', async () => {
+   find('vector', (await detail(ob2)).tickets.find(t => t.destination_id === dest.vector.id).remote_key).status = 'Done (completed)'
+   await at('2026-10-11T12:10:00Z')
+  }], ['asana', async () => { find('asana', asana.key).closed = true; await at('2026-10-11T12:25:00Z') }]]) {
+   const before = await retests(), closedAt = Date.parse(tracker.clock)
+   const untouched = (await detail(ob3)).observations
    await closeIt()
-   assert.equal((await detail(ob2)).obligation.state, provider === 'asana' ? 'open' : 'awaiting verification', provider)
+   assert.equal((await detail(ob2)).obligation.state, ['asana', 'vector'].includes(provider) ? 'open' : 'awaiting verification', provider)
    await app.tick()
-   assert.equal(await retests(), before + 1, provider)
+   const runs = await retests(), started = runs.find(r => !before.some(old => old.id === r.id))
+   assert.equal(runs.length, before.length + 1, provider)
+   assert.ok(started && Date.parse(started.started_at) >= closedAt && Date.parse(started.started_at) - closedAt <= 15 * 60000, provider + ' re-test deadline')
    const now = await detail(ob2)
    assert.equal(now.obligation.state, 'open', provider); assert.equal(now.observations[0].run_trigger, 'retest')
+   assert.equal(now.observations[0].result, 'fail', provider)
+   assert.deepEqual([now.obligation.clock_started_at, now.obligation.sla.due, now.obligation.sla_policy_id, now.obligation.cycles], [original.clock_started_at, original.sla.due, original.sla_policy_id, original.cycles], provider)
+   assert.deepEqual((await detail(ob3)).observations, untouched, provider + ' re-tested an unrelated item')
    assert.ok(now.events.some(e => e.kind === 'closed in tracker' && /re-test is queued/.test(e.body)), provider)
   }
   const kinds = (await detail(ob2)).events.map(e => e.kind)
-  assert.equal(kinds.filter(k => k === 'retest failed').length, 3); assert.ok(!kinds.includes('verified'))
+  assert.equal(kinds.filter(k => k === 'retest failed').length, 4); assert.ok(!kinds.includes('verified'))
  })
- await scenario('Comments travel both ways, a due date edited on both sides shows both values, and a refused field mapping is visible on the obligation', async () => {
+ await scenario('REMEDY-002: Linear closure automatically re-tests its item within 15 minutes and keeps the clock; comments, due conflicts and refused mappings remain visible', async () => {
   const lin = await owner(`/api/remediation/${ob3}/tickets`, { destination_id: dest.linear.id })
   await owner(`/api/remediation/${ob3}/comments`, { body: 'Rotating the service account today.' })
   const remote = [...tracker.issues.values()].find(i => i.provider === 'linear' && i.key === lin.key)
   assert.match(remote.comments[0].body, /Evidence owner in Evidence: Rotating the service account today\./)
   remote.comments.push({ id: 'lc-ext', author: 'Dana Lee', body: 'Blocked on vendor access.', at: tracker.clock })
   remote.due = '2026-12-01'
+  const original = (await detail(ob3)).obligation, closedAt = Date.parse(tracker.clock)
+  remote.status = 'Done (completed)'
   await owner(`/api/remediation/${ob3}/assign`, { owner_person_id: (await owner('/api/people', { name: 'Ana Ruiz', email: 'ana@northstar.test', kind: 'employee' })).id, next_action: 'Rotate', target_date: '2026-10-30' }, 200)
-  await at('2026-10-11T12:30:00Z'); await app.tick()
+  await at('2026-10-11T12:40:00Z'); await app.tick()
   const view = await detail(ob3), ticket = view.tickets.find(t => t.destination_id === dest.linear.id)
+  assert.equal(view.obligation.state, 'open')
+  assert.equal(view.observations[0].run_trigger, 'retest'); assert.equal(view.observations[0].result, 'fail')
+  assert.ok(Date.parse(view.observations[0].observed_at) - closedAt <= 15 * 60000)
+  assert.deepEqual([view.obligation.clock_started_at, view.obligation.sla.due, view.obligation.sla_policy_id, view.obligation.cycles], [original.clock_started_at, original.sla.due, original.sla_policy_id, original.cycles])
   assert.equal(ticket.sync_state, 'conflict'); assert.equal(ticket.remote_due, '2026-12-01')
   assert.ok(view.events.some(e => e.kind === 'tracker comment' && e.body === 'Blocked on vendor access.' && /Dana Lee in Linear/.test(e.actor_name)))
   assert.ok(!view.events.some(e => e.kind === 'tracker comment' && /Rotating/.test(e.body)), 'own comment mirrored back')
@@ -190,16 +206,23 @@ try {
   await owner(`/api/remediation/${ob3}/tickets`, { destination_id: dest.jira.id })
   assert.equal((await detail(ob3)).tickets.find(t => t.destination_id === dest.jira.id).sync_state, 'linked')
  })
- await scenario('A revoked grant and a deleted remote ticket are shown on the obligation; only a fixed source verifies the work', async () => {
+ await scenario('REMEDY-002: A source change verifies closure automatically within 15 minutes; revoked grants and deleted tickets remain visible', async () => {
   tracker.tokens.linear = 'rotated-elsewhere'
   const github = (await detail(ob2)).tickets.find(t => t.destination_id === dest.github.id); find('github', github.remote_id).deleted = true
-  await at('2026-10-11T12:45:00Z'); await app.tick()
+  await at('2026-10-11T12:55:00Z'); await app.tick()
   const lin = (await detail(ob3)).tickets.find(t => t.destination_id === dest.linear.id)
   assert.equal(lin.sync_state, 'authorization lost'); assert.equal((await get('/api/trackers/' + dest.linear.id)).destination.status, 'needs reconnect')
   assert.equal((await detail(ob2)).tickets.find(t => t.id === github.id).sync_state, 'remote deleted')
   assert.ok((await detail(ob2)).events.some(e => e.kind === 'ticket remote deleted'))
   assert.equal((await detail(ob2)).obligation.state, 'open')
+  const original = (await detail(ob2)).obligation, changedAt = Date.parse(tracker.clock)
   assert.equal((await v1(push.token, 'PUT', '/v1/resources/internal_service', { resources: services(['svc-3']) })).status, 200)
+  const verified = await detail(ob2)
+  assert.equal(verified.obligation.state, 'verified')
+  assert.equal(verified.observations[0].run_trigger, 'source-change'); assert.equal(verified.observations[0].result, 'pass')
+  assert.ok(Date.parse(verified.obligation.closed_at) >= changedAt && Date.parse(verified.obligation.closed_at) - changedAt <= 15 * 60000)
+  assert.deepEqual([verified.obligation.clock_started_at, verified.obligation.sla.due, verified.obligation.cycles], [original.clock_started_at, original.sla.due, original.cycles])
+  assert.ok(verified.observations.some(o => o.result === 'fail' && o.run_trigger === 'retest'))
   await at('2026-10-11T13:00:00Z'); await app.tick()
   assert.equal((await detail(ob2)).obligation.state, 'verified'); assert.equal((await detail(ob3)).obligation.state, 'open')
   tracker.tokens.linear = 'lin_key2'
@@ -207,33 +230,65 @@ try {
   await owner(`/api/tickets/${lin.id}/sync`, {}, 200)
   assert.equal((await detail(ob3)).tickets.find(t => t.id === lin.id).sync_state, 'linked')
  })
- await scenario('Per-item tickets are created automatically with their own due dates; closing one re-tests only its item; the queue filters by tracker assignee and status', async () => {
-  assert.equal((await v1(push.token, 'PUT', '/v1/resource-types/endpoint', { schema: { fields: { patched: 'boolean' } } })).status, 200)
-  assert.equal((await v1(push.token, 'PUT', '/v1/resources/endpoint', { resources: ['e1', 'e2'].map(u => ({ uniqueId: u, displayName: 'Endpoint ' + u, attributes: { patched: false } })) })).status, 200)
-  const test = await (await v1(push.token, 'POST', '/v1/tests', { name: 'Endpoints are patched', resourceType: 'endpoint', criteria: [{ attribute: 'patched', op: 'equals', value: true }], cadence: 'daily', category: 'device', severity: 'medium', controls: ['OPS-04'] })).json()
-  await owner(`/api/tests/${test.id}/ticket-settings`, { destination_id: dest.jira.id, granularity: 'item', auto_create: 'on', follow_up: 'reopen' }, 200)
-  await at('2026-10-11T14:00:00Z'); await app.tick()
-  const items = (await get('/api/remediation')).open.filter(o => o.test_id === test.id)
-  assert.equal(items.length, 2); assert.ok(items.every(o => o.tickets.length === 1 && /^SEC-/.test(o.tickets[0].remote_key)))
-  const [first, second] = items.map(o => find('jira', o.tickets[0].remote_key))
-  assert.ok(first.due && second.due); assert.notEqual(first.id, second.id)
-  first.assignee = 'Lena Ortiz'; first.status = 'In Progress'
-  await at('2026-10-11T14:15:00Z'); await app.tick()
-  const filtered = await get('/api/remediation?tracker_assignee=lena')
-  assert.deepEqual(filtered.open.map(o => o.resource_name), ['Endpoint e1'])
-  assert.deepEqual((await get('/api/remediation?tracker_status=progress')).open.map(o => o.resource_name), ['Endpoint e1'])
-  const page = await get('/api/tests/' + test.id)
-  assert.equal(page.latest.find(o => o.display_name === 'Endpoint e1').tickets[0].remote_assignee, 'Lena Ortiz')
-  first.closed = true; first.status = 'Done'
-  const before = (await app.db.prepare("SELECT COUNT(*) AS n FROM observations o JOIN test_runs r ON r.id=o.run_id WHERE r.trigger='retest' AND o.test_id=?").bind(test.id).first()).n
-  await at('2026-10-11T14:30:00Z'); await app.tick()
-  const retested = (await app.db.prepare("SELECT r2.display_name FROM observations o JOIN test_runs r ON r.id=o.run_id JOIN resources r2 ON r2.id=o.resource_id WHERE r.trigger='retest' AND o.test_id=?").bind(test.id).all()).results.slice(before).map(r => r.display_name)
-  assert.deepEqual(retested, ['Endpoint e1'])
-  const after = (await get('/api/remediation')).open.filter(o => o.test_id === test.id)
-  assert.equal(after.length, 2); assert.equal(after.find(o => o.resource_name === 'Endpoint e1').state, 'open')
-  assert.equal(after.find(o => o.resource_name === 'Endpoint e2').clock_started_at, items.find(o => o.resource_name === 'Endpoint e2').clock_started_at); assert.equal(after.find(o => o.resource_name === 'Endpoint e2').sla.due, items.find(o => o.resource_name === 'Endpoint e2').sla.due)
+ await scenario('REMEDY-002 / WORK-002: Every current tracker gives each item its due date and re-tests only its own item within 15 minutes while both original clocks keep running', async () => {
+  for (const provider of ['vector', 'jira', 'linear', 'github', 'asana']) {
+   const type = 'endpoint_' + provider, name = uniqueId => `Endpoint ${provider} ${uniqueId}`
+   const resources = ['e1', 'e2'].map(uniqueId => ({ uniqueId, displayName: name(uniqueId), attributes: { patched: false } }))
+   assert.equal((await v1(push.token, 'PUT', '/v1/resource-types/' + type, { schema: { fields: { patched: 'boolean' } } })).status, 200)
+   assert.equal((await v1(push.token, 'PUT', '/v1/resources/' + type, { resources })).status, 200)
+   const response = await v1(push.token, 'POST', '/v1/tests', { name: `${provider} endpoints are patched`, resourceType: type, criteria: [{ attribute: 'patched', op: 'equals', value: true }], cadence: 'daily', category: 'device', severity: 'medium', controls: ['OPS-04'] })
+   assert.equal(response.status, 201); const test = await response.json()
+   await owner(`/api/tests/${test.id}/ticket-settings`, { destination_id: dest[provider].id, granularity: 'item', auto_create: 'on', follow_up: 'reopen' }, 200)
+   await at(new Date(Date.parse(tracker.clock) + 60 * 60000).toISOString()); await app.tick()
+   const items = (await get('/api/remediation')).open.filter(o => o.test_id === test.id)
+   assert.equal(items.length, 2); assert.ok(items.every(o => o.tickets.length === 1), provider)
+   const remotes = await Promise.all(items.map(async o => {
+    const ticket = (await detail(o.id)).tickets[0]
+    return [...tracker.issues.values()].find(i => i.provider === provider && (i.id === ticket.remote_id || (i.key ?? i.id) === ticket.remote_key))
+   }))
+   const [first, second] = remotes
+   assert.ok(first && second, provider); assert.notEqual(first.id, second.id)
+   for (const [index, remote] of remotes.entries()) {
+    if (provider === 'github') assert.ok(remote.body.includes(items[index].sla.due.slice(0, 10)), 'GitHub issue omits its item deadline')
+    else assert.equal(remote.due, items[index].sla.due.slice(0, 10), provider)
+   }
+   first.assignee = 'Lena ' + provider
+   first.status = ['vector', 'linear'].includes(provider) ? 'In Progress (started)' : 'In Progress'
+   await at(new Date(Date.parse(tracker.clock) + 15 * 60000).toISOString()); await app.tick()
+   const page = await get('/api/tests/' + test.id), ticket = page.latest.find(o => o.display_name === name('e1')).tickets[0]
+   assert.equal(ticket.remote_assignee, first.assignee, provider)
+   const filter = `tracker_assignee=${encodeURIComponent(first.assignee)}`
+   assert.deepEqual((await get('/api/remediation?' + filter)).open.map(o => o.resource_name), [name('e1')])
+   assert.deepEqual((await get('/api/remediation?' + filter + '&tracker_status=' + encodeURIComponent(ticket.remote_status))).open.map(o => o.resource_name), [name('e1')])
+   const before = await Promise.all(items.map(o => detail(o.id))), closedAt = Date.parse(tracker.clock)
+   first.closed = true; first.status = ['vector', 'linear'].includes(provider) ? 'Done (completed)' : 'Done'
+   await at(new Date(closedAt + 15 * 60000).toISOString()); await app.tick()
+   const after = await Promise.all(items.map(o => detail(o.id)))
+   assert.equal(after[0].obligation.state, 'open', provider)
+   assert.equal(after[0].observations.length, before[0].observations.length + 1, provider)
+   assert.equal(after[0].observations[0].run_trigger, 'retest'); assert.equal(after[0].observations[0].result, 'fail')
+   assert.ok(Date.parse(after[0].observations[0].observed_at) >= closedAt && Date.parse(after[0].observations[0].observed_at) - closedAt <= 15 * 60000)
+   assert.deepEqual(after[1].observations, before[1].observations, provider + ' re-tested the other item')
+   for (const [index, view] of after.entries()) assert.deepEqual([view.obligation.clock_started_at, view.obligation.sla.due, view.obligation.sla_policy_id, view.obligation.cycles], [items[index].clock_started_at, items[index].sla.due, items[index].sla_policy_id, items[index].cycles], provider)
+   const run = (await get('/api/tests/' + test.id)).runs.find(r => r.trigger === 'retest')
+   assert.equal(run.population, 1); assert.equal(run.failed, 1)
+   // A later source event fixes only e2; e1's failed-ticket clock survives.
+   resources[1].attributes.patched = true
+   const changedAt = Date.parse(tracker.clock)
+   assert.equal((await v1(push.token, 'PUT', '/v1/resources/' + type, { resources })).status, 200)
+   const fixed = await detail(items[1].id), stillOpen = await detail(items[0].id)
+   assert.equal(fixed.obligation.state, 'verified'); assert.equal(fixed.observations[0].run_trigger, 'source-change')
+   assert.equal(fixed.observations[0].result, 'pass')
+   assert.ok(Date.parse(fixed.obligation.closed_at) >= changedAt && Date.parse(fixed.obligation.closed_at) - changedAt <= 15 * 60000)
+   assert.equal(stillOpen.obligation.state, 'open')
+   assert.equal(stillOpen.obligation.clock_started_at, items[0].clock_started_at); assert.equal(stillOpen.obligation.sla.due, items[0].sla.due)
+   second.closed = true; second.status = ['vector', 'linear'].includes(provider) ? 'Done (completed)' : 'Done'
+   await at(new Date(Date.parse(tracker.clock) + 15 * 60000).toISOString()); await app.tick()
+   assert.equal((await detail(items[1].id)).obligation.state, 'verified')
+   assert.equal((await detail(items[0].id)).obligation.state, 'open')
+  }
  })
- await scenario('A whole-test ticket lists every item with its deadline; closing it with one item fixed re-tests all, closes only the fixed one and reopens the ticket naming the rest', async () => {
+ await scenario('REMEDY-002 / WORK-002: A whole-test ticket lists every item with its deadline; closing it with one item fixed re-tests all, closes only the fixed one and reopens the ticket naming the rest', async () => {
   assert.equal((await v1(push.token, 'PUT', '/v1/resource-types/bucket', { schema: { fields: { private: 'boolean' } } })).status, 200)
   assert.equal((await v1(push.token, 'PUT', '/v1/resources/bucket', { resources: ['b1', 'b2', 'b3'].map(u => ({ uniqueId: u, displayName: 'Bucket ' + u, attributes: { private: false } })) })).status, 200)
   const test = await (await v1(push.token, 'POST', '/v1/tests', { name: 'Buckets are private', resourceType: 'bucket', criteria: [{ attribute: 'private', op: 'equals', value: true }], cadence: 'daily', category: 'cloud', severity: 'high', controls: ['DAT-08'] })).json()
@@ -247,8 +302,18 @@ try {
   assert.equal((await v1(push.token, 'PUT', '/v1/resources/bucket', { resources: ['b1', 'b2', 'b3', 'b4'].map(u => ({ uniqueId: u, displayName: 'Bucket ' + u, attributes: { private: u === 'b1' ? true : false } })) })).status, 200)
   await owner(`/api/tests/${test.id}/tickets`, {})
   assert.match(remote.comments.at(-1).body, /New failing items:\n- Bucket b4/)
+  const members = [...(await get('/api/remediation')).open, ...(await get('/api/remediation')).resolved].filter(o => o.test_id === test.id)
+  const before = await Promise.all(members.map(o => detail(o.id))), closedAt = Date.parse(tracker.clock)
   remote.closed = true
-  await at('2026-10-11T14:45:00Z'); await app.tick()
+  await at(new Date(Date.parse(tracker.clock) + 15 * 60000).toISOString()); await app.tick()
+  for (const prior of before) {
+   const retested = await detail(prior.obligation.id)
+   assert.equal(retested.observations.length, prior.observations.length + 1, prior.obligation.resource_name)
+   assert.equal(retested.observations[0].run_trigger, 'retest', 'whole-test closure must re-test every listed item, including a previously passing item')
+   assert.ok(Date.parse(retested.observations[0].observed_at) >= closedAt && Date.parse(retested.observations[0].observed_at) - closedAt <= 15 * 60000)
+   assert.equal(retested.obligation.clock_started_at, prior.obligation.clock_started_at)
+   assert.equal(retested.obligation.sla.due, prior.obligation.sla.due)
+  }
   const states = Object.fromEntries((await get('/api/remediation')).open.concat((await get('/api/remediation')).resolved).filter(o => o.test_id === test.id).map(o => [o.resource_name, o.state]))
   assert.deepEqual(states, { 'Bucket b1': 'verified', 'Bucket b2': 'open', 'Bucket b3': 'open', 'Bucket b4': 'open' })
   assert.equal(remote.closed, false)

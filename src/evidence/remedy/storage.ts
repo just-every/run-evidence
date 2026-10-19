@@ -80,11 +80,12 @@ export async function acceptRisk(env: Bindings, actor: Actor, id: string, ration
 // Paused time: approved, expiring exceptions overlapping the running clock.
 export function slaStatus(o: Obligation, exceptions: { test_id: string; resource_id: string | null; approved_at: string; expires_at: string; revoked_at: string | null }[], now: Date) {
  const start = Date.parse(o.clock_started_at), end = o.closed_at ? Date.parse(o.closed_at) : now.getTime()
- const paused = exceptions.filter(e => e.test_id === o.test_id && (e.resource_id === null || e.resource_id === o.resource_id)).reduce((sum, e) => {
-  const from = Math.max(start, Date.parse(e.approved_at)), to = Math.min(end, Date.parse(e.revoked_at ?? e.expires_at), Date.parse(e.expires_at))
-  return sum + Math.max(0, to - from)
- }, 0)
- const due = start + o.sla_days * DAY + paused, pausedNow = exceptions.some(e => e.test_id === o.test_id && (e.resource_id === null || e.resource_id === o.resource_id) && !e.revoked_at && Date.parse(e.approved_at) <= now.getTime() && Date.parse(e.expires_at) > now.getTime())
+ const intervals = exceptions.filter(e => e.test_id === o.test_id && (e.resource_id === null || e.resource_id === o.resource_id)).map(e => ({
+  from: Math.max(start, Date.parse(e.approved_at)), to: Math.min(end, Date.parse(e.revoked_at ?? e.expires_at), Date.parse(e.expires_at)),
+ })).filter(i => i.to > i.from).sort((a,b) => a.from - b.from)
+ let paused = 0, through = start
+ for (const interval of intervals) { paused += Math.max(0, interval.to - Math.max(through, interval.from)); through = Math.max(through, interval.to) }
+ const due = start + o.sla_days * DAY + paused, pausedNow = o.state !== 'verified' && exceptions.some(e => e.test_id === o.test_id && (e.resource_id === null || e.resource_id === o.resource_id) && !e.revoked_at && Date.parse(e.approved_at) <= now.getTime() && Date.parse(e.expires_at) > now.getTime())
  const status = o.state === 'verified' ? (end <= due ? 'resolved within SLA' : 'resolved after SLA') : now.getTime() >= due ? 'SLA missed' : now.getTime() >= due - Math.max(DAY, o.sla_days * DAY * 0.2) ? 'approaching' : 'within SLA'
  return { due: new Date(due).toISOString(), status, paused: pausedNow, pausedMs: paused, hoursToRemediate: o.closed_at ? Math.round((end - start) / 3600000) : null }
 }
@@ -97,11 +98,15 @@ export async function obligations(env: Bindings, now: Date) {
 }
 export const obligationEvents = async (env: Bindings, id: string) => (await env.DB.prepare('SELECT kind,actor_name,body,observation_id,at FROM obligation_events WHERE obligation_id=? ORDER BY at,rowid').bind(id).all<{ kind: string; actor_name: string; body: string; observation_id: string | null; at: string }>()).results
 // Automatic re-tests: queued by closed work, run within one scheduler tick.
-export async function runRetests(env: Bindings, now: Date, run: (testId: string, resourceId: string) => Promise<{ run: string }>) {
- const { results } = await env.DB.prepare('SELECT q.id,o.test_id,o.resource_id FROM retests q JOIN obligations o ON o.id=q.obligation_id WHERE q.done_at IS NULL ORDER BY q.queued_at LIMIT 50').all<{ id: string; test_id: string; resource_id: string }>()
- for (const item of results) {
-  const outcome = await run(item.test_id, item.resource_id)
-  await env.DB.prepare('UPDATE retests SET run_id=?,done_at=? WHERE id=? AND done_at IS NULL').bind(outcome.run, now.toISOString(), item.id).run()
+export async function runRetests(env: Bindings, now: Date, run: (testId: string, resourceIds: string[]) => Promise<{ run: string }>) {
+ const { results } = await env.DB.prepare('SELECT q.id,o.test_id,o.resource_id FROM retests q JOIN obligations o ON o.id=q.obligation_id WHERE q.done_at IS NULL ORDER BY q.queued_at,q.rowid').all<{ id: string; test_id: string; resource_id: string }>()
+ // One read/evaluation per test, restricted to the requested items. A large
+ // whole-test ticket must not wait behind the former 50-item cron slice.
+ const groups = new Map<string, typeof results>()
+ for (const item of results) groups.set(item.test_id, [...(groups.get(item.test_id) ?? []), item])
+ for (const [test, items] of groups) {
+  const outcome = await run(test, [...new Set(items.map(i => i.resource_id))])
+  await env.DB.prepare('UPDATE retests SET run_id=?,done_at=? WHERE id IN (SELECT value FROM json_each(?)) AND done_at IS NULL').bind(outcome.run, now.toISOString(), JSON.stringify(items.map(i => i.id))).run()
  }
  return results.length
 }
