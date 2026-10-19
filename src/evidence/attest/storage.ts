@@ -6,6 +6,7 @@ import { upsertRegister } from '../resources'
 import { catalogueStatements } from '../tests/storage'
 import { runForType } from '../tests/engine'
 import { sendFollowup, sent } from '../followup/send'
+import { requestHandover } from '../handover/storage'
 // ATTEST-001: role-appropriate policy assignment, acknowledgment of an exact
 // published revision by the signed-in person only, exceptions, reminders and
 // departures. Publishing, assigning or reminding never records anyone's assent.
@@ -69,7 +70,8 @@ export async function addException(env: Bindings, actor: Actor, policy: string, 
  await env.DB.batch([env.DB.prepare('INSERT INTO policy_exceptions(id,policy_id,person_id,reason,approved_by,approved_at,expires_at) VALUES(?,?,?,?,?,?,?)').bind(crypto.randomUUID(), policy, person, text(input, 'reason', 500), actor.name, now.toISOString(), until + 'T23:59:59.999Z'), auditStatement(env, actor, 'policy.exception', 'policy:' + policy, now, 'succeeded', `${person ?? 'everyone'} until ${until}`)])
  await syncAttestations(env, now)
 }
-// A departure closes open work, keeps every acknowledgment and ends sign-in access.
+// A departure closes open work, keeps every acknowledgment, ends sign-in access
+// and asks for the handover of everything the person still holds (LIFECYCLE-002).
 export async function depart(env: Bindings, actor: Actor, request: Request, person: string, reason: string, now: Date) {
  const row = await env.DB.prepare('SELECT id,email FROM people WHERE id=?').bind(person).first<{ id: string; email: string }>()
  if (!row) throw new Refusal('Person not found.', 404)
@@ -85,7 +87,8 @@ export async function depart(env: Bindings, actor: Actor, request: Request, pers
   auditStatement(env, actor, 'person.departed', 'person:' + person, now, 'succeeded', outcome),
  ])
  await syncAttestations(env, now)
- return { outcome }
+ const handover = await requestHandover(env, person, now, false)
+ return { outcome, handover }
 }
 export async function invite(env: Bindings, request: Request, actor: Actor, person: string, now: Date) {
  const row = await env.DB.prepare('SELECT id,name,email FROM people WHERE id=?').bind(person).first<{ id: string; name: string; email: string }>()

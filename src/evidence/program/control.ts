@@ -45,7 +45,7 @@ export async function assignOwner(env: Bindings, actor: Actor, id: string, input
  ])
 }
 export async function ownership(env: Bindings, id: string) {
- const rows = (await env.DB.prepare('SELECT o.*,p.name AS owner_name,p.email AS owner_email FROM control_owners o JOIN people p ON p.id=o.owner_person_id WHERE o.control_id=? ORDER BY o.at,o.rowid').bind(id).all<{ owner_person_id: string; owner_name: string; owner_email: string; contributors: string; due_date: string | null; actor_name: string; reason: string; at: string }>()).results
+ const rows = (await env.DB.prepare('SELECT o.*,p.name AS owner_name,p.email AS owner_email,d.departed_at AS owner_left_at FROM control_owners o JOIN people p ON p.id=o.owner_person_id LEFT JOIN people_departures d ON d.person_id=o.owner_person_id WHERE o.control_id=? ORDER BY o.at,o.rowid').bind(id).all<{ owner_person_id: string; owner_name: string; owner_email: string; owner_left_at: string | null; contributors: string; due_date: string | null; actor_name: string; reason: string; at: string }>()).results
  const names = new Map((await env.DB.prepare('SELECT id,name FROM people').all<{ id: string; name: string }>()).results.map(p => [p.id, p.name]))
  return rows.map(r => ({ ...r, contributor_names: parseList(r.contributors).map(c => names.get(c) ?? c) }))
 }

@@ -2,7 +2,7 @@
 // through the owner's doors and the Cron Trigger. Only the mail edge is faked.
 process.env.RER_SERVER_JOURNEY = '1'
 import assert from 'node:assert/strict'
-import {readFile} from 'node:fs/promises'
+import {readdir, readFile} from 'node:fs/promises'
 import {createHash} from 'node:crypto'
 import {createRequire} from 'node:module'
 const require = createRequire(import.meta.url), dependency = createRequire(require.resolve('wrangler/package.json'))
@@ -179,8 +179,8 @@ try {
    // A predecessor-schema fixture, not application writes with a mocked store.
    await prior.db.prepare("INSERT INTO risks(id,title,scenario,origin,source_label,treatment,created_at,updated_at) VALUES(?,'Legacy workforce access','Old assessment','form','Entered by owner','mitigate','2026-10-01','2026-10-01')").bind(id).run()
    await prior.db.prepare("INSERT INTO risk_assessments(id,risk_id,kind,method_revision,likelihood,impact,score,level,likelihood_label,impact_label,actor_name,at) VALUES(?,?,'inherent',1,2,3,6,'Medium','Unlikely','Moderate','Original owner','2026-10-01')").bind(crypto.randomUUID(),id).run()
-   const sql = await readFile('migrations/core/0035_risk_details.sql','utf8')
-   await prior.db.batch(unstable_splitSqlQuery(sql).map(s=>prior.db.prepare(s)))
+   // The upgrade applies every later migration in order, as a deploy does.
+   for (const file of (await readdir('migrations/core')).filter(f => f > '0035').sort()) await prior.db.batch(unstable_splitSqlQuery(await readFile('migrations/core/'+file,'utf8')).map(s=>prior.db.prepare(s)))
    const response = await prior.fetch('/api/risks/'+id); assert.equal(response.status,200)
    const detail = await response.json()
    assert.equal(detail.assessments[0].score,6); assert.equal(detail.assessments[0].actor_name,'Original owner')
@@ -190,7 +190,7 @@ try {
    const magic = Buffer.from('EVIDENCE-ARCHIVE\n'), length = exported.readUInt32BE(magic.length)
    const envelope = JSON.parse(exported.subarray(magic.length+4,magic.length+4+length))
    const manifest = JSON.parse(envelope.manifest)
-   manifest.version = 4; delete manifest.extensions.program.files; manifest.extensions.program.rows.risk_methods = []
+   manifest.version = 4; delete manifest.extensions.program.files; delete manifest.extensions.program.rows.handover_events; delete manifest.extensions.program.rows.handover_settings; manifest.extensions.program.rows.risk_methods = []
    for (const row of manifest.extensions.program.rows.risks) delete row.library_revision
    const text = JSON.stringify(manifest), legacyEnvelope = Buffer.from(JSON.stringify({manifest:text,sha256:createHash('sha256').update(text).digest('hex')}))
    const size = Buffer.alloc(4); size.writeUInt32BE(legacyEnvelope.length)

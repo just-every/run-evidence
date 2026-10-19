@@ -90,9 +90,9 @@ export function slaStatus(o: Obligation, exceptions: { test_id: string; resource
  return { due: new Date(due).toISOString(), status, paused: pausedNow, pausedMs: paused, hoursToRemediate: o.closed_at ? Math.round((end - start) / 3600000) : null }
 }
 export const allExceptions = async (env: Bindings) => (await env.DB.prepare('SELECT test_id,resource_id,approved_at,expires_at,revoked_at FROM test_exceptions').all<{ test_id: string; resource_id: string | null; approved_at: string; expires_at: string; revoked_at: string | null }>()).results
-export interface QueueRow extends Obligation { test_name: string; catalogue_id: string | null; resource_name: string; resource_type: string; source_kind: string; owner_name: string | null; owner_email: string | null }
+export interface QueueRow extends Obligation { test_name: string; catalogue_id: string | null; resource_name: string; resource_type: string; source_kind: string; owner_name: string | null; owner_email: string | null; owner_left_at: string | null }
 export async function obligations(env: Bindings, now: Date) {
- const rows = (await env.DB.prepare('SELECT o.*,t.name AS test_name,t.catalogue_id,r.display_name AS resource_name,r.type AS resource_type,r.source_kind,p.name AS owner_name,p.email AS owner_email FROM obligations o JOIN tests t ON t.id=o.test_id JOIN resources r ON r.id=o.resource_id LEFT JOIN people p ON p.id=o.owner_person_id ORDER BY o.clock_started_at,r.display_name,o.id').all<QueueRow>()).results
+ const rows = (await env.DB.prepare('SELECT o.*,t.name AS test_name,t.catalogue_id,r.display_name AS resource_name,r.type AS resource_type,r.source_kind,p.name AS owner_name,p.email AS owner_email,(SELECT departed_at FROM people_departures d WHERE d.person_id=o.owner_person_id) AS owner_left_at FROM obligations o JOIN tests t ON t.id=o.test_id JOIN resources r ON r.id=o.resource_id LEFT JOIN people p ON p.id=o.owner_person_id ORDER BY o.clock_started_at,r.display_name,o.id').all<QueueRow>()).results
  const exceptions = await allExceptions(env)
  return rows.map(o => ({ ...o, sla: slaStatus(o, exceptions, now) }))
 }

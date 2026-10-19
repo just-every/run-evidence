@@ -88,6 +88,8 @@ export const programColumns = {
  ticket_settings:['test_id','destination_id','granularity','auto_create','follow_up','updated_by','updated_at'],
  ticket_defaults:['singleton','destination_id','granularity','auto_create','follow_up','updated_by','updated_at'],
  ticket_groups:['id','test_id','destination_id','remote_id','remote_key','remote_url','created_at','created_name','state','item_list','handled_close_at','due_written'],
+ handover_events:['id','person_id','kind','item_id','role','label','to_person_id','reason','bulk','actor_id','actor_name','at'],
+ handover_settings:['singleton','window_days','updated_by','updated_at'],
 } as const
 export type ProgramTable = keyof typeof programColumns
 export const programTables = Object.keys(programColumns) as ProgramTable[]
@@ -97,7 +99,9 @@ const addedInVersion4 = new Set<ProgramTable>(['tracker_destinations', 'tickets'
 const addedColumns: Partial<Record<ProgramTable, Record<string, string | null>>> = { followups: { channel: 'email' }, connections: { config_json: '{}' }, policies: { template_id: null }, people: { role: null }, tickets: { group_id: null } }
 const addedInVersion5: Partial<Record<ProgramTable, Record<string, string | null>>> = { risk_methods: { likelihood_definitions: '[]', impact_definitions: '[]' }, risks: { library_revision: null } }
 const columnsOf = (table: ProgramTable, version: number) => programColumns[table].filter(c => (version >= 4 || !Object.hasOwn(addedColumns[table] ?? {}, c)) && (version >= 5 || !Object.hasOwn(addedInVersion5[table] ?? {}, c)))
-const tablesOf = (version: number) => programTables.filter(t => version >= 4 || !addedInVersion4.has(t))
+// Tables first carried by archive version 7 (LIFECYCLE-002 handover history and window).
+const addedInVersion7 = new Set<ProgramTable>(['handover_events', 'handover_settings'])
+const tablesOf = (version: number) => programTables.filter(t => (version >= 4 || !addedInVersion4.has(t)) && (version >= 7 || !addedInVersion7.has(t)))
 export interface ProgramArchive { rows: Record<ProgramTable, Row[]>; files?: PopulationFile[] }
 export async function exportProgramArchive(env: Pick<Bindings, 'DB' | 'EXHIBITS'>): Promise<ProgramArchive> {
  const results = await env.DB.batch(programTables.map(t => env.DB.prepare(`SELECT ${programColumns[t].join(',')} FROM ${t} ORDER BY rowid LIMIT 20001`)))

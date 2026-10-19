@@ -2,6 +2,8 @@
 // archives keep ISO; only pages read through these.
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const parts = (value: string) => { const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(value) ? value + 'T00:00:00Z' : value); return Number.isNaN(d.getTime()) ? null : d }
+/** " · owner left 2026-10-16" (LIFECYCLE-002), or nothing while the owner is current */
+export const ownerLeft = (departedAt: string | null | undefined) => departedAt ? ` · owner left ${departedAt.slice(0, 10)}` : ''
 /** "Oct 16, 2026" */
 export function usDate(value: string | null | undefined) {
  const d = value ? parts(value) : null

@@ -13,6 +13,7 @@ import { reviewReminders } from './reviews/schedule'
 import { accessReviewWork } from './access/storage'
 import { trainingWork } from './training/storage'
 import { ticketAutomation } from './work/granularity'
+import { handoverWork } from './handover/storage'
 // The Worker's Cron Trigger (every five minutes): collect due connector reads,
 // read linked tracker tickets, run due tests, run queued re-tests, then send deduplicated follow-ups. Each
 // step records its own durable outcome; a failed step does not hide the others.
@@ -33,6 +34,7 @@ export async function scheduledWork(env: Bindings, now: Date) {
  await step('weekly digest', () => weeklyDigest(env, now))
  await step('attestation reminders', () => attestationReminders(env, now))
  await step('review reminders', () => reviewReminders(env, now))
+ await step('handovers', () => handoverWork(env, now))
  await step('readiness snapshots', () => snapshotReadiness(env, now))
  return outcome
 }

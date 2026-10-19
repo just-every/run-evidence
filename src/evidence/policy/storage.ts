@@ -49,7 +49,7 @@ export async function publish(env: Bindings, actor: Actor, policy: string, revis
  ])
 }
 export async function policyList(env: Bindings, now: Date) {
- const policies = (await env.DB.prepare('SELECT p.*,o.name AS owner_name FROM policies p LEFT JOIN people o ON o.id=p.owner_person_id ORDER BY p.title').all<PolicyRow & { owner_name: string | null }>()).results
+ const policies = (await env.DB.prepare('SELECT p.*,o.name AS owner_name,(SELECT departed_at FROM people_departures d WHERE d.person_id=p.owner_person_id) AS owner_left_at FROM policies p LEFT JOIN people o ON o.id=p.owner_person_id ORDER BY p.title').all<PolicyRow & { owner_name: string | null; owner_left_at: string | null }>()).results
  const revisions = (await env.DB.prepare('SELECT id,policy_id,version,status,body_sha256,drafted_by,drafted_at,decided_by,decided_at,decision_note,published_at,effective_date,review_due FROM policy_revisions ORDER BY version').all<Omit<RevisionRow, 'body' | 'approved_sha256'>>()).results
  // CADENCE-001: the review cycle comes from the policy's review schedule (default annual from its last review).
  const reviews = new Map((await reviewStates(env, now)).filter(s => s.kind === 'policy').map(s => [s.id, s.review]))

@@ -12,12 +12,12 @@ import { confirmImport, dryRun, readImport } from './import'
 import { dryRunPage, registerPage, riskPage, type RiskRow, type Vendor, vendorsPage } from './view'
 const id = `(${uuid})`
 const both = (path: string) => new RegExp(`^/(?:app|api)${path}$`)
-const register = async (env: Bindings) => (await env.DB.prepare(`SELECT r.id,r.title,r.origin,r.source_label,p.name AS owner_name,r.treatment,r.review_due,
+const register = async (env: Bindings) => (await env.DB.prepare(`SELECT r.id,r.title,r.origin,r.source_label,p.name AS owner_name,(SELECT departed_at FROM people_departures d WHERE d.person_id=r.owner_person_id) AS owner_left_at,r.treatment,r.review_due,
  (SELECT level||' ('||score||', method '||method_revision||')' FROM risk_assessments a WHERE a.risk_id=r.id AND a.kind='inherent' ORDER BY a.at DESC,a.rowid DESC LIMIT 1) AS level,
  (SELECT level||' ('||score||', method '||method_revision||')' FROM risk_assessments a WHERE a.risk_id=r.id AND a.kind='residual' ORDER BY a.at DESC,a.rowid DESC LIMIT 1) AS residual,
  (SELECT MAX(expires_at) FROM risk_acceptances x WHERE x.risk_id=r.id) AS accepted_until
  FROM risks r LEFT JOIN people p ON p.id=r.owner_person_id ORDER BY r.created_at,r.id`).all<RiskRow>()).results
-const vendors = async (env: Bindings) => (await env.DB.prepare('SELECT v.id,v.name,v.criticality,v.data_access,v.review_due,p.name AS owner_name FROM vendors v LEFT JOIN people p ON p.id=v.owner_person_id ORDER BY v.name').all<Vendor>()).results
+const vendors = async (env: Bindings) => (await env.DB.prepare('SELECT v.id,v.name,v.criticality,v.data_access,v.review_due,p.name AS owner_name,(SELECT departed_at FROM people_departures d WHERE d.person_id=v.owner_person_id) AS owner_left_at FROM vendors v LEFT JOIN people p ON p.id=v.owner_person_id ORDER BY v.name').all<Vendor>()).results
 const csv = (value: unknown) => { const s = String(value ?? ''); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s }
 export function riskHandler(clock: () => Date) {
  const routes: Route[] = [
@@ -60,8 +60,8 @@ export function riskHandler(clock: () => Date) {
     c.env.DB.prepare('SELECT * FROM risk_acceptances WHERE risk_id=? ORDER BY approved_at').bind(m[1]),
    ])
    const names = new Map([...(await c.env.DB.prepare("SELECT c.id,c.name FROM controls c").all<{ id: string; name: string }>()).results.map(x => [x.id, `<a href="/app/controls/${x.id}">${escape(x.name)}</a>`] as [string, string]), ...(await c.env.DB.prepare('SELECT id,name FROM tests').all<{ id: string; name: string }>()).results.map(x => [x.id, `<a href="/app/tests/${x.id}">${escape(x.name)}</a>`] as [string, string]), ...(await vendors(c.env)).map(v => [v.id, escape(v.name)] as [string, string])])
-   const owner = risk.owner_person_id ? (await c.env.DB.prepare('SELECT name FROM people WHERE id=?').bind(risk.owner_person_id).first<{ name: string }>())?.name ?? null : null
-   const detail = { risk, methods: await methods(c.env), owner_name: owner, assessments: assessments.results as Record<string, string | number>[], links: (links.results as { kind: string; target: string }[]).map(l => ({ ...l, label: names.get(l.target) ?? escape(l.target) })), treatments: treatments.results as Record<string, string>[], acceptances: acceptances.results as Record<string, string>[] }
+   const owner = risk.owner_person_id ? await c.env.DB.prepare('SELECT p.name,d.departed_at FROM people p LEFT JOIN people_departures d ON d.person_id=p.id WHERE p.id=?').bind(risk.owner_person_id).first<{ name: string; departed_at: string | null }>() : null
+   const detail = { risk, methods: await methods(c.env), owner_name: owner?.name ?? null, owner_left_at: owner?.departed_at ?? null, assessments: assessments.results as Record<string, string | number>[], links: (links.results as { kind: string; target: string }[]).map(l => ({ ...l, label: names.get(l.target) ?? escape(l.target) })), treatments: treatments.results as Record<string, string>[], acceptances: acceptances.results as Record<string, string>[] }
    return c.isApi ? json({ ...detail, links: (links.results as { kind: string; target: string }[]) }) : riskPage(detail, await people(c.env), (await c.env.DB.prepare('SELECT id,name FROM tests ORDER BY name').all<{ id: string; name: string }>()).results, await vendors(c.env), c.now, c.actor.name)
   } },
   { method: 'POST', pattern: both(`/risks/${id}`), run: async (c, m) => { await editRisk(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/risks/' + m[1], { updated: true }) } },
