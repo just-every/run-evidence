@@ -3,7 +3,7 @@ import { boundedBody, Refusal } from './upload'
 import { headers, page, escape, signedOutPage } from './view'
 export interface Actor { id: string; name: string }
 export interface OwnerContext { env: Bindings; actor: Actor; now: Date; url: URL; request: Request; isApi: boolean }
-export interface Route { method: 'GET' | 'POST'; pattern: RegExp; run: (context: OwnerContext, match: RegExpExecArray) => Promise<Response> }
+export interface Route { method: 'GET' | 'POST'; pattern: RegExp; errorReturn?: string; run: (context: OwnerContext, match: RegExpExecArray) => Promise<Response> }
 export type Input = Record<string, string | string[]>
 export const json = (data: unknown, status = 200) => Response.json(data, { status, headers })
 export const redirect = (location: string) => new Response(null, { status: 303, headers: { ...headers, location } })
@@ -30,7 +30,7 @@ export function ownerRoutes(routes: Route[], clock: () => Date) {
   try { return await hit.route.run(context, hit.match!) }
   catch (error) {
    if (!(error instanceof Refusal)) { console.error('Evidence operation failed', error instanceof Error ? error.message : ''); return json({ error: 'Storage unavailable; no result is claimed.' }, 503) }
-   return isApi ? json({ error: error.message, ...(error.details ? { details: error.details } : {}) }, error.status) : page('Could not save', `<p role="alert">${escape(error.message)}</p>${Array.isArray(error.details) ? `<ul>${error.details.map(d => `<li>${escape(typeof d === 'string' ? d : JSON.stringify(d))}</li>`).join('')}</ul>` : ''}<p><a href="${escape(request.headers.get('referer') && new URL(request.headers.get('referer')!).origin === env.AUTH_ORIGIN ? new URL(request.headers.get('referer')!).pathname : '/app')}">Go back</a></p>`, error.status)
+   return isApi ? json({ error: error.message, ...(error.details ? { details: error.details } : {}) }, error.status) : page('Could not save', `<p role="alert">${escape(error.message)}</p>${Array.isArray(error.details) ? `<ul>${error.details.map(d => `<li>${escape(typeof d === 'string' ? d : JSON.stringify(d))}</li>`).join('')}</ul>` : ''}<p><a href="${escape(hit.route.errorReturn ?? (request.headers.get('referer') && new URL(request.headers.get('referer')!).origin === env.AUTH_ORIGIN ? new URL(request.headers.get('referer')!).pathname : '/app'))}">Go back</a></p>`, error.status)
   }
  }
 }

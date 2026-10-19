@@ -102,6 +102,8 @@ export const programColumns = {
  custom_framework_requirements:['id','framework_id','ref','title','description','section','removed_at','created_at'],
  custom_framework_revisions:['id','framework_id','revision','snapshot_json','diff_json','actor_id','actor_name','at','reason','object_key','filename','size','media_type','sha256'],
  custom_framework_mappings:['id','requirement_id','control_id','decision','origin','actor_id','actor_name','at','reason','framework_revision'],
+ inventory_decisions:['id','source_key','canonical_key','revision','owner_person_id','criticality','scope','lifecycle','reason','actor_id','actor_name','at'],
+ inventory_group_events:['id','operation_id','source_key','canonical_key','previous_canonical_key','revision','action','reason','actor_id','actor_name','at'],
 } as const
 export type ProgramTable = keyof typeof programColumns
 export const programTables = Object.keys(programColumns) as ProgramTable[]
@@ -116,7 +118,7 @@ const addedInVersion7 = new Set<ProgramTable>(['handover_events', 'handover_sett
 // Tables first carried by archive version 8 (VULN-002 penetration-test findings and retest letters).
 const addedInVersion8 = new Set<ProgramTable>(['vuln_imports', 'vuln_findings', 'vuln_documents', 'vuln_events'])
 const addedInVersion9 = new Set<ProgramTable>(['control_revisions', 'requirement_revisions', 'run_control_definitions', 'custom_frameworks', 'custom_framework_requirements', 'custom_framework_revisions', 'custom_framework_mappings'])
-const tablesOf = (version: number) => programTables.filter(t => (version >= 4 || !addedInVersion4.has(t)) && (version >= 7 || !addedInVersion7.has(t)) && (version >= 8 || !addedInVersion8.has(t)) && (version >= 9 || !addedInVersion9.has(t)))
+const tablesOf = (version: number) => programTables.filter(t => !['inventory_decisions','inventory_group_events'].includes(t) && (version >= 4 || !addedInVersion4.has(t)) && (version >= 7 || !addedInVersion7.has(t)) && (version >= 8 || !addedInVersion8.has(t)) && (version >= 9 || !addedInVersion9.has(t)))
 export interface ProgramArchive { rows: Record<ProgramTable, Row[]>; files?: PopulationFile[] }
 export async function exportProgramArchive(env: Pick<Bindings, 'DB' | 'EXHIBITS'>): Promise<ProgramArchive> {
  const results = await env.DB.batch(programTables.map(t => env.DB.prepare(`SELECT ${programColumns[t].join(',')} FROM ${t} ORDER BY rowid LIMIT 20001`)))

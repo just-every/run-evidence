@@ -140,7 +140,7 @@ try {
   assert.ok(aws.calls.every(c => /GetCallerIdentity|AssumeRole|ListAccounts|GetAccountSummary|GetAccountPasswordPolicy|CredentialReport|DescribeTrails|GetTrailStatus|GetEbsEncryptionByDefault|DescribeSecurityGroups|DescribeDBInstances|\/detector|\/\?|\/$|location|publicAccessBlock|encryption|policyStatus/.test(c)))
   assert.equal(aws.unsigned, 1)
  })
- await scenario('A source fix passes on the next hourly read with both observations kept; a revoked read is a gap that turns known resources unknown; keys for another account are refused', async () => {
+ await scenario('INVENTORY-001 / CLOUD-001: A source fix passes on the next hourly read with both observations kept; a revoked read is a gap that turns known resources unknown; keys for another account are refused', async () => {
   aws.accounts[MGMT].buckets['northstar-site'].block = true
   aws.denied.add(MGMT + ':ec2')
   await at('2026-10-11T13:00:00Z'); await app.tick()
@@ -155,6 +155,17 @@ try {
   await owner(`/api/connections/${connection.id}/rotate`, { access_key_id: OTHER_KEY, secret_access_key: aws.keys[OTHER_KEY].secret }, 400)
   const exported = Buffer.from(await (await app.fetch('/api/archive/export')).arrayBuffer()).toString('latin1')
   assert.ok(!exported.includes(keys.secret_access_key))
+  const before = (await get('/api/tests/' + (await testOf('aws.root-mfa')).id)).latest
+  aws.denied.add(MGMT + ':organizations')
+  await at('2026-10-11T14:00:00Z'); await app.tick()
+  const after = (await get('/api/tests/' + (await testOf('aws.root-mfa')).id)).latest
+  assert.deepEqual(after.map(r => r.resource_id).sort(), before.map(r => r.resource_id).sort(), 'lost discovery permission never shrinks known account subjects')
+  assert.equal(after.filter(r => r.result === 'unknown').length, 2)
+  const snapshot = await get('/api/inventory'), assets = snapshot.records.filter(r => r.source_ref === 'aws:' + connection.id)
+  assert.ok(assets.some(r => r.source_type === 'aws.s3_bucket'))
+  assert.ok(assets.every(r => r.lifecycle === 'active' && r.scope === 'included'))
+  assert.ok(assets.some(r => r.collection_state === 'unread'))
+
  })
  console.log(`${passed} AWS public-door scenarios passed; AWS is faked only at the network edge, with every signature checked.`)
 } finally { await app.close() }

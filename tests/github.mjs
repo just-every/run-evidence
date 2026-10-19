@@ -139,5 +139,37 @@ try {
   assert.equal(again.status, 400); assert.match((await again.json()).error, /empty Evidence database/)
   await target.close()
  })
+ await scenario('INVENTORY-001: source IDs remain connection-qualified after reconnect and one connection cannot shrink another population', async () => {
+  const test = await testByCatalogue('github.branch-protection')
+  const original = (await get('/api/tests/' + test.id)).latest
+  const replacement = await owner('/api/connections', { account: 'northstar', token: 'synthetic-github_pat_rotated', label: 'Replacement GitHub connection' })
+  await owner(`/api/connections/${replacement.id}/repositories`, { repositories: ['northstar/web'] }, 200)
+  assert.equal((await owner(`/api/connections/${replacement.id}/collect`, {})).outcome, 'complete')
+  const after = (await get('/api/tests/' + test.id)).latest
+  assert.equal(after.length, original.length + 1)
+  for (const old of original) assert.ok(after.some(row => row.resource_id === old.resource_id), 'original connection subject retained')
+  const shared = after.filter(row => row.display_name === 'northstar/web')
+  assert.equal(new Set(shared.map(row => row.resource_id)).size, 2)
+  assert.equal(shared.filter(row => row.result === 'unknown').length, 1)
+  await owner(`/api/connections/${replacement.id}/repositories`, { repositories: [] }, 200)
+  await owner(`/api/connections/${replacement.id}/collect`, {})
+  const retained = (await get('/api/tests/' + test.id)).latest
+  assert.deepEqual(retained.map(row => row.resource_id).sort(), original.map(row => row.resource_id).sort())
+  const snapshot = await get('/api/inventory')
+  const repos = snapshot.records.filter(row => row.source_type === 'github.repository')
+  assert.equal(repos.length, original.length + 1)
+  assert.equal(new Set(repos.map(row => row.source_key)).size, repos.length)
+  assert.ok(repos.every(row => row.lifecycle === 'active'), 'source absence never records an owner retirement')
+  assert.ok(repos.some(row => row.collection_state === 'removed'))
+  const bytes=await (await app.fetch('/api/archive/export')).arrayBuffer(),receiver=await runtime({ownerEmail:'inventory-receiver@northstar.test'})
+  try {
+   await receiver.signin()
+   const restored=await receiver.fetch('/api/archive/restore',{method:'POST',headers:{origin:receiver.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:bytes})
+   assert.equal(restored.status,200,await restored.clone().text())
+   const after=await (await receiver.fetch('/api/inventory')).json()
+   assert.deepEqual(after.records.filter(r=>r.source_type==='github.repository').map(r=>r.source_key).sort(),repos.map(r=>r.source_key).sort(),'PORTABLE-001 retains both connection-qualified copies of a provider ID')
+  }finally{await receiver.close()}
+
+ })
  console.log(`${passed} GitHub connection public-door scenarios passed; GitHub is faked only at the network edge.`)
 } finally { await app.close() }

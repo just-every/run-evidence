@@ -12,7 +12,8 @@ import { fileQuery,assertBucket } from './files'
 export interface RestoreOptions {journal?:unknown;acceptUnverifiedHistory?:boolean}
 export async function decodePortable(env:Store,session:Session,reader:Reader,first:{data:any;bytes:Uint8Array;prefix:Uint8Array},options:RestoreOptions={}) {
  const head=first.data
- if(head?.format!=='evidence-custody'||head.version!==10||!head.source||typeof head.source.lineage!=='string'||! /^[a-zA-Z0-9_-]{16,128}$/.test(head.source.lineage)||!Number.isSafeInteger(head.source.sequence)||head.source.sequence<0||!Number.isSafeInteger(head.source.generation)||!Number.isFinite(Date.parse(head.created_at))||JSON.stringify(head.tables)!==JSON.stringify(registry))fail('Unsupported or incomplete portable archive registry.')
+ if(head?.format!=='evidence-custody'||head.version!==10||!head.source||typeof head.source.lineage!=='string'||! /^[a-zA-Z0-9_-]{16,128}$/.test(head.source.lineage)||!Number.isSafeInteger(head.source.sequence)||head.source.sequence<0||!Number.isSafeInteger(head.source.generation)||!Number.isFinite(Date.parse(head.created_at))||![registry, Object.fromEntries(Object.entries(registry).filter(([t]) => !['inventory_decisions','inventory_group_events'].includes(t)))].some(known => JSON.stringify(head.tables)===JSON.stringify(known)))fail('Unsupported or incomplete portable archive registry.')
+ const sourceTables=Object.keys(head.tables)
  await checkHistory(env,head.source,options.journal,options.acceptUnverifiedHistory)
  await env.DB.prepare("UPDATE portable_sessions SET state='validating',header=?,error=NULL WHERE id=?").bind(JSON.stringify(head),session.id).run()
  await cleanupSession(env,session.id,false);await createStages(env,session.id)
@@ -21,19 +22,19 @@ export async function decodePortable(env:Store,session:Session,reader:Reader,fir
  try{
   for(;;){const {data:f,bytes,prefix}=await readFrame(reader)
    if(f?.type==='end'){
-    if(blob||tableIndex!==portableTables.length-1||f.rows!==rowCount||f.files!==fileCount||f.bytes!==total||f.sha256!==hash.digest('hex'))fail('Archive end frame or complete-stream digest does not match.')
+    if(blob||tableIndex!==sourceTables.length-1||f.rows!==rowCount||f.files!==fileCount||f.bytes!==total||f.sha256!==hash.digest('hex'))fail('Archive end frame or complete-stream digest does not match.')
     await reader.end();break
    }
    hash.update(prefix).update(bytes)
-   if(f?.type==='table') {if(blob||filesStarted||f.table!==portableTables[++tableIndex])fail('Archive table order is incomplete or duplicated.');current=f.table}
+   if(f?.type==='table') {if(blob||filesStarted||f.table!==sourceTables[++tableIndex])fail('Archive table order is incomplete or duplicated.');current=f.table}
    else if(f?.type==='rows'){if(blob||filesStarted||!current||f.table!==current)fail('Unexpected archive rows.');await stageRows(env,session.id,current,f.rows);rowCount+=f.rows.length;counts[current]+=f.rows.length}
    else if(f?.type==='journal'){
-    if(filesStarted||tableIndex!==portableTables.length-1||!Array.isArray(f.rows)||f.rows.length>128)fail('Invalid source erasure journal page.')
+    if(filesStarted||tableIndex!==sourceTables.length-1||!Array.isArray(f.rows)||f.rows.length>128)fail('Invalid source erasure journal page.')
     for(const r of f.rows)if(!r||r.lineage!==head.source.lineage||!Number.isSafeInteger(r.sequence)||r.sequence<1||r.sequence>head.source.sequence||typeof r.recorded_at!=='string'||!Number.isFinite(Date.parse(r.recorded_at))||typeof r.receipt!=='string'||!r.receipt||r.receipt.length>1024)fail('Invalid source erasure journal receipt.')
     await env.DB.prepare("INSERT INTO portable_journal_stage(session_id,lineage,sequence,recorded_at,receipt) SELECT ?,json_extract(value,'$.lineage'),json_extract(value,'$.sequence'),json_extract(value,'$.recorded_at'),json_extract(value,'$.receipt') FROM json_each(?)").bind(session.id,JSON.stringify(f.rows)).run()
    }
    else if(f?.type==='file'){
-    if(blob||tableIndex!==portableTables.length-1)fail('Original bytes arrived before all tables.');filesStarted=true;const f0=f.file
+    if(blob||tableIndex!==sourceTables.length-1)fail('Original bytes arrived before all tables.');filesStarted=true;const f0=f.file
     if(!f0||typeof f0.available!=='boolean'||!Number.isSafeInteger(f0.size)||f0.size<1||f0.size>20*1024*1024||typeof f0.sha256!=='string'||! /^[a-f0-9]{64}$/.test(f0.sha256)||(!f0.available&&(typeof f0.reason!=='string'||!f0.reason||f0.reason.length>300)))fail('Invalid original file inventory.')
     pathOK(f0.object_key);pathOK(f0.path);const bound=f0.path.startsWith('populations/')?5*1024*1024:f0.path.startsWith('import-sources/')?20*1024*1024:10*1024*1024;if(f0.size>bound)fail('Original exceeds its record-class size limit.');if(f0.object_key.startsWith('_portable/'))fail('Reserved object namespace.')
     const expected=await env.DB.prepare(`SELECT * FROM (${fileQuery(session.id)}) WHERE object_key=?`).bind(f0.object_key).first<{path:string;size:number;sha256:string}>()

@@ -56,10 +56,10 @@ export async function runCollection(env: Bindings, connection: Connection, trigg
  }
  // Unread repositories stay in the denominator with readable=false: their tests are unknown.
  await upsertResources(env, 'github.organization', organizationSchema, organization ? [organization] : [], source, false, now)
- const written = await upsertResources(env, 'github.repository', repositorySchema, repos, source, true, now)
+ const written = await upsertResources(env, 'github.repository', repositorySchema, repos, source, 'source', now)
  const fresh = written.results.filter(r => r.id && r.outcome !== 'removed' && coverage.repositories_read.includes(r.uniqueId)).map(r => r.id!)
  const observed = [
-  ...(coverage.organization === 'read' ? [env.DB.prepare("UPDATE resources SET observed_at=? WHERE type='github.organization' AND unique_id=?").bind(at, connection.account)] : []),
+  ...(coverage.organization === 'read' ? [env.DB.prepare("UPDATE resources SET observed_at=? WHERE type='github.organization' AND unique_id=? AND source_ref=?").bind(at, connection.account, source.ref)] : []),
   ...(fresh.length ? [env.DB.prepare('UPDATE resources SET observed_at=? WHERE id IN (SELECT value FROM json_each(?))').bind(at, JSON.stringify(fresh))] : []),
  ]
  // Nothing read is nothing stamped: an empty batch would abort the run before it finishes.

@@ -49,11 +49,11 @@ function validate(schema: ResourceSchema, item: unknown): { uniqueId: string; di
 }
 // Idempotent upsert of one batch. Identical attributes change nothing, not even
 // the update time; a full sync marks every absent resource of the type removed.
-// fullSync 'source' removes only resources this same source wrote (a collector's own account).
+// Every full sync removes only resources this same source wrote (a collector's own connection).
 export async function upsertResources(env: Bindings, type: string, schema: ResourceSchema, items: unknown[], source: Source, fullSync: boolean | 'source', now: Date) {
  if (items.length > MAX_ITEMS) throw new Refusal(`Push at most ${MAX_ITEMS} resources per request.`, 413)
  const at = now.toISOString(), results: ItemResult[] = [], statements: D1PreparedStatement[] = [], changed: string[] = []
- const existing = new Map((await env.DB.prepare('SELECT * FROM resources WHERE type=?').bind(type).all<Resource>()).results.map(r => [r.unique_id, r]))
+ const existing = new Map((await env.DB.prepare('SELECT * FROM resources WHERE type=? AND source_ref=?').bind(type, source.ref).all<Resource>()).results.map(r => [r.unique_id, r]))
  const seen = new Set<string>()
  for (const item of items) {
   const checked = validate(schema, item)
@@ -70,7 +70,7 @@ export async function upsertResources(env: Bindings, type: string, schema: Resou
    env.DB.prepare('INSERT INTO resource_versions(id,resource_id,change,attributes_json,source_ref,at) VALUES(?,?,?,?,?,?)').bind(crypto.randomUUID(), id, outcome, attributes, source.ref, at))
   results.push({ uniqueId: checked.uniqueId, outcome, id }); changed.push(id)
  }
- if (fullSync) for (const prior of existing.values()) if (!seen.has(prior.unique_id) && !prior.removed_at && prior.source_kind === source.kind && (fullSync === true || prior.source_ref === source.ref)) {
+ if (fullSync) for (const prior of existing.values()) if (!seen.has(prior.unique_id) && !prior.removed_at && prior.source_kind === source.kind && prior.source_ref === source.ref) {
   statements.push(env.DB.prepare('UPDATE resources SET removed_at=?,updated_at=? WHERE id=? AND removed_at IS NULL').bind(at, at, prior.id), env.DB.prepare('INSERT INTO resource_versions(id,resource_id,change,attributes_json,source_ref,at) VALUES(?,?,?,?,?,?)').bind(crypto.randomUUID(), prior.id, 'removed', prior.attributes_json, source.ref, at))
   results.push({ uniqueId: prior.unique_id, outcome: 'removed', id: prior.id }); changed.push(prior.id)
  }
@@ -78,7 +78,7 @@ export async function upsertResources(env: Bindings, type: string, schema: Resou
  return { results, changed }
 }
 export async function removeResource(env: Bindings, type: string, uniqueId: string, source: Source, now: Date) {
- const prior = await env.DB.prepare('SELECT * FROM resources WHERE type=? AND unique_id=?').bind(type, uniqueId).first<Resource>()
+ const prior = await env.DB.prepare('SELECT * FROM resources WHERE type=? AND unique_id=? AND source_ref=?').bind(type, uniqueId, source.ref).first<Resource>()
  if (!prior || prior.source_kind !== source.kind) throw new Refusal('Resource not found.', 404)
  if (prior.removed_at) return prior
  const at = now.toISOString()

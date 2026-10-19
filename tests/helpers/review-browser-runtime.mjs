@@ -25,22 +25,33 @@ export async function installation(root) {
   const code=await new Promise((done,fail)=>{child.once('error',fail);child.once('close',done)})
   assert.equal(code,0,`rer ${args[0]} failed (${code}): ${sanitize(output)}`)
  }
+ // This installation owns its dedicated process group. Stop its foreground
+ // descendants before removing the files their watchers own.
  const stop=async()=>{
   if(!server)return
-  if(server.exitCode===null&&server.signalCode===null)server.kill('SIGTERM')
-  await new Promise(done=>server.exitCode!==null||server.signalCode!==null?done():server.once('close',done));server=null
+  const child=server,pid=child.pid
+  const alive=()=>{try{process.kill(-pid,0);return true}catch(error){if(error.code==='ESRCH')return false;throw error}}
+  const signal=name=>{try{process.kill(-pid,name)}catch(error){if(error.code!=='ESRCH')throw error}}
+  signal('SIGTERM')
+  for(let n=0;n<50&&alive();n++)await wait(100)
+  if(alive())signal('SIGKILL')
+  await new Promise(done=>child.exitCode!==null||child.signalCode!==null?done():child.once('close',done))
+  for(let n=0;n<20&&alive();n++)await wait(50)
+  assert.equal(alive(),false,'this installation process group stopped')
+  server=null
  }
+
  try {
   await cp(root,dir,{recursive:true,filter:path=>!['node_modules','.git','.wrangler','.rer','.seed','.cache','dist','.tanstack','.dev.vars'].includes(basename(path))&&!basename(path).startsWith('.env')})
   const socket=createServer();await new Promise(done=>socket.listen(0,'127.0.0.1',done));const port=socket.address().port;await new Promise(done=>socket.close(done))
   const origin=`http://127.0.0.1:${port}`
   return {dir,origin,run,stop,async start(){
    await run(['setup','--owner-email','owner@example.test','--port',String(port),'--non-interactive'])
-   log='';server=spawn(process.execPath,__rerTestEntryArgs([__rerTestEntry,'dev','--port',String(port),...queue]),{cwd:dir,env,stdio:['ignore','pipe','pipe']})
+   log='';server=spawn(process.execPath,__rerTestEntryArgs([__rerTestEntry,'dev','--port',String(port),...queue]),{cwd:dir,env,detached:true,stdio:['ignore','pipe','pipe']})
    for(const stream of [server.stdout,server.stderr])stream.on('data',chunk=>{log+=chunk})
    for(let n=0;n<720&&!/^RER_OPEN /m.test(log);n++){if(server.exitCode!==null||server.signalCode!==null)throw Error('rer dev failed: '+sanitize(log));await wait(250)}
    const open=log.match(/^RER_OPEN (\S+)/m)?.[1];assert.ok(open,'dev supplied owner sign-in');return open
-  },async close(){try{await stop()}finally{await rm(dir,{recursive:true,force:true})}}}
+  },async close(){await stop();await rm(dir,{recursive:true,force:true})}}
  } catch(error) {await rm(dir,{recursive:true,force:true});throw error}
 }
 

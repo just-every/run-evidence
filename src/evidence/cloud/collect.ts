@@ -28,6 +28,7 @@ export async function runAwsCollection(env: Bindings, connection: Connection, tr
  let keys: { accessKeyId: string; secretAccessKey: string }
  try { keys = JSON.parse(await unseal(env, connection.secret_ciphertext, connection.secret_iv, connection.id)) }
  catch { return finish('failed', {}, 'credential unreadable under this installation key', reconnectUpdate(env, connection, 'Stored credential cannot be decrypted; reconnect.', now)) }
+ const lostAccounts = new Set<string>()
  const clock = () => now, out = new Map<string, Item[]>(Object.keys(types).map(t => [t, []])), unread = new Map<string, string[]>(Object.keys(types).map(t => [t, []]))
  const coverage: { accounts: { id: string; name: string; read: boolean; reason: string }[]; regions: string[]; gaps: { account: string; class: string; region: string; reason: string }[] } = { accounts: [], regions: config.regions, gaps: [] }
  const push = (type: string, item: Item) => out.get(type)!.push(item)
@@ -45,6 +46,17 @@ export async function runAwsCollection(env: Bindings, connection: Connection, tr
   if (identity.account !== connection.account) return finish('failed', {}, 'account binding changed', reconnectUpdate(env, connection, `These credentials now reach account ${identity.account}, not ${connection.account}; reconnect deliberately.`, now))
   const members = await organizationAccounts(primary)
   const accounts = [{ id: connection.account, name: members?.find(a => a.id === connection.account)?.name ?? 'this account', status: 'ACTIVE' }, ...(members ?? []).filter(a => a.id !== connection.account && a.status === 'ACTIVE')].slice(0, 50)
+  // INVENTORY-001: lost organization-list permission must not remove known
+  // member accounts or their assets from any test population.
+  const knownAccounts = (await env.DB.prepare("SELECT unique_id,display_name FROM resources WHERE type='aws.account' AND source_ref=? AND removed_at IS NULL").bind('aws:' + connection.id).all<{unique_id:string;display_name:string}>()).results
+  for (const known of knownAccounts) if (!accounts.some(a => a.id === known.unique_id)) {
+   lostAccounts.add(known.unique_id)
+   const reason = 'Previously known account is absent from the readable organization list'
+   coverage.accounts.push({id:known.unique_id,name:known.display_name,read:false,reason})
+   coverage.gaps.push({account:known.unique_id,class:'Organizations',region:'global',reason})
+   push('aws.account',{uniqueId:known.unique_id,displayName:known.display_name,attributes:{readable:false,member:known.unique_id!==connection.account}})
+   for (const type of Object.keys(types)) if (type!=='aws.account') unread.get(type)!.push(known.unique_id)
+  }
   for (const account of accounts) {
    const member = account.id !== connection.account
    let client: Client | null = member ? null : primary, reason = ''
@@ -92,7 +104,7 @@ export async function runAwsCollection(env: Bindings, connection: Connection, tr
  // and its known resources in an unread account are rewritten as unread, so their tests are
  // unknown from this run on rather than carrying the last answer forward.
  const source = { kind: 'source-observed' as const, ref: 'aws:' + connection.id, label: `AWS ${connection.account} via ${connection.label}` }
- const placeholders = new Set<string>()
+ const placeholders = new Set([...lostAccounts].map(id => 'aws.account ' + id))
  for (const [type, gaps] of unread) for (const account of new Set(gaps)) {
   const known = (await env.DB.prepare("SELECT unique_id,display_name FROM resources WHERE type=? AND source_ref=? AND removed_at IS NULL AND substr(unique_id,1,13)=?").bind(type, source.ref, account + '/').all<{ unique_id: string; display_name: string }>()).results
   for (const r of known) if (!out.get(type)!.some(i => i.uniqueId === r.unique_id)) placeholders.add(type + ' ' + r.unique_id), push(type, { uniqueId: r.unique_id, displayName: r.display_name, attributes: Object.fromEntries(Object.keys(types[type].fields).map(f => [f, null])) })
