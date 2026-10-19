@@ -1,3 +1,4 @@
+import { capabilityAllowed } from '../archive/capabilities'
 import type { Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
 import { auditStatement, oneOf, text, type Actor, type Input } from '../door'
@@ -111,6 +112,7 @@ export async function importKnowBe4(env: Bindings, rows: { enrollment_id: string
 }
 // Scheduler work: onboarding and recurring assignments, reminders and escalation.
 export async function trainingWork(env: Bindings, now: Date) {
+ if (!await capabilityAllowed(env,'schedules')) return 0
  const at = now.toISOString()
  const gone = new Set((await env.DB.prepare('SELECT person_id FROM people_departures').all<{ person_id: string }>()).results.map(r => r.person_id))
  const folks = (await env.DB.prepare('SELECT id,email,kind,role,created_at FROM people').all<{ id: string; email: string; kind: string; role: string | null; created_at: string }>()).results.filter(p => !gone.has(p.id) && ['employee', 'contractor'].includes(p.kind))
@@ -136,6 +138,7 @@ export async function trainingWork(env: Bindings, now: Date) {
 }
 // The training test: nobody holds an overdue training assignment.
 export async function syncTraining(env: Bindings, now: Date) {
+ if (!await capabilityAllowed(env,'schedules')) return 0
  if (!await env.DB.prepare("SELECT 1 FROM tests WHERE catalogue_id='training.current'").first()) return 0
  const rows = (await env.DB.prepare("SELECT p.id,p.name,p.email,SUM(a.state='assigned' AND a.due_date<?) AS overdue,SUM(a.state='assigned') AS open,SUM(a.state='completed') AS completed FROM training_assignments a JOIN people p ON p.id=a.person_id WHERE a.state!='departed' GROUP BY p.id").bind(today(now)).all<{ id: string; name: string; email: string; overdue: number; open: number; completed: number }>()).results
  const written = await upsertRegister(env, 'training.person', { fields: { overdue: 'number', open: 'number', completed: 'number' }, required: [] }, rows.map(r => ({ uniqueId: r.id, displayName: `${r.name} <${r.email}>`, attributes: { overdue: r.overdue, open: r.open, completed: r.completed } })), { kind: 'source-observed', ref: 'training:register', label: 'Evidence training register' }, now)

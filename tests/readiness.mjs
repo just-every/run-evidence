@@ -1,3 +1,4 @@
+import {decodeArchive} from './helpers/portable-format.mjs'
 // READINESS-001 through owner HTTP, the public resource API, a real Git source,
 // production Cron snapshots and downloadable reports. No database fixture writes.
 process.env.RER_SERVER_JOURNEY = '1'
@@ -157,7 +158,7 @@ try {
   assertReadiness(historic,47,94);assert.equal(historic.exceptions.length,0)
   await reconcileCsv('',current)
  })
- await scenario('unrun and unsupported work cannot pass, and an empty applicability denominator has no percentage', async () => {
+ await scenario('PORTABLE-001 / unrun and unsupported work cannot pass, and an empty applicability denominator has no percentage', async () => {
   const unsupported = await post('/api/tests',{name:'Hosted review policy is observed',resourceType:'private.git.repository',criteria:JSON.stringify([{attribute:'branch_protection',op:'equals',value:true}]),cadence:'hourly',category:'code',severity:'high',controls:['GOV-09']})
   let current = await fixture.getReady()
   assert.equal(current.requirements.find(r => r.ref === 'CC2.3').ready,false)
@@ -187,7 +188,7 @@ try {
   const populated = await fixture.board()
   assert.ok(populated.personnel.attestations.length >= 250)
   const archive = await get('/api/archive/export?dry-run=1')
-  const savedRows = archive.manifest.extensions.program.rows.readiness_snapshots
+  const savedRows = decodeArchive(Buffer.from(await(await request('/api/archive/export')).arrayBuffer())).allRows.readiness_snapshots
   const saved = savedRows.find(r => r.day === '2026-10-21')
   assert.deepEqual(JSON.parse(saved.totals_json).detail.personnel,populated.personnel)
   assert.equal(archive.counts.people,250)
@@ -195,7 +196,7 @@ try {
   const target = await runtime()
   try {
    await target.signin()
-   const restored = await target.fetch('/api/archive/restore',{method:'POST',headers:{origin:target.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore'},body:bytes})
+   const restored = await target.fetch('/api/archive/restore',{method:'POST',headers:{origin:target.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore', 'x-evidence-erasure-history':'unverified acknowledged'},body:bytes})
    assert.equal(restored.status,200,await restored.clone().text())
    const historicalRestore = await (await target.fetch(fixture.base+'/board?snapshot=2026-10-21')).json()
    assert.deepEqual(historicalRestore.personnel,populated.personnel)

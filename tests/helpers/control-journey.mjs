@@ -1,3 +1,4 @@
+import {decodeArchive} from './portable-format.mjs'
 import assert from 'node:assert/strict'
 export async function controlJourney(app) {
  const get=async path=>{const r=await app.fetch(path);assert.equal(r.status,200,path+' '+await r.clone().text());return r.json()}
@@ -57,12 +58,12 @@ export async function controlArchiveJourney(app) {
  try {
   await target.signin()
   const sourceResponse=await app.fetch('/api/archive/manifest');assert.equal(sourceResponse.status,200,await sourceResponse.clone().text())
-  const source=(await sourceResponse.json()).manifest,tables=['control_revisions','requirement_revisions','run_control_definitions','custom_frameworks','custom_framework_requirements','custom_framework_revisions','custom_framework_mappings']
+  const source=decodeArchive(Buffer.from(await(await app.fetch('/api/archive/export')).arrayBuffer())).manifest,tables=['control_revisions','requirement_revisions','run_control_definitions','custom_frameworks','custom_framework_requirements','custom_framework_revisions','custom_framework_mappings']
   for(const table of tables)assert.ok(source.extensions.program.rows[table].length,'CONTROL-001 populated archive includes '+table)
   const archive=await app.fetch('/api/archive/export');assert.equal(archive.status,200,await archive.clone().text());const bytes=await archive.arrayBuffer()
-  const restored=await target.fetch('/api/archive/restore',{method:'POST',headers:{origin:target.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore'},body:bytes})
+  const restored=await target.fetch('/api/archive/restore',{method:'POST',headers:{origin:target.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore', 'x-evidence-erasure-history':'unverified acknowledged'},body:bytes})
   assert.equal(restored.status,200,await restored.clone().text())
-  const after=(await(await target.fetch('/api/archive/manifest')).json()).manifest
+  const after=decodeArchive(Buffer.from(await(await target.fetch('/api/archive/export')).arrayBuffer())).manifest
   for(const table of tables)assert.deepEqual(after.extensions.program.rows[table],source.extensions.program.rows[table],'CONTROL-001 archive round trip '+table)
   for(const row of source.extensions.program.rows.custom_framework_revisions.filter(r=>r.object_key)){
    const path=`/api/frameworks/${row.framework_id}/revisions/${row.revision}/file`

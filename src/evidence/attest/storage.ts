@@ -1,3 +1,4 @@
+import { capabilityAllowed } from '../archive/capabilities'
 import { operatorAuth, type Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
 import { auditStatement, list, oneOf, text, type Actor, type Input } from '../door'
@@ -27,12 +28,12 @@ export async function assign(env: Bindings, actor: Actor, policy: string, input:
  if (!people.length) throw new Refusal('Nobody matches that audience.')
  const at = now.toISOString()
  const results = await env.DB.batch([
-  ...people.map(p => env.DB.prepare("INSERT INTO policy_assignments(id,policy_id,revision_id,person_id,assigned_by,assigned_at,due_date,state) VALUES(?,?,?,?,?,?,?,'pending') ON CONFLICT(revision_id,person_id) DO NOTHING").bind(crypto.randomUUID(), policy, revision.id, p.id, actor.name, at, due)),
+  ...people.map(p => env.DB.prepare("INSERT INTO policy_assignments(id,policy_id,revision_id,person_id,assigned_by,assigned_at,due_date,state) VALUES(?,?,?,?,?,?,?,'pending') ON CONFLICT(revision_id,person_id) DO NOTHING RETURNING id").bind(crypto.randomUUID(), policy, revision.id, p.id, actor.name, at, due)),
   auditStatement(env, actor, 'policy.assigned', 'policy:' + policy, now, 'succeeded', `version ${revision.version} to ${audience} (${people.length}) due ${due}`),
   ...await catalogueStatements(env, 'attestations', actor, now),
  ])
  await syncAttestations(env, now)
- return { assigned: results.slice(0, people.length).reduce((n, r) => n + r.meta.changes, 0) }
+ return { assigned: results.slice(0, people.length).reduce((n, r) => n + r.results.length, 0) }
 }
 // A material revision replaces open and completed assignments of earlier
 // revisions with new ones for the same people; earlier acknowledgments stay.
@@ -99,6 +100,7 @@ export async function invite(env: Bindings, request: Request, actor: Actor, pers
 }
 // Each person's attestation state: the attestation test fails while any assignment is overdue.
 export async function syncAttestations(env: Bindings, now: Date) {
+ if (!await capabilityAllowed(env,'schedules')) return 0
  if (!await env.DB.prepare("SELECT 1 FROM tests WHERE catalogue_id='attest.acknowledged'").first()) return 0
  const today = now.toISOString().slice(0, 10), at = now.toISOString()
  const rows = (await env.DB.prepare("SELECT p.id,p.name,p.email,SUM(a.state='pending') AS pending,SUM(a.state='pending' AND a.due_date<? AND NOT EXISTS(SELECT 1 FROM policy_exceptions e WHERE e.policy_id=a.policy_id AND (e.person_id IS NULL OR e.person_id=a.person_id) AND e.expires_at>?)) AS overdue,SUM(a.state='acknowledged') AS acknowledged FROM policy_assignments a JOIN people p ON p.id=a.person_id WHERE p.id NOT IN (SELECT person_id FROM people_departures) GROUP BY p.id").bind(today, at).all<{ id: string; name: string; email: string; pending: number; overdue: number; acknowledged: number }>()).results

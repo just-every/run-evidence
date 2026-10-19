@@ -24,6 +24,9 @@ export class Reader {
   }
   return out
  }
+ async *remainder() {
+  try { if(this.offset<this.chunk.length) yield this.chunk.subarray(this.offset); for(;;) {const next=await this.reader.read();if(next.done)break;yield next.value} } finally {this.reader.releaseLock()}
+ }
  async number() { return new DataView((await this.read(4)).buffer).getUint32(0) }
  async end() { if (this.offset !== this.chunk.length || !(await this.reader.read()).done) fail('Unexpected extra archive entry or bytes.') }
  async close() { try { while(!(await this.reader.read()).done) { /* Drain without buffering so HTTP refusals remain readable. */ } } catch { /* Transport already ended. */ } finally { this.reader.releaseLock() } }

@@ -1,3 +1,4 @@
+import { capabilityAllowed } from '../archive/capabilities'
 import type { Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
 import { auditStatement, oneOf, text, type Actor, type Input } from '../door'
@@ -79,6 +80,7 @@ export async function delegate(env: Bindings, actor: Actor, itemId: string, inpu
 }
 // Scheduler work: revocation readback, late-discovered accounts, completion, reminders and recurrence.
 export async function accessReviewWork(env: Bindings, now: Date) {
+ if (!await capabilityAllowed(env,'schedules')) return 0
  const at = now.toISOString(), today = at.slice(0, 10)
  let count = 0
  for (const v of (await env.DB.prepare("SELECT v.item_id,v.state,v.requested_at,i.source,i.subject_ref,i.account_key,r.due_date FROM access_revocations v JOIN access_review_items i ON i.id=v.item_id JOIN access_reviews r ON r.id=i.review_id WHERE v.state!='verified'").all<{ item_id: string; state: string; requested_at: string; source: string; subject_ref: string; account_key: string; due_date: string }>()).results) {

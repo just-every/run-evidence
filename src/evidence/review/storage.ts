@@ -1,3 +1,4 @@
+import { requireCapability } from '../archive/capabilities'
 import { activeControl, activeReceipt } from '../visibility'
 import type { Bindings } from '../../auth.server'
 import { gap, period, type Receipt, type Requirement } from '../model'
@@ -7,6 +8,7 @@ const folderColumns = 'id,reviewer_label,period_from,period_to,expires_at,create
 export const tokenDigest = async (token: string) => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token)))).map(n => n.toString(16).padStart(2,'0')).join('')
 export const folderActive = (folder: Folder, now: Date) => !folder.closed_at && now.getTime() < Date.parse(folder.expires_at)
 export async function issueFolder(env: Bindings, input: FolderInput, now: Date, options: { id?: string; statements?: D1PreparedStatement[] } = {}) {
+ await requireCapability(env,'shares')
  const token = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(n => n.toString(16).padStart(2,'0')).join('')
  const folder: Folder = { id:options.id ?? crypto.randomUUID(), reviewer_label:input.reviewer_label, period_from:input.period_from, period_to:input.period_to, expires_at:input.expires_at, created_at:now.toISOString(), closed_at:null }
  await env.DB.batch([

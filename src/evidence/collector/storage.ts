@@ -1,3 +1,4 @@
+import { capabilityAllowed } from '../archive/capabilities'
 import type { Bindings } from '../../auth.server'
 import { auditStatement, text, type Actor, type Input } from '../door'
 import { digest } from '../api/tokens'
@@ -30,6 +31,7 @@ export async function rotateCollector(env: Bindings, actor: Actor, id: string, n
  return { id, token }
 }
 export async function authenticateCollector(env: Bindings, id: string, authorization: string | null): Promise<Connection | null> {
+ if (!await capabilityAllowed(env,'collections',id)) return null
  const match = /^Bearer (evc_[A-Za-z0-9_-]{43})$/.exec(authorization ?? '')
  if (!match) return null
  return env.DB.prepare("SELECT * FROM connections WHERE id=? AND provider=? AND status='active' AND collector_token_hash=?").bind(id, provider, await digest(match[1])).first<Connection>()

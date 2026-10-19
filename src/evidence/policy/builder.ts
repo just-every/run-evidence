@@ -1,3 +1,4 @@
+import { capabilityAllowed } from '../archive/capabilities'
 import { usDate } from '../format'
 import type { Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
@@ -40,6 +41,7 @@ export async function draftFromTemplate(env: Bindings, actor: Actor, templateId:
 // Each template's policy test reads the register: approved, published and
 // within its review deadline is current; anything else is not.
 export async function syncPolicies(env: Bindings, now: Date) {
+ if (!await capabilityAllowed(env,'schedules')) return 0
  if (!await env.DB.prepare("SELECT 1 FROM tests WHERE catalogue_id LIKE 'policy.%' LIMIT 1").first()) return 0
  const register = await policyList(env, now), at = now.toISOString(), source = { kind: 'source-observed' as const, ref: 'policies:register', label: 'Evidence policy register' }
  for (const t of templates) {

@@ -107,7 +107,7 @@ try {
   assert.equal(inactive['Ben'], 'fail'); assert.equal(inactive['Cy Park'], 'fail'); assert.equal(inactive['Ana'], 'pass'); assert.equal(inactive['Frank'], 'unknown')
   assert.ok((await get('/api/remediation')).open.some(o => o.resource_name.startsWith('Partner')))
  })
- await scenario('Matches are proposed by email and decided by a person; a duplicate is reconciled by human decisions, and a disabled account and a denied scope stay visible', async () => {
+ await scenario('PORTABLE-001 / Matches are proposed by email and decided by a person; a duplicate is reconciled by human decisions, and a disabled account and a denied scope stay visible', async () => {
   const ana = await owner('/api/people', { name: 'Ana Ruiz', email: 'ana@northstar.test', kind: 'employee' }), dana = await owner('/api/people', { name: 'Dana Fox', email: 'dana@northstar.test', kind: 'contractor' })
   await app.clock('2026-10-11T13:00:00Z'); await app.tick()
   let ids = await get('/api/identities')
@@ -134,7 +134,7 @@ try {
   assert.equal(ids.accounts.filter(a => a.match?.state === 'approved').length, 2)
   const exported = Buffer.from(await (await app.fetch('/api/archive/export')).arrayBuffer())
   const target = await runtime(); await target.signin()
-  assert.equal((await target.fetch('/api/archive/restore', { method: 'POST', headers: { origin: target.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore' }, body: exported })).status, 200)
+  assert.equal((await target.fetch('/api/archive/restore', { method: 'POST', headers: { origin: target.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore', 'x-evidence-erasure-history':'unverified acknowledged' }, body: exported })).status, 200)
   assert.deepEqual((await target.db.prepare('SELECT * FROM identity_matches ORDER BY rowid').all()).results, (await app.db.prepare('SELECT * FROM identity_matches ORDER BY rowid').all()).results)
   assert.deepEqual([...new Set((await target.db.prepare('SELECT status,secret_ciphertext FROM connections').all()).results.map(r => JSON.stringify(r)))], [JSON.stringify({ status: 'inactive after restore', secret_ciphertext: null })])
   await target.close()

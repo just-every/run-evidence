@@ -1,3 +1,4 @@
+import {decodeArchive} from './helpers/portable-format.mjs'
 // Labelled CSV populations and Inventory through the owner's doors: dry runs,
 // whole-or-nothing admission, reviewable matches, differences between lists,
 // staleness and custody of the original file. Only mail is faked.
@@ -73,7 +74,7 @@ try {
   assert.equal(manualDevice.encrypted, true); assert.equal(manualDevice.tests, 'unknown: needs a source read')
   assert.equal(manualDevice.provenance, 'manually-asserted')
  })
- await scenario('POPULATION-001: a revised roster keeps the original file and shows joiners, leavers and removed rows; past its refresh window a population is stale', async () => {
+ await scenario('PORTABLE-001 / POPULATION-001: a revised roster keeps the original file and shows joiners, leavers and removed rows; past its refresh window a population is stale', async () => {
   const revised = roster([['ana@northstar.test', 'Ana Ruiz', 'W-2', '2024-01-02', ''], ['ben@northstar.test', 'Ben Ode', 'W-2', '2023-05-01', '2026-10-20'], ['cy@northstar.test', 'Cy Park', 'W-2', '2026-10-21', '']])
   const fields = { ...rosterFields, as_of: '2026-10-22', filename: 'justworks-oct22.csv' }
   const dry = (await upload(fields, revised, 200)).body
@@ -93,7 +94,7 @@ try {
   const destination = await runtime()
   try {
    await destination.signin(); await destination.clock('2026-12-01T12:00:00Z')
-   const restore = (bytes, dry = false) => destination.fetch('/api/archive/restore' + (dry ? '?dry-run=1' : ''), { method: 'POST', headers: { origin: destination.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore' }, body: bytes })
+   const restore = (bytes, dry = false) => destination.fetch('/api/archive/restore' + (dry ? '?dry-run=1' : ''), { method: 'POST', headers: { origin: destination.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore', 'x-evidence-erasure-history':'unverified acknowledged' }, body: bytes })
    assert.equal((await restore(raw, true)).status, 200)
    assert.equal((await (await destination.fetch('/api/populations')).json()).uploads.length, 0)
    const restored = await restore(raw); assert.equal(restored.status, 200, await restored.clone().text())
@@ -108,7 +109,7 @@ try {
   const bucket = await app.mf.getR2Bucket('EXHIBITS')
   const key = (await app.db.prepare('SELECT object_key FROM population_uploads WHERE id=?').bind(first.id).first()).object_key
   await bucket.put(key, 'changed original')
-  const manifest = (await get('/api/archive/manifest')).manifest
+  const manifest = decodeArchive(Buffer.from(await(await app.fetch('/api/archive/export')).arrayBuffer())).manifest
   const file = manifest.extensions.program.files.find(f => f.path.endsWith(first.id))
   assert.equal(file.available, false); assert.match(file.reason, /changed/)
   assert.equal((await app.fetch(`/app/populations/${first.id}/file`)).status, 410)
@@ -116,7 +117,7 @@ try {
   const unavailable = await runtime()
   try {
    await unavailable.signin()
-   const restored = await unavailable.fetch('/api/archive/restore', { method: 'POST', headers: { origin: unavailable.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore' }, body: missingRaw })
+   const restored = await unavailable.fetch('/api/archive/restore', { method: 'POST', headers: { origin: unavailable.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore', 'x-evidence-erasure-history':'unverified acknowledged' }, body: missingRaw })
    assert.equal(restored.status, 200, await restored.clone().text())
    assert.equal((await unavailable.fetch(`/app/populations/${first.id}/file`)).status, 410)
    assert.equal((await (await unavailable.fetch('/api/populations/' + first.id)).json()).upload.id, first.id)

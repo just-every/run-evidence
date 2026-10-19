@@ -115,7 +115,7 @@ try {
   const latest = (await get('/api/tests/' + (await testByCatalogue('github.branch-protection')).id)).latest
   assert.ok(latest.every(o => /stale/.test(o.reason)))
  })
- await scenario('CONNECT-001: a custody archive carries every program record; restored tokens and connections hold no authority', async () => {
+ await scenario('PORTABLE-001 / CONNECT-001: a custody archive carries every program record; restored tokens and connections hold no authority', async () => {
   const program = await owner('/api/programs', { framework: 'soc2', name: 'SOC 2', legal_entity: 'Northstar', report_type: 'Type I', audit_from: '2026-10-01', audit_to: '2026-10-01' })
   const token = await owner('/api/api-tokens', { name: 'Restore probe', scopes: ['read'], expires_at: '2027-04-01' })
   await owner('/api/policies', { title: 'Information security policy', body: 'Security is everyone\'s job.' })
@@ -125,7 +125,7 @@ try {
   assert.ok(manifest.counts.observations > 0 && manifest.counts.programs === 1 && manifest.counts.connections === 1)
   assert.ok(!exported.includes('github_pat_') && !exported.includes(token.token))
   const target = await runtime(); await target.signin()
-  const restored = await target.fetch('/api/archive/restore', { method: 'POST', headers: { origin: target.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore' }, body: exported })
+  const restored = await target.fetch('/api/archive/restore', { method: 'POST', headers: { origin: target.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore', 'x-evidence-erasure-history':'unverified acknowledged' }, body: exported })
   assert.equal(restored.status, 200, await restored.clone().text())
   for (const table of ['people', 'programs', 'program_revisions', 'library_adoptions', 'tests', 'test_runs', 'observations', 'obligations', 'obligation_events', 'collection_runs', 'policy_revisions', 'product_audit', 'resources']) {
    const rows = async db => (await db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all()).results
@@ -135,7 +135,7 @@ try {
   assert.equal((await target.fetch('/v1/programs', { headers: { cookie: '', authorization: 'Bearer ' + token.token } })).status, 401)
   assert.deepEqual(await target.db.prepare('SELECT status,secret_ciphertext FROM connections').first(), { status: 'inactive after restore', secret_ciphertext: null })
   assert.equal((await target.fetch('/api/programs/' + program.id)).status, 200)
-  const again = await app.fetch('/api/archive/restore', { method: 'POST', headers: { origin: app.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore' }, body: exported })
+  const again = await app.fetch('/api/archive/restore', { method: 'POST', headers: { origin: app.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore', 'x-evidence-erasure-history':'unverified acknowledged' }, body: exported })
   assert.equal(again.status, 400); assert.match((await again.json()).error, /empty Evidence database/)
   await target.close()
  })

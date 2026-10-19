@@ -93,7 +93,7 @@ try {
   await app.clock('2026-10-11T12:01:00Z');assert.equal((await agent('/api/agent/desk',undefined,expiring.token)).status,401)
   await assert.rejects(app.db.prepare('UPDATE agent_tokens SET revoked_at=NULL,revoked_by=NULL WHERE id=?').bind(credential.grant.id).run(),/immutable_agent_token/)
  })
- await scenario('Public archive round trip retains exact proposals and decisions while closing folders and disabling credentials',async()=>{
+ await scenario('PORTABLE-001 / Public archive round trip retains exact proposals and decisions while closing folders and disabling credentials',async()=>{
   const issued=await owner('/api/agent/tokens',{label:'Portable agent history',expires_at:'2026-10-20T00:00:00Z'});assert.equal(issued.status,201)
   const portable=await issued.json()
   assert.equal((await agent('/api/agent/desk',undefined,portable.token)).status,200)
@@ -111,7 +111,7 @@ try {
   const destination=await runtime()
   try {
    await destination.signin()
-   const restored=await destination.fetch('/api/archive/restore',{method:'POST',headers:{origin:destination.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore'},body:bytes})
+   const restored=await destination.fetch('/api/archive/restore',{method:'POST',headers:{origin:destination.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore', 'x-evidence-erasure-history':'unverified acknowledged'},body:bytes})
    assert.equal(restored.status,200)
    const after=await (await destination.fetch('/api/agent')).json()
    assert.deepEqual(after.proposals,before.proposals)

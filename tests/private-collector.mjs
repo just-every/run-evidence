@@ -76,7 +76,7 @@ try {
   const recovered = await get('/api/tests/' + supported)
   assert.equal(recovered.latest[0].result, 'pass'); assert.ok(recovered.runs.some(r => r.unknown === 1))
  })
- await scenario('credentials bind one installation and connection, rotate/revoke immediately, stay secret in custody, and missed reads become stale without invented observations', async () => {
+ await scenario('PORTABLE-001 / credentials bind one installation and connection, rotate/revoke immediately, stay secret in custody, and missed reads become stale without invented observations', async () => {
   const second = await post('/api/collectors', { label: 'Second private service', reviewed: 'yes' })
   assert.equal((await cli(issued.token, repo, second.id, 'Second private service')).code, 1)
   const rotated = await post(`/api/collectors/${issued.id}/rotate`, {}, 200)
@@ -92,14 +92,16 @@ try {
   const target = await runtime()
   try {
    await target.signin(); await clockNow(target)
-   const restored = await target.fetch('/api/archive/restore', { method: 'POST', headers: { origin: target.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore' }, body: raw })
+   const restored = await target.fetch('/api/archive/restore', { method: 'POST', headers: { origin: target.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore', 'x-evidence-erasure-history':'unverified acknowledged' }, body: raw })
    assert.equal(restored.status, 200, await restored.clone().text())
    receiver = target
    assert.equal((await cli(issued.token)).code, 1)
    const state = await (await target.fetch('/api/connections/' + issued.id)).json()
    assert.equal(state.connection.status, 'inactive after restore')
    const fresh = await post(`/api/collectors/${issued.id}/rotate`, {}, 200, target)
-   await clockNow(target); assert.equal((await cli(fresh.token)).code, 0)
+   await clockNow(target); assert.equal((await cli(fresh.token)).code, 1, 'PORTABLE-001 fresh credentials still require explicit collection reauthorization')
+   await post('/api/archive/reauthorize', { capability: 'collections', subject: issued.id }, 200, target)
+   assert.equal((await cli(fresh.token)).code, 0)
   } finally { receiver = app; await target.close() }
   const before = (await get('/api/connections/' + issued.id)).runs.length
   await app.clock(new Date(Date.now() + 3 * 3600000).toISOString()); await app.tick()

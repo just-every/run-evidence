@@ -1,3 +1,4 @@
+import {decodeArchive} from './helpers/portable-format.mjs'
 // Real dev, two clean installations, independent owner/reviewer contexts.
 process.env.RER_SERVER_JOURNEY='1'
 import assert from 'node:assert/strict'
@@ -7,6 +8,7 @@ import { createHash } from 'node:crypto'
 import { chromium } from 'playwright'
 import { installation, signIn, sanitize, wait } from './helpers/review-browser-runtime.mjs'
 import { inspectArchive } from './helpers/review-browser-archive.mjs'
+import { portableBrowserJourney } from './helpers/portable-browser.mjs'
 
 const output=resolve(process.env.EVIDENCE_BROWSER_OUTPUT||'.cache/review-browser')
 await mkdir(output,{recursive:true})
@@ -31,6 +33,7 @@ async function context(width,origin) {
  page.on('console',message=>{if(message.type()==='error'){
   const text=sanitize(message.text())
   if(client.expectRefusal&&/Failed to load resource.*404/.test(text))expectedRefusals.push('expected closed/expired navigation 404')
+  else if(client.archiveRefusal&&/Failed to load resource.*400/.test(text)&&message.location().url.includes('/api/archive/uploads/'))expectedRefusals.push('expected invalid erasure journal 400')
   else errors.push(text)
  }})
  return client
@@ -116,7 +119,7 @@ async function compareDesk(owner,origin,before) {
 async function compareArchive(owner,origin,before) {
  const response=await owner.context.request.get(origin+'/api/archive/manifest')
  assert.equal(response.status(),200,'restored manifest available to owner')
- const {manifest:after}=await response.json()
+ const after=decodeArchive(Buffer.from(await(await owner.context.request.get(origin+'/api/archive/export')).body())).manifest
  for(const [table,rows] of Object.entries(before.rows)){
   if(table==='review_folders'){
    assert.ok(after.rows[table].every(row=>row.closed_at),'every restored folder is closed')
@@ -200,20 +203,14 @@ try {
   for(const issued of [reviewURL,expiring])assert.ok(!archiveBytes.includes(Buffer.from(new URL(issued).pathname.split('/').at(-1))),'archive omits bearer tokens')
   const inspected=inspectArchive(archiveBytes)
   assert.equal(inspected.summary.receipts,before.requirements.flatMap(row=>row.receipts).length,'archive includes every desk receipt')
+  const journalResponse=await owner.context.request.get(source.origin+'/api/archive/journal');assert.equal(journalResponse.status(),200)
+  const journalBytes=await journalResponse.body()
   await owner.context.close();await source.stop()
   const restored=await context(width,target.origin)
   await signIn(restored.page,await target.start())
   assert.equal((await deskSnapshot(restored,target.origin)).requirements.length,0,'restore destination has independently empty business data')
-  await restored.page.goto(target.origin+'/app/archive')
-  await restored.page.getByLabel('Archive file',{exact:true}).setInputFiles({name:'custody.evidence',mimeType:'application/octet-stream',buffer:archiveBytes})
-  await restored.page.getByRole('button',{name:'Run dry run',exact:true}).click()
-  await restored.page.locator('#archive-status').filter({hasText:'Dry run passed:'}).waitFor()
-  assert.equal((await deskSnapshot(restored,target.origin)).requirements.length,0,'dry run admits no business records')
-  const dryResult=JSON.parse(await restored.page.locator('#archive-result').textContent())
-  assert.equal(dryResult.counts.receipts,inspected.summary.receipts,'UI dry run counts full receipt inventory')
-  await capture(restored.page,`${width}-restore-validated`)
-  await restored.page.getByRole('button',{name:'Confirm restore',exact:true}).click()
-  await restored.page.locator('#archive-status').filter({hasText:'Restore complete.'}).waitFor()
+  await portableBrowserJourney({targetPage:restored.page,archiveBytes,journalBytes,artifacts:output,width,capture,expectJournalRefusal:value=>{restored.archiveRefusal=value}})
+  await capture(restored.page,`${width}-PORTABLE-001-restored-archive`)
   comparisons.push({width,...await compareDesk(restored,target.origin,before),archive:inspected.summary})
   await compareArchive(restored,target.origin,inspected.manifest)
   await restored.page.goto(target.origin+'/app')
@@ -229,7 +226,7 @@ try {
  }
  assert.deepEqual(errors,[],'No browser runtime or console errors')
  await writeFile(join(output,'report.json'),JSON.stringify({viewports:[1440,390],errors,expectedRefusals,folderIssues,measurements,comparisons},null,2)+'\n')
- console.log('PASS r2 browser journeys at 1440 and 390; independent review, closure, real expiry, archive round trip, zero overflow/errors.')
+ console.log('PASS PORTABLE-001 and r2 browser journeys at 1440 and 390; independent review, closure, real expiry, archive round trip, zero overflow/errors.')
 } catch(error) {
  await writeFile(join(output,'failure.json'),JSON.stringify({error:sanitize(error.message),errors,measurements,comparisons},null,2)+'\n')
  throw new Error(sanitize(error.message))

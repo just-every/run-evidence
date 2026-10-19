@@ -7,17 +7,18 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { spawn } from 'node:child_process'
 import { runtime } from './helpers/runtime.mjs'
+import { decodeArchive as decode } from './helpers/portable-format.mjs'
+import { portableJourney } from './helpers/portable-journey.mjs'
 const require=createRequire(import.meta.url),dependency=createRequire(require.resolve('wrangler/package.json'))
 const {unstable_splitSqlQuery}=dependency('wrangler')
 const digest=bytes=>createHash('sha256').update(bytes).digest('hex')
 const magic=Buffer.from('EVIDENCE-ARCHIVE\n'),u32=n=>{const b=Buffer.alloc(4);b.writeUInt32BE(n);return b}
-function decode(bytes){let at=magic.length;const length=bytes.readUInt32BE(at);at+=4;const envelope=JSON.parse(bytes.subarray(at,at+length));at+=length;const manifest=JSON.parse(envelope.manifest),entries=[];while(at<bytes.length){const n=bytes.readUInt32BE(at);at+=4;const path=bytes.subarray(at,at+n).toString();at+=n;const size=bytes.readUInt32BE(at);at+=4;entries.push({path,bytes:bytes.subarray(at,at+size)});at+=size}return{envelope,manifest,entries}}
 function encode(data,stale=false){const text=JSON.stringify(data.manifest),envelope=Buffer.from(JSON.stringify({manifest:text,sha256:stale?data.envelope.sha256:digest(text)}));return Buffer.concat([magic,u32(envelope.length),envelope,...data.entries.flatMap(e=>[u32(Buffer.byteLength(e.path)),Buffer.from(e.path),u32(e.bytes.length),e.bytes])])}
 const tableNames=['controls','requirements','exhibits','receipts','receipt_actors','review_folders','review_folder_controls','review_events']
 const rows=async(app,table)=>(await app.db.prepare(`SELECT * FROM ${table} ORDER BY 1${table==='review_folder_controls'?',2':''}`).all()).results
 const snapshot=async app=>Object.fromEntries(await Promise.all(tableNames.map(async t=>[t,await rows(app,t)])))
 const assertEmpty=async app=>{for(const t of tableNames)assert.equal((await rows(app,t)).length,0,t+' remains empty');assert.equal((await(await app.mf.getR2Bucket('EXHIBITS')).list()).objects.length,0)}
-const restore=(app,bytes,dry=false)=>app.fetch('/api/archive/restore'+(dry?'?dry-run=1':''),{method:'POST',headers:{origin:app.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore'},body:bytes})
+const restore=(app,bytes,dry=false)=>app.fetch('/api/archive/restore'+(dry?'?dry-run=1':''),{method:'POST',headers:{origin:app.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:bytes})
 const createControl=async(app,name)=>{const res=await app.fetch('/app/controls',{method:'POST',headers:{origin:app.origin,'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({name,group:'Access',proof:'Dated proof',cadence:'daily'})});assert.equal(res.status,303);return res.headers.get('location').split('/').at(-1)}
 const upload=async(app,id,bytes,supersedes)=>{const form=new FormData();Object.entries({source:'archive source',covered_from:'2026-10-11',covered_to:'2026-10-11',...(supersedes?{supersedes}:{})}).forEach(([k,v])=>form.set(k,v));form.set('file',new File([bytes],'proof.html',{type:'text/html'}));const res=await app.fetch('/app/requirements/'+id+'/uploads',{method:'POST',headers:{origin:app.origin},body:form});assert.equal(res.status,303);return(await app.fetch(res.headers.get('location').replace('/app/','/api/'))).json()}
 const stopForCLI=async app=>{await app.mf.dispose();app.close=()=>rm(app.persistencePath,{recursive:true,force:true})}
@@ -125,7 +126,7 @@ try{
   const empty=await runtime();await empty.signin();const emptyState=empty.persistencePath;await stopForCLI(empty)
   try{
    const checked=await cli(['restore','--input',output,'--dry-run','--state',emptyState,'--config',config]);assert.equal(checked.code,0,checked.error)
-   const restored=await cli(['restore','--input',output,'--yes','--state',emptyState,'--config',config]);assert.equal(restored.code,0,restored.error)
+   const restored=await cli(['restore','--input',output,'--yes','--accept-unverified-history','--state',emptyState,'--config',config]);assert.equal(restored.code,0,restored.error)
    const reexport=join(dir,'roundtrip.evidence');const exportedAgain=await cli(['export','--output',reexport,'--state',emptyState,'--config',config]);assert.equal(exportedAgain.code,0,exportedAgain.error)
    const result=decode(await readFile(reexport))
    for(const table of tableNames.filter(t=>t!=='review_folders'))assert.deepEqual(result.manifest.rows[table],cliData.manifest.rows[table])
@@ -134,5 +135,6 @@ try{
    console.log('CLI round trip: exact receipt rows and four present file digests; missing entry retained; folders closed.')
   }finally{await empty.close()}
  })
+ await scenario('PORTABLE-001 complete bounded HTTP and offline CLI transfer, erasure history and execution fences',()=>portableJourney({runtime,cli,dir}))
  console.log(`${passed} archive public-door scenarios passed.`)
 }finally{await app?.close();await target?.close();if(dir)await rm(dir,{recursive:true,force:true})}

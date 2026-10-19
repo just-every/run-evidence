@@ -322,11 +322,11 @@ try {
   const group = (await get('/api/tests/' + test.id)).tickets.groups[0]
   assert.equal(group.state, 'open'); assert.equal(group.item_list.split(',').length, 4)
  })
- await scenario('Tickets and their sync history travel in the archive; restored destinations hold no credentials', async () => {
+ await scenario('PORTABLE-001 / Tickets and their sync history travel in the archive; restored destinations hold no credentials', async () => {
   const exported = Buffer.from(await (await app.fetch('/api/archive/export')).arrayBuffer())
   for (const secret of [...Object.values(tracker.tokens), dest.jira.webhook.secret]) assert.ok(!exported.includes(secret))
   const target = await runtime(); await target.signin()
-  const restored = await target.fetch('/api/archive/restore', { method: 'POST', headers: { origin: target.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore' }, body: exported })
+  const restored = await target.fetch('/api/archive/restore', { method: 'POST', headers: { origin: target.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore', 'x-evidence-erasure-history':'unverified acknowledged' }, body: exported })
   assert.equal(restored.status, 200, await restored.clone().text())
   for (const table of ['tickets', 'ticket_events', 'ticket_comments', 'tracker_deliveries']) assert.deepEqual((await target.db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all()).results, (await app.db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all()).results, table)
   assert.deepEqual([...new Set((await target.db.prepare('SELECT status,secret_ciphertext,hook_ciphertext FROM tracker_destinations').all()).results.map(r => JSON.stringify(r)))], [JSON.stringify({ status: 'inactive after restore', secret_ciphertext: null, hook_ciphertext: null })])
