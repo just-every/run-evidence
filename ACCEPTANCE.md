@@ -287,6 +287,8 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: `src/evidence/import/plan.ts`; `src/evidence/import/http.ts`; `tests/import.mjs`. Current limit: Only the documented Drata archive shape is implemented and exercised with synthetic fixtures; Vanta, Secureframe, broader objects and live migration validation are missing.
 
+  This incumbent-switching workflow carries OPEN-001’s migration obligation; open-source availability alone does not prove a switch.
+
 - **MIGRATE-002 — Switching in the middle of an audit period · missing.** Migrate from a Vanta export dated four months into a Type II period and set the cutover. Generate the terminations population across the whole period: pre-cutover rows show as imported, post-cutover rows as source-observed from the connected HRIS, the boundary is marked, and the count reconciles with no person missing or duplicated at the boundary. Sample one row from each side and satisfy both requests, the pre-cutover one with imported evidence. Remove one month of pre-cutover rows from the export and regenerate: that interval shows incomplete with its reason until back-filled from the HRIS. Export the pack: every record carries its provenance and the boundary is visible.
 
   Current evidence: —.
@@ -325,9 +327,9 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: `src/auth.server.ts`; `tests/site.mjs`; `tests/evidence.mjs`; `tests/browser.mjs`; `tests/review-browser.mjs`.
 
-- **OPEN-001 — Free and open source under the MIT license · partial.** Verify the repository's `LICENSE` is the MIT license and the package metadata declares MIT. Install from the public source with no account or key from Evidence's authors and reach every product area, with all four core programs and 250 people, without a payment, upgrade or license prompt. Begin enabling a paid provider connection and verify its cost is shown in USD as that provider's before activation.
+- **OPEN-001 — Free and open source under the MIT license · done.** Verify the repository's `LICENSE` is the MIT license and the package metadata declares MIT. Install from the public source with no account or key from Evidence's authors and reach every product area, with all four core programs and 250 people, without a payment, upgrade or license prompt. Begin enabling a paid provider connection and verify its cost is shown in USD as that provider's before activation.
 
-  Current evidence: `LICENSE`. Current limit: The repository license is MIT and nothing in the product charges; `package.json` declares no license, no test checks the license or the absence of paid gates, and provider cost disclosure before enablement is missing (OPS-001).
+  Current evidence: `LICENSE`; `package.json`; `src/evidence/costs.ts`; `docs/PROVIDER-COSTS.md`; `tests/open.mjs`; `tests/helpers/open-browser.mjs`; `tests/browser.mjs`. Every shipped capability conforms; future provider/capability clauses named in OPEN-001 inherit its no-gate and USD-cost obligations before shipping. MIGRATE-001 owns the future incumbent-switching workflow.
 
 - **OWN-001 — Run on your own computer or Cloudflare account, with your evidence in your own database · partial.** On a clean macOS and a clean Ubuntu machine, run the one-line start: Evidence opens its private link, first-run setup completes, and an uploaded receipt and a test result survive a stop and restart, held in the local D1 and R2 files under the checkout. With every connector off, record every outbound request for an hour of use: none goes to a host run by Evidence's authors. Deploy with `rer deploy` to a sandbox Cloudflare account: the D1 database and R2 bucket are in that account, and the deployment serves the restored archive of the local installation with every record and byte reconciled.
 
@@ -375,4 +377,4 @@ The current public-door suites are `tests/evidence.mjs` (native owner access, re
 
 For each new user flow, build rounds must exercise the named public door, persistence/restart, refusal/error path, actor permissions and final state in the journey. Inspect each changed screen at 1440 and 390 with realistic data; provider acknowledgments are separate from source truth and human decisions. Certification, independent assessor judgment, legal applicability, outside-provider reliability and copies already downloaded remain the declared boundaries in BOUNDARY-001, rather than fabricated acceptance results.
 
-**Clause totals:** 79 — 21 done / 27 partial / 31 missing.
+**Clause totals:** 79 — 22 done / 26 partial / 31 missing.

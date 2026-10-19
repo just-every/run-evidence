@@ -12,6 +12,7 @@ import { join, resolve, basename } from 'node:path'
 import { createServer } from 'node:net'
 import { createHash } from 'node:crypto'
 import { chromium } from 'playwright'
+import { openSetupScreens } from './helpers/open-browser.mjs'
 import { moveInAndPrepare } from './helpers/move-in-browser.mjs'
 import { readDevKey, signInAs } from '../src/modules/operator-auth/dev/sign-in-as.mjs'
 const root = process.cwd(), scratch = await mkdtemp(join(tmpdir(),'evidence-browser-'))
@@ -128,6 +129,7 @@ try {
   assert.deepEqual(await (await context.request.get(firstURL+'/download')).body(),original)
   await page.goto(origin+'/app?date='+yesterday);await capture(page,`${width}-gap`);await capture(page,`${width}-desk`)
   await moveInAndPrepare(page,origin,width,capture,scratch)
+  await openSetupScreens(page, origin, width, capture)
   await context.close()
  }
  assert.deepEqual(errors,[],'No browser runtime or console errors')
@@ -141,6 +143,6 @@ try {
  throw new Error(sanitized)
 } finally {
  await browser?.close()
- if(server){try{await run(['dev','--stop'])}catch(error){console.error(error.message)}finally{if(server.exitCode===null)server.kill('SIGTERM');await new Promise(resolve=>server.exitCode!==null?resolve():server.once('close',resolve))}}
+ if(server && server.exitCode===null && server.signalCode===null){server.kill('SIGTERM');await new Promise(resolve=>server.once('close',resolve))}
  await rm(scratch,{recursive:true,force:true})
 }

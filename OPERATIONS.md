@@ -2,6 +2,13 @@
 
 `rer dev` installs locked dependencies, prepares local D1/R2 and starts the app. `rer dev --stop` stops this checkout. `rer build` builds without tests; `rer verify` builds, typechecks and runs the public-door integration and browser journeys. CI runs one Verify per main commit.
 
+Before configuring a paid provider or running deployment, review
+[provider costs in USD](docs/PROVIDER-COSTS.md). Cloudflare hosts in your account;
+mail is billed by the selected mail provider. Free allowances are shared with
+other applications in that account. Record your intended usage in the provider
+calculator and review its USD estimate before enabling credentials. Local
+operation and the development outbox carry USD 0 in provider charges.
+
 `rer deploy --dry-run` validates the Worker, D1 migrations, exhibit R2 binding and deployment declaration without provider calls. See README.md for the actual `rer deploy` inputs. Project and deployed resource identities remain unchanged from Evidence.
 
 Use the Evidence archive UI or `node scripts/archive.mjs` for complete custody transfer. Base's generic export/import is not the domain archive. Local state, setup values, grants, API tokens and exports are private. Export before destructive `rer reset --yes`; reset removes the local installation. Imported receipts are retained when a batch is undone. Review links close on restore; agent credentials are excluded.

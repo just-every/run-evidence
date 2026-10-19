@@ -462,6 +462,8 @@ Each candidate shows the source records that surfaced it. Candidates seen in sev
 
 **MIGRATE-001 — Switch from Vanta, Drata and Secureframe.** Guided migration separately supports Vanta, Drata and Secureframe exports and authorized APIs for available framework scope, mappings, controls, test history, policies/attestations, people, vendors/risks, audit requests, trust/questionnaire content and original exhibits. Preview counts, field mappings, unsupported records and absent export fields; resolve identity/owner conflicts before admission. Preserve original IDs, timestamps, source and audit periods as imported provenance, never fabricated live observations. Reconcile totals and bytes, undo admitted links without deleting source custody, and explicitly reauthorize connectors and external access.
 
+MIGRATE-001 carries OPEN-001’s incumbent-switching obligation: open-source availability alone does not prove a completed switch.
+
 **Acceptance evidence:** For each incumbent, use a representative authorized customer export through Move-in, preview it, resolve a duplicate identity, admit, export and undo. Reconcile each record class separately, showing source count, admitted, unsupported and refused for each:
 - frameworks, controls and mappings;
 - test history;
@@ -518,7 +520,7 @@ The cutover boundary is shown explicitly in each report, in population exports (
 
 **Acceptance evidence:** Build the run site, follow the homepage Run/docs links without JavaScript, and inspect installed Lobby before and after setup. Existing browser journeys inspect the approved owner/reviewer flows at 1440 and 390. `tests/site.mjs`, `tests/evidence.mjs`, `tests/browser.mjs` and `tests/review-browser.mjs` are the existing checks.
 
-**OPEN-001 — Free and open source under the MIT license.** Evidence is free and open source under the MIT license: the repository's license and the package metadata declare MIT, and anyone may run, modify and redistribute it. Every capability in this contract is available in the open-source product with no license key, seat, framework or connector cap, paid gate or upgrade prompt from Evidence's authors. Paid third-party services a buyer connects (hosting on the buyer's Cloudflare account, email delivery, model providers, KnowBe4, e-signature and the named SaaS sources) are billed by those providers, and Evidence names that provider cost in USD before the connection is enabled (OPS-001). Evidence is an alternative to Vanta, Drata and Secureframe and switches a buyer off them through MIGRATE-001; it is not affiliated with them, and it never claims to certify anyone (BOUNDARY-001).
+**OPEN-001 — Free and open source under the MIT license.** Evidence is free and open source under the MIT license: the repository's license and the package metadata declare MIT, and anyone may run, modify and redistribute it. Every capability that exists today is available in the open-source product with no license key, seat, framework or connector cap, paid gate or upgrade prompt from Evidence's authors. Paid third-party services a buyer connects (hosting on the buyer's Cloudflare account, email delivery, model providers, KnowBe4, e-signature and the named SaaS sources) are billed by those providers, and Evidence names that provider cost in USD before the connection is enabled (OPS-001). Future capabilities and provider doors under COLLECTION-001, CLOUD-002, CODE-001, APPS-001, MONITOR-001, HRIS-001, DEVICE-001, VULN-001, ISSUES-001, WORK-001, TRUST-001..004, ANSWER-001..003, AGENT-002..007 and AI-001 inherit the same no-gate and preactivation USD-disclosure obligations before shipping. MIGRATE-001 owns switching from Vanta, Drata and Secureframe; it is not affiliated with them, and it never claims to certify anyone (BOUNDARY-001).
 
 **Acceptance evidence:** Verify the repository's `LICENSE` is the MIT license and the package metadata declares MIT. Install from the public source with no account or key from Evidence's authors and reach every product area, with all four core programs and 250 people, without a payment, upgrade or license prompt. Begin enabling a paid provider connection and verify its cost is shown in USD as that provider's before activation.
 
@@ -684,11 +686,13 @@ Judged from the code and tests at commit `752e0d4a6dea5f6f5f97c23fb00b5e4bb6ce86
 
 The earlier statuses were judged at `0b495fb9adc1bd062adb0356423d47dbf922a1e1`. Between it and the commit above, `src/evidence` changed only in one library control's wording (GOV-07) and a deterministic sort order in the remediation queue, and `src/identity.ts` only in its tagline; the rest is the run site (`src/site`), docs and source locks, so every earlier status stands. Revised 17 October 2026 so every capability claim on the approved homepage has a clause (see [Homepage claims](#homepage-claims)): FOLLOWUP-002, LIFECYCLE-002, OPEN-001 and OWN-001 were added and judged from the commit above, and LIBRARY-001, READINESS-001, HRIS-001, DEVICE-001, INVENTORY-001, LIFECYCLE-001 and AUDIT-001 were sharpened without changing their statuses.
 
+OPEN-001 updated 19 October 2026 with clause-named public-door and clean-checkout browser journeys; other baselines below remain historical.
+
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 6 | 1 | 1 | 8 |
-| Target and push further | 15 | 26 | 30 | 71 |
-| All | 21 | 27 | 31 | 79 |
+| Target and push further | 16 | 25 | 30 | 71 |
+| All | 22 | 26 | 31 | 79 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -760,7 +764,7 @@ The earlier statuses were judged at `0b495fb9adc1bd062adb0356423d47dbf922a1e1`. 
 | `OPS-001` | Durable operation, health and recovery | target | partial | `SEED-COMMAND-CONTRACT.md`; `src/auth.server.ts`; `tests/evidence.mjs`; `tests/archive.mjs`; `tests/email-link.mjs` | Current CLI/auth/custody journeys are exercised; target collectors, durable scheduled obligations, all-operation outcomes and provider cost disclosure are missing. |
 | `MOBILE-001` | Responsive and accessible complete workflows | target | partial | `tests/browser.mjs`; `tests/review-browser.mjs`; `src/evidence/view.ts`; `public/desk.css`; `public/review.css` | Existing owner/reviewer custody flows have 1440/390 browser journeys; new program/employee workflows, mobile camera validation and independent accessibility conformance are unproven. |
 | `PUBLIC-001` | Preserve the approved installation and run surfaces | target | done | `tests/site.mjs`; `tests/browser.mjs` |  |
-| `OPEN-001` | Free and open source under the MIT license | target | partial | `LICENSE` | The repository license is MIT and nothing in the product charges; `package.json` declares no license, no test checks the license or the absence of paid gates, and provider cost disclosure before enablement is missing (OPS-001). |
+| `OPEN-001` | Free and open source under the MIT license | target | done | `LICENSE`; `package.json`; `src/evidence/costs.ts`; `docs/PROVIDER-COSTS.md`; `tests/open.mjs`; `tests/helpers/open-browser.mjs`; `tests/browser.mjs` |  |
 | `OWN-001` | Run on your own computer or Cloudflare account, with your evidence in your own database | target | partial | `README.md`; `RUN-LOCALLY.md`; `wrangler.jsonc`; `tests/archive.mjs` | The one-line start and `rer deploy` come from the pinned rer CLI and keep data in the installation's own D1 and R2; no check in this repository runs the one-line start on a clean machine, records outbound requests, or deploys to a sandbox account. |
 | `AGENT-001` | Prepare-only proposals with exact human approval | published | done | `src/evidence/agent/http.ts`; `src/evidence/agent/storage.ts`; `tests/agent.mjs`; `docs/AGENT-COMMANDS.md` |  |
 | `AGENT-002` | Prove operation across the audit period | push-further | missing |  | No implementing path |

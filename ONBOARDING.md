@@ -6,6 +6,19 @@ command's flags, effects, state handling and exits are defined in
 onboarding package supplies the shared lifecycle used by the command adapter.
 It is not a separate first-party setup command.
 
+## Provider costs before setup
+
+Evidence is MIT licensed and charges USD 0. Local setup uses local storage and
+an outbox, with no paid provider connection. No account or license key from
+Evidence's authors is needed. Before choosing hosted deployment or replacing
+the outbox with external mail, review [provider costs](docs/PROVIDER-COSTS.md).
+Cloudflare Workers Paid starts at USD 5/month plus usage; Resend Pro is USD
+20/month for 50,000 emails; SendGrid Essentials starts at USD 19.95/month.
+These are provider charges to your own account, with taxes and overage separate.
+Review the linked current plan and its USD estimate before entering provider
+credentials or running deployment. Keep the local outbox until you choose to
+enable a delivery provider.
+
 ## Edition-owned inputs
 
 The foundation edition owns:

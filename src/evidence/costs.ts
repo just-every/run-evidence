@@ -1,0 +1,32 @@
+import { escape } from './view'
+// OPEN-001. Provider prices checked against the linked first-party pages on
+// 19 October 2026. Examples are provider plans, never Evidence activation fees.
+interface Cost { name: string; basis: string; url: string }
+const costs: Record<string, Cost> = {
+ github: { name: 'GitHub', basis: 'Free: USD 0. Team: USD 4 per user/month. Enterprise and security add-ons cost extra; use your existing plan and permissions.', url: 'https://github.com/pricing' },
+ aws: { name: 'AWS', basis: 'IAM and STS: USD 0 additional charge. Other API requests, storage, CloudTrail and GuardDuty are usage-based in USD; estimate your accounts and hourly collection in the AWS calculator.', url: 'https://aws.amazon.com/pricing/' },
+ gcp: { name: 'Google Cloud', basis: 'Resource Manager and Cloud Asset APIs: USD 0. Other services and API usage can add USD charges; estimate your projects and hourly reads with Google Cloud pricing.', url: 'https://cloud.google.com/pricing' },
+ azure: { name: 'Microsoft Azure', basis: 'Variable USD usage charges by service, subscription and region. Review the Azure calculator with your subscriptions and hourly collection before connecting.', url: 'https://azure.microsoft.com/en-us/pricing/calculator/' },
+ google: { name: 'Google Workspace', basis: 'Business Starter: USD 7 per user/month with a one-year commitment, or USD 8.40 on flexible billing. For 250 users: USD 1,750/month on the annual plan. API permissions and reporting depend on your edition.', url: 'https://workspace.google.com/pricing?hl=en&region=US' },
+ okta: { name: 'Okta', basis: 'Workforce Identity is billed per user/month annually, with a USD 1,500 annual contract minimum. Your suite and API entitlements determine the USD quote; check your contract before connecting.', url: 'https://www.okta.com/pricing/' },
+ entra: { name: 'Microsoft Entra ID', basis: 'Free edition: USD 0. Paid identity/reporting features require a separately billed Microsoft plan; obtain its USD seat quote for your tenant and required Graph permissions before connecting.', url: 'https://www.microsoft.com/en-us/security/business/microsoft-entra-pricing' },
+ jumpcloud: { name: 'JumpCloud', basis: 'Subscription and API entitlements depend on your package and seats. Obtain the monthly USD amount from your JumpCloud quote or admin billing page before connecting; no universal flat connection price is published.', url: 'https://jumpcloud.com/pricing' },
+ jira: { name: 'Atlassian Jira', basis: 'Free plan: USD 0, subject to Atlassian limits. Paid plans vary by users and billing term; use the USD estimate for your team on Atlassian pricing.', url: 'https://www.atlassian.com/software/jira/pricing' },
+ linear: { name: 'Linear', basis: 'Free plan: USD 0, subject to Linear limits. Basic: USD 10 per user/month billed yearly; 25 users cost USD 250/month equivalent. Check API and webhook availability for your plan.', url: 'https://linear.app/pricing' },
+ asana: { name: 'Asana', basis: 'Personal: USD 0, subject to Asana limits. Starter: USD 10.99 per user/month billed annually; 25 users cost USD 274.75/month equivalent. Check your API entitlements.', url: 'https://asana.com/pricing' },
+ vector: { name: 'Your Vector operator', basis: 'Use the monthly USD hosting or service amount quoted by the operator of your Vector address. Evidence does not set or collect a Vector service price.', url: '' },
+ slack: { name: 'Slack', basis: 'Free plan: USD 0, subject to Slack limits. Pro: USD 7.25 per user/month billed annually, or USD 8.75 monthly. For 250 users on annual billing: USD 1,812.50/month equivalent.', url: 'https://slack.com/pricing' },
+ teams: { name: 'Microsoft Teams', basis: 'Your Microsoft subscription and Workflows/Power Automate entitlements determine the USD cost. Review the USD quote for your tenant before connecting; a Teams seat alone may not include the required workflow.', url: 'https://www.microsoft.com/en-us/microsoft-teams/compare-microsoft-teams-business-options' },
+ knowbe4: { name: 'KnowBe4', basis: 'SAT Foundation MSRP for 101–250 seats: USD 1.97 per seat/month on a three-year term; 250 seats cost USD 492.50/month equivalent. Reporting API entitlement and your actual contract may differ.', url: 'https://www.knowbe4.com/products/security-awareness-training/pricing' },
+ cloudflare: { name: 'Cloudflare hosting', basis: 'Local hosting: USD 0 to Cloudflare. Workers Paid starts at USD 5/month per account, plus metered Workers, D1 and R2 usage above allowances. Review your account usage before deploying.', url: 'https://developers.cloudflare.com/workers/platform/pricing/' },
+ resend: { name: 'Resend email', basis: 'Free: USD 0 within its allowance. Pro: USD 20/month for 50,000 transactional emails, with overage charged separately. Check daily limits and your existing account usage.', url: 'https://resend.com/pricing' },
+ sendgrid: { name: 'Twilio SendGrid email', basis: 'Essentials starts at USD 19.95/month. Volume, overage and other services depend on your plan; review your account quote before enabling delivery.', url: 'https://www.twilio.com/en-us/products/email-api/pricing' },
+ cloudflare_mail: { name: 'Cloudflare email', basis: 'Arbitrary recipients require Workers Paid (from USD 5/month). Includes 3,000 outbound emails/month, then USD 0.35 per 1,000; 10,000 emails cost USD 2.45 in overage plus the Workers subscription and other usage.', url: 'https://developers.cloudflare.com/email-service/platform/pricing/' },
+}
+export function providerCosts(providers: string[]) {
+ return `<aside class="provider-costs" aria-label="Provider costs in USD"><p><strong>Provider costs in USD</strong> · Evidence charges USD 0. These services are billed by the named provider to your account. Existing subscriptions still apply. Examples exclude taxes, discounts and additional usage; confirm your plan and permissions before connecting.</p><ul class="plain-list">${providers.map(provider => {
+  const cost = costs[provider]
+  if (!cost) throw new Error('Missing provider cost disclosure: ' + provider)
+  return `<li data-cost-provider="${escape(provider)}"><strong>${escape(cost.name)}</strong>: ${escape(cost.basis)}${cost.url ? ` <a href="${escape(cost.url)}" rel="noreferrer">Provider pricing</a>.` : ''}</li>`
+ }).join('')}</ul></aside>`
+}
