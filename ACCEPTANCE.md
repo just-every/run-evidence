@@ -37,9 +37,10 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
-### Import, custody and approvals
-
   Before shipping, this clause adds questionnaire completion records to the READINESS-001 checklist, with reconciled counts and record drilldown. Assert the new checklist count and its record drilldown when the capability ships.
+
+
+### Import, custody and approvals
 
 - **IMPORT-001 — Reviewed Drata archive admission and undo · done.** Through Move-in, inspect a documented-shape Drata ZIP, review mappings and refuse unsafe/malformed artifacts, admit with a journal, then undo active links. Inspect retained originals and import history after undo, restart and archive restore. `tests/import.mjs` exercises these routes; a real customer export remains separately required under MIGRATE-001.
 
@@ -248,9 +249,10 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
-### Customer assurance
-
   Before shipping, this clause adds attributable auditor-decision flags and their source/comment drilldown to READINESS-001; auditor decisions never create a readiness pass. Assert the new checklist count and its record drilldown when the capability ships.
+
+
+### Customer assurance
 
 - **TRUST-001 — Published and permissioned trust center · partial.** Publish an approved statement, request a restricted SOC 2 report as a prospect, complete an NDA through each named e-signature integration, approve one recipient and deny another. Check expiry/revocation, downloads and custom-domain access from a signed-out browser. An unapproved draft and another prospect’s documents never appear.
 
@@ -278,9 +280,10 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
-### Portability and migration
-
   Before shipping, this clause adds questionnaire assignment completion records to the READINESS-001 checklist, with reconciled counts and record drilldown. Assert the new checklist count and its record drilldown when the capability ships.
+
+
+### Portability and migration
 
 - **MIGRATE-001 — Switch from Vanta, Drata and Secureframe · partial.** For each incumbent, use a representative authorized customer export through Move-in, preview it, resolve a duplicate identity, admit, export and undo. Reconcile each record class separately, showing source count, admitted, unsupported and refused for each:
   - frameworks, controls and mappings;
