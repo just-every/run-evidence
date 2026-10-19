@@ -1,7 +1,7 @@
 import { populationFiles, validatePopulationFiles, type PopulationFile } from './populations'
 import { retainDefaultMethod } from '../risk/method-default'
 import type { Bindings } from '../../auth.server'
-import { fail, type Row } from './format'
+import { fail, MAX_METADATA, type Row } from './format'
 // Archive version 3 carries every program-domain table, in foreign-key order.
 // Credentials never travel: token digests and connection secrets are left out,
 // so restored API tokens cannot authenticate and restored connections stay
@@ -113,7 +113,12 @@ export function validateProgramExtension(value: unknown, version: number): asser
  for (const table of expected) for (const row of (value.rows as Record<string, unknown[]>)[table]) {
   const columns = columnsOf(table, version)
   if (++count > 20000 || !object(row) || Object.keys(row).length !== columns.length || columns.some(c => !Object.hasOwn(row, c))) fail(`Invalid ${table} row in the program archive.`)
-  for (const field of Object.values(row)) if (!(field === null || (typeof field === 'number' && Number.isFinite(field)) || (typeof field === 'string' && field.length <= 262144))) fail(`Invalid ${table} field in the program archive.`)
+  for (const [column, field] of Object.entries(row)) {
+   // A retained report includes its whole source denominator; it shares the
+   // existing complete-manifest bound rather than an ordinary text-field cap.
+   const bound = table === 'readiness_snapshots' && column === 'totals_json' ? MAX_METADATA : 262144
+   if (!(field === null || (typeof field === 'number' && Number.isFinite(field)) || (typeof field === 'string' && field.length <= bound))) fail(`Invalid ${table} field in the program archive.`)
+  }
  }
  if (version >= 6) validatePopulationFiles(value.files, (value.rows as ProgramArchive['rows']).population_uploads)
 }

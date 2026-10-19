@@ -3,7 +3,7 @@ import { Refusal } from '../upload'
 import { auditStatement, oneOf, text, type Actor, type Input } from '../door'
 import { validDate } from '../model'
 import { addMonths } from '../cadence'
-import { upsertResources } from '../resources'
+import { upsertRegister } from '../resources'
 import { catalogueStatements } from '../tests/storage'
 import { runForType } from '../tests/engine'
 import { sendFollowup, sent } from '../followup/send'
@@ -138,7 +138,7 @@ export async function trainingWork(env: Bindings, now: Date) {
 export async function syncTraining(env: Bindings, now: Date) {
  if (!await env.DB.prepare("SELECT 1 FROM tests WHERE catalogue_id='training.current'").first()) return 0
  const rows = (await env.DB.prepare("SELECT p.id,p.name,p.email,SUM(a.state='assigned' AND a.due_date<?) AS overdue,SUM(a.state='assigned') AS open,SUM(a.state='completed') AS completed FROM training_assignments a JOIN people p ON p.id=a.person_id WHERE a.state!='departed' GROUP BY p.id").bind(today(now)).all<{ id: string; name: string; email: string; overdue: number; open: number; completed: number }>()).results
- const written = await upsertResources(env, 'training.person', { fields: { overdue: 'number', open: 'number', completed: 'number' }, required: [] }, rows.map(r => ({ uniqueId: r.id, displayName: `${r.name} <${r.email}>`, attributes: { overdue: r.overdue, open: r.open, completed: r.completed } })), { kind: 'source-observed', ref: 'training:register', label: 'Evidence training register' }, 'source', now)
+ const written = await upsertRegister(env, 'training.person', { fields: { overdue: 'number', open: 'number', completed: 'number' }, required: [] }, rows.map(r => ({ uniqueId: r.id, displayName: `${r.name} <${r.email}>`, attributes: { overdue: r.overdue, open: r.open, completed: r.completed } })), { kind: 'source-observed', ref: 'training:register', label: 'Evidence training register' }, now)
  const ids = written.results.filter(r => r.id && r.outcome !== 'removed').map(r => r.id!)
  if (ids.length) await env.DB.prepare('UPDATE resources SET observed_at=? WHERE id IN (SELECT value FROM json_each(?))').bind(now.toISOString(), JSON.stringify(ids)).run()
  if (written.changed.length) await runForType(env, 'training.person', now)

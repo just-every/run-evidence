@@ -106,8 +106,8 @@ export const exclusions = (json: string): Exclusion[] => { try { const v = JSON.
 export const testControls = async (env: Bindings, id: string) => (await env.DB.prepare('SELECT c.id,c.name,l.library_id FROM test_controls t JOIN controls c ON c.id=t.control_id LEFT JOIN library_adoptions l ON l.control_id=c.id WHERE t.test_id=? ORDER BY c.name').bind(id).all<{ id: string; name: string; library_id: string | null }>()).results
 // Latest result per test and resource, for every enabled test.
 export async function latestResults(env: Bindings) {
- return (await env.DB.prepare(`SELECT o.*,r.source_label FROM observations o JOIN tests t ON t.id=o.test_id JOIN resources r ON r.id=o.resource_id
-  WHERE t.enabled=1 AND r.removed_at IS NULL AND o.rowid=(SELECT o2.rowid FROM observations o2 WHERE o2.test_id=o.test_id AND o2.resource_id=o.resource_id ORDER BY o2.observed_at DESC,o2.rowid DESC LIMIT 1)`).all<Observation & { source_label: string }>()).results
+ return (await env.DB.prepare(`SELECT o.*,r.source_label,r.observed_at AS source_observed_at,r.updated_at AS resource_updated_at FROM observations o JOIN tests t ON t.id=o.test_id JOIN resources r ON r.id=o.resource_id
+  WHERE t.enabled=1 AND r.removed_at IS NULL AND o.rowid=(SELECT o2.rowid FROM observations o2 WHERE o2.test_id=o.test_id AND o2.resource_id=o.resource_id ORDER BY o2.observed_at DESC,o2.rowid DESC LIMIT 1)`).all<Observation & { source_label: string; source_observed_at: string | null; resource_updated_at: string }>()).results
 }
 // Runs that started later than their cadence allows leave a stale interval;
 // a missed run is never carried forward as a pass.
@@ -120,15 +120,25 @@ export function staleIntervals(runs: { started_at: string }[], cadence: 'hourly'
  return out
 }
 export interface ControlTestStatus { tests: number; pass: number; fail: number; unknown: number; notApplicable: number; untested: number; failingSources: string[] }
-export async function controlTestStatus(env: Bindings) {
- const links = (await env.DB.prepare('SELECT tc.test_id,tc.control_id FROM test_controls tc JOIN tests t ON t.id=tc.test_id WHERE t.enabled=1').all<{ test_id: string; control_id: string }>()).results
+export async function controlTestStatus(env: Bindings, now: Date) {
+ const links = (await env.DB.prepare('SELECT tc.test_id,tc.control_id,t.cadence,t.revision,t.resource_type FROM test_controls tc JOIN tests t ON t.id=tc.test_id WHERE t.enabled=1').all<{ test_id: string; control_id: string; cadence: 'hourly' | 'daily'; revision: number; resource_type: string }>()).results
+ const population = (await env.DB.prepare('SELECT id,type FROM resources WHERE removed_at IS NULL').all<{id:string; type:string}>()).results
  const latest = await latestResults(env), out = new Map<string, ControlTestStatus>()
  for (const link of links) {
   const status = out.get(link.control_id) ?? { tests: 0, pass: 0, fail: 0, unknown: 0, notApplicable: 0, untested: 0, failingSources: [] }
   status.tests++
   const results = latest.filter(o => o.test_id === link.test_id)
-  if (!results.length) status.untested++
-  for (const o of results) { if (o.result === 'pass') status.pass++; else if (o.result === 'fail') { status.fail++; if (!status.failingSources.includes(o.source_label)) status.failingSources.push(o.source_label) } else if (o.result === 'unknown') status.unknown++; else status.notApplicable++ }
+  if (!results.length || population.some(r => r.type === link.resource_type && !results.some(o => o.resource_id === r.id))) status.untested++
+  if (results.length && results.every(o => o.result === 'not applicable')) status.unknown++
+  for (const o of results) {
+   // Readiness never carries a pass across a missed run, revised definition,
+   // changed resource, or stale collector, even before the next cron runs.
+   const stale = o.revision !== link.revision || now.getTime() - Date.parse(o.observed_at) > CADENCE_MS[link.cadence] * 1.5 || o.resource_updated_at > o.observed_at || (o.source_kind === 'source-observed' && (!o.source_observed_at || now.getTime() - Date.parse(o.source_observed_at) > CADENCE_MS[link.cadence] * 1.5 + 3600000))
+   if (o.result === 'fail') { status.fail++; if (!status.failingSources.includes(o.source_label)) status.failingSources.push(o.source_label) }
+   else if (stale || o.result === 'unknown') status.unknown++
+   else if (o.result === 'pass') status.pass++
+   else status.notApplicable++
+  }
   out.set(link.control_id, status)
  }
  return out

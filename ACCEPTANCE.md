@@ -39,6 +39,8 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
 ### Import, custody and approvals
 
+  Before shipping, this clause adds questionnaire completion records to the READINESS-001 checklist, with reconciled counts and record drilldown. Assert the new checklist count and its record drilldown when the capability ships.
+
 - **IMPORT-001 — Reviewed Drata archive admission and undo · done.** Through Move-in, inspect a documented-shape Drata ZIP, review mappings and refuse unsafe/malformed artifacts, admit with a journal, then undo active links. Inspect retained originals and import history after undo, restart and archive restore. `tests/import.mjs` exercises these routes; a real customer export remains separately required under MIGRATE-001.
 
   Current evidence: `src/evidence/import/http.ts`; `src/evidence/import/plan.ts`; `tests/import.mjs`; `docs/DRATA-IMPORT.md`.
@@ -77,9 +79,10 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: `src/evidence/storage.ts`; `src/evidence/http.ts`; `tests/evidence.mjs`. Current limit: Owner-written control, one proof requirement and cadence are implemented; revisions, multiple requirements per control through the UI, framework mappings and the CSV/XLSX framework import are not.
 
-- **READINESS-001 — Readiness, trend and executive reports · partial.** From readiness, compare current and prior audit periods with a stale connector, failed test, accepted exception and missing policy attestation. Follow every displayed total to records, export the report, and reconcile counts and period boundaries. A filtered or failed read cannot create a passing result. On a SOC 2 Type II program with 50 in-scope requirements, 47 of them ready: readiness shows 94% with "47 of 50 requirements ready" and its calculation, and the checklist lists policies, access reviews, vendor risk and trust center with their own counts. Let one passing test's collector go stale: the percentage drops to 92%. Make the remaining three requirements ready: it shows 100%, and no page or export uses the word certified.
+- **READINESS-001 — Readiness, trend and executive reports · done.** From readiness, compare current and prior audit periods with a stale connector, failed test, accepted exception and missing policy attestation. Follow every displayed total to records, export the report, and reconcile counts and period boundaries. A filtered or failed read cannot create a passing result. On a SOC 2 Type II program with 50 in-scope requirements, 47 of them ready: readiness shows 94% with "47 of 50 requirements ready" and its calculation, and the checklist lists policies, access reviews, vendor risk and trust center with their own counts. Let one passing test's collector go stale: the percentage drops to 92%. Make the remaining three requirements ready: it shows 100%, and no page or export uses the word certified.
 
-  Current evidence: `src/evidence/storage.ts`; `src/evidence/model.ts`; `src/evidence/view.ts`; `tests/evidence.mjs`. Current limit: The desk organizes controls, receipts and period gaps; framework readiness, effectiveness trends and executive reporting are missing.
+  Current evidence: `src/evidence/program/readiness.ts`; `src/evidence/program/board.ts`; `src/evidence/program/board-view.ts`; `src/evidence/program/denominator-view.ts`; `tests/readiness.mjs`; `tests/helpers/readiness-browser.mjs`; `tests/report.mjs`. The READINESS-001 public-door journey asserts 50/47/94 → stale 46/50/92 → fresh 50/50/100, daily snapshots with exact historical denominators, scope changes, filters, revisions, untested/unsupported work, exceptions, missing attestation and reconciled CSV. The browser journey uses Programs, requirement/source drilldowns and board exports at 1440/390. READINESS-001 is complete for every capability that exists today. Before shipping, AUDIT-003 adds auditor-decision flags and their source/comment drilldown; TRUST-001 adds trust publication/access checklist records; ANSWER-001 and ANSWER-003 add questionnaire and assignment checklist records; AUDIT-001 adds engagement/request counts. These unavailable areas show 0 recorded, never complete, until their own clauses implement them. The percentage is floor(100 × ready / included), with no percentage for an empty scope. Every mapped control needs current proof and fresh passing observations for every enabled mapped test at its current revision; unknown, stale, untested and unsupported work is not ready, and an exception never grants a pass. A test observation becomes stale after 1.5 times its cadence; a source read becomes stale after 1.5 times its test cadence plus one hour. Policies must be approved, published and within their review deadline. Checklist counts use mapped in-scope requirement references (policy counts use requirements calling for policies). Framework and product select whole programs by exact recorded membership, since current program scope has no finer product assignment; owner, test severity and category filter requirement details, and opened-from/to are inclusive UTC remediation bounds. Detail filters never change the whole-program score. The first successful scheduler snapshot of each UTC day retains exact scope, requirement/source denominators, owners, tests, policies, personnel completion, risks, exceptions and remediation; current/prior audit periods use their last recorded snapshot and inclusive, equally long UTC date windows. Older totals-only snapshots have no reconstructed denominator; absent snapshots remain unavailable. Installation-wide risk and personnel records are labeled separately from program-specific test and requirement counts.
+
 
 ### Evidence provenance and continuous observation
 
@@ -235,6 +238,8 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: `src/evidence/review/http.ts`; `src/evidence/review/storage.ts`; `tests/review.mjs`. Current limit: Expiring scoped read-only folders and access history exist; authenticated auditor collaboration, requests, comments and findings are missing.
 
+  Before shipping, this clause adds its engagement and request records to the READINESS-001 checklist, with reconciled counts and record drilldown. Assert the new checklist count and its record drilldown when the capability ships.
+
 - **AUDIT-002 — Type II populations, sampling and non-occurrence · missing.** As auditor on a Type II engagement, generate the terminations population for the period and reconcile its count and identities with the connected HRIS. Select five samples with a recorded seed: five per-sample requests open with owners. Satisfy four, and leave one rejected and resubmitted. With ISSUES-001 incident selectors on a Jira Cloud sandbox that holds no matching issues in the period, generate the incidents population: zero records with complete source reads, recorded as a non-occurrence. Readiness and the exported pack show it as a non-occurrence, never a pass, and a request to mark it passing is refused. Revoke HRIS read scope mid-period and regenerate: the population shows incomplete and cannot be closed. Export the population CSV with its retrieval metadata and sample decisions.
 
   Current evidence: —.
@@ -245,9 +250,13 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
 ### Customer assurance
 
+  Before shipping, this clause adds attributable auditor-decision flags and their source/comment drilldown to READINESS-001; auditor decisions never create a readiness pass. Assert the new checklist count and its record drilldown when the capability ships.
+
 - **TRUST-001 — Published and permissioned trust center · partial.** Publish an approved statement, request a restricted SOC 2 report as a prospect, complete an NDA through each named e-signature integration, approve one recipient and deny another. Check expiry/revocation, downloads and custom-domain access from a signed-out browser. An unapproved draft and another prospect’s documents never appear.
 
   Current evidence: `src/evidence/review/http.ts`; `tests/review.mjs`. Current limit: Scoped expiring reviewer downloads are implemented; trust publication, customer access requests, NDA integrations and domains are missing.
+
+  Before shipping, this clause adds its trust publication and access records to the READINESS-001 checklist, with reconciled counts and record drilldown. Assert the new checklist count and its record drilldown when the capability ships.
 
 - **TRUST-002 — CRM-driven access, click-through NDA and live control status · missing.** Connect Salesforce and HubSpot sandboxes and create one auto-approval rule in each. A prospect whose domain matches a gated Salesforce account is auto-approved for SOC 2 tags with the matched record shown. A matching HubSpot contact is approved under that rule. A non-matching requester is queued for review. Clear the Salesforce checkbox: the next request is no longer auto-approved. Complete a click-through NDA as a new requester and inspect its acceptance record. Publish live status for an access-control category, then fail its linked MFA test: a signed-out browser sees "under review" with no resource detail. Pass the re-test: the category shows monitored again. A stale collector also drops the category to "under review".
 
@@ -270,6 +279,8 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
   Current evidence: —.
 
 ### Portability and migration
+
+  Before shipping, this clause adds questionnaire assignment completion records to the READINESS-001 checklist, with reconciled counts and record drilldown. Assert the new checklist count and its record drilldown when the capability ships.
 
 - **MIGRATE-001 — Switch from Vanta, Drata and Secureframe · partial.** For each incumbent, use a representative authorized customer export through Move-in, preview it, resolve a duplicate identity, admit, export and undo. Reconcile each record class separately, showing source count, admitted, unsupported and refused for each:
   - frameworks, controls and mappings;
@@ -377,4 +388,4 @@ The current public-door suites are `tests/evidence.mjs` (native owner access, re
 
 For each new user flow, build rounds must exercise the named public door, persistence/restart, refusal/error path, actor permissions and final state in the journey. Inspect each changed screen at 1440 and 390 with realistic data; provider acknowledgments are separate from source truth and human decisions. Certification, independent assessor judgment, legal applicability, outside-provider reliability and copies already downloaded remain the declared boundaries in BOUNDARY-001, rather than fabricated acceptance results.
 
-**Clause totals:** 79 — 23 done / 25 partial / 31 missing.
+**Clause totals:** 79 — 26 done / 22 partial / 31 missing.

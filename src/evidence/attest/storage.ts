@@ -2,7 +2,7 @@ import { operatorAuth, type Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
 import { auditStatement, list, oneOf, text, type Actor, type Input } from '../door'
 import { validDate } from '../model'
-import { upsertResources } from '../resources'
+import { upsertRegister } from '../resources'
 import { catalogueStatements } from '../tests/storage'
 import { runForType } from '../tests/engine'
 import { sendFollowup, sent } from '../followup/send'
@@ -99,7 +99,7 @@ export async function syncAttestations(env: Bindings, now: Date) {
  if (!await env.DB.prepare("SELECT 1 FROM tests WHERE catalogue_id='attest.acknowledged'").first()) return 0
  const today = now.toISOString().slice(0, 10), at = now.toISOString()
  const rows = (await env.DB.prepare("SELECT p.id,p.name,p.email,SUM(a.state='pending') AS pending,SUM(a.state='pending' AND a.due_date<? AND NOT EXISTS(SELECT 1 FROM policy_exceptions e WHERE e.policy_id=a.policy_id AND (e.person_id IS NULL OR e.person_id=a.person_id) AND e.expires_at>?)) AS overdue,SUM(a.state='acknowledged') AS acknowledged FROM policy_assignments a JOIN people p ON p.id=a.person_id WHERE p.id NOT IN (SELECT person_id FROM people_departures) GROUP BY p.id").bind(today, at).all<{ id: string; name: string; email: string; pending: number; overdue: number; acknowledged: number }>()).results
- const written = await upsertResources(env, 'attestation.person', { fields: { pending: 'number', overdue: 'number', acknowledged: 'number' }, required: [] }, rows.map(r => ({ uniqueId: r.id, displayName: `${r.name} <${r.email}>`, attributes: { pending: r.pending, overdue: r.overdue, acknowledged: r.acknowledged } })), { kind: 'source-observed', ref: 'attestations:register', label: 'Evidence attestation register' }, 'source', now)
+ const written = await upsertRegister(env, 'attestation.person', { fields: { pending: 'number', overdue: 'number', acknowledged: 'number' }, required: [] }, rows.map(r => ({ uniqueId: r.id, displayName: `${r.name} <${r.email}>`, attributes: { pending: r.pending, overdue: r.overdue, acknowledged: r.acknowledged } })), { kind: 'source-observed', ref: 'attestations:register', label: 'Evidence attestation register' }, now)
  const ids = written.results.filter(r => r.id && r.outcome !== 'removed').map(r => r.id!)
  if (ids.length) await env.DB.prepare('UPDATE resources SET observed_at=? WHERE id IN (SELECT value FROM json_each(?))').bind(at, JSON.stringify(ids)).run()
  if (written.changed.length) await runForType(env, 'attestation.person', now)

@@ -86,3 +86,21 @@ export async function removeResource(env: Bindings, type: string, uniqueId: stri
  return { ...prior, removed_at: at }
 }
 export const resourceHistory = async (env: Bindings, id: string) => (await env.DB.prepare('SELECT change,attributes_json,source_ref,at FROM resource_versions WHERE resource_id=? ORDER BY at,rowid').bind(id).all<{ change: string; attributes_json: string; source_ref: string; at: string }>()).results
+
+// Internal registers publish a complete population, which may exceed one API
+// request. Retire absent rows only after all bounded batches were admitted.
+export async function upsertRegister(env: Bindings, type: string, schema: ResourceSchema, items: {uniqueId:string}[], source: Source, now: Date) {
+ const results: ItemResult[] = [], changed: string[] = []
+ for (let start = 0; start < items.length; start += MAX_ITEMS) {
+  const batch = await upsertResources(env, type, schema, items.slice(start, start + MAX_ITEMS), source, false, now)
+  results.push(...batch.results); changed.push(...batch.changed)
+  if (batch.results.some(r => r.outcome === 'rejected')) throw new Refusal('The internal register population could not be admitted completely.', 503)
+ }
+ const seen = new Set(items.map(i => i.uniqueId))
+ const previous = (await env.DB.prepare('SELECT unique_id,id FROM resources WHERE type=? AND source_kind=? AND source_ref=? AND removed_at IS NULL').bind(type, source.kind, source.ref).all<{unique_id:string; id:string}>()).results
+ for (const old of previous) if (!seen.has(old.unique_id)) {
+  await removeResource(env, type, old.unique_id, source, now)
+  results.push({uniqueId:old.unique_id,id:old.id,outcome:'removed'}); changed.push(old.id)
+ }
+ return {results,changed}
+}

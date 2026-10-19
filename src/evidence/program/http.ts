@@ -10,16 +10,19 @@ import { addMapping, assignOwner, changeScope, controlMappings, ownership, perio
 import { controlPage, peoplePage, programPage, programsPage, reportPage } from './view'
 import { scheduleRequirement, overrideRenewal } from './schedule'
 import { auditStatement } from '../door'
-import { boardCsv, boardReport, type BoardFilters } from './board'
+import { boardCsv, boardReport } from './board'
+import { boardFilters } from './report-filters'
 import { boardPage } from './board-view'
 const id = `(${uuid})`
 const both = (path: string) => new RegExp(`^/(?:app|api)${path}$`)
-const boardFilters = (url: URL): BoardFilters => ({ owner: url.searchParams.get('owner') ?? '', severity: url.searchParams.get('severity') ?? '', category: url.searchParams.get('category') ?? '', from: url.searchParams.get('from') ?? '', to: url.searchParams.get('to') ?? '' })
+
 export function programHandler(clock: () => Date) {
  const routes: Route[] = [
   { method: 'GET', pattern: both('/programs'), run: async c => {
-   const rows = await Promise.all((await programs(c.env)).map(async p => ({ ...p, totals: (await readiness(c.env, p, c.now)).totals })))
-   return c.isApi ? json({ programs: rows }) : programsPage(rows, await people(c.env), c.actor.name)
+   const framework = c.url.searchParams.get('framework') || '', product = c.url.searchParams.get('product') || ''
+   const selected = (await programs(c.env)).filter(p => (!framework || p.framework === framework) && (!product || JSON.parse(p.products).includes(product)))
+   const rows = await Promise.all(selected.map(async p => ({ ...p, totals: (await readiness(c.env, p, c.now)).totals })))
+   return c.isApi ? json({ programs: rows }) : programsPage(rows, await people(c.env), c.actor.name, {framework,product})
   } },
   { method: 'POST', pattern: both('/programs'), run: async c => {
    const input = await readInput(c.request)
@@ -42,7 +45,7 @@ export function programHandler(clock: () => Date) {
   { method: 'GET', pattern: both(`/programs/${id}/export`), run: async (c, m) => {
    const row = await requireProgram(c.env, m[1]), ready = await readiness(c.env, row, c.now), history = await programHistory(c.env, row.id), { history: decisions } = await applicability(c.env, row.id)
    const owners = await Promise.all([...new Set(ready.requirements.flatMap(r => r.controls.map(x => x.id)))].map(async control => ({ control, owner: (await ownership(c.env, control)).at(-1) ?? null })))
-   const body = { format: 'evidence-program', version: 1, exported_at: c.now.toISOString(), certification: 'None asserted. ' + ready.framework.assessor, program: row, readiness: ready.totals, calculation: ready.calculation, requirements: ready.requirements, applicability_history: decisions, owners, history, unresolved: ready.requirements.filter(r => r.state === 'included' && (r.proof !== 'current' || r.testing === 'failing' || r.testing === 'unknown')).map(r => ({ ref: r.ref, title: r.title, proof: r.proof, testing: r.testing })) }
+   const body = { format: 'evidence-program', version: 1, exported_at: c.now.toISOString(), certification: 'None asserted. ' + ready.framework.assessor, program: row, readiness: ready.totals, calculation: ready.calculation, requirements: ready.requirements, checklist: ready.checklist, applicability_history: decisions, owners, history, unresolved: ready.requirements.filter(r => r.state === 'included' && (r.proof !== 'current' || r.testing === 'failing' || r.testing === 'unknown')).map(r => ({ ref: r.ref, title: r.title, proof: r.proof, testing: r.testing })) }
    await c.env.DB.prepare("INSERT INTO product_audit(id,actor_kind,actor_id,actor_name,action,subject,outcome,detail,at) VALUES(?,'owner',?,?,'program.exported',?,'succeeded','',?)").bind(crypto.randomUUID(), c.actor.id, c.actor.name, 'program:' + row.id, c.now.toISOString()).run()
    return new Response(JSON.stringify(body, null, 1), { headers: { 'content-type': 'application/json; charset=utf-8', 'content-disposition': `attachment; filename="program-${row.id}.json"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } })
   } },

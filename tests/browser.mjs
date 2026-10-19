@@ -12,6 +12,7 @@ import { join, resolve, basename } from 'node:path'
 import { createServer } from 'node:net'
 import { createHash } from 'node:crypto'
 import { chromium } from 'playwright'
+import { readinessJourney } from './helpers/readiness-browser.mjs'
 import { collectorJourney } from './helpers/collector-browser.mjs'
 import { populationJourney } from './helpers/population-browser.mjs'
 import { riskJourney } from './helpers/risk-browser.mjs'
@@ -70,7 +71,17 @@ try {
  const open=serverOutput.match(/^RER_OPEN (\S+)/m)?.[1]
  assert.ok(open,'rer dev printed its sign-in link')
  browser=await chromium.launch({headless:true,args:['--use-mock-keychain','--password-store=basic']})
- for(const width of [1440,390]) {
+ if(process.env.EVIDENCE_BROWSER_CLAUSE === 'READINESS-001') for(const width of [1440,390]) {
+  const context = await browser.newContext({viewport:{width,height:1000}}), page = await context.newPage()
+  page.on('pageerror',error=>errors.push(error.message))
+  page.on('console',message=>{if(message.type()==='error')errors.push(message.text())})
+  await page.goto(open)
+  await page.waitForURL(url => url.pathname === '/setup' || url.pathname === '/app')
+  if(new URL(page.url()).pathname === '/setup') {await page.getByRole('checkbox').check();await page.getByRole('button',{name:'Finish setup'}).click();await page.waitForURL(url => url.pathname === '/app')}
+  await readinessJourney(page,origin,width,capture)
+  await context.close()
+ }
+ if(process.env.EVIDENCE_BROWSER_CLAUSE !== 'READINESS-001') for(const width of [1440,390]) {
   const context=await browser.newContext({viewport:{width,height:1000}})
   const page=await context.newPage()
   page.on('pageerror',error=>errors.push(error.message))
@@ -139,8 +150,8 @@ try {
   await context.close()
  }
  assert.deepEqual(errors,[],'No browser runtime or console errors')
- await writeFile(join(output,'report.json'),JSON.stringify({journeys:2,viewports:[1440,390],errors,measurements,privatePaths:'all refused 403/404',downloadDigest:'independently matched',supersession:'facts and bytes retained'},null,2)+'\n')
- console.log('PASS browser owner journeys: 1440 and 390; downloads, replacement, history, gaps, no errors or horizontal overflow; private dev paths refused.')
+ await writeFile(join(output,'report.json'),JSON.stringify(process.env.EVIDENCE_BROWSER_CLAUSE === 'READINESS-001' ? {journeys:2,viewports:[1440,390],errors,measurements,clause:'READINESS-001'} : {journeys:2,viewports:[1440,390],errors,measurements,privatePaths:'all refused 403/404',downloadDigest:'independently matched',supersession:'facts and bytes retained'},null,2)+'\n')
+ console.log(process.env.EVIDENCE_BROWSER_CLAUSE === 'READINESS-001' ? 'PASS READINESS-001 browser owner journeys: 1440 and 390; readiness, denominator, sources, filters and CSV; no errors or horizontal overflow.' : 'PASS browser owner journeys: 1440 and 390; downloads, replacement, history, gaps, no errors or horizontal overflow; private dev paths refused.')
 } catch(error) {
  // Navigation failures can include the credential-bearing printed URL.
  const sanitized=await safeLog(error.message)
@@ -150,5 +161,5 @@ try {
 } finally {
  await browser?.close()
  if(server && server.exitCode===null && server.signalCode===null){server.kill('SIGTERM');await new Promise(resolve=>server.once('close',resolve))}
- await rm(scratch,{recursive:true,force:true})
+ await rm(scratch,{recursive:true,force:true,maxRetries:3,retryDelay:100})
 }
