@@ -1,3 +1,4 @@
+import { frameworkHandler } from './evidence/framework/http'
 import { collectorHandler } from './evidence/collector/ingest'
 import { collectorOwnerHandler } from './evidence/collector/http'
 import { authResponse, runtimeBindings, type Bindings } from './auth.server'
@@ -39,7 +40,7 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
  const evidence = evidenceHandler(clock)
  const review = reviewHandler(clock)
  const archive = archiveHandler(clock)
- const program = [collectorOwnerHandler(clock), programHandler(clock), testHandler(clock), remedyHandler(clock), connectHandler(clock), riskHandler(clock), policyHandler(clock), workHandler(clock), followupHandler(clock), identityHandler(clock), attestHandler(clock), recurringReviews(clock), populationHandler(clock), accessHandler(clock), trainingHandler(clock), handoverHandler(clock), vulnHandler(clock)]
+ const program = [frameworkHandler(clock), collectorOwnerHandler(clock), programHandler(clock), testHandler(clock), remedyHandler(clock), connectHandler(clock), riskHandler(clock), policyHandler(clock), workHandler(clock), followupHandler(clock), identityHandler(clock), attestHandler(clock), recurringReviews(clock), populationHandler(clock), accessHandler(clock), trainingHandler(clock), handoverHandler(clock), vulnHandler(clock)]
  const api = apiHandler(clock)
  const hooks = hookHandler(clock)
  const member = memberHandler(clock)

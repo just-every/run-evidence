@@ -1,3 +1,4 @@
+import { frameworkFiles, validateFrameworkFiles } from './frameworks'
 import { populationFiles, retestFiles, validatePopulationFiles, validateRetestFiles, type PopulationFile } from './populations'
 import { retainDefaultMethod } from '../risk/method-default'
 import type { Bindings } from '../../auth.server'
@@ -94,6 +95,13 @@ export const programColumns = {
  vuln_findings:['id','import_id','row_number','title','severity','asset','resource_id','description','cve','cwe','tester','report_date','recommended_fix','sla_days','sla_policy_id','due_date','state','marked_fixed_at','closed_at','closure_basis','closed_by'],
  vuln_documents:['id','finding_id','filename','sha256','size','object_key','uploaded_by','uploaded_name','uploaded_at','decision','decided_by','decided_name','decided_at','decision_note'],
  vuln_events:['id','finding_id','kind','body','document_id','actor_id','actor_name','at'],
+ control_revisions:['id','control_id','revision','name','group_name','applicability','test_intent','evaluation_criteria','actor_id','actor_name','reason','effective_at'],
+ requirement_revisions:['id','requirement_id','revision','name','actor_id','actor_name','reason','effective_at'],
+ run_control_definitions:['run_id','control_id','control_revision','snapshot_json'],
+ custom_frameworks:['id','name','revision','created_at'],
+ custom_framework_requirements:['id','framework_id','ref','title','description','section','removed_at','created_at'],
+ custom_framework_revisions:['id','framework_id','revision','snapshot_json','diff_json','actor_id','actor_name','at','reason','object_key','filename','size','media_type','sha256'],
+ custom_framework_mappings:['id','requirement_id','control_id','decision','origin','actor_id','actor_name','at','reason','framework_revision'],
 } as const
 export type ProgramTable = keyof typeof programColumns
 export const programTables = Object.keys(programColumns) as ProgramTable[]
@@ -107,12 +115,13 @@ const columnsOf = (table: ProgramTable, version: number) => programColumns[table
 const addedInVersion7 = new Set<ProgramTable>(['handover_events', 'handover_settings'])
 // Tables first carried by archive version 8 (VULN-002 penetration-test findings and retest letters).
 const addedInVersion8 = new Set<ProgramTable>(['vuln_imports', 'vuln_findings', 'vuln_documents', 'vuln_events'])
-const tablesOf = (version: number) => programTables.filter(t => (version >= 4 || !addedInVersion4.has(t)) && (version >= 7 || !addedInVersion7.has(t)) && (version >= 8 || !addedInVersion8.has(t)))
+const addedInVersion9 = new Set<ProgramTable>(['control_revisions', 'requirement_revisions', 'run_control_definitions', 'custom_frameworks', 'custom_framework_requirements', 'custom_framework_revisions', 'custom_framework_mappings'])
+const tablesOf = (version: number) => programTables.filter(t => (version >= 4 || !addedInVersion4.has(t)) && (version >= 7 || !addedInVersion7.has(t)) && (version >= 8 || !addedInVersion8.has(t)) && (version >= 9 || !addedInVersion9.has(t)))
 export interface ProgramArchive { rows: Record<ProgramTable, Row[]>; files?: PopulationFile[] }
 export async function exportProgramArchive(env: Pick<Bindings, 'DB' | 'EXHIBITS'>): Promise<ProgramArchive> {
  const results = await env.DB.batch(programTables.map(t => env.DB.prepare(`SELECT ${programColumns[t].join(',')} FROM ${t} ORDER BY rowid LIMIT 20001`)))
  const rows = Object.fromEntries(programTables.map((t, i) => [t, results[i].results as Row[]])) as ProgramArchive['rows']
- return { rows, files: [...await populationFiles(env, rows.population_uploads), ...await retestFiles(env, rows.vuln_documents)] }
+ return { rows, files: [...await populationFiles(env, rows.population_uploads), ...await retestFiles(env, rows.vuln_documents), ...await frameworkFiles(env, rows.custom_framework_revisions)] }
 }
 export const programRowCount = (value: ProgramArchive) => Object.values(value.rows).reduce((sum, rows) => sum + rows.length, 0)
 const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v)
@@ -131,9 +140,10 @@ export function validateProgramExtension(value: unknown, version: number): asser
   }
  }
  if (version >= 6) {
-  const files = Array.isArray(value.files) ? value.files as { path?: unknown }[] : null, retest = (f: { path?: unknown }) => typeof f?.path === 'string' && f.path.startsWith('vulns/')
-  validatePopulationFiles(files?.filter(f => !retest(f)), (value.rows as ProgramArchive['rows']).population_uploads)
+  const files = Array.isArray(value.files) ? value.files as { path?: unknown }[] : null, framework = (f: {path?:unknown}) => typeof f?.path === 'string' && f.path.startsWith('framework-originals/'), retest = (f: { path?: unknown }) => typeof f?.path === 'string' && f.path.startsWith('vulns/')
+  validatePopulationFiles(files?.filter(f => !retest(f) && !framework(f)), (value.rows as ProgramArchive['rows']).population_uploads)
   validateRetestFiles(files?.filter(retest), version >= 8 ? (value.rows as ProgramArchive['rows']).vuln_documents : [])
+  validateFrameworkFiles(files?.filter(framework), version >= 9 ? (value.rows as ProgramArchive['rows']).custom_framework_revisions : [])
  }
 }
 // Restored grants hold no authority: tokens lack digests, and connections and

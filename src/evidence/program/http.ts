@@ -1,3 +1,5 @@
+import { definitions, reviseControl, addRequirement, reviseRequirement } from '../control-definition/storage'
+import { definitionPanel } from '../control-definition/view'
 import { populationMemberships } from '../population/storage'
 import { day } from '../model'
 import { desk } from '../storage'
@@ -67,8 +69,13 @@ export function programHandler(clock: () => Date) {
    const latest = await latestResults(c.env)
    const tests = linked.map(t => { const results = latest.filter(o => o.test_id === t.id).map(o => o.result); return { ...t, status: results.includes('fail') ? 'failing' : results.includes('unknown') ? 'unknown' : results.length ? 'passing' : 'never run' } })
    const mappings = await controlMappings(c.env, control.id, control.library_id), owners = await ownership(c.env, control.id), scope = await scopeAt(c.env, control.id, c.now.toISOString())
-   return c.isApi ? json({ control, mappings, owners, scope, requirements, tests }) : controlPage(control, mappings, owners, scope, requirements, tests, await people(c.env), c.actor.name)
+   const revisions = await definitions(c.env,control.id)
+   return c.isApi ? json({ control, mappings, owners, scope, requirements, tests, revisions }) : controlPage(control, mappings, owners, scope, requirements, tests, await people(c.env), c.actor.name, definitionPanel(control.id,revisions))
   } },
+  { method: 'POST', pattern: both(`/controls/${id}/revisions`), run: async (c,m) => done(c,'/app/controls/'+m[1],await reviseControl(c.env,c.actor,m[1],await readInput(c.request),c.now)) },
+  { method: 'POST', pattern: both(`/controls/${id}/requirements`), run: async (c,m) => { const result=await addRequirement(c.env,c.actor,m[1],await readInput(c.request),c.now); return done(c,'/app/requirements/'+result.id,result,201) } },
+  { method: 'POST', pattern: both(`/requirements/${id}/revisions`), run: async (c,m) => { await reviseRequirement(c.env,c.actor,m[1],await readInput(c.request),c.now); return done(c,'/app/requirements/'+m[1],{revised:true}) } },
+  { method: 'GET', pattern: both(`/controls/${id}/export`), run: async (c,m) => { const control=await requireControl(c.env,m[1]); return json({control,revisions:await definitions(c.env,m[1]),mappings:await controlMappings(c.env,m[1],control.library_id)}) } },
   { method: 'POST', pattern: both(`/controls/${id}/owners`), run: async (c, m) => { await assignOwner(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/controls/' + m[1], { assigned: true }) } },
   { method: 'POST', pattern: both(`/controls/${id}/mappings`), run: async (c, m) => done(c, '/app/controls/' + m[1], { id: await addMapping(c.env, c.actor, m[1], await readInput(c.request), c.now) }, 201) },
   { method: 'POST', pattern: both(`/controls/${id}/mappings/${id}/remove`), run: async (c, m) => { await removeMapping(c.env, c.actor, m[1], m[2], await readInput(c.request), c.now); return done(c, '/app/controls/' + m[1], { removed: true }) } },

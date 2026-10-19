@@ -1,0 +1,10 @@
+-- CONTROL-001 custom framework definitions and prospective, immutable revisions.
+CREATE TABLE custom_frameworks (id TEXT PRIMARY KEY,name TEXT NOT NULL,revision INTEGER NOT NULL,created_at TEXT NOT NULL);
+CREATE TABLE custom_framework_requirements (id TEXT PRIMARY KEY,framework_id TEXT NOT NULL REFERENCES custom_frameworks(id),ref TEXT NOT NULL,title TEXT NOT NULL,description TEXT NOT NULL,section TEXT NOT NULL,removed_at TEXT,created_at TEXT NOT NULL,UNIQUE(framework_id,ref));
+CREATE TABLE custom_framework_revisions (id TEXT PRIMARY KEY,framework_id TEXT NOT NULL REFERENCES custom_frameworks(id),revision INTEGER NOT NULL,snapshot_json TEXT NOT NULL,diff_json TEXT NOT NULL,actor_id TEXT NOT NULL,actor_name TEXT NOT NULL,at TEXT NOT NULL,reason TEXT NOT NULL,object_key TEXT UNIQUE,filename TEXT,size INTEGER,media_type TEXT,sha256 TEXT,UNIQUE(framework_id,revision));
+CREATE TABLE custom_framework_mappings (id TEXT PRIMARY KEY,requirement_id TEXT NOT NULL REFERENCES custom_framework_requirements(id),control_id TEXT NOT NULL,decision TEXT NOT NULL CHECK(decision IN ('mapped','unmapped')),origin TEXT NOT NULL CHECK(origin IN ('manual','import')),actor_id TEXT NOT NULL,actor_name TEXT NOT NULL,at TEXT NOT NULL,reason TEXT NOT NULL,framework_revision INTEGER NOT NULL);
+CREATE INDEX custom_framework_mapping_requirement ON custom_framework_mappings(requirement_id,framework_revision);
+CREATE TRIGGER custom_framework_revisions_no_update BEFORE UPDATE ON custom_framework_revisions BEGIN SELECT RAISE(ABORT,'immutable_framework_revision'); END;
+CREATE TRIGGER custom_framework_revisions_no_delete BEFORE DELETE ON custom_framework_revisions BEGIN SELECT RAISE(ABORT,'immutable_framework_revision'); END;
+CREATE TRIGGER custom_framework_mappings_no_update BEFORE UPDATE ON custom_framework_mappings BEGIN SELECT RAISE(ABORT,'immutable_framework_mapping'); END;
+CREATE TRIGGER custom_framework_mappings_no_delete BEFORE DELETE ON custom_framework_mappings BEGIN SELECT RAISE(ABORT,'immutable_framework_mapping'); END;

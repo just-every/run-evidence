@@ -21,16 +21,23 @@ export async function history(env: Bindings, requirement?: string): Promise<Rece
 // Each requirement's state at the selected date under the schedule in force
 // then; calendar anchors on the four desk periods keep the GAP-001 logic.
 export async function desk(env: Bindings, selected: string, now: Date) {
- const [requirements, schedules, overrides, adoptions] = await env.DB.batch([
+ const [requirements, schedules, overrides, adoptions, controlsHistory, requirementHistory] = await env.DB.batch([
   env.DB.prepare('SELECT r.*,c.name AS control_name,c.group_name FROM requirements r JOIN controls c ON c.id=r.control_id WHERE '+activeControl('c')+' ORDER BY c.created_at,c.id'),
   env.DB.prepare('SELECT * FROM requirement_schedules ORDER BY effective_from,rowid'),
   env.DB.prepare('SELECT requirement_id,cycle_due,due_date,reason,actor_name FROM renewal_overrides ORDER BY at,rowid'),
   env.DB.prepare('SELECT control_id,library_id FROM library_adoptions'),
+  env.DB.prepare('SELECT control_id,name,group_name,effective_at FROM control_revisions ORDER BY revision'),
+  env.DB.prepare('SELECT requirement_id,name,effective_at FROM requirement_revisions ORDER BY revision'),
  ])
  const receipts = await history(env)
  const instant = selected === day(now) ? now.getTime() : Math.min(now.getTime(), Date.parse(selected + 'T00:00:00Z') + 86399999)
  const library = new Map((adoptions.results as { control_id: string; library_id: string }[]).map(a => [a.control_id, a.library_id]))
- return { selected, requirements: (requirements.results as Requirement[]).map(r => {
+ return { selected, requirements: (requirements.results as Requirement[]).map(original => {
+  const r={...original}
+  const priorControl=(controlsHistory.results as {control_id:string;name:string;group_name:string;effective_at:string}[]).filter(d=>d.control_id===r.control_id&&Date.parse(d.effective_at)<=instant).at(-1)
+  const priorRequirement=(requirementHistory.results as {requirement_id:string;name:string;effective_at:string}[]).filter(d=>d.requirement_id===r.id&&Date.parse(d.effective_at)<=instant).at(-1)
+  if(priorControl){r.control_name=priorControl.name;r.group_name=priorControl.group_name as Requirement['group_name']}
+  if(priorRequirement)r.name=priorRequirement.name
   const rows = receipts.filter(row => row.requirement_id === r.id)
   const schedule = scheduleAt(r.cadence, (schedules.results as ScheduleRow[]).filter(s => s.requirement_id === r.id), instant)
   const state = renewal(schedule, selected, rows, (overrides.results as (Override & { requirement_id: string })[]).filter(o => o.requirement_id === r.id), now)

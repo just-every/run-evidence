@@ -78,5 +78,7 @@ export async function periodReport(env: Bindings, id: string, from: string, to: 
   segments.push({ from: boundaries[i], to: boundaries[i + 1], assets: [...assets].sort(), definition: change ? `Changed definition: ${change.asset} ${change.action} by ${change.actor_name} (${change.reason})` : 'Definition in force at period start' })
  }
  const receipts = (await env.DB.prepare('SELECT r.id,r.origin,r.covered_from,r.covered_to,r.added_at,q.name AS requirement FROM receipts r JOIN requirements q ON q.id=r.requirement_id WHERE q.control_id=? AND r.covered_to>=? AND r.covered_from<=? ORDER BY r.covered_from').bind(id, from, to).all()).results
- return { control_id: id, from, to, segments, changes, receipts }
+ const definitions = (await env.DB.prepare('SELECT * FROM control_revisions WHERE control_id=? AND effective_at<=? ORDER BY revision').bind(id,end).all()).results
+ const evaluated = (await env.DB.prepare(`SELECT d.control_revision,d.snapshot_json,r.id AS run_id,r.test_id,r.revision AS test_revision,r.started_at,o.id AS observation_id,o.result,o.expected_json,o.actual_json,o.reason FROM run_control_definitions d JOIN test_runs r ON r.id=d.run_id LEFT JOIN observations o ON o.run_id=r.id WHERE d.control_id=? AND r.started_at>=? AND r.started_at<=? ORDER BY r.started_at,r.id,o.id`).bind(id,start,end).all()).results
+ return { control_id: id, from, to, segments, changes, receipts, definitions, evaluated }
 }

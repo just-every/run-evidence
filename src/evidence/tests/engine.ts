@@ -1,3 +1,4 @@
+import { runDefinitions } from '../control-definition/storage'
 import type { Bindings } from '../../auth.server'
 import type { Resource } from '../resources'
 import { remediationStatements } from '../remedy/storage'
@@ -26,6 +27,7 @@ export async function runTest(env: Bindings, testId: string, trigger: Trigger, n
  await env.DB.batch([
   env.DB.prepare("INSERT INTO test_runs(id,test_id,revision,trigger,started_at,finished_at,outcome,population,passed,failed,unknown,not_applicable) VALUES(?,?,?,?,?,?,'complete',?,?,?,?,?)").bind(run, testId, revision.revision, trigger, at, at, observations.length, count('pass'), count('fail'), count('unknown'), count('not applicable')),
   ...(observations.length ? [env.DB.prepare("INSERT INTO observations(id,run_id,test_id,revision,resource_id,result,expected_json,actual_json,reason,source_kind,source_ref,observed_at,exception_id,interval_from) SELECT value->>'id',value->>'run_id',value->>'test_id',value->>'revision',value->>'resource_id',value->>'result',value->>'expected_json',value->>'actual_json',value->>'reason',value->>'source_kind',value->>'source_ref',value->>'observed_at',value->>'exception_id',value->>'interval_from' FROM json_each(?)").bind(JSON.stringify(observations))] : []),
+  ...await runDefinitions(env, testId, run, now),
   ...await remediationStatements(env, row, observations, now),
  ])
  return { run, observations }

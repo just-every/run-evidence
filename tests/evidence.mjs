@@ -1,6 +1,8 @@
 process.env.RER_SERVER_JOURNEY = '1'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
+import { frameworkJourney } from './helpers/framework-journey.mjs'
+import { controlJourney, controlArchiveJourney } from './helpers/control-journey.mjs'
 import { runtime } from './helpers/runtime.mjs'
 const app = await runtime()
 let passed = 0
@@ -85,5 +87,6 @@ try {
   assert.equal((await primary()).gap,'unavailable bytes');assert.equal((await app.fetch('/app/receipts/'+second.id+'/download')).status,410)
   await bucket.delete(second.object_key);assert.equal((await primary()).gap,'unavailable bytes');assert.equal((await primary()).receipts.length,2)
  })
+ await scenario('CONTROL-001 prospective controls, multiple requirements, exact failed observations and exported mappings',async()=>{ const fixture=await controlJourney(app); await frameworkJourney(app,fixture); await controlArchiveJourney(app) })
  console.log(`${passed} public-door scenarios passed; real workerd, D1, R2 and Base email-link sign-in.`)
 } finally { await app.close() }

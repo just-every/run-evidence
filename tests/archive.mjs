@@ -71,7 +71,7 @@ try{
  target=await runtime();await target.signin()
  await scenario('All malformed archives refuse before any domain or bucket writes',async()=>{
   const cases=[
-   ['manifest digest',d=>{d.manifest.created_at='2026-10-10T00:00:00Z'},true],['version',d=>{d.manifest.version=9}],
+   ['manifest digest',d=>{d.manifest.created_at='2026-10-10T00:00:00Z'},true],['version',d=>{d.manifest.version=Number.MAX_SAFE_INTEGER}],
    ...['/absolute','files/../escape','C:drive','files\\escape','manifest'].map(path=>['unsafe '+path,d=>{d.manifest.files[0].path=path;d.entries[0].path=path}]),
    ['duplicate manifest path',d=>{d.manifest.files[1].path=d.manifest.files[0].path}],
    ['repeated entry',d=>{d.entries[1].path=d.entries[0].path}],

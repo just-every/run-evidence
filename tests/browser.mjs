@@ -12,6 +12,8 @@ import { join, resolve, basename } from 'node:path'
 import { createServer } from 'node:net'
 import { createHash } from 'node:crypto'
 import { chromium } from 'playwright'
+import { controlBrowserJourney } from './helpers/control-browser.mjs'
+import { frameworkBrowserJourney } from './helpers/framework-browser.mjs'
 import { readinessJourney } from './helpers/readiness-browser.mjs'
 import { collectorJourney } from './helpers/collector-browser.mjs'
 import { populationJourney } from './helpers/population-browser.mjs'
@@ -81,7 +83,17 @@ try {
   await readinessJourney(page,origin,width,capture)
   await context.close()
  }
- if(process.env.EVIDENCE_BROWSER_CLAUSE !== 'READINESS-001') for(const width of [1440,390]) {
+ if(process.env.EVIDENCE_BROWSER_CLAUSE === 'CONTROL-001') for(const width of [1440,390]) {
+  const context=await browser.newContext({viewport:{width,height:1000}}),page=await context.newPage()
+  page.on('pageerror',error=>errors.push(error.message))
+  page.on('console',message=>{if(message.type()==='error')errors.push(message.text())})
+  await page.goto(open);await page.waitForURL(url=>url.pathname==='/setup'||url.pathname==='/app')
+  if(new URL(page.url()).pathname==='/setup'){await page.getByRole('checkbox').check();await page.getByRole('button',{name:'Finish setup'}).click();await page.waitForURL(url=>url.pathname==='/app')}
+  const fixture=await controlBrowserJourney(page,origin,width,capture)
+  await frameworkBrowserJourney(page,origin,width,capture,fixture)
+  await context.close()
+ }
+ if(!['READINESS-001','CONTROL-001'].includes(process.env.EVIDENCE_BROWSER_CLAUSE)) for(const width of [1440,390]) {
   const context=await browser.newContext({viewport:{width,height:1000}})
   const page=await context.newPage()
   page.on('pageerror',error=>errors.push(error.message))
@@ -147,11 +159,13 @@ try {
   await riskJourney(page, origin, width, capture)
   await populationJourney(page, origin, width, capture)
   await collectorJourney(page, origin, width, capture)
+  const controlFixture=await controlBrowserJourney(page,origin,width,capture)
+  await frameworkBrowserJourney(page,origin,width,capture,controlFixture)
   await context.close()
  }
  assert.deepEqual(errors,[],'No browser runtime or console errors')
  await writeFile(join(output,'report.json'),JSON.stringify(process.env.EVIDENCE_BROWSER_CLAUSE === 'READINESS-001' ? {journeys:2,viewports:[1440,390],errors,measurements,clause:'READINESS-001'} : {journeys:2,viewports:[1440,390],errors,measurements,privatePaths:'all refused 403/404',downloadDigest:'independently matched',supersession:'facts and bytes retained'},null,2)+'\n')
- console.log(process.env.EVIDENCE_BROWSER_CLAUSE === 'READINESS-001' ? 'PASS READINESS-001 browser owner journeys: 1440 and 390; readiness, denominator, sources, filters and CSV; no errors or horizontal overflow.' : 'PASS browser owner journeys: 1440 and 390; downloads, replacement, history, gaps, no errors or horizontal overflow; private dev paths refused.')
+ console.log(process.env.EVIDENCE_BROWSER_CLAUSE === 'CONTROL-001' ? 'PASS CONTROL-001 browser owner journeys at 1440 and 390: definitions, exact observations, reviewed imports, history and readiness.' : process.env.EVIDENCE_BROWSER_CLAUSE === 'READINESS-001' ? 'PASS READINESS-001 browser owner journeys: 1440 and 390; readiness, denominator, sources, filters and CSV; no errors or horizontal overflow.' : 'PASS browser owner journeys: 1440 and 390; downloads, replacement, history, gaps, no errors or horizontal overflow; private dev paths refused.')
 } catch(error) {
  // Navigation failures can include the credential-bearing printed URL.
  const sanitized=await safeLog(error.message)
