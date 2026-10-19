@@ -33,6 +33,7 @@
     "test:browser": "node tests/browser.mjs",
     "test:review": "node tests/review.mjs",
     "test:archive": "node tests/archive.mjs",
+    "test:vulns": "node tests/vulns.mjs",
     "test:review-browser": "node tests/review-browser.mjs",
     "archive": "node scripts/archive.mjs",
     "test:import": "node tests/import.mjs",

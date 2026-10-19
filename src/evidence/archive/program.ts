@@ -1,4 +1,4 @@
-import { populationFiles, validatePopulationFiles, type PopulationFile } from './populations'
+import { populationFiles, retestFiles, validatePopulationFiles, validateRetestFiles, type PopulationFile } from './populations'
 import { retainDefaultMethod } from '../risk/method-default'
 import type { Bindings } from '../../auth.server'
 import { fail, MAX_METADATA, type Row } from './format'
@@ -90,6 +90,10 @@ export const programColumns = {
  ticket_groups:['id','test_id','destination_id','remote_id','remote_key','remote_url','created_at','created_name','state','item_list','handled_close_at','due_written'],
  handover_events:['id','person_id','kind','item_id','role','label','to_person_id','reason','bulk','actor_id','actor_name','at'],
  handover_settings:['singleton','window_days','updated_by','updated_at'],
+ vuln_imports:['id','requirement_id','receipt_id','tester','report_date','report_filename','report_sha256','table_filename','table_sha256','mapping_json','admitted','refused','imported_by','imported_name','imported_at'],
+ vuln_findings:['id','import_id','row_number','title','severity','asset','resource_id','description','cve','cwe','tester','report_date','recommended_fix','sla_days','sla_policy_id','due_date','state','marked_fixed_at','closed_at','closure_basis','closed_by'],
+ vuln_documents:['id','finding_id','filename','sha256','size','object_key','uploaded_by','uploaded_name','uploaded_at','decision','decided_by','decided_name','decided_at','decision_note'],
+ vuln_events:['id','finding_id','kind','body','document_id','actor_id','actor_name','at'],
 } as const
 export type ProgramTable = keyof typeof programColumns
 export const programTables = Object.keys(programColumns) as ProgramTable[]
@@ -101,12 +105,14 @@ const addedInVersion5: Partial<Record<ProgramTable, Record<string, string | null
 const columnsOf = (table: ProgramTable, version: number) => programColumns[table].filter(c => (version >= 4 || !Object.hasOwn(addedColumns[table] ?? {}, c)) && (version >= 5 || !Object.hasOwn(addedInVersion5[table] ?? {}, c)))
 // Tables first carried by archive version 7 (LIFECYCLE-002 handover history and window).
 const addedInVersion7 = new Set<ProgramTable>(['handover_events', 'handover_settings'])
-const tablesOf = (version: number) => programTables.filter(t => (version >= 4 || !addedInVersion4.has(t)) && (version >= 7 || !addedInVersion7.has(t)))
+// Tables first carried by archive version 8 (VULN-002 penetration-test findings and retest letters).
+const addedInVersion8 = new Set<ProgramTable>(['vuln_imports', 'vuln_findings', 'vuln_documents', 'vuln_events'])
+const tablesOf = (version: number) => programTables.filter(t => (version >= 4 || !addedInVersion4.has(t)) && (version >= 7 || !addedInVersion7.has(t)) && (version >= 8 || !addedInVersion8.has(t)))
 export interface ProgramArchive { rows: Record<ProgramTable, Row[]>; files?: PopulationFile[] }
 export async function exportProgramArchive(env: Pick<Bindings, 'DB' | 'EXHIBITS'>): Promise<ProgramArchive> {
  const results = await env.DB.batch(programTables.map(t => env.DB.prepare(`SELECT ${programColumns[t].join(',')} FROM ${t} ORDER BY rowid LIMIT 20001`)))
  const rows = Object.fromEntries(programTables.map((t, i) => [t, results[i].results as Row[]])) as ProgramArchive['rows']
- return { rows, files: await populationFiles(env, rows.population_uploads) }
+ return { rows, files: [...await populationFiles(env, rows.population_uploads), ...await retestFiles(env, rows.vuln_documents)] }
 }
 export const programRowCount = (value: ProgramArchive) => Object.values(value.rows).reduce((sum, rows) => sum + rows.length, 0)
 const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v)
@@ -124,7 +130,11 @@ export function validateProgramExtension(value: unknown, version: number): asser
    if (!(field === null || (typeof field === 'number' && Number.isFinite(field)) || (typeof field === 'string' && field.length <= bound))) fail(`Invalid ${table} field in the program archive.`)
   }
  }
- if (version >= 6) validatePopulationFiles(value.files, (value.rows as ProgramArchive['rows']).population_uploads)
+ if (version >= 6) {
+  const files = Array.isArray(value.files) ? value.files as { path?: unknown }[] : null, retest = (f: { path?: unknown }) => typeof f?.path === 'string' && f.path.startsWith('vulns/')
+  validatePopulationFiles(files?.filter(f => !retest(f)), (value.rows as ProgramArchive['rows']).population_uploads)
+  validateRetestFiles(files?.filter(retest), version >= 8 ? (value.rows as ProgramArchive['rows']).vuln_documents : [])
+ }
 }
 // Restored grants hold no authority: tokens lack digests, and connections and
 // ticket destinations and Slack or Teams channels wait without credentials

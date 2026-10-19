@@ -7,7 +7,7 @@ export interface ShellFacts { programs: ShellProgram[]; selected: ShellProgram |
 let readFacts: () => Promise<ShellFacts | null> = async () => null
 export const provideShellFacts = (reader: typeof readFacts) => { readFacts = reader }
 export const shellFacts = () => readFacts()
-export type NavKey = 'desk' | 'programs' | 'tests' | 'remediation' | 'policies' | 'people' | 'vendors' | 'risks' | 'connections' | 'folders' | 'agent' | 'import' | 'archive'
+export type NavKey = 'desk' | 'programs' | 'tests' | 'remediation' | 'vulnerabilities' | 'policies' | 'people' | 'vendors' | 'risks' | 'connections' | 'folders' | 'agent' | 'import' | 'archive'
 export interface PageOptions {
  active?: NavKey
  owner?: string
@@ -22,6 +22,7 @@ const work: [NavKey, string, string, IconName][] = [
  ['programs', '/app/programs', 'Programs', 'shield'],
  ['tests', '/app/tests', 'Tests', 'pulse'],
  ['remediation', '/app/remediation', 'Remediation', 'alert'],
+ ['vulnerabilities', '/app/vulnerabilities', 'Vulnerabilities', 'bug'],
  ['policies', '/app/policies', 'Policies', 'document'],
  ['people', '/app/people', 'People', 'people'],
  ['vendors', '/app/vendors', 'Vendors', 'building'],

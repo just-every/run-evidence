@@ -33,22 +33,28 @@ export async function upload(request: Request, env: Bindings, requirement: strin
  if (supersedes) {
   if (typeof supersedes !== 'string' || !await env.DB.prepare('SELECT id FROM receipts WHERE id=? AND requirement_id=? AND NOT EXISTS(SELECT 1 FROM receipts n WHERE n.supersedes=receipts.id)').bind(supersedes,requirement).first()) throw new Refusal('Replacement must name a current receipt for this requirement.', 409)
  }
+ return appendReceipt(env, { requirement, bytes: await file.arrayBuffer(), filename: file.name, mediaType: file.type, origin: 'manually-asserted', source, from, to, effective: effective as string | null, supersedes: supersedes as string | null }, operator, now, extra).then(r => r.id)
+}
+// Custody for one exhibit: write fresh bytes, read them back, digest what was
+// stored and append the immutable exhibit and receipt (VULN-002 reports use it too).
+export async function appendReceipt(env: Bindings, r: { requirement: string; bytes: ArrayBuffer; filename: string; mediaType: string; origin: 'manually-asserted'; source: string; from: string; to: string; effective: string | null; supersedes: string | null }, operator: { id: string; displayName: string }, now: Date, extra?: (receipt: string) => D1PreparedStatement[]) {
+ const { requirement, from, to, source, effective, supersedes } = r
  const exhibitId = crypto.randomUUID(), id = crypto.randomUUID(), objectKey = 'exhibits/' + exhibitId
  // Caller names are display metadata only; keys are fresh random identifiers.
- const written = await env.EXHIBITS.put(objectKey, await file.arrayBuffer(), { onlyIf: { etagDoesNotMatch: '*' }, httpMetadata: { contentType: 'application/octet-stream' } })
+ const written = await env.EXHIBITS.put(objectKey, r.bytes, { onlyIf: { etagDoesNotMatch: '*' }, httpMetadata: { contentType: 'application/octet-stream' } })
  if (!written) throw new Refusal('Object key conflict; no receipt issued.',409)
  const stored = await env.EXHIBITS.get(objectKey)
  if (!stored) throw new Refusal('Stored bytes could not be read; no receipt issued.', 503)
  const actual = await stored.arrayBuffer()
  const hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', actual))).map(n => n.toString(16).padStart(2, '0')).join('')
- const filename = file.name.replace(/[\x00-\x1f\x7f]/g, '').slice(0, 240) || 'exhibit'
+ const filename = r.filename.replace(/[\x00-\x1f\x7f]/g, '').slice(0, 240) || 'exhibit'
  try {
   await env.DB.batch([
-   env.DB.prepare('INSERT INTO exhibits(id,object_key,filename,size,media_type) VALUES(?,?,?,?,?)').bind(exhibitId,objectKey,filename,actual.byteLength,file.type || 'application/octet-stream'),
-   env.DB.prepare('INSERT INTO receipts(id,requirement_id,exhibit_id,origin,source,covered_from,covered_to,added_by,added_by_name,added_at,sha256,supersedes) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)').bind(id,requirement,exhibitId,'manually-asserted',source,from,to,operator.id,operator.displayName,now.toISOString(),hash,supersedes),
+   env.DB.prepare('INSERT INTO exhibits(id,object_key,filename,size,media_type) VALUES(?,?,?,?,?)').bind(exhibitId,objectKey,filename,actual.byteLength,r.mediaType || 'application/octet-stream'),
+   env.DB.prepare('INSERT INTO receipts(id,requirement_id,exhibit_id,origin,source,covered_from,covered_to,added_by,added_by_name,added_at,sha256,supersedes) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)').bind(id,requirement,exhibitId,r.origin,source,from,to,operator.id,operator.displayName,now.toISOString(),hash,supersedes),
    ...(effective ? [env.DB.prepare('INSERT INTO receipt_effective_dates(receipt_id,effective_date) VALUES(?,?)').bind(id,effective)] : []),
    ...(extra ? extra(id) : []),
   ])
  } catch { throw new Refusal('Receipt could not be appended. A concurrent replacement may already exist.', 409) }
- return id
+ return { id, sha256: hash }
 }
