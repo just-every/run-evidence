@@ -168,7 +168,7 @@ try {
  console.log(process.env.EVIDENCE_BROWSER_CLAUSE === 'CONTROL-001' ? 'PASS CONTROL-001 browser owner journeys at 1440 and 390: definitions, exact observations, reviewed imports, history and readiness.' : process.env.EVIDENCE_BROWSER_CLAUSE === 'READINESS-001' ? 'PASS READINESS-001 browser owner journeys: 1440 and 390; readiness, denominator, sources, filters and CSV; no errors or horizontal overflow.' : 'PASS browser owner journeys: 1440 and 390; downloads, replacement, history, gaps, no errors or horizontal overflow; private dev paths refused.')
 } catch(error) {
  // Navigation failures can include the credential-bearing printed URL.
- const sanitized=await safeLog(error.message)
+ const sanitized=await safeLog(error.stack ?? error.message)
  await writeFile(join(output,'failure.txt'),sanitized)
  console.error('Browser failure: '+sanitized.split('\n').filter(line=>/failed|error|exit|refus|missing|Error|Unexpected/i.test(line)).join('\n'))
  throw new Error(sanitized)
