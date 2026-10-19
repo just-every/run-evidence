@@ -119,7 +119,7 @@ try {
   assert.equal(enabled.length, 13); assert.ok(!enabled.includes('aws.s3-tls-only'))
   assert.match((await get('/api/tests')).catalogue.find(e => e.id === 'aws.s3-tls-only').manualRequirement, /aws:SecureTransport/)
  })
- await scenario('The hourly read finds every organization account, keeps the unreadable one as unknown, and fails the real misconfigurations with AWS remediation and Terraform', async () => {
+ await scenario('BOUNDARY-001 / The hourly read finds every organization account, keeps the unreadable one as unknown, and fails the real misconfigurations with AWS remediation and Terraform', async () => {
   await app.tick()
   const detail = await get('/api/connections/' + connection.id), run = detail.runs[0], coverage = JSON.parse(run.coverage_json)
   assert.equal(run.outcome, 'partial'); assert.equal(run.trigger, 'schedule')

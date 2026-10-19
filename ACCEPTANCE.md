@@ -407,7 +407,7 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
 ### Honest product boundaries
 
-- **BOUNDARY-001 — US-first scope and independent specialist services · partial.** Onboard a US business, choose a HIPAA/PCI scope, inspect data-processing prerequisites and assessor handoff, review USD module/provider costs, and export an evidence pack for an independent assessor. Follow linked remediation to Vector and source checks to the named specialist providers. No UI/report claims certification, legal sufficiency or operation of an external system without source evidence.
+- **BOUNDARY-001 — US-first scope and independent specialist services · done.** Onboard a US business, choose a HIPAA/PCI scope, inspect data-processing prerequisites and assessor handoff, review USD module/provider costs, and export an evidence pack for an independent assessor. Follow linked remediation to Vector and source checks to the named specialist providers. No UI/report claims certification, legal sufficiency or operation of an external system without source evidence. Prerequisites carry "not verified by Evidence"; the handoff pack is an audited download that lists fingerprinted exhibits and shares files only through review folders. Future program, agreement and specialist-handoff clauses (PROGRAM-003, PROGRAM-004, VENDOR-001, VENDOR-002, ANSWER-001, TRUST-001, AUDIT-001) inherit these checks.
 
   Current evidence: `src/evidence/model.ts`; `src/evidence/review/http.ts`; `tests/evidence.mjs`; `tests/review.mjs`. Current limit: The current desk distinguishes assertion/custody from control operation and shares reviewer evidence; target program applicability, specialist handoffs, agreements and cost disclosures are unbuilt.
 

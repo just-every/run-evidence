@@ -21,12 +21,16 @@ const costs: Record<string, Cost> = {
  cloudflare: { name: 'Cloudflare hosting', basis: 'Local hosting: USD 0 to Cloudflare. Workers Paid starts at USD 5/month per account, plus metered Workers, D1 and R2 usage above allowances. Review your account usage before deploying.', url: 'https://developers.cloudflare.com/workers/platform/pricing/' },
  resend: { name: 'Resend email', basis: 'Free: USD 0 within its allowance. Pro: USD 20/month for 50,000 transactional emails, with overage charged separately. Check daily limits and your existing account usage.', url: 'https://resend.com/pricing' },
  sendgrid: { name: 'Twilio SendGrid email', basis: 'Essentials starts at USD 19.95/month. Volume, overage and other services depend on your plan; review your account quote before enabling delivery.', url: 'https://www.twilio.com/en-us/products/email-api/pricing' },
+ 'private-git': { name: 'Private Git collector', basis: 'Runs on a machine you operate against repositories you already host: USD 0 to any provider beyond that machine.', url: '' },
  cloudflare_mail: { name: 'Cloudflare email', basis: 'Arbitrary recipients require Workers Paid (from USD 5/month). Includes 3,000 outbound emails/month, then USD 0.35 per 1,000; 10,000 emails cost USD 2.45 in overage plus the Workers subscription and other usage.', url: 'https://developers.cloudflare.com/email-service/platform/pricing/' },
 }
-export function providerCosts(providers: string[]) {
- return `<aside class="provider-costs" aria-label="Provider costs in USD"><p><strong>Provider costs in USD</strong> · Evidence charges USD 0. These services are billed by the named provider to your account. Existing subscriptions still apply. Examples exclude taxes, discounts and additional usage; confirm your plan and permissions before connecting.</p><ul class="plain-list">${providers.map(provider => {
+export function costRows(providers: string[]) {
+ return providers.map(provider => {
   const cost = costs[provider]
   if (!cost) throw new Error('Missing provider cost disclosure: ' + provider)
-  return `<li data-cost-provider="${escape(provider)}"><strong>${escape(cost.name)}</strong>: ${escape(cost.basis)}${cost.url ? ` <a href="${escape(cost.url)}" rel="noreferrer">Provider pricing</a>.` : ''}</li>`
- }).join('')}</ul></aside>`
+  return { provider, ...cost }
+ })
+}
+export function providerCosts(providers: string[]) {
+ return `<aside class="provider-costs" aria-label="Provider costs in USD"><p><strong>Provider costs in USD</strong> · Evidence charges USD 0. These services are billed by the named provider to your account. Existing subscriptions still apply. Examples exclude taxes, discounts and additional usage; confirm your plan and permissions before connecting.</p><ul class="plain-list">${costRows(providers).map(cost => `<li data-cost-provider="${escape(cost.provider)}"><strong>${escape(cost.name)}</strong>: ${escape(cost.basis)}${cost.url ? ` <a href="${escape(cost.url)}" rel="noreferrer">Provider pricing</a>.` : ''}</li>`).join('')}</ul></aside>`
 }

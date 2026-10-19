@@ -18,6 +18,14 @@ framework it maps to, so proof attached once counts everywhere.
 - Readiness keeps proof completeness and automated test results apart, drills
   from each total to its requirements, and never labels a business certified.
 - Export a program as JSON (`/api/programs/{id}/export`).
+- Prerequisites and assessor handoff: each program lists its data-processing
+  prerequisites (BAAs for HIPAA, DPAs, PCI service-provider agreements, licensed
+  framework text, and regional controls for any region outside the US), each
+  marked "not verified by Evidence", names who decides and signs, and shows USD
+  provider costs. Export the assessor handoff pack as JSON
+  (`/api/programs/{id}/handoff`): scope, prerequisites, costs, readiness, every
+  unresolved requirement and a SHA-256 index of current exhibits. Share the files
+  themselves through an expiring review folder.
 
 Requirement and control text from AICPA, ISO and PCI SSC is licensed; Evidence
 ships reference ids and its own short summaries.

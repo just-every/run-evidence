@@ -119,7 +119,7 @@ try {
   assert.ok(stored.secret_ciphertext && !stored.secret_ciphertext.includes(tracker.tokens.jira))
   assert.match(await (await app.fetch('/app/trackers/' + dest.jira.id)).text(), /Due date.*Evidence owns it/s)
  })
- await scenario('A failed control opens one linked Vector ticket with source links; tracker assignee and status arrive by signed webhook, and a replay changes nothing', async () => {
+ await scenario('BOUNDARY-001 / A failed control opens one linked Vector ticket with source links; tracker assignee and status arrive by signed webhook, and a replay changes nothing', async () => {
   const created = await owner(`/api/remediation/${ob2}/tickets`, { destination_id: dest.vector.id })
   await owner(`/api/remediation/${ob2}/tickets`, { destination_id: dest.vector.id }, 409)
   const remote = find('vector', created.key)

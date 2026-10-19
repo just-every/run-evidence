@@ -15,6 +15,7 @@ import { auditStatement } from '../door'
 import { boardCsv, boardReport } from './board'
 import { boardFilters } from './report-filters'
 import { boardPage } from './board-view'
+import { boundaryPanel, handoffPack } from './boundary'
 const id = `(${uuid})`
 const both = (path: string) => new RegExp(`^/(?:app|api)${path}$`)
 
@@ -35,7 +36,7 @@ export function programHandler(clock: () => Date) {
   { method: 'GET', pattern: both(`/programs/${id}`), run: async (c, m) => {
    const row = await requireProgram(c.env, m[1]), ready = await readiness(c.env, row, c.now)
    if (c.isApi) return json({ program: row, readiness: ready, applicability: (await applicability(c.env, row.id)).history, history: await programHistory(c.env, row.id) })
-   return programPage(row, ready, await programHistory(c.env, row.id), await people(c.env), c.url.searchParams.get('show') || 'all', c.actor.name)
+   return programPage(row, ready, await programHistory(c.env, row.id), await people(c.env), c.url.searchParams.get('show') || 'all', c.actor.name, await boundaryPanel(c.env, row, ready.framework.assessor))
   } },
   { method: 'POST', pattern: both(`/programs/${id}`), run: async (c, m) => { await updateProgram(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/programs/' + m[1], { updated: true }) } },
   { method: 'POST', pattern: both(`/programs/${id}/applicability`), run: async (c, m) => { await decideApplicability(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, `/app/programs/${m[1]}?show=excluded#requirements`, { recorded: true }) } },
@@ -50,6 +51,12 @@ export function programHandler(clock: () => Date) {
    const body = { format: 'evidence-program', version: 1, exported_at: c.now.toISOString(), certification: 'None asserted. ' + ready.framework.assessor, program: row, readiness: ready.totals, calculation: ready.calculation, requirements: ready.requirements, checklist: ready.checklist, applicability_history: decisions, owners, history, unresolved: ready.requirements.filter(r => r.state === 'included' && (r.proof !== 'current' || r.testing === 'failing' || r.testing === 'unknown')).map(r => ({ ref: r.ref, title: r.title, proof: r.proof, testing: r.testing })) }
    await c.env.DB.prepare("INSERT INTO product_audit(id,actor_kind,actor_id,actor_name,action,subject,outcome,detail,at) VALUES(?,'owner',?,?,'program.exported',?,'succeeded','',?)").bind(crypto.randomUUID(), c.actor.id, c.actor.name, 'program:' + row.id, c.now.toISOString()).run()
    return new Response(JSON.stringify(body, null, 1), { headers: { 'content-type': 'application/json; charset=utf-8', 'content-disposition': `attachment; filename="program-${row.id}.json"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } })
+  } },
+  // BOUNDARY-001: the assessor handoff pack, recorded like every export.
+  { method: 'GET', pattern: both(`/programs/${id}/handoff`), run: async (c, m) => {
+   const row = await requireProgram(c.env, m[1]), body = await handoffPack(c.env, row, await readiness(c.env, row, c.now), c.now)
+   await auditStatement(c.env, c.actor, 'program.handoff-exported', 'program:' + row.id, c.now, 'succeeded', 'json').run()
+   return new Response(JSON.stringify(body, null, 1), { headers: { 'content-type': 'application/json; charset=utf-8', 'content-disposition': `attachment; filename="assessor-handoff-${row.id}.json"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } })
   } },
   { method: 'GET', pattern: both(`/programs/${id}/board`), run: async (c, m) => {
    const row = await requireProgram(c.env, m[1]), report = await boardReport(c.env, row, boardFilters(c.url), c.now)
