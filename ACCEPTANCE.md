@@ -57,7 +57,7 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
-- **PROGRAM-003 — Framework-required program documents · missing.** For each core program, generate its documents from a populated program through Program → Documents, edit and approve a revision, and export it (system description as DOCX and PDF, SoA as XLSX and PDF, risk analysis and SAQ worksheet as PDF). Then reconcile each document with program state. The SOC 2 description cites the inventory and policy revisions it pre-filled from. The SoA lists all 93 Annex A:2022 controls, and its exclusions match applicability. Record an internal audit with one nonconformity and corrective action, and one management review. Switching the SAQ answers changes the selected type and worksheet. Fail a test mapped to a control the SoA marks implemented: the SoA flags drift and needs review, and the approved prior revision stays retrievable.
+- **PROGRAM-003 — Framework-required program documents · missing.** For each core program, generate its documents from a populated program through Program → Documents, edit and approve a revision, and export it (system description as DOCX and PDF, SoA as XLSX and PDF, risk analysis and SAQ worksheet as PDF). Then reconcile each document with program state. The SOC 2 description cites the inventory and policy revisions it pre-filled from. The SoA lists all 93 Annex A:2022 controls, and its exclusions match applicability. Record an internal audit with one nonconformity and corrective action, and one management review. Switching the SAQ answers changes the selected type and worksheet. Start the HIPAA risk analysis and add its RISK-002 library scenarios inside the document. Fail a test mapped to a control the SoA marks implemented: the SoA flags drift and needs review, and the approved prior revision stays retrievable.
 
   Current evidence: —.
 
@@ -187,9 +187,9 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
-- **RISK-002 — Shipped risk library, register import and configurable scoring · partial.** On a fresh ISO 27001 program, add five library risks: each is linked to its suggested controls and matching in-scope assets. Import a 30-row register CSV through Risk Register → Import: the dry run refuses one invalid row with a reason, and 29 risks are admitted labeled imported. Change the scale from 5×5 to 4×4 with new labels: earlier assessments still show their original scale, labels and score. Reassess one risk: both assessments are retained with their method revisions. Start the HIPAA risk analysis (PROGRAM-003) and add its scenarios from the library. Export the register with the method revision per assessment.
+- **RISK-002 — Shipped risk library, register import and configurable scoring · done.** On a fresh ISO 27001 program, add five library risks: each is linked to its suggested controls and matching in-scope assets. Import a 30-row register CSV through Risk Register → Import: the dry run refuses one invalid row with a reason, and 29 risks are admitted labeled imported. Change the scale from 5×5 to 4×4 with new labels: earlier assessments still show their original scale, labels and score. Reassess one risk: both assessments are retained with their method revisions. Create a HIPAA program and add its ePHI/HIPAA scenarios from the library. PROGRAM-003 carries starting the HIPAA risk-analysis document and adding those scenarios inside it. Export the register with the method revision per assessment.
 
-  Current evidence: —.
+  Current evidence: `src/evidence/risk/`; `tests/risk.mjs`; `tests/helpers/risk-browser.mjs`. Historical scales, definitions, numeric scores and method revisions are retained; matrix lookup selects level labels. Library changes never rewrite prior additions.
 
 - **VENDOR-001 — Vendor inventory and security diligence · partial.** Onboard a US SaaS supplier through Vendors, request a SOC 2 report and BAA where applicable, send a shipped CAIQ v4 questionnaire, collect the supplier's per-question response and record a finding. Approve with an expiring condition, reach renewal, and inspect overdue reassessment reminders and the unchanged original documents. An expired supplier link cannot read or mutate another vendor.
 
@@ -377,4 +377,4 @@ The current public-door suites are `tests/evidence.mjs` (native owner access, re
 
 For each new user flow, build rounds must exercise the named public door, persistence/restart, refusal/error path, actor permissions and final state in the journey. Inspect each changed screen at 1440 and 390 with realistic data; provider acknowledgments are separate from source truth and human decisions. Certification, independent assessor judgment, legal applicability, outside-provider reliability and copies already downloaded remain the declared boundaries in BOUNDARY-001, rather than fabricated acceptance results.
 
-**Clause totals:** 79 — 22 done / 26 partial / 31 missing.
+**Clause totals:** 79 — 23 done / 25 partial / 31 missing.

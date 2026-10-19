@@ -2,7 +2,7 @@ import type { Bindings } from '../../auth.server'
 import { Refusal, boundedBody } from '../upload'
 import { auditStatement, type Actor } from '../door'
 import { parseTable } from '../tabular'
-import { currentMethod, insertRisk, score, validateRisk, type RiskInput } from './storage'
+import { controlTargets, currentMethod, insertRisk, score, validateRisk, type RiskInput } from './storage'
 // RISK-002 spreadsheet import: map columns, dry-run every row, admit nothing
 // until the owner confirms the same file. Admitted risks are labelled imported.
 export const fields = ['title', 'scenario', 'likelihood', 'impact', 'treatment', 'owner_email', 'review_due', 'controls'] as const
@@ -26,7 +26,7 @@ export async function dryRun(env: Bindings, filename: string, bytes: Uint8Array,
   const value = (f: string) => mapping[f] && table.headers.includes(mapping[f]) ? record[mapping[f]] : ''
   const raw = { title: value('title'), scenario: value('scenario'), likelihood: value('likelihood'), impact: value('impact'), treatment: value('treatment').toLowerCase(), owner_email: value('owner_email'), review_due: value('review_due'), controls: value('controls') }
   const reasons: string[] = []; let input: RiskInput | undefined
-  try { input = await validateRisk(env, raw); score(method, input.likelihood, input.impact) } catch (error) { reasons.push(error instanceof Refusal ? error.message : 'Invalid row') }
+  try { input = await validateRisk(env, raw); score(method, input.likelihood, input.impact); await controlTargets(env, input.controls) } catch (error) { reasons.push(error instanceof Refusal ? error.message : 'Invalid row') }
   const key = raw.title.toLowerCase()
   if (raw.title && existing.has(key)) reasons.push('Duplicate of a risk already in the register')
   else if (raw.title && seen.has(key)) reasons.push('Duplicate title earlier in this file')

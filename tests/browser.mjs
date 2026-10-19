@@ -12,6 +12,7 @@ import { join, resolve, basename } from 'node:path'
 import { createServer } from 'node:net'
 import { createHash } from 'node:crypto'
 import { chromium } from 'playwright'
+import { riskJourney } from './helpers/risk-browser.mjs'
 import { openSetupScreens } from './helpers/open-browser.mjs'
 import { moveInAndPrepare } from './helpers/move-in-browser.mjs'
 import { readDevKey, signInAs } from '../src/modules/operator-auth/dev/sign-in-as.mjs'
@@ -130,6 +131,7 @@ try {
   await page.goto(origin+'/app?date='+yesterday);await capture(page,`${width}-gap`);await capture(page,`${width}-desk`)
   await moveInAndPrepare(page,origin,width,capture,scratch)
   await openSetupScreens(page, origin, width, capture)
+  await riskJourney(page, origin, width, capture)
   await context.close()
  }
  assert.deepEqual(errors,[],'No browser runtime or console errors')

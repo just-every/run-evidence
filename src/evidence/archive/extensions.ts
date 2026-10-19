@@ -39,7 +39,7 @@ export function extensionStatements(env: Store, manifest: Manifest) {
  return [
   ...restoreAgentStatements(env as Bindings, manifest.extensions.agent),
   ...restoreImportStatements(manifest.extensions.imports).map(s => env.DB.prepare(s.sql).bind(...(s.params ?? []))),
-  ...(manifest.extensions.program ? restoreProgramStatements(env, manifest.extensions.program) : []),
+  ...(manifest.extensions.program ? restoreProgramStatements(env, manifest.extensions.program, manifest.version) : []),
  ]
 }
 export function archiveFiles(manifest: Manifest) {

@@ -5,14 +5,15 @@ import { auditStatement, list, oneOf, text, type Actor, type Input } from '../do
 import { libraryControl } from '../library'
 import { sendFollowup, sent as delivered } from '../followup/send'
 import { latestResults } from '../tests/storage'
-import { riskScenario } from './library'
+import { riskScenario, riskLibraryRevision } from './library'
 // RISK-001/002. Assessments are append-only and record the scoring-method
 // revision they used; changing the method never rescores history.
 export const treatments = ['mitigate', 'accept', 'transfer', 'avoid'] as const
-export interface Method { revision: number; scale: number; likelihood_labels: string[]; impact_labels: string[]; formula: 'product' | 'matrix'; matrix: string[][]; thresholds: { level: string; max: number }[] }
-interface MethodRow { revision: number; scale: number; likelihood_labels: string; impact_labels: string; formula: 'product' | 'matrix'; matrix_json: string; thresholds_json: string; actor_name: string; at: string }
-export const shippedMethod: Method = { revision: 1, scale: 5, likelihood_labels: ['Rare', 'Unlikely', 'Possible', 'Likely', 'Almost certain'], impact_labels: ['Negligible', 'Minor', 'Moderate', 'Major', 'Severe'], formula: 'product', matrix: [], thresholds: [{ level: 'Low', max: 4 }, { level: 'Medium', max: 9 }, { level: 'High', max: 16 }, { level: 'Critical', max: 25 }] }
-const fromRow = (r: MethodRow): Method => ({ revision: r.revision, scale: r.scale, likelihood_labels: JSON.parse(r.likelihood_labels), impact_labels: JSON.parse(r.impact_labels), formula: r.formula, matrix: JSON.parse(r.matrix_json), thresholds: JSON.parse(r.thresholds_json) })
+export interface Method { revision: number; scale: number; likelihood_labels: string[]; impact_labels: string[]; likelihood_definitions: string[]; impact_definitions: string[]; formula: 'product' | 'matrix'; matrix: string[][]; thresholds: { level: string; max: number }[] }
+interface MethodRow { revision: number; scale: number; likelihood_labels: string; impact_labels: string; likelihood_definitions: string; impact_definitions: string; formula: 'product' | 'matrix'; matrix_json: string; thresholds_json: string; actor_name: string; at: string }
+export { shippedMethod } from './method-default'
+import { shippedMethod, retainDefaultMethod } from './method-default'
+const fromRow = (r: MethodRow): Method => ({ revision: r.revision, scale: r.scale, likelihood_labels: JSON.parse(r.likelihood_labels), impact_labels: JSON.parse(r.impact_labels), likelihood_definitions: JSON.parse(r.likelihood_definitions), impact_definitions: JSON.parse(r.impact_definitions), formula: r.formula, matrix: JSON.parse(r.matrix_json), thresholds: JSON.parse(r.thresholds_json) })
 export async function methods(env: Bindings) {
  const rows = (await env.DB.prepare('SELECT * FROM risk_methods ORDER BY revision').all<MethodRow>()).results
  return rows.length ? rows.map(r => ({ ...fromRow(r), actor_name: r.actor_name, at: r.at })) : [{ ...shippedMethod, actor_name: 'Evidence (shipped default)', at: '' }]
@@ -29,6 +30,8 @@ export async function setMethod(env: Bindings, actor: Actor, input: Input, now: 
  const scale = Number(input.scale), formula = oneOf(input, 'formula', ['product', 'matrix'] as const)
  if (!Number.isInteger(scale) || scale < 3 || scale > 5) throw new Refusal('The scale is 3×3 to 5×5.')
  const likelihood = list(input, 'likelihood_labels', 5), impact = list(input, 'impact_labels', 5)
+ const definitions = (key: string) => { const value = input[key]; const rows = Array.isArray(value) ? value : typeof value === 'string' ? value.split('\n').map(x => x.trim()).filter(Boolean) : []; if (rows.length !== scale || rows.some(x => !x || x.length > 500)) throw new Refusal(`Give exactly ${scale} ${key.replaceAll('_', ' ')} (up to 500 characters each).`); return rows }
+ const likelihoodDefinitions = definitions('likelihood_definitions'), impactDefinitions = definitions('impact_definitions')
  if (likelihood.length !== scale || impact.length !== scale) throw new Refusal(`Give exactly ${scale} likelihood and ${scale} impact labels.`)
  let matrix: string[][] = [], thresholds: { level: string; max: number }[] = []
  if (formula === 'matrix') {
@@ -41,8 +44,8 @@ export async function setMethod(env: Bindings, actor: Actor, input: Input, now: 
  const revision = (await currentMethod(env)).revision + 1
  const statements = []
  // The shipped default becomes revision 1 the first time an owner changes the method.
- if (!await env.DB.prepare('SELECT 1 FROM risk_methods LIMIT 1').first()) statements.push(env.DB.prepare('INSERT INTO risk_methods(id,revision,scale,likelihood_labels,impact_labels,formula,matrix_json,thresholds_json,actor_name,at) VALUES(?,?,?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), 1, shippedMethod.scale, JSON.stringify(shippedMethod.likelihood_labels), JSON.stringify(shippedMethod.impact_labels), 'product', '[]', JSON.stringify(shippedMethod.thresholds), 'Evidence (shipped default)', now.toISOString()))
- statements.push(env.DB.prepare('INSERT INTO risk_methods(id,revision,scale,likelihood_labels,impact_labels,formula,matrix_json,thresholds_json,actor_name,at) VALUES(?,?,?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), revision, scale, JSON.stringify(likelihood), JSON.stringify(impact), formula, JSON.stringify(matrix), JSON.stringify(thresholds), actor.name, now.toISOString()), auditStatement(env, actor, 'risk.method-revised', 'risk-method:' + revision, now))
+ if (!await env.DB.prepare('SELECT 1 FROM risk_methods LIMIT 1').first()) statements.push(env.DB.prepare('INSERT INTO risk_methods(id,revision,scale,likelihood_labels,impact_labels,formula,matrix_json,thresholds_json,actor_name,at,likelihood_definitions,impact_definitions) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), 1, shippedMethod.scale, JSON.stringify(shippedMethod.likelihood_labels), JSON.stringify(shippedMethod.impact_labels), 'product', '[]', JSON.stringify(shippedMethod.thresholds), 'Evidence (shipped default)', now.toISOString(), JSON.stringify(shippedMethod.likelihood_definitions), JSON.stringify(shippedMethod.impact_definitions)))
+ statements.push(env.DB.prepare('INSERT INTO risk_methods(id,revision,scale,likelihood_labels,impact_labels,formula,matrix_json,thresholds_json,actor_name,at,likelihood_definitions,impact_definitions) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), revision, scale, JSON.stringify(likelihood), JSON.stringify(impact), formula, JSON.stringify(matrix), JSON.stringify(thresholds), actor.name, now.toISOString(), JSON.stringify(likelihoodDefinitions), JSON.stringify(impactDefinitions)), auditStatement(env, actor, 'risk.method-revised', 'risk-method:' + revision, now))
  await env.DB.batch(statements)
  return revision
 }
@@ -50,7 +53,7 @@ const assessmentStatement = (env: Bindings, risk: string, kind: 'inherent' | 're
  const s = score(method, likelihood, impact), id = crypto.randomUUID()
  return { id, statement: env.DB.prepare('INSERT INTO risk_assessments(id,risk_id,kind,method_revision,likelihood,impact,score,level,likelihood_label,impact_label,notes,actor_name,at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(id, risk, kind, method.revision, likelihood, impact, s.score, s.level, s.likelihood_label, s.impact_label, notes, actor.name, now.toISOString()) }
 }
-async function controlTargets(env: Bindings, refs: string[]) {
+export async function controlTargets(env: Bindings, refs: string[]) {
  const out: string[] = []
  for (const ref of refs) {
   const adopted = await env.DB.prepare('SELECT control_id FROM library_adoptions WHERE library_id=?').bind(ref).first<{ control_id: string }>()
@@ -62,10 +65,13 @@ async function controlTargets(env: Bindings, refs: string[]) {
  return out
 }
 // In-scope assets of a matching type: resources whose type names the asset kind.
-const assetPatterns: Record<string, RegExp> = { repository: /repo/, application: /service|application|app/, database: /database|db/, laptop: /device|laptop|endpoint/, 'cloud account': /cloud|aws|gcp|azure|account/, network: /network|firewall|zone/, 'identity provider': /identity|idp|directory/, 'AI system': /ai_|model|llm/ }
+const assetPatterns: Record<string, RegExp> = { repository: /repo/, application: /service|application|app/, database: /database|db/, laptop: /device|laptop|endpoint/, 'cloud account': /cloud|aws|gcp|azure|account/, network: /network|firewall|zone/, 'identity provider': /identity|idp|directory/, 'AI system': /ai_|model|llm/, person: /person|employee|contractor/, facility: /facility|office|building/, vendor: /vendor|supplier/ }
 async function matchingAssets(env: Bindings, kinds: string[]) {
  const resources = (await env.DB.prepare('SELECT id,type FROM resources WHERE removed_at IS NULL').all<{ id: string; type: string }>()).results
- return resources.filter(r => kinds.some(k => assetPatterns[k]?.test(r.type))).slice(0, 25).map(r => r.id)
+ const matched = resources.filter(r => kinds.some(k => assetPatterns[k]?.test(r.type))).map(r => r.id)
+ if (kinds.includes('person')) matched.push(...(await env.DB.prepare('SELECT p.id FROM people p LEFT JOIN people_departures d ON d.person_id=p.id WHERE d.person_id IS NULL').all<{id: string}>()).results.map(p => p.id))
+ if (kinds.includes('vendor')) matched.push(...(await env.DB.prepare('SELECT id FROM vendors').all<{id: string}>()).results.map(v => v.id))
+ return [...new Set(matched)]
 }
 export interface RiskInput { title: string; scenario: string; likelihood: number; impact: number; treatment: typeof treatments[number]; owner: string | null; review_due: string | null; controls: string[]; assets: string[]; library_id?: string }
 export async function validateRisk(env: Bindings, input: Record<string, unknown>): Promise<RiskInput> {
@@ -81,17 +87,18 @@ export async function validateRisk(env: Bindings, input: Record<string, unknown>
  const asList = (v: unknown) => Array.isArray(v) ? v.map(String) : typeof v === 'string' && v ? v.split(/[\s,]+/).filter(Boolean) : []
  return { title, scenario, likelihood: Number(input.likelihood), impact: Number(input.impact), treatment, owner, review_due: due, controls: asList(input.controls), assets: asList(input.assets) }
 }
-export async function createRisk(env: Bindings, actor: Actor & { kind?: 'owner' | 'token' }, raw: Record<string, unknown>, origin: 'form' | 'api' | 'library', now: Date, extra: { library_id?: string; import_id?: string; source_label?: string } = {}) {
+export async function createRisk(env: Bindings, actor: Actor & { kind?: 'owner' | 'token' }, raw: Record<string, unknown>, origin: 'form' | 'api' | 'library', now: Date, extra: { library_id?: string; library_revision?: number; import_id?: string; source_label?: string } = {}) {
  const input = await validateRisk(env, raw), method = await currentMethod(env)
  score(method, input.likelihood, input.impact)
  return insertRisk(env, actor, input, method, origin, now, extra)
 }
-export async function insertRisk(env: Bindings, actor: Actor & { kind?: 'owner' | 'token' | 'system' }, input: RiskInput, method: Method, origin: 'form' | 'api' | 'library' | 'import', now: Date, extra: { library_id?: string; import_id?: string; source_label?: string }) {
+export async function insertRisk(env: Bindings, actor: Actor & { kind?: 'owner' | 'token' | 'system' }, input: RiskInput, method: Method, origin: 'form' | 'api' | 'library' | 'import', now: Date, extra: { library_id?: string; library_revision?: number; import_id?: string; source_label?: string }) {
  const id = crypto.randomUUID(), at = now.toISOString(), controls = await controlTargets(env, input.controls)
  const assessment = assessmentStatement(env, id, 'inherent', method, input.likelihood, input.impact, 'Initial assessment', actor, now)
- const label = extra.source_label ?? (origin === 'api' ? `Pushed by ${actor.name}` : origin === 'library' ? `Shipped risk library ${extra.library_id}` : `Entered by ${actor.name}`)
+ const label = extra.source_label ?? (origin === 'api' ? `Pushed by ${actor.name}` : origin === 'library' ? `Shipped risk library ${extra.library_id}, revision ${extra.library_revision}` : `Entered by ${actor.name}`)
  await env.DB.batch([
-  env.DB.prepare('INSERT INTO risks(id,title,scenario,library_id,origin,import_id,source_label,owner_person_id,assets,treatment,review_due,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(id, input.title, input.scenario, extra.library_id ?? null, origin, extra.import_id ?? null, label, input.owner, JSON.stringify(input.assets), input.treatment, input.review_due, at, at),
+  env.DB.prepare('INSERT INTO risks(id,title,scenario,library_id,origin,import_id,source_label,owner_person_id,assets,treatment,review_due,created_at,updated_at,library_revision) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(id, input.title, input.scenario, extra.library_id ?? null, origin, extra.import_id ?? null, label, input.owner, JSON.stringify(input.assets), input.treatment, input.review_due, at, at, extra.library_revision ?? null),
+  ...(method.revision === 1 ? [retainDefaultMethod(env)] : []),
   assessment.statement,
   ...controls.map(c => env.DB.prepare("INSERT OR IGNORE INTO risk_links(risk_id,kind,target,added_at) VALUES(?,'control',?,?)").bind(id, c, at)),
   ...input.assets.map(a => env.DB.prepare("INSERT OR IGNORE INTO risk_links(risk_id,kind,target,added_at) VALUES(?,'asset',?,?)").bind(id, a, at)),
@@ -103,7 +110,7 @@ export async function addFromLibrary(env: Bindings, actor: Actor, scenarioId: st
  const scenario = riskScenario(scenarioId); if (!scenario) throw new Refusal('Choose a scenario from the shipped library.')
  const method = await currentMethod(env), clamp = (n: number) => Math.max(1, Math.min(method.scale, Math.round(n * method.scale / 5)))
  const assets = await matchingAssets(env, scenario.assets)
- return insertRisk(env, actor, { title: scenario.title, scenario: `Threat: ${scenario.threat}. Vulnerability: ${scenario.vulnerability}. Asset types: ${scenario.assets.join(', ')}.`, likelihood: clamp(scenario.likelihood), impact: clamp(scenario.impact), treatment: scenario.treatment, owner: null, review_due: null, controls: scenario.controls, assets }, method, 'library', now, { library_id: scenario.id })
+ return insertRisk(env, actor, { title: scenario.title, scenario: `Threat: ${scenario.threat}. Vulnerability: ${scenario.vulnerability}. Asset types: ${scenario.assets.join(', ')}.`, likelihood: clamp(scenario.likelihood), impact: clamp(scenario.impact), treatment: scenario.treatment, owner: null, review_due: null, controls: scenario.controls, assets }, method, 'library', now, { library_id: scenario.id, library_revision: riskLibraryRevision })
 }
 export async function assess(env: Bindings, actor: Actor, risk: string, input: Input, now: Date) {
  await requireRisk(env, risk)
@@ -119,7 +126,7 @@ export async function link(env: Bindings, actor: Actor, risk: string, input: Inp
  const resolved = kind === 'control' ? (await controlTargets(env, [target]))[0] : target
  if (kind === 'test' && !await env.DB.prepare('SELECT 1 FROM tests WHERE id=?').bind(target).first()) throw new Refusal('Choose an existing test.')
  if (kind === 'vendor' && !await env.DB.prepare('SELECT 1 FROM vendors WHERE id=?').bind(target).first()) throw new Refusal('Choose an existing vendor.')
- await env.DB.batch([env.DB.prepare('INSERT OR IGNORE INTO risk_links(risk_id,kind,target,added_at) VALUES(?,?,?,?)').bind(risk, kind, resolved, now.toISOString()), env.DB.prepare('UPDATE risks SET updated_at=? WHERE id=?').bind(now.toISOString(), risk), auditStatement(env, actor, 'risk.linked', 'risk:' + risk, now, 'succeeded', kind)])
+ await env.DB.batch([env.DB.prepare('INSERT OR IGNORE INTO risk_links(risk_id,kind,target,added_at) VALUES(?,?,?,?)').bind(risk, kind, resolved, now.toISOString()), env.DB.prepare("UPDATE risks SET assets=(SELECT json_group_array(target) FROM risk_links WHERE risk_id=? AND kind='asset'),updated_at=? WHERE id=?").bind(risk, now.toISOString(), risk), auditStatement(env, actor, 'risk.linked', 'risk:' + risk, now, 'succeeded', kind)])
 }
 export async function addTreatment(env: Bindings, actor: Actor, risk: string, input: Input, now: Date) {
  await requireRisk(env, risk)

@@ -1,3 +1,4 @@
+import { retainDefaultMethod } from '../risk/method-default'
 import type { Bindings } from '../../auth.server'
 import { fail, type Row } from './format'
 // Archive version 3 carries every program-domain table, in foreign-key order.
@@ -40,10 +41,10 @@ export const programColumns = {
  connections:['id','provider','label','account','api_base','granted_scopes','status','created_by','created_name','created_at','rotated_at','revoked_at','last_success_at','last_attempt_at','next_attempt_at','backoff_seconds','last_error','config_json'],
  connection_repositories:['connection_id','full_name','selected'],
  collection_runs:['id','connection_id','trigger','connector_revision','started_at','finished_at','outcome','coverage_json','error_code'],
- risk_methods:['id','revision','scale','likelihood_labels','impact_labels','formula','matrix_json','thresholds_json','actor_name','at'],
+ risk_methods:['id','revision','scale','likelihood_labels','impact_labels','formula','matrix_json','thresholds_json','actor_name','at','likelihood_definitions','impact_definitions'],
  vendors:['id','name','owner_person_id','data_access','criticality','review_due','created_at','updated_at'],
  risk_imports:['id','filename','sha256','admitted','refused','actor_name','at'],
- risks:['id','title','scenario','library_id','origin','import_id','source_label','owner_person_id','assets','treatment','review_due','created_at','updated_at'],
+ risks:['id','title','scenario','library_id','origin','import_id','source_label','owner_person_id','assets','treatment','review_due','created_at','updated_at','library_revision'],
  risk_assessments:['id','risk_id','kind','method_revision','likelihood','impact','score','level','likelihood_label','impact_label','notes','actor_name','at'],
  risk_links:['risk_id','kind','target','added_at'],
  risk_treatments:['id','risk_id','title','owner_person_id','due_date','verification_test_id','status','evidence','updated_at'],
@@ -93,7 +94,8 @@ export const programTables = Object.keys(programColumns) as ProgramTable[]
 const addedInVersion4 = new Set<ProgramTable>(['tracker_destinations', 'tickets', 'ticket_events', 'ticket_comments', 'tracker_deliveries', 'readiness_snapshots', 'followup_settings', 'followup_channels', 'notify_preferences', 'followup_pauses', 'identity_matches', 'policy_assignments', 'policy_acknowledgments', 'policy_exceptions', 'people_departures', 'review_schedules', 'review_completions', 'review_overrides', 'population_uploads', 'population_rows', 'population_matches', 'access_reviews', 'access_review_items', 'access_decisions', 'access_delegations', 'access_revocations', 'training_adoptions', 'training_campaigns', 'training_schedule_changes', 'training_assignments', 'training_attempts', 'internal_courses', 'training_completions', 'ticket_settings', 'ticket_defaults', 'ticket_groups'])
 // Columns first carried by version 4 in tables that version 3 already listed, with the value older rows restore with.
 const addedColumns: Partial<Record<ProgramTable, Record<string, string | null>>> = { followups: { channel: 'email' }, connections: { config_json: '{}' }, policies: { template_id: null }, people: { role: null }, tickets: { group_id: null } }
-const columnsOf = (table: ProgramTable, version: number) => programColumns[table].filter(c => version >= 4 || !Object.hasOwn(addedColumns[table] ?? {}, c))
+const addedInVersion5: Partial<Record<ProgramTable, Record<string, string | null>>> = { risk_methods: { likelihood_definitions: '[]', impact_definitions: '[]' }, risks: { library_revision: null } }
+const columnsOf = (table: ProgramTable, version: number) => programColumns[table].filter(c => (version >= 4 || !Object.hasOwn(addedColumns[table] ?? {}, c)) && (version >= 5 || !Object.hasOwn(addedInVersion5[table] ?? {}, c)))
 const tablesOf = (version: number) => programTables.filter(t => version >= 4 || !addedInVersion4.has(t))
 export interface ProgramArchive { rows: Record<ProgramTable, Row[]> }
 export async function exportProgramArchive(env: Pick<Bindings, 'DB'>): Promise<ProgramArchive> {
@@ -115,9 +117,10 @@ export function validateProgramExtension(value: unknown, version: number): asser
 // Restored grants hold no authority: tokens lack digests, and connections and
 // ticket destinations and Slack or Teams channels wait without credentials
 // until an owner reconnects them.
-export function restoreProgramStatements(env: Pick<Bindings, 'DB'>, value: ProgramArchive) {
- return programTables.flatMap(table => (value.rows[table] ?? []).map(row => {
-  const columns = [...programColumns[table]], values = columns.map(c => (table === 'connections' || table === 'tracker_destinations' || table === 'followup_channels') && c === 'status' ? 'inactive after restore' : table === 'connections' && c === 'next_attempt_at' ? null : Object.hasOwn(row, c) ? row[c] : addedColumns[table]?.[c] ?? null)
+export function restoreProgramStatements(env: Pick<Bindings, 'DB'>, value: ProgramArchive, version: number) {
+ const legacyDefault = version < 5 && !(value.rows.risk_methods ?? []).length && (value.rows.risk_assessments ?? []).some(a => a.method_revision === 1)
+ return [...(legacyDefault ? [retainDefaultMethod(env, false)] : []), ...programTables.flatMap(table => (value.rows[table] ?? []).map(row => {
+  const columns = [...programColumns[table]], values = columns.map(c => (table === 'connections' || table === 'tracker_destinations' || table === 'followup_channels') && c === 'status' ? 'inactive after restore' : table === 'connections' && c === 'next_attempt_at' ? null : Object.hasOwn(row, c) ? row[c] : addedColumns[table]?.[c] ?? addedInVersion5[table]?.[c] ?? null)
   return env.DB.prepare(`INSERT INTO ${table}(${columns.join(',')}) VALUES(${columns.map(() => '?').join(',')})`).bind(...values)
- }))
+ }))]
 }

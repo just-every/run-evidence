@@ -1,6 +1,9 @@
 import type { Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
 import { auditStatement, done, json, oneOf, ownerRoutes, readInput, text, uuid, type Route } from '../door'
+import { editRisk, unlinkRisk } from './edit'
+import { riskLibrary, riskLibraryRevision } from './library'
+import { libraryPage } from './library-view'
 import { escape } from '../ui'
 import { validDate } from '../model'
 import { people } from '../program/people'
@@ -28,7 +31,11 @@ export function riskHandler(clock: () => Date) {
    if (typeof input.test_id === 'string' && input.test_id) await link(c.env, c.actor, created.id, { kind: 'test', target: input.test_id }, c.now)
    return done(c, '/app/risks/' + created.id, created, 201)
   } },
-  { method: 'POST', pattern: both('/risks/library'), run: async c => { const created = await addFromLibrary(c.env, c.actor, text(await readInput(c.request), 'scenario', 40), c.now); return done(c, '/app/risks/' + created.id, created, 201) } },
+  { method: 'GET', pattern: both('/risks/library'), run: async c => {
+   const adopted = (await c.env.DB.prepare("SELECT id,title,scenario,library_id,library_revision FROM risks WHERE origin='library'").all<Record<string, string | number | null>>()).results
+   return c.isApi ? json({ revision: riskLibraryRevision, scenarios: riskLibrary, adopted }) : libraryPage(adopted, c.actor.name)
+  } },
+  { method: 'POST', pattern: both('/risks/library'), run: async c => { const input = await readInput(c.request); if (input.revision && Number(input.revision) !== riskLibraryRevision) throw new Refusal('The library changed; review its current revision.', 409); const created = await addFromLibrary(c.env, c.actor, text(input, 'scenario', 40), c.now); return done(c, '/app/risks/' + created.id, created, 201) } },
   { method: 'POST', pattern: both('/risks/method'), run: async c => done(c, '/app/risks#method-title', { revision: await setMethod(c.env, c.actor, await readInput(c.request), c.now) }, 201) },
   { method: 'POST', pattern: both('/risks/import'), run: async c => {
    const file = await readImport(c.request)
@@ -54,9 +61,11 @@ export function riskHandler(clock: () => Date) {
    ])
    const names = new Map([...(await c.env.DB.prepare("SELECT c.id,c.name FROM controls c").all<{ id: string; name: string }>()).results.map(x => [x.id, `<a href="/app/controls/${x.id}">${escape(x.name)}</a>`] as [string, string]), ...(await c.env.DB.prepare('SELECT id,name FROM tests').all<{ id: string; name: string }>()).results.map(x => [x.id, `<a href="/app/tests/${x.id}">${escape(x.name)}</a>`] as [string, string]), ...(await vendors(c.env)).map(v => [v.id, escape(v.name)] as [string, string])])
    const owner = risk.owner_person_id ? (await c.env.DB.prepare('SELECT name FROM people WHERE id=?').bind(risk.owner_person_id).first<{ name: string }>())?.name ?? null : null
-   const detail = { risk, owner_name: owner, assessments: assessments.results as Record<string, string | number>[], links: (links.results as { kind: string; target: string }[]).map(l => ({ ...l, label: names.get(l.target) ?? escape(l.target) })), treatments: treatments.results as Record<string, string>[], acceptances: acceptances.results as Record<string, string>[] }
+   const detail = { risk, methods: await methods(c.env), owner_name: owner, assessments: assessments.results as Record<string, string | number>[], links: (links.results as { kind: string; target: string }[]).map(l => ({ ...l, label: names.get(l.target) ?? escape(l.target) })), treatments: treatments.results as Record<string, string>[], acceptances: acceptances.results as Record<string, string>[] }
    return c.isApi ? json({ ...detail, links: (links.results as { kind: string; target: string }[]) }) : riskPage(detail, await people(c.env), (await c.env.DB.prepare('SELECT id,name FROM tests ORDER BY name').all<{ id: string; name: string }>()).results, await vendors(c.env), c.now, c.actor.name)
   } },
+  { method: 'POST', pattern: both(`/risks/${id}`), run: async (c, m) => { await editRisk(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/risks/' + m[1], { updated: true }) } },
+  { method: 'POST', pattern: both(`/risks/${id}/links/remove`), run: async (c, m) => { await unlinkRisk(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/risks/' + m[1], { removed: true }) } },
   { method: 'POST', pattern: both(`/risks/${id}/assessments`), run: async (c, m) => done(c, '/app/risks/' + m[1], { id: await assess(c.env, c.actor, m[1], await readInput(c.request), c.now), method_revision: (await currentMethod(c.env)).revision }, 201) },
   { method: 'POST', pattern: both(`/risks/${id}/links`), run: async (c, m) => { await link(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/risks/' + m[1], { linked: true }, 201) } },
   { method: 'POST', pattern: both(`/risks/${id}/treatments`), run: async (c, m) => { await addTreatment(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/risks/' + m[1], { added: true }, 201) } },
