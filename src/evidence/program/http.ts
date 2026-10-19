@@ -1,3 +1,4 @@
+import { populationMemberships } from '../population/storage'
 import { day } from '../model'
 import { desk } from '../storage'
 import { done, json, ownerRoutes, readInput, uuid, type Route } from '../door'
@@ -73,7 +74,7 @@ export function programHandler(clock: () => Date) {
    const control = await requireControl(c.env, m[1]), report = await periodReport(c.env, m[1], c.url.searchParams.get('from') ?? '', c.url.searchParams.get('to') ?? '')
    return c.isApi ? json(report) : reportPage(control.name, report, c.actor.name)
   } },
-  { method: 'GET', pattern: both('/people'), run: async c => { const rows = (await c.env.DB.prepare('SELECT p.id,p.name,p.email,p.kind,p.created_at,d.departed_at,d.access_outcome FROM people p LEFT JOIN people_departures d ON d.person_id=p.id ORDER BY p.name,p.id').all<Person & { departed_at: string | null; access_outcome: string | null }>()).results; return c.isApi ? json({ people: rows }) : peoplePage(rows, c.actor.name) } },
+  { method: 'GET', pattern: both('/people'), run: async c => { const rows = (await c.env.DB.prepare('SELECT p.id,p.name,p.email,p.kind,p.created_at,d.departed_at,d.access_outcome FROM people p LEFT JOIN people_departures d ON d.person_id=p.id ORDER BY p.name,p.id').all<Person & { departed_at: string | null; access_outcome: string | null }>()).results; return c.isApi ? json({ people: rows }) : peoplePage(rows, c.actor.name, await populationMemberships(c.env, c.now)) } },
   { method: 'POST', pattern: both('/people'), run: async c => done(c, '/app/people', await addPerson(c.env, c.actor, await readInput(c.request), c.now), 201) },
   { method: 'POST', pattern: both(`/requirements/${id}/schedule`), run: async (c, m) => { await scheduleRequirement(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/requirements/' + m[1], { scheduled: true }) } },
   { method: 'POST', pattern: both(`/requirements/${id}/renewal-date`), run: async (c, m) => { await overrideRenewal(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/requirements/' + m[1], { overridden: true }) } },

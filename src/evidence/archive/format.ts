@@ -1,5 +1,5 @@
 export const MAGIC = new TextEncoder().encode('EVIDENCE-ARCHIVE\n')
-export const VERSION = 5
+export const VERSION = 6
 export const MAX_METADATA = 8 * 1024 * 1024
 export const MAX_FILE = 10 * 1024 * 1024
 export const MAX_TOTAL = 64 * 1024 * 1024

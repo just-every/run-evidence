@@ -70,7 +70,7 @@ acceptances expire and escalate; treatment tasks can be verified by a test.
 
 ## Custody archives
 
-Archive version 5 carries current program records, including historical scoring definitions and risk-library revision provenance. Versions 1–4 remain readable; legacy definitions are shown as not recorded. Restored API tokens cannot
+Archive version 6 carries current program records and verified original population files, including historical scoring definitions and risk-library revision provenance. Versions 1–5 remain readable; legacy definitions are shown as not recorded. Restored API tokens cannot
 authenticate and restored connections stay inactive until reconnected. The
 existing limits (8 MiB metadata, 20,000 rows) now count observations too; an
 installation past them gets an explicit refusal, never a truncated archive.

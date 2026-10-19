@@ -190,7 +190,7 @@ try {
    const magic = Buffer.from('EVIDENCE-ARCHIVE\n'), length = exported.readUInt32BE(magic.length)
    const envelope = JSON.parse(exported.subarray(magic.length+4,magic.length+4+length))
    const manifest = JSON.parse(envelope.manifest)
-   manifest.version = 4; manifest.extensions.program.rows.risk_methods = []
+   manifest.version = 4; delete manifest.extensions.program.files; manifest.extensions.program.rows.risk_methods = []
    for (const row of manifest.extensions.program.rows.risks) delete row.library_revision
    const text = JSON.stringify(manifest), legacyEnvelope = Buffer.from(JSON.stringify({manifest:text,sha256:createHash('sha256').update(text).digest('hex')}))
    const size = Buffer.alloc(4); size.writeUInt32BE(legacyEnvelope.length)

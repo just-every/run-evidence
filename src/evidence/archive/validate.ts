@@ -6,7 +6,7 @@ const timestamp = (v:unknown) => typeof v === 'string' && /^\d{4}-\d\d-\d\dT\d\d
 const nullable = new Set(['receipts.supersedes','review_folders.closed_at','review_events.folder_id','review_events.exhibit_id'])
 const id = (value:unknown) => typeof value === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(value)
 export function validateManifest(value:unknown): asserts value is Manifest {
- if(!object(value) || !exact(value,Number(value.version)>=2 ? ['format','version','created_at','rows','files','extensions'] : ['format','version','created_at','rows','files']) || value.format !== 'evidence-custody' || ![1,2,3,4,VERSION].includes(Number(value.version))) fail('Unsupported archive format or version.')
+ if(!object(value) || !exact(value,Number(value.version)>=2 ? ['format','version','created_at','rows','files','extensions'] : ['format','version','created_at','rows','files']) || value.format !== 'evidence-custody' || ![1,2,3,4,5,VERSION].includes(Number(value.version))) fail('Unsupported archive format or version.')
  if(!timestamp(value.created_at) || !object(value.rows) || !exact(value.rows,tables) || !Array.isArray(value.files)) fail('Invalid archive metadata.')
  const rows = value.rows as Record<Table,Row[]>, sets = {} as Record<Table,Map<string,Row>>
  let rowCount = 0

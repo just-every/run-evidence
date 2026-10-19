@@ -12,6 +12,7 @@ import { join, resolve, basename } from 'node:path'
 import { createServer } from 'node:net'
 import { createHash } from 'node:crypto'
 import { chromium } from 'playwright'
+import { populationJourney } from './helpers/population-browser.mjs'
 import { riskJourney } from './helpers/risk-browser.mjs'
 import { openSetupScreens } from './helpers/open-browser.mjs'
 import { moveInAndPrepare } from './helpers/move-in-browser.mjs'
@@ -132,6 +133,7 @@ try {
   await moveInAndPrepare(page,origin,width,capture,scratch)
   await openSetupScreens(page, origin, width, capture)
   await riskJourney(page, origin, width, capture)
+  await populationJourney(page, origin, width, capture)
   await context.close()
  }
  assert.deepEqual(errors,[],'No browser runtime or console errors')

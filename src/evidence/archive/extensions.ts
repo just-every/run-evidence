@@ -44,6 +44,7 @@ export function extensionStatements(env: Store, manifest: Manifest) {
 }
 export function archiveFiles(manifest: Manifest) {
  return [
+  ...(manifest.extensions?.program?.files ?? []),
   ...manifest.files.map(file => ({ ...file, object_key: String(manifest.rows.exhibits.find(r => r.id === file.exhibit_id)!.object_key) })),
   ...(manifest.extensions?.imports.files ?? []).map(file => ({ ...file, ...(!file.available ? { reason: 'Original import ZIP is missing or changed.' } : {}) })),
  ]

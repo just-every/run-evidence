@@ -1,3 +1,4 @@
+import { populationFiles, validatePopulationFiles, type PopulationFile } from './populations'
 import { retainDefaultMethod } from '../risk/method-default'
 import type { Bindings } from '../../auth.server'
 import { fail, type Row } from './format'
@@ -97,22 +98,24 @@ const addedColumns: Partial<Record<ProgramTable, Record<string, string | null>>>
 const addedInVersion5: Partial<Record<ProgramTable, Record<string, string | null>>> = { risk_methods: { likelihood_definitions: '[]', impact_definitions: '[]' }, risks: { library_revision: null } }
 const columnsOf = (table: ProgramTable, version: number) => programColumns[table].filter(c => (version >= 4 || !Object.hasOwn(addedColumns[table] ?? {}, c)) && (version >= 5 || !Object.hasOwn(addedInVersion5[table] ?? {}, c)))
 const tablesOf = (version: number) => programTables.filter(t => version >= 4 || !addedInVersion4.has(t))
-export interface ProgramArchive { rows: Record<ProgramTable, Row[]> }
-export async function exportProgramArchive(env: Pick<Bindings, 'DB'>): Promise<ProgramArchive> {
+export interface ProgramArchive { rows: Record<ProgramTable, Row[]>; files?: PopulationFile[] }
+export async function exportProgramArchive(env: Pick<Bindings, 'DB' | 'EXHIBITS'>): Promise<ProgramArchive> {
  const results = await env.DB.batch(programTables.map(t => env.DB.prepare(`SELECT ${programColumns[t].join(',')} FROM ${t} ORDER BY rowid LIMIT 20001`)))
- return { rows: Object.fromEntries(programTables.map((t, i) => [t, results[i].results as Row[]])) as ProgramArchive['rows'] }
+ const rows = Object.fromEntries(programTables.map((t, i) => [t, results[i].results as Row[]])) as ProgramArchive['rows']
+ return { rows, files: await populationFiles(env, rows.population_uploads) }
 }
 export const programRowCount = (value: ProgramArchive) => Object.values(value.rows).reduce((sum, rows) => sum + rows.length, 0)
 const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v)
 export function validateProgramExtension(value: unknown, version: number): asserts value is ProgramArchive {
  const expected = tablesOf(version)
- if (!object(value) || Object.keys(value).join() !== 'rows' || !object(value.rows) || Object.keys(value.rows).length !== expected.length || expected.some(t => !Array.isArray((value.rows as Record<string, unknown>)[t]))) fail('Invalid program archive extension: every program table must be listed exactly.')
+ if (!object(value) || Object.keys(value).sort().join() !== (version >= 6 ? 'files,rows' : 'rows') || !object(value.rows) || Object.keys(value.rows).length !== expected.length || expected.some(t => !Array.isArray((value.rows as Record<string, unknown>)[t]))) fail('Invalid program archive extension: every program table must be listed exactly.')
  let count = 0
  for (const table of expected) for (const row of (value.rows as Record<string, unknown[]>)[table]) {
   const columns = columnsOf(table, version)
   if (++count > 20000 || !object(row) || Object.keys(row).length !== columns.length || columns.some(c => !Object.hasOwn(row, c))) fail(`Invalid ${table} row in the program archive.`)
   for (const field of Object.values(row)) if (!(field === null || (typeof field === 'number' && Number.isFinite(field)) || (typeof field === 'string' && field.length <= 262144))) fail(`Invalid ${table} field in the program archive.`)
  }
+ if (version >= 6) validatePopulationFiles(value.files, (value.rows as ProgramArchive['rows']).population_uploads)
 }
 // Restored grants hold no authority: tokens lack digests, and connections and
 // ticket destinations and Slack or Teams channels wait without credentials

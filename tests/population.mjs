@@ -22,7 +22,7 @@ const rosterFields = { kind: 'roster', source_system: 'Justworks', as_of: '2026-
 const people = {}
 let first
 try {
- await scenario('A roster and an app account list are checked row by row and admitted whole; a renamed column is mapped, an ambiguous match is resolved and an unmatched row stays visible, all labelled manual', async () => {
+ await scenario('POPULATION-001: a roster and an app account list are checked row by row and admitted whole; a renamed column is mapped, an ambiguous match is resolved and an unmatched row stays visible, all labelled manual', async () => {
   await app.signin()
   for (const [k, name, email] of [['ana', 'Ana Ruiz', 'ana@northstar.test'], ['sam1', 'Sam Lee', 'sam.lee@northstar.test'], ['sam2', 'Sam Lee', 'samuel.lee@northstar.test'], ['ben', 'Ben Ode', 'ben@northstar.test']]) people[k] = (await post('/api/people', { name, email, kind: 'employee' })).id
   const bad = roster([['ana@northstar.test', 'Ana Ruiz', 'W-2', '2024-01-02', ''], ['not-an-email', 'Pat', 'W-2', '2024-01-02', ''], ['ana@northstar.test', 'Ana Again', '1099', '2025-13-40', ''], ['', '', '', '', '']])
@@ -57,12 +57,23 @@ try {
   assert.equal(inventory.unmatched.accounts, 1)
   assert.deepEqual(inventory.people.find(p => p.email === 'ana@northstar.test').manual.map(m => m.replace(/uploaded .*\)/, 'uploaded)')).sort(), ['Figma accounts (manual, uploaded)', 'Justworks roster (manual, uploaded)'])
   const listed = (await get('/api/populations')).uploads
-  assert.ok(listed.every(u => u.provenance === 'manually-asserted' && u.state === 'current'))
+  assert.ok(listed.every(u => u.provenance === 'manually-asserted' && u.state === 'current' && u.uploaded_name === 'Evidence owner' && u.uploaded_at === '2026-10-11T12:00:00.000Z'))
   const file = await app.fetch(`/app/populations/${first.id}/file`)
   assert.equal(file.status, 200); assert.equal(await file.text(), good)
   assert.match(await (await app.fetch('/app/inventory')).text(), /needs a source read/)
+  const peoplePage = await (await app.fetch('/app/people')).text()
+  assert.match(peoplePage, /Justworks roster \(manual, uploaded 2026-10-11; current\)/)
+  assert.match(peoplePage, /Figma accounts \(manual, uploaded 2026-10-11; current\)/)
+  const deviceCsv = 'serial,owner_email,hostname,encrypted\r\nNS-01,ana@northstar.test,Ana MacBook,yes\r\n'
+  const deviceFields = { kind: 'devices', source_system: 'Manual fleet', as_of: '2026-10-10', refresh_days: '30', filename: 'devices.csv' }
+  const deviceDry = (await upload(deviceFields, deviceCsv, 200)).body
+  const device = (await upload({ ...deviceFields, confirm: 'yes', sha256: deviceDry.sha256 }, deviceCsv, 201)).body
+  assert.equal((await get('/api/populations/' + device.id)).upload.provenance, 'manually-asserted')
+  const manualDevice = (await get('/api/inventory')).devices[0]
+  assert.equal(manualDevice.encrypted, true); assert.equal(manualDevice.tests, 'unknown: needs a source read')
+  assert.equal(manualDevice.provenance, 'manually-asserted')
  })
- await scenario('A revised roster keeps the original file and shows joiners, leavers and removed rows; past its refresh window a population is stale', async () => {
+ await scenario('POPULATION-001: a revised roster keeps the original file and shows joiners, leavers and removed rows; past its refresh window a population is stale', async () => {
   const revised = roster([['ana@northstar.test', 'Ana Ruiz', 'W-2', '2024-01-02', ''], ['ben@northstar.test', 'Ben Ode', 'W-2', '2023-05-01', '2026-10-20'], ['cy@northstar.test', 'Cy Park', 'W-2', '2026-10-21', '']])
   const fields = { ...rosterFields, as_of: '2026-10-22', filename: 'justworks-oct22.csv' }
   const dry = (await upload(fields, revised, 200)).body
@@ -76,6 +87,40 @@ try {
   assert.equal(states[first.id], 'stale'); assert.equal(states[second.id], 'current')
   await app.clock('2026-12-01T12:00:00Z')
   assert.equal((await get('/api/populations')).uploads.find(u => u.id === second.id).state, 'stale')
+  const uploads = (await get('/api/populations')).uploads
+  const originals = await Promise.all(uploads.map(async u => [u.id, await (await app.fetch(`/app/populations/${u.id}/file`)).text()]))
+  const raw = new Uint8Array(await (await app.fetch('/api/archive/export')).arrayBuffer())
+  const destination = await runtime()
+  try {
+   await destination.signin(); await destination.clock('2026-12-01T12:00:00Z')
+   const restore = (bytes, dry = false) => destination.fetch('/api/archive/restore' + (dry ? '?dry-run=1' : ''), { method: 'POST', headers: { origin: destination.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore' }, body: bytes })
+   assert.equal((await restore(raw, true)).status, 200)
+   assert.equal((await (await destination.fetch('/api/populations')).json()).uploads.length, 0)
+   const restored = await restore(raw); assert.equal(restored.status, 200, await restored.clone().text())
+   for (const [id, text] of originals) {
+    const file = await destination.fetch(`/app/populations/${id}/file`)
+    assert.equal(file.status, 200); assert.equal(await file.text(), text)
+    const before = await get('/api/populations/' + id), after = await (await destination.fetch('/api/populations/' + id)).json()
+    assert.deepEqual(after, before)
+   }
+   assert.deepEqual(await (await destination.fetch('/api/inventory')).json(), await get('/api/inventory'))
+  } finally { await destination.close() }
+  const bucket = await app.mf.getR2Bucket('EXHIBITS')
+  const key = (await app.db.prepare('SELECT object_key FROM population_uploads WHERE id=?').bind(first.id).first()).object_key
+  await bucket.put(key, 'changed original')
+  const manifest = (await get('/api/archive/manifest')).manifest
+  const file = manifest.extensions.program.files.find(f => f.path.endsWith(first.id))
+  assert.equal(file.available, false); assert.match(file.reason, /changed/)
+  assert.equal((await app.fetch(`/app/populations/${first.id}/file`)).status, 410)
+  const missingRaw = new Uint8Array(await (await app.fetch('/api/archive/export')).arrayBuffer())
+  const unavailable = await runtime()
+  try {
+   await unavailable.signin()
+   const restored = await unavailable.fetch('/api/archive/restore', { method: 'POST', headers: { origin: unavailable.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore' }, body: missingRaw })
+   assert.equal(restored.status, 200, await restored.clone().text())
+   assert.equal((await unavailable.fetch(`/app/populations/${first.id}/file`)).status, 410)
+   assert.equal((await (await unavailable.fetch('/api/populations/' + first.id)).json()).upload.id, first.id)
+  } finally { await unavailable.close() }
  })
  console.log(`${passed} population public-door scenarios passed.`)
 } finally { await app.close() }

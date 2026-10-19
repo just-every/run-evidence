@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict'
+// POPULATION-001: the owner can complete the reviewed import with real file inputs.
+export async function populationJourney(page, origin, width, capture) {
+ const source = `Justworks workforce ${width}`
+ const csv = Buffer.from('Work Email,Full Name,Employment Type\r\nana@northstar.test,Ana Ruiz,W-2\r\nunknown@northstar.test,New contractor,1099\r\n')
+ await page.goto(origin + '/app/people')
+ const person = await page.request.post(origin + '/api/people', { headers: { origin }, data: { name: `Ana Ruiz ${width}`, email: `ana-${width}@northstar.test`, kind: 'employee' } })
+ assert.equal(person.status(), 201)
+ const personId = (await person.json()).id
+ await page.goto(origin + '/app/inventory')
+ await page.getByRole('link', { name: 'Upload a population' }).click()
+ await page.getByLabel('Source system', { exact: true }).fill(source)
+ await page.getByLabel('True as of', { exact: true }).fill(new Date().toISOString().slice(0, 10))
+ await page.getByLabel('File (CSV or XLSX)', { exact: true }).setInputFiles({ name: 'justworks.csv', mimeType: 'text/csv', buffer: csv })
+ await page.getByText('Renamed columns', { exact: true }).click()
+ await page.getByLabel('Column for email', { exact: true }).fill('Work Email')
+ await page.getByLabel('Column for name', { exact: true }).fill('Full Name')
+ await page.getByRole('button', { name: 'Check every row', exact: true }).click()
+ await page.getByRole('heading', { name: 'Dry run: nothing is admitted yet' }).waitFor()
+ await capture(page, `${width}-population-review`)
+ await page.getByLabel('Same file', { exact: true }).setInputFiles({ name: 'justworks.csv', mimeType: 'text/csv', buffer: csv })
+ await page.getByRole('button', { name: 'Confirm this population', exact: true }).click()
+ await page.waitForURL(/\/app\/populations\/[a-f0-9-]+$/)
+ const populationPath = new URL(page.url()).pathname
+ await page.getByLabel('Person for row 2').selectOption(personId)
+ await page.getByRole('button', { name: 'Decide', exact: true }).first().click()
+ await page.getByRole('heading', { name: 'Rows and matches', exact: true }).waitFor()
+ assert.equal(new URL(page.url()).pathname, populationPath)
+ await capture(page, `${width}-population-admitted`)
+ const detail = await (await page.request.get(origin + populationPath.replace('/app/', '/api/'))).json()
+ assert.equal(detail.rows[0].match.state, 'approved')
+ assert.equal(detail.rows[1].match, null)
+ assert.equal(detail.upload.provenance, 'manually-asserted')
+ const download = await page.request.get(origin + populationPath + '/file')
+ assert.deepEqual(await download.body(), csv)
+ await page.goto(origin + '/app/people')
+ assert.match(await page.locator('main').innerText(), new RegExp(source + ' roster \\(manual, uploaded'))
+ await capture(page, `${width}-population-people`)
+ await page.goto(origin + '/app/inventory')
+ assert.match(await page.locator('main').innerText(), /manual/)
+ await capture(page, `${width}-population-inventory`)
+ console.log(`PASS POPULATION-001 browser import, matching, original download and People at ${width}`)
+}

@@ -86,7 +86,7 @@ export async function admit(env: Bindings, actor: Actor, upload: Upload, now: Da
  return { id, rows: rows.length }
 }
 export async function decide(env: Bindings, actor: Actor, rowId: string, input: Record<string, unknown>, now: Date) {
- const row = await env.DB.prepare('SELECT id FROM population_rows WHERE id=?').bind(rowId).first()
+ const row = await env.DB.prepare('SELECT id,upload_id FROM population_rows WHERE id=?').bind(rowId).first<{ id: string; upload_id: string }>()
  if (!row) throw new Refusal('Row not found.', 404)
  const decision = String(input.decision), person = typeof input.person_id === 'string' && input.person_id ? input.person_id : null
  if (!['approved', 'rejected'].includes(decision)) throw new Refusal('Approve or reject the match.')
@@ -95,6 +95,7 @@ export async function decide(env: Bindings, actor: Actor, rowId: string, input: 
  if (decision === 'approved' && !chosen) throw new Refusal('Choose the person this row belongs to.')
  if (chosen && !await env.DB.prepare('SELECT 1 FROM people WHERE id=?').bind(chosen).first()) throw new Refusal('Choose a person from People.')
  await env.DB.batch([env.DB.prepare("INSERT INTO population_matches(row_id,person_id,state,basis,decided_by,decided_at) VALUES(?,?,?,'owner choice',?,?) ON CONFLICT(row_id) DO UPDATE SET person_id=excluded.person_id,state=excluded.state,basis=CASE WHEN population_matches.person_id IS excluded.person_id THEN population_matches.basis ELSE 'owner choice' END,decided_by=excluded.decided_by,decided_at=excluded.decided_at").bind(rowId, chosen, decision, actor.name, now.toISOString()), auditStatement(env, actor, 'population.match-' + decision, 'population-row:' + rowId, now, 'succeeded', chosen ?? '')])
+ return row.upload_id
 }
 export interface RowView { id: string; row_number: number; row_key: string; attributes: Record<string, unknown>; match: { person_id: string | null; person: string | null; state: string; basis: string; candidates: string[] } | null }
 export async function uploads(env: Bindings, now: Date) {
@@ -119,4 +120,16 @@ export async function differences(env: Bindings, upload: { id: string; kind: Kin
   removed: [...before.keys()].filter(k => !keys.has(k)),
   leavers: upload.kind === 'roster' ? now.filter(r => leaver(r) && !(before.get(r.row_key) && leaver(before.get(r.row_key)!))).map(r => r.row_key) : [],
  }
+}
+
+// Latest approved list memberships for the People door; retain manual attribution.
+export async function populationMemberships(env: Bindings, now: Date) {
+ const latest = new Map<string, Awaited<ReturnType<typeof uploads>>[number]>()
+ for (const u of await uploads(env, now)) if (!latest.has(u.kind + '|' + u.source_system)) latest.set(u.kind + '|' + u.source_system, u)
+ const memberships = new Map<string, string[]>()
+ for (const u of latest.values()) for (const r of await rows(env, u.id)) if (r.match?.state === 'approved' && r.match.person_id) {
+  const id = r.match.person_id
+  memberships.set(id, [...(memberships.get(id) ?? []), `${u.source_system} ${u.kind} (manual, uploaded ${u.uploaded_at.slice(0, 10)}; ${u.state})`])
+ }
+ return memberships
 }

@@ -1,6 +1,6 @@
 # Backup and restore
 
-An Evidence archive carries the business records and retained exhibit bytes together. It includes controls, requirements, immutable receipts, review folders, access events, import custody and agent preparations and decisions. Treat the downloaded archive as sensitive business evidence.
+An Evidence archive carries the business records and retained exhibit bytes together. It includes controls, requirements, immutable receipts, review folders, access events, import custody agent preparations and decisions, and original CSV/XLSX population files. Missing population bytes remain listed as unavailable; older archives that never carried those bytes cannot recover them. Treat the downloaded archive as sensitive business evidence.
 
 ## Export from Yours
 
