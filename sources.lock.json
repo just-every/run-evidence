@@ -6072,7 +6072,7 @@
       "executable": false
     },
     "tests/inventory.mjs": {
-      "sha256": "fe0a7ee9ed2ec55fd8f39b657ba6e0500a9c24678fec37d0f06f0a08f05f4b54",
+      "sha256": "7612f336d0c9f3d9a3837cf79476065937b519585006b55886ebd37ed3ddd1ca",
       "executable": false
     },
     "tests/open.mjs": {

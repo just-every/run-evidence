@@ -84,7 +84,9 @@ try {
   const next=await post('/api/training/campaigns',{name:'Next engineering training',course_id:'security-awareness',kind:'recurring',audience:'engineering',due_days:'30',interval_months:'12'})
   const training=await get('/api/training');assert.equal(training.assignments.filter(a=>a.campaign==='Next engineering training').length,1);assert.equal(training.assignments.find(a=>a.campaign==='Next engineering training').email,'morgan-unmatched@northstar.test');assert.ok(training.assignments.some(a=>a.email==='morgan@northstar.test'&&a.state==='departed'))
   assert.equal((await get('/api/people')).people.length,beforePeople.length)
-  const after=await get('/api/access-reviews/'+access.id);assert.deepEqual(after.items,review.items,'earlier access population remains frozen')
+  const after=await get('/api/access-reviews/'+access.id),frozen=items=>items.map(({person,...item})=>item);assert.deepEqual(frozen(after.items),frozen(review.items),'earlier access population remains frozen')
+  // ACCESS-001: People reconciliation is live; the departed person's account now says so.
+  assert.ok(after.items.some(i=>i.person?.id===person.id&&i.person.departed_at))
   console.log('INVENTORY-001 consumer campaigns',Boolean(campaign.id&&next.id&&accounts.id))
  })
  console.log(`${passed} INVENTORY-001 public-door scenarios passed.`)
