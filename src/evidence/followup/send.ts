@@ -2,7 +2,6 @@ import { capabilityAllowed } from '../archive/capabilities'
 import type { Bindings } from '../../auth.server'
 import { operatorMail } from '../../mail.server.mjs'
 import { escape } from '../ui'
-import { auditStatement } from '../door'
 import { activeChannel, deliver, type Outcome } from './channels'
 import { inBusinessWindow, settings } from './settings'
 // FOLLOWUP-001 delivery. One durable row per kind, subject and cycle
@@ -12,7 +11,6 @@ import { inBusinessWindow, settings } from './settings'
 // A provider acknowledgement never means a person acted.
 export interface Followup { kind: string; subject: string; cycle: string; recipient: string; title: string; text: string; link?: string; scheduled?: boolean }
 export type SendResult = 'duplicate' | 'deferred' | 'paused' | Outcome['state']
-const sender = { id: 'system', name: 'Evidence follow-ups', kind: 'system' as const }
 async function email(env: Bindings, id: string, message: Followup): Promise<Outcome> {
  const sender = operatorMail(env)
  if (!sender || !env.MAIL_FROM) return { state: 'failed', detail: 'Mail is not configured; set MAIL_PROVIDER and MAIL_FROM.' }
@@ -38,11 +36,13 @@ export async function sendFollowup(env: Bindings, message: Followup, now: Date):
  }
  // LOG-001: every attempt is audited with its outcome; an uncertain one stays
  // uncertain until the owner records how it resolved (resolve.ts).
- await env.DB.batch([
-  env.DB.prepare('UPDATE followups SET state=?,detail=?,attempted_at=? WHERE id=?').bind(outcome.state, outcome.detail, at, id),
-  auditStatement(env, sender, 'followup.sent', 'followup:' + id, now, outcome.state === 'accepted' ? 'succeeded' : outcome.state, `${message.kind} via ${via}: ${outcome.detail}`),
+ const completion = await env.DB.batch([
+  // OPS-001: a delayed provider answer cannot overwrite an interrupted
+  // delivery already reconciled as uncertain. Audit and completion are atomic.
+  env.DB.prepare("INSERT INTO product_audit(id,actor_kind,actor_id,actor_name,action,subject,outcome,detail,at) SELECT ?,'system','system','Evidence follow-ups','followup.sent',?,?,?,? WHERE EXISTS(SELECT 1 FROM followups WHERE id=? AND state='pending')").bind(crypto.randomUUID(), 'followup:' + id, outcome.state === 'accepted' ? 'succeeded' : outcome.state, `${message.kind} via ${via}: ${outcome.detail}`.slice(0,500), at, id),
+  env.DB.prepare("UPDATE followups SET state=?,detail=?,attempted_at=? WHERE id=? AND state='pending'").bind(outcome.state, outcome.detail, at, id),
  ])
- return outcome.state
+ return completion[1].meta.changes ? outcome.state : 'uncertain'
 }
 export const sent = (result: SendResult) => result === 'accepted' || result === 'failed' || result === 'uncertain'
 export const followups = async (env: Bindings, limit = 200) => (await env.DB.prepare('SELECT * FROM followups ORDER BY created_at DESC,rowid DESC LIMIT ?').bind(limit).all<{ id: string; kind: string; subject_id: string; cycle_key: string; recipient: string; state: string; detail: string; created_at: string; attempted_at: string | null; channel: string }>()).results

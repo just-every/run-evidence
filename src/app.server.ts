@@ -1,3 +1,5 @@
+import { configurationFailures, configurationRefusal } from './evidence/ops/configuration'
+import { operationsHandler } from './evidence/ops/http'
 import { frameworkHandler } from './evidence/framework/http'
 import { collectorHandler } from './evidence/collector/ingest'
 import { collectorOwnerHandler } from './evidence/collector/http'
@@ -42,13 +44,17 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
  const evidence = evidenceHandler(clock)
  const review = reviewHandler(clock)
  const archive = archiveHandler(clock)
- const program = [frameworkHandler(clock), collectorOwnerHandler(clock), programHandler(clock), auditHandler(clock), testHandler(clock), remedyHandler(clock), connectHandler(clock), riskHandler(clock), policyHandler(clock), workHandler(clock), followupHandler(clock), identityHandler(clock), attestHandler(clock), recurringReviews(clock), populationHandler(clock), inventoryHandler(clock), accessHandler(clock), trainingHandler(clock), handoverHandler(clock), vulnHandler(clock)]
+ const program = [operationsHandler(clock), frameworkHandler(clock), collectorOwnerHandler(clock), programHandler(clock), auditHandler(clock), testHandler(clock), remedyHandler(clock), connectHandler(clock), riskHandler(clock), policyHandler(clock), workHandler(clock), followupHandler(clock), identityHandler(clock), attestHandler(clock), recurringReviews(clock), populationHandler(clock), inventoryHandler(clock), accessHandler(clock), trainingHandler(clock), handoverHandler(clock), vulnHandler(clock)]
  const api = apiHandler(clock)
  const hooks = hookHandler(clock)
  const member = memberHandler(clock)
  return (request: Request, env: Bindings) => withShellScope(request, env, () => respond(request, env))
  async function respond(request: Request, env: Bindings) {
   const path = new URL(request.url).pathname
+  if (/^\/(?:app(?:\/|$)|api(?:\/|$)|auth(?:\/|$)|v1(?:\/|$)|collectors\/|hooks\/|signin$|setup$)/.test(path)) {
+   const missing = configurationFailures(runtimeBindings(env))
+   if (missing.length) return configurationRefusal(missing)
+  }
   if (path.startsWith('/collectors/')) return collectors(request, env)
   // The public API takes Bearer tokens only, outside every owner door.
   if (path.startsWith('/v1/')) return api(request,env)

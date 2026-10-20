@@ -18,6 +18,8 @@ export const businessRows=(t:string,table=quote(t))=>t==='product_audit'?`(SELEC
 export const portableTables = Object.keys(registry)
 export const localTables = Object.keys(schema).filter(t=>!Object.hasOwn(registry,t))
 export const portableLocal:Record<string,string[]> = {
+ // OPS-001: execution attempts belong to this installation; restoration never replays them.
+ operation_steps:['id','step','scheduled_at','lease_until','finished_at','outcome','processed_count','detail'],
  portable_journal_stage:['session_id','lineage','sequence','recorded_at','receipt'],
  portable_state:['singleton','lineage','generation'], portable_journal:['lineage','sequence','recorded_at','receipt'],
  portable_history:['lineage','sequence','checked_at'], portable_capabilities:['capability','subject','authorized_by','authorized_at'],

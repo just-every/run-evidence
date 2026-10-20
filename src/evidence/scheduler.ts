@@ -1,3 +1,5 @@
+import { configurationFailures } from './ops/configuration'
+import { runStep, reconcileDeliveries } from './ops/outcomes'
 import { capabilityAllowed } from './archive/capabilities'
 import type { Bindings } from '../auth.server'
 import { runDueTests, runTest } from './tests/engine'
@@ -19,8 +21,11 @@ import { handoverWork } from './handover/storage'
 // read linked tracker tickets, run due tests, run queued re-tests, then send deduplicated follow-ups. Each
 // step records its own durable outcome; a failed step does not hide the others.
 export async function scheduledWork(env: Bindings, now: Date) {
+ const missing = configurationFailures(env)
+ if (missing.length) throw new Error('Required configuration is missing or invalid: ' + missing.join(', '))
  const outcome: Record<string, number | string> = {}
- const step = async (name: string, work: () => Promise<number>) => { try { outcome[name] = await work() } catch (error) { console.error('Scheduled step failed', name, error instanceof Error ? error.message : ''); outcome[name] = 'failed' } }
+ const step = async (name: string, work: () => Promise<number>) => { outcome[name] = await runStep(env, name, now, work) }
+ await step('delivery reconciliation', () => reconcileDeliveries(env, now))
  await step('collections', () => collectDue(env, now))
  await step('tickets', () => syncDue(env, now))
  if (!await capabilityAllowed(env,'schedules')) return outcome
