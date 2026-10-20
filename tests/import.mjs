@@ -82,7 +82,7 @@ try{
   const desk=await(await app.fetch('/api/desk?date=2026-10-11')).json();assert.ok(desk.requirements.some(r=>r.id===later.requirement_id&&['covered','due soon'].includes(r.gap)))
   assert.ok((await rows(app,'ik_originals')).length>=2);assert.ok((await rows(app,'import_reviews'))[0].approved_at)
  })
- await scenario('LOG-001 / Uploads, refused and approved commits, undo and evidence replacement are audited with outcomes; the owner filters and exports the audit, each export is recorded, and a restart keeps it',async()=>{
+ await scenario('LOG-001 / Uploads, refused and approved commits, undo, evidence replacement and refused owner writes are audited with outcomes; the owner filters and exports the audit, each export is recorded, and a restart and a restore keep it',async()=>{
   assert.equal((await app.fetch('/api/audit',{headers:{cookie:''}})).status,401)
   assert.equal((await app.fetch('/api/audit?from=2026-10-12&to=2026-10-11')).status,400)
   const trail=async query=>(await(await app.fetch('/api/audit'+query)).json()).entries
@@ -102,8 +102,21 @@ try{
   const replacement=(await rows(app,'receipts')).find(r=>r.supersedes===later.id),receipts=await trail('?action=receipt.')
   assert.ok(receipts.some(e=>e.action==='receipt.added'&&e.subject==='receipt:'+later.id))
   assert.ok(receipts.some(e=>e.action==='receipt.superseded'&&e.subject==='receipt:'+replacement.id&&e.detail===`sha256 ${replacement.sha256.slice(0,16)} supersedes receipt:${later.id}`))
+  // A refused owner write is recorded with the door it reached, never its body.
+  assert.equal((await app.fetch('/api/programs',{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify({framework:'none',note:'synthetic-secret-body'})})).status,400)
+  const refused=(await trail('?action=door.refused')).at(0)
+  assert.deepEqual([refused.subject,refused.outcome,refused.actor_name],['POST /api/programs','refused','Evidence owner']);assert.match(refused.detail,/^400: Choose SOC 2/);assert.doesNotMatch(JSON.stringify(refused),/synthetic-secret-body/)
   await app.clock('2026-10-11T12:05:00Z')
   assert.deepEqual(await trail('?action=import.'),imports)
+  // Restore into an empty installation keeps every entry, attributable and unchanged.
+  const all=await trail(''),receiver=await runtime()
+  try {
+   await receiver.signin()
+   const restored=await receiver.fetch('/api/archive/restore',{method:'POST',headers:{origin:receiver.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:Buffer.from(await(await app.fetch('/api/archive/export')).arrayBuffer())})
+   assert.equal(restored.status,200,await restored.clone().text())
+   const kept=(await(await receiver.fetch('/api/audit')).json()).entries,ids=new Set(kept.map(e=>JSON.stringify(e)))
+   for(const entry of all)assert.ok(ids.has(JSON.stringify(entry)),entry.action)
+  }finally{await receiver.close()}
  })
  console.log(`${passed} import scenarios passed`)
 }finally{await app?.close();await target?.close()}

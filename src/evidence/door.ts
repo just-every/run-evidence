@@ -29,7 +29,11 @@ export function ownerRoutes(routes: Route[], clock: () => Date) {
   const context: OwnerContext = { env, actor: { id: session.operator.id, name: session.operator.displayName }, now: clock(), url, request, isApi }
   try { return await hit.route.run(context, hit.match!) }
   catch (error) {
-   if (!(error instanceof Refusal)) { console.error('Evidence operation failed', error instanceof Error ? error.message : ''); return json({ error: 'Storage unavailable; no result is claimed.' }, 503) }
+   // LOG-001: a refused or failed owner write is recorded with its outcome,
+   // naming the door (method and path, never the query or body).
+   const record = (outcome: 'refused' | 'failed', detail: string) => method === 'GET' ? Promise.resolve() : auditStatement(env, context.actor, 'door.' + outcome, `${method} ${url.pathname}`, context.now, outcome, detail).run().then(() => undefined, failure => console.error('Evidence audit write failed', failure instanceof Error ? failure.message : ''))
+   if (!(error instanceof Refusal)) { console.error('Evidence operation failed', error instanceof Error ? error.message : ''); await record('failed', 'Storage unavailable; no result is claimed.'); return json({ error: 'Storage unavailable; no result is claimed.' }, 503) }
+   await record('refused', `${error.status}: ${error.message}`)
    return isApi ? json({ error: error.message, ...(error.details ? { details: error.details } : {}) }, error.status) : page('Could not save', `<p role="alert">${escape(error.message)}</p>${Array.isArray(error.details) ? `<ul>${error.details.map(d => `<li>${escape(typeof d === 'string' ? d : JSON.stringify(d))}</li>`).join('')}</ul>` : ''}<p><a href="${escape(hit.route.errorReturn ?? (request.headers.get('referer') && new URL(request.headers.get('referer')!).origin === env.AUTH_ORIGIN ? new URL(request.headers.get('referer')!).pathname : '/app'))}">Go back</a></p>`, error.status)
   }
  }
