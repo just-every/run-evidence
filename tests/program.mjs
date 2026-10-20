@@ -28,13 +28,14 @@ try {
   contributor = await post('/api/people', { name: 'Sam Ortiz', email: 'sam@northstar.test', kind: 'contractor' })
   assert.equal((await app.fetch('/api/people', { method: 'POST', headers: { origin: app.origin, 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Dup', email: 'PRIYA@northstar.test', kind: 'employee' }) })).status, 409)
  })
- await scenario('Each core program starts pre-mapped to the library with no unmapped requirement and no certification claim', async () => {
+ await scenario('LIBRARY-001: Each core program starts pre-mapped to the library with no unmapped requirement, a test or named proof on every mapped control, and no certification claim', async () => {
   soc2 = (await program('soc2', { categories: ['Availability'], lead_person_id: owner.id })).id
   iso = (await program('iso27001')).id; hipaa = (await program('hipaa')).id; pci = (await program('pci', { audit_from: '2026-01-01', audit_to: '2026-12-31' })).id
   for (const [id, total] of [[soc2, 61], [iso, 118], [hipaa, 67], [pci, 71]]) {
    const { program: row, readiness } = await get('/api/programs/' + id)
    assert.equal(readiness.totals.requirements, total); assert.equal(readiness.totals.unmapped, 0)
    assert.ok(readiness.requirements.filter(r => r.state === 'included').every(r => r.controls.length > 0))
+   assert.ok(readiness.requirements.flatMap(r => r.controls).every(c => c.evidence.length > 0 || c.tests?.tests > 0))
    assert.deepEqual(JSON.parse(row.products), ['Web app', 'API'])
   }
   const soc = (await get('/api/programs/' + soc2)).readiness

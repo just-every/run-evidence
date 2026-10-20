@@ -16,6 +16,8 @@ import { boardCsv, boardReport } from './board'
 import { boardFilters } from './report-filters'
 import { boardPage } from './board-view'
 import { boundaryPanel, handoffPack } from './boundary'
+import { acceptLibraryRevision, libraryReview } from './library'
+import { libraryPage } from './library-view'
 const id = `(${uuid})`
 const both = (path: string) => new RegExp(`^/(?:app|api)${path}$`)
 
@@ -27,6 +29,8 @@ export function programHandler(clock: () => Date) {
    const rows = await Promise.all(selected.map(async p => ({ ...p, totals: (await readiness(c.env, p, c.now)).totals })))
    return c.isApi ? json({ programs: rows }) : programsPage(rows, await people(c.env), c.actor.name, {framework,product})
   } },
+  { method: 'GET', pattern: both('/library'), run: async c => { const review = await libraryReview(c.env); return c.isApi ? json(review) : libraryPage(review, c.actor.name) } },
+  { method: 'POST', pattern: both('/library/revisions/(\\d{1,6})'), errorReturn: '/app/library', run: async (c, m) => done(c, '/app/library', await acceptLibraryRevision(c.env, c.actor, Number(m[1]), await readInput(c.request), c.now)) },
   { method: 'POST', pattern: both('/programs'), run: async c => {
    const input = await readInput(c.request)
    if (typeof input.framework_edition === 'string') { const [framework, edition] = input.framework_edition.split('|'); input.framework = framework; input.edition = edition ?? '' }

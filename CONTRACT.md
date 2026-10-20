@@ -104,7 +104,13 @@ Each ships requirements (with licensed text where required), pre-mapped library 
 
 A platform that does not expose an evidence class lists it in its catalog as unsupported, together with the manual evidence requirement that replaces it; an unsupported class never counts as passing.
 
+Every connector that exists today (AWS, Google Cloud and Azure under CLOUD-001; Okta, Google Workspace, Entra ID and JumpCloud under IDENTITY-001; GitHub under CODE-001 and CONNECT-001) ships its catalog and is enumerated by the build-time check. Each later clause that adds a connector ships its catalog, per-provider remediation steps (with a Terraform snippet or a stated absence of a Terraform provider) and build-time check entries before it ships: CLOUD-002 (hosting, edge and managed data, including the Vercel deployment-protection test), APPS-001 (app accounts), VULN-001 (vulnerability), ISSUES-001 (security issues and incidents), MONITOR-001 (monitoring and alerting), HRIS-001 (HRIS) and DEVICE-001 (device).
+
 Each catalog entry states the criteria, evaluated resource type, mapped controls and cadence, plus remediation steps for every provider it runs against: the console steps, the equivalent CLI or API call and, for cloud and hosting configuration tests on a platform with a Terraform provider, a Terraform snippet that sets the passing configuration. A platform without a Terraform provider has its entry say so. A test's Results page shows these steps in a How to remediate panel for the provider of each failing resource, and the guidance on its REMEDY-001 obligation is drawn from them, pinned to the library revision. Scheduled configuration tests run at least once per hour per connected account, and population and period tests at least daily. Each catalog entry and the readiness view show the last-run time, and a missed run appears as a stale interval, never as a carried-forward pass. Library updates arrive as reviewable revisions and never retroactively change results.
+
+Library revisions work as follows. Every installation starts at shipped library revision 1. Each later shipped revision is a change set of control-to-requirement mappings, listed under Control library (`/app/library`, `/api/library`) with the programs on this installation it would affect. Program mappings, readiness, the control page and newly adopted controls follow the installation's accepted revision until the owner accepts a later one with a reason (audited as `library.revision-accepted`). Accepting revision N applies every change set up to N; an accepted revision is never rolled back. Every test run records the library revision in force when it ran; that record is append-only, travels in archives, and is never rewritten by a later acceptance. Runs in archives that predate library revisions restore as revision 1, the only revision shipped then. Shipped revisions change mappings only. A revision that changes catalogue criteria or remediation steps must carry them in its change set before it ships. An obligation's How to remediate panel names the library revision of the item's latest observation.
+
+Acceptance runs against fakes built from each provider's documented API at the network edge, as CLOUD-001 does. Applying the Terraform snippet in a live sandbox account is labelled in the Gap.
 
 **Acceptance evidence:** Create each core program on a fresh installation: readiness reports zero unmapped requirements, and every mapped control shows a test or an evidence requirement. A build-time catalog check enumerates every program requirement and every listed connector evidence class, and fails on any requirement with no control, any control with neither test nor evidence requirement, or any evidence class with neither a shipped test nor an explicit unsupported entry naming its replacement evidence requirement. The same check fails on any test entry with no remediation steps for a provider it runs against, and on any cloud or hosting configuration test with neither a Terraform snippet nor a stated absence of a Terraform provider. Fail an AWS S3 public-access test and a Vercel deployment-protection test: each Results page shows the How to remediate panel for its own provider, the AWS entry includes a Terraform snippet, and applying that snippet in the sandbox makes the next run pass. Connect one cloud account and leave it for two hours: at least two runs per configuration test appear. Pause the scheduler for an hour: that interval shows as stale. Accept a library revision: earlier observations keep the revision they were evaluated under. Run SOC 2, ISO 27001 and HIPAA programs on one installation and let one connected test mapped to a shared library control (for example an MFA test on the logical-access control) pass once: each program's readiness shows every requirement mapped to that control as passing from that single observation, with one observation and no copied evidence in the store. Fail the same test: all three programs show those requirements failing from the same observation.
 
@@ -694,16 +700,16 @@ Legacy v1–v9 archives retain their bounded metadata validators: at most 8 MiB 
 
 ## Homepage claims
 
-Every capability claim on the approved homepage (`src/site/landing/`, checked against br's claims truth table of 17 October 2026, rows 1–49 in page order) maps to the clauses that promise it. A claim's status is `done` when every mapped clause is done, `missing` when every one is missing, and `partial` otherwise. "Try the demo" links the hosted demo and is not a capability claim. 49 claims: 18 done, 25 partial, 6 missing.
+Every capability claim on the approved homepage (`src/site/landing/`, checked against br's claims truth table of 17 October 2026, rows 1–49 in page order) maps to the clauses that promise it. A claim's status is `done` when every mapped clause is done, `missing` when every one is missing, and `partial` otherwise. "Try the demo" links the hosted demo and is not a capability claim. 49 claims: 21 done, 22 partial, 6 missing.
 
 | # | Claim | Clause(s) | Status |
 | --- | --- | --- | --- |
-| 1 | "tests your controls around the clock" | TEST-001, LIBRARY-001 | partial |
+| 1 | "tests your controls around the clock" | TEST-001, LIBRARY-001 | done |
 | 2 | "collects the proof" | COLLECTION-001, CLOUD-001, IDENTITY-001, CODE-001, PROOF-001 | partial |
 | 3 | "fixes what drifts" | REMEDY-001, REMEDY-002, AGENT-003 | partial |
 | 4 | "hands your auditor everything they ask for" | AUDIT-001, AUDIT-003, REVIEW-001 | partial |
 | 5 | "100% free, open source alternative to Vanta, Drata and Secureframe" | OPEN-001, MIGRATE-001 | partial |
-| 6 | Hero board: SOC 2 criteria on controls (CC6.1 Logical access, CC7.2 Monitoring) | LIBRARY-001, PROGRAM-001 | partial |
+| 6 | Hero board: SOC 2 criteria on controls (CC6.1 Logical access, CC7.2 Monitoring) | LIBRARY-001, PROGRAM-001 | done |
 | 7 | Exhibit A: "MFA enforced for all 42 users · Okta" | IDENTITY-001, TEST-001 | done |
 | 8 | Exhibit B: "S3 buckets encrypted · AWS · 12 of 12" | CLOUD-001, TEST-001 | done |
 | 9 | Exhibit C: laptop disk encryption, 1 failing → fixed, re-tested | DEVICE-001, DEVICE-002, REMEDY-001 | partial |
@@ -713,7 +719,7 @@ Every capability claim on the approved homepage (`src/site/landing/`, checked ag
 | 13 | Jamf tile; "Device systems · Endpoints" | DEVICE-001 | missing |
 | 14 | "HR systems · People" | HRIS-001, POPULATION-001 | partial |
 | 15 | "SOC 2, ISO 27001, HIPAA and PCI DSS" programs with per-framework readiness | PROGRAM-001, READINESS-001 | done |
-| 16 | "share controls, so one passing test counts everywhere it applies" | PROGRAM-002, LIBRARY-001 | partial |
+| 16 | "share controls, so one passing test counts everywhere it applies" | PROGRAM-002, LIBRARY-001 | done |
 | 17 | "Each control has an owner and a scope" | PROGRAM-002 | done |
 | 18 | "CC6.2 owner left → reassigned to Priya Shah" | LIFECYCLE-002, PROGRAM-002 | done |
 | 19 | "Connect AWS, GitHub, Google Workspace, Okta … once. Evidence runs every control test on a schedule" | CONNECT-001, COLLECTION-001, TEST-001 | partial |
@@ -761,15 +767,15 @@ ACCESS-001 updated 20 October 2026 with clause-named campaign, revocation-eviden
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 6 | 1 | 1 | 8 |
-| Target and push further | 28 | 14 | 29 | 71 |
-| All | 34 | 15 | 30 | 79 |
+| Target and push further | 29 | 13 | 29 | 71 |
+| All | 35 | 14 | 30 | 79 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
 | `PROGRAM-001` | Framework programs and applicability | target | done | `tests/program.mjs` |  |
 | `PROGRAM-003` | Framework-required program documents | target | missing |  | No implementing path: system description, SoA, HIPAA risk analysis, SAQ worksheets |
 | `PROGRAM-004` | Extended and regulated programs | target | missing |  | No implementing path |
-| `LIBRARY-001` | Shipped control library, test catalog and cadence | target | partial | `scripts/library-check.mjs`; `src/evidence/cloud/`; `src/evidence/identity/`; `src/evidence/policy/`; `tests/cloud.mjs`; `tests/clouds.mjs`; `tests/identity.mjs`; `tests/policy.mjs` | Missing: hosting (CLOUD-002), app-account (APPS-001), vulnerability, security-issue, monitoring, HRIS and device catalogs; library revisions as reviewable updates |
+| `LIBRARY-001` | Shipped control library, test catalog and cadence | target | done | `scripts/library-check.mjs`; `src/evidence/library/`; `src/evidence/program/library.ts`; `src/evidence/tests/engine.ts`; `src/evidence/cloud/`; `src/evidence/identity/`; `src/evidence/policy/`; `tests/program.mjs`; `tests/github.mjs`; `tests/cloud.mjs` | Live acceptance needs an account: applying the AWS Terraform snippet in a sandbox account. The hosting, app-account, vulnerability, security-issue, monitoring, HRIS and device catalogs ship with CLOUD-002, APPS-001, VULN-001, ISSUES-001, MONITOR-001, HRIS-001 and DEVICE-001 |
 | `PROGRAM-002` | Reusable mappings and accountable ownership | target | done | `src/evidence/program/control.ts`; `src/evidence/program/storage.ts`; `tests/program.mjs` |  |
 | `CONTROL-001` | Custom controls and testing intent | target | done | `tests/evidence.mjs`; `tests/helpers/control-journey.mjs`; `tests/helpers/framework-journey.mjs`; `tests/browser.mjs`; `tests/helpers/control-browser.mjs`; `tests/helpers/framework-browser.mjs` | Current definitions, mappings and reviewed CSV/XLSX framework import conform. AGENT-006 inherits proposal decisions before its capability ships. |
 | `READINESS-001` | Readiness, trend and executive reports | target | done | `src/evidence/program/readiness.ts`; `src/evidence/program/board.ts`; `src/evidence/program/board-view.ts`; `src/evidence/program/denominator-view.ts`; `tests/readiness.mjs`; `tests/helpers/readiness-browser.mjs`; `tests/report.mjs` | Current capability readiness, denominators, daily snapshots, filters and CSV asserted; future checklist/decision integration is explicitly inherited by AUDIT-001/003, TRUST-001 and ANSWER-001/003. |

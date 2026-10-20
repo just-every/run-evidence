@@ -105,6 +105,14 @@ export const programColumns = {
  inventory_decisions:['id','source_key','canonical_key','revision','owner_person_id','criticality','scope','lifecycle','reason','actor_id','actor_name','at'],
  inventory_group_events:['id','operation_id','source_key','canonical_key','previous_canonical_key','revision','action','reason','actor_id','actor_name','at'],
 } as const
+// LIBRARY-001 tables, carried by the v10 portable archive only. Archives that
+// predate them restore their runs as evaluated under library revision 1.
+export const libraryColumns = {
+ library_acceptances:['id','revision','from_revision','changes_json','actor_id','actor_name','reason','at'],
+ run_library_revisions:['run_id','library_revision'],
+} as const
+export const libraryTables = Object.keys(libraryColumns)
+export const backfillRunLibraryRevisions = (env: Pick<Bindings, 'DB'>) => env.DB.prepare('INSERT INTO run_library_revisions(run_id,library_revision) SELECT id,1 FROM test_runs WHERE id NOT IN (SELECT run_id FROM run_library_revisions)')
 export type ProgramTable = keyof typeof programColumns
 export const programTables = Object.keys(programColumns) as ProgramTable[]
 // Tables first carried by archive version 4; a version 3 archive lists none of them.
@@ -156,5 +164,5 @@ export function restoreProgramStatements(env: Pick<Bindings, 'DB'>, value: Progr
  return [...(legacyDefault ? [retainDefaultMethod(env, false)] : []), ...programTables.flatMap(table => (value.rows[table] ?? []).map(row => {
   const columns = [...programColumns[table]], values = columns.map(c => (table === 'connections' || table === 'tracker_destinations' || table === 'followup_channels') && c === 'status' ? 'inactive after restore' : table === 'connections' && c === 'next_attempt_at' ? null : Object.hasOwn(row, c) ? row[c] : addedColumns[table]?.[c] ?? addedInVersion5[table]?.[c] ?? null)
   return env.DB.prepare(`INSERT INTO ${table}(${columns.join(',')}) VALUES(${columns.map(() => '?').join(',')})`).bind(...values)
- }))]
+ })), backfillRunLibraryRevisions(env)]
 }

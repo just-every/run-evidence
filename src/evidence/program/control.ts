@@ -5,6 +5,7 @@ import { auditStatement, list, oneOf, parseList, text, type Actor, type Input } 
 import { controlsFor, edition, frameworks, isFramework } from '../library'
 import { requirePerson } from './people'
 import { programs } from './storage'
+import { acceptedLibraryRevision } from './library-revision'
 // PROGRAM-002: one control, mapped to several frameworks, with an accountable
 // owner, contributors and scope whose every change keeps actor and reason.
 export async function requireControl(env: Bindings, id: string) {
@@ -13,8 +14,8 @@ export async function requireControl(env: Bindings, id: string) {
  return row
 }
 export async function controlMappings(env: Bindings, id: string, libraryId: string | null) {
- const active = await programs(env)
- const library = libraryId ? active.flatMap(p => edition(p.framework, p.edition)!.requirements.filter(r => controlsFor(p.framework, p.edition, r.ref).some(c => c.id === libraryId)).map(r => ({ program_id: p.id, program: p.name, framework: frameworks[p.framework].name, edition: p.edition, ref: r.ref, title: r.title, origin: 'library' as const }))) : []
+ const active = await programs(env), revision = await acceptedLibraryRevision(env)
+ const library = libraryId ? active.flatMap(p => edition(p.framework, p.edition)!.requirements.filter(r => controlsFor(p.framework, p.edition, r.ref, revision).some(c => c.id === libraryId)).map(r => ({ program_id: p.id, program: p.name, framework: frameworks[p.framework].name, edition: p.edition, ref: r.ref, title: r.title, origin: 'library' as const }))) : []
  const custom = (await env.DB.prepare('SELECT * FROM control_mappings WHERE control_id=? ORDER BY added_at,rowid').bind(id).all<{ id: string; framework: string; edition: string; ref: string; added_name: string; added_at: string; reason: string; removed_name: string | null; removed_at: string | null; removal_reason: string | null }>()).results
  return { library, custom }
 }

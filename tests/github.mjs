@@ -171,5 +171,73 @@ try {
   }finally{await receiver.close()}
 
  })
+ await scenario('LIBRARY-001: one connected MFA observation on the shared AC-05 control passes and then fails SOC 2, ISO 27001 and HIPAA; an accepted library revision moves mappings forward while earlier runs keep their revision, through restore', async () => {
+  const lib = await runtime({ outbound: fakeGitHub }), target = await runtime()
+  try {
+   await lib.clock('2026-10-12T09:00:00Z'); github.clock = '2026-10-12T09:00:00Z'; github.org.two_factor_requirement_enabled = true
+   await lib.signin()
+   const send = async (path, body, status = 201, origin = lib.origin) => { const r = await lib.fetch(path, { method: 'POST', headers: { origin, 'content-type': 'application/json' }, body: JSON.stringify(body) }); const text = await r.text(); assert.equal(r.status, status, path + ' ' + text); return text ? JSON.parse(text) : null }
+   const read = async path => { const r = await lib.fetch(path); assert.equal(r.status, 200, path); return r.json() }
+   const programs = {}
+   for (const framework of ['soc2', 'iso27001', 'hipaa']) programs[framework] = (await send('/api/programs', { framework, name: framework + ' program', legal_entity: 'Northstar', report_type: 'Type II', audit_from: '2026-10-01', audit_to: '2027-09-30' })).id
+   const linked = await send('/api/connections', { account: 'northstar', token: 'synthetic-github_pat_rotated', label: 'GitHub org' })
+   await send(`/api/connections/${linked.id}/repositories`, { repositories: ['northstar/web'] }, 200)
+   const receipts = async () => (await lib.db.prepare('SELECT COUNT(*) AS n FROM receipts').first()).n, stored = await receipts()
+   const mfa = async () => { const test = (await read('/api/tests')).tests.find(t => t.catalogue_id === 'github.org-two-factor'); return read('/api/tests/' + test.id) }
+   // Every requirement of each program that AC-05 serves, with that control's test state.
+   const served = async framework => (await read('/api/programs/' + programs[framework])).readiness.requirements.filter(r => r.controls.some(c => c.library_id === 'AC-05')).map(r => ({ ref: r.ref, testing: r.testing, control: r.controls.find(c => c.library_id === 'AC-05'), libraries: r.controls.map(c => c.library_id) }))
+   assert.equal((await send(`/api/connections/${linked.id}/collect`, {})).outcome, 'complete')
+   let detail = await mfa()
+   assert.deepEqual(detail.latest.map(o => [o.display_name, o.result, o.library_revision]), [['northstar (organization)', 'pass', 1]])
+   assert.equal((await lib.db.prepare('SELECT COUNT(*) AS n FROM observations WHERE test_id=?').bind(detail.test.id).first()).n, 1)
+   for (const [framework, ref] of [['soc2', 'CC6.1'], ['iso27001', 'A.8.5'], ['hipaa', '164.312(d)']]) {
+    const rows = await served(framework)
+    assert.ok(rows.some(r => r.ref === ref), framework + ' ' + ref)
+    for (const r of rows) assert.deepEqual([r.control.tests.tests, r.control.tests.pass, r.control.tests.fail, r.control.tests.unknown], [1, 1, 0, 0], framework + ' ' + r.ref)
+   }
+   assert.equal(await receipts(), stored)
+   // Revision 2 waits as a reviewable change set; current mappings stay at revision 1.
+   const review = await read('/api/library')
+   assert.equal(review.accepted, 1); assert.equal(review.latest, 2); assert.deepEqual(review.history, [])
+   const change = review.pending[0].changes.find(x => x.control === 'AC-13')
+   assert.deepEqual([change.framework, change.ref, change.change, change.programs.map(p => p.id)], ['iso27001', 'A.5.16', 'added', [programs.iso27001]])
+   const isoRow = async ref => (await read('/api/programs/' + programs.iso27001)).readiness.requirements.find(r => r.ref === ref).controls.map(c => c.library_id)
+   assert.ok(!(await isoRow('A.5.16')).includes('AC-13')); assert.ok(!(await isoRow('A.8.5')).includes('AC-12'))
+   assert.match(await (await lib.fetch('/app/library')).text(), /Revision 2 · waiting for review/)
+   await send('/api/library/revisions/2', {}, 400)
+   await send('/api/library/revisions/2', { reason: 'x' }, 403, 'https://evil.test')
+   await send('/api/library/revisions/3', { reason: 'Not shipped' }, 404)
+   assert.deepEqual((await send('/api/library/revisions/2', { reason: 'Reviewed with our assessor' }, 200)).accepted, 2)
+   await send('/api/library/revisions/2', { reason: 'again' }, 409); await send('/api/library/revisions/1', { reason: 'back' }, 409)
+   assert.ok((await isoRow('A.5.16')).includes('AC-13')); assert.ok((await isoRow('A.8.5')).includes('AC-12'))
+   assert.ok((await served('soc2')).find(r => r.ref === 'CC6.1').libraries.includes('AC-12'))
+   assert.equal((await read('/api/library')).accepted, 2)
+   assert.ok((await read('/api/audit')).entries.some(e => e.action === 'library.revision-accepted' && /1 -> 2: Reviewed with our assessor/.test(e.detail)))
+   // The same test now fails: one new observation under revision 2; the earlier one keeps revision 1.
+   github.org.two_factor_requirement_enabled = false
+   await lib.clock('2026-10-12T09:20:00Z'); github.clock = '2026-10-12T09:20:00Z'
+   assert.equal((await send(`/api/connections/${linked.id}/collect`, {})).outcome, 'complete')
+   detail = await mfa()
+   assert.deepEqual(detail.runs.map(r => [r.library_revision, r.failed, r.passed]), [[2, 1, 0], [1, 0, 1]])
+   assert.equal((await lib.db.prepare('SELECT COUNT(*) AS n FROM observations WHERE test_id=?').bind(detail.test.id).first()).n, 2)
+   for (const framework of ['soc2', 'iso27001', 'hipaa']) for (const r of await served(framework)) {
+    assert.equal(r.testing, 'failing', framework + ' ' + r.ref); assert.deepEqual([r.control.tests.pass, r.control.tests.fail], [0, 1])
+   }
+   assert.equal(await receipts(), stored)
+   assert.match(await (await lib.fetch('/app/tests/' + detail.test.id)).text(), /Library revision/)
+   // The catalogue entry and each program's readiness board show the last-run time.
+   assert.equal((await read('/api/tests')).tests.find(t => t.id === detail.test.id).last_run, '2026-10-12T09:20:00.000Z')
+   for (const id of Object.values(programs)) assert.deepEqual((await read(`/api/programs/${id}/board`)).tests.filter(t => t.id === detail.test.id).map(t => [t.last_run, t.status]), [['2026-10-12T09:20:00.000Z', 'failing']])
+   const obligation = (await read('/api/remediation')).open.find(o => o.test_id === detail.test.id)
+   assert.equal((await read('/api/remediation/' + obligation.id)).observations[0].library_revision, 2)
+   assert.match(await (await lib.fetch('/app/remediation/' + obligation.id)).text(), /library revision 2/)
+   // Restore carries the acceptance and every run's revision unchanged.
+   await target.signin()
+   const restored = await target.fetch('/api/archive/restore', { method: 'POST', headers: { origin: target.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore', 'x-evidence-erasure-history': 'unverified acknowledged' }, body: Buffer.from(await (await lib.fetch('/api/archive/export')).arrayBuffer()) })
+   assert.equal(restored.status, 200, await restored.clone().text())
+   for (const table of ['library_acceptances', 'run_library_revisions']) assert.deepEqual((await target.db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all()).results, (await lib.db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all()).results, table)
+   assert.equal((await (await target.fetch('/api/library')).json()).accepted, 2)
+  } finally { await lib.close(); await target.close() }
+ })
  console.log(`${passed} GitHub connection public-door scenarios passed; GitHub is faked only at the network edge.`)
 } finally { await app.close() }

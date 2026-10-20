@@ -1,5 +1,6 @@
 import type { LibraryControl, ControlGroup, LibraryCadence } from './types'
-// The shipped common control library, revision 1. One control can satisfy
+// The shipped common control library at revision 1; later revisions are change
+// sets in revisions.ts. One control can satisfy
 // requirements in several frameworks; ISO/IEC 27001:2013 mappings derive from
 // the 2022 successors (see index.ts). Every control names its proof, and the
 // controls the GitHub catalogue observes also name their automated tests.
@@ -119,5 +120,4 @@ const rows: Row[] = [
  ['VEN-04','Service provider responsibilities are acknowledged to customers','Customer responsibility matrix','annual',{ pci:['12.9'] }],
  ['VEN-05','Group health plan documents carry Security Rule terms','Plan document amendments','annual',{ hipaa:['164.314(b)'] }],
 ]
-export const libraryRevision = 1
 export const libraryControls: LibraryControl[] = rows.map(([id,title,proof,cadence,maps,tests=[],policies=[]]) => ({ id, title, group: group(id), proof, cadence, maps, tests, policies }))
