@@ -18,6 +18,8 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
 - **COLLECTION-001 — Scheduled source collection with visible failures · partial.** Connect a real authorized sandbox via the Connections UI, schedule collection, close the browser, change the source and inspect the next run. Revoke a required scope, throttle a page and interrupt a run; reconnect and resume. The run history and period report preserve missing coverage, failure and recovery separately; only actual source reads issue observed receipts.
 
+  Current slice: `tests/github.mjs` → `tests/helpers/collection-journey.mjs`, named COLLECTION-001, exercises owner-set GitHub elapsed schedules through `/api/connections/{id}/schedule`, the browser-independent Cron door, invalid/foreign-origin/unauthenticated refusal, no early or duplicate scheduler read, schema-drift and bounded-pagination gaps producing unknown tests, throttling/backoff, fresh-read recovery without rewriting earlier failures, audited scheduling, restart, and inactive custody restore. GitHub alone is faked at the documented REST network edge. The Connections page exposes the form and the retained gaps. Intervals are whole multiples of five from 5 through 60 minutes, default 60, measured since the last attempt in UTC; the next five-minute tick runs due work, with backoff taking precedence and no fabricated catch-up. Gap: real sandbox journey above; source events; other collectors’ configurable schedules and schema checks; durable cursors/resume; collection-linked revisions, source/receipt timestamps, audit periods and period reports.
+
   Current evidence: —.
 
 ### Audit folders and questionnaires

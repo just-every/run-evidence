@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "eb482fdfa920d61a2858ff55c81beecde5038393145405c3eeeef0c711e05de1",
+  "manifest": "0c759200b35e341374476d1da3bb82f1ad0be2c62acc4d503f250e0e86b6603f",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2414,6 +2414,7 @@
           "migrations/core/0043_inventory.sql",
           "migrations/core/0044_access_cadence.sql",
           "migrations/core/0045_library_revisions.sql",
+          "migrations/core/0046_audit_context.sql",
           "package.json",
           "pnpm-lock.yaml",
           "public/apple-touch-icon.png",
@@ -2540,6 +2541,7 @@
           "src/evidence/archive/view.ts",
           "src/evidence/attest/http.ts",
           "src/evidence/attest/storage.ts",
+          "src/evidence/audit/auth.ts",
           "src/evidence/audit/http.ts",
           "src/evidence/audit/storage.ts",
           "src/evidence/audit/view.ts",
@@ -2561,9 +2563,11 @@
           "src/evidence/collector/view.ts",
           "src/evidence/connect/collect.ts",
           "src/evidence/connect/custody.ts",
+          "src/evidence/connect/github-schema.ts",
           "src/evidence/connect/github.ts",
           "src/evidence/connect/http.ts",
           "src/evidence/connect/runs.ts",
+          "src/evidence/connect/schedule.ts",
           "src/evidence/connect/storage.ts",
           "src/evidence/connect/view.ts",
           "src/evidence/control-definition/storage.ts",
@@ -2573,6 +2577,7 @@
           "src/evidence/followup/channels.ts",
           "src/evidence/followup/digest.ts",
           "src/evidence/followup/http.ts",
+          "src/evidence/followup/resolve.ts",
           "src/evidence/followup/send.ts",
           "src/evidence/followup/settings.ts",
           "src/evidence/followup/view.ts",
@@ -2761,12 +2766,14 @@
           "tests/followup.mjs",
           "tests/github.mjs",
           "tests/handover.mjs",
+          "tests/helpers/collection-journey.mjs",
           "tests/helpers/collector-browser.mjs",
           "tests/helpers/control-browser.mjs",
           "tests/helpers/control-journey.mjs",
           "tests/helpers/framework-browser.mjs",
           "tests/helpers/framework-fixture.mjs",
           "tests/helpers/framework-journey.mjs",
+          "tests/helpers/github-fixture.mjs",
           "tests/helpers/inventory-fixture.mjs",
           "tests/helpers/move-in-browser.mjs",
           "tests/helpers/open-browser.mjs",
@@ -2833,7 +2840,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "1cd2dc6af41dd77834b816f89f908dd7c48818f313c6b09ceb7b84e77d1ebef5",
+      "sha256": "2f2cd39c0aa1a688ac61b3debd56790d7949446a8ff752fb894b39f3edac189d",
       "executable": false
     },
     "AGENTS.md": {
@@ -2849,7 +2856,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "9d019a4f2d4513db0c345fb78b0af98377725176f4564083d49836bfd747eb6b",
+      "sha256": "80ad0bbce79ac089fb99e0a47391925066d1bada04f0b649bff07b8632a1b9e2",
       "executable": false
     },
     "DEMO.md": {
@@ -2909,7 +2916,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "eb482fdfa920d61a2858ff55c81beecde5038393145405c3eeeef0c711e05de1",
+      "sha256": "0c759200b35e341374476d1da3bb82f1ad0be2c62acc4d503f250e0e86b6603f",
       "executable": false
     },
     "LICENSE": {
@@ -3861,23 +3868,31 @@
       "executable": false
     },
     "src/evidence/connect/collect.ts": {
-      "sha256": "b52945a0097a138051d67acb3061121fe894d15e0759aa01e3867f6cfce6e34b",
+      "sha256": "42decd91de23e797730b8059d138aad3b5c16f1aee44fc912b9e1da567683113",
       "executable": false
     },
     "src/evidence/connect/custody.ts": {
       "sha256": "aadb097f2ff55c3e75af313165b764ad5d2e7f8fd366a07a05e980c7e9f0fc23",
       "executable": false
     },
+    "src/evidence/connect/github-schema.ts": {
+      "sha256": "bb9ea09c710e02b2706916875810feff058277e23bd4c56ff8878837723c2b12",
+      "executable": false
+    },
     "src/evidence/connect/github.ts": {
-      "sha256": "d97d554040c4b0cd5c1e2bc54df6091db59a4c05c2da4b04a8a25177556d62ef",
+      "sha256": "eb8648679f3ec0d392d86a11dc26b49e388c03390da8af9ade35f1f0442ccc85",
       "executable": false
     },
     "src/evidence/connect/http.ts": {
-      "sha256": "d3e3f761e26ede09fcd8d151b412296123fe30645a0afa18566329cd368432d1",
+      "sha256": "4604fd2d8055cf424db8fe89e67f0c2d046ff0747e134c88c9256d37a65e5e4e",
       "executable": false
     },
     "src/evidence/connect/runs.ts": {
       "sha256": "a49d2d2432798bddc0300db3549532039486e26bc906830929e4e19e5afa4fe6",
+      "executable": false
+    },
+    "src/evidence/connect/schedule.ts": {
+      "sha256": "eccef39ac8923b1feaba697aa94b554b9ae1771e59651115d7a5244277b26eb3",
       "executable": false
     },
     "src/evidence/connect/storage.ts": {
@@ -3885,7 +3900,7 @@
       "executable": false
     },
     "src/evidence/connect/view.ts": {
-      "sha256": "e14c7ca720e087371bd473f36c1764e2d3deb7b6d8be169ce9c63548fe5fe151",
+      "sha256": "ba20209af6e295607293878cd41b55dc903a8e97f3e78b04c80c5268803245ee",
       "executable": false
     },
     "src/evidence/control-definition/storage.ts": {
@@ -6017,11 +6032,15 @@
       "executable": false
     },
     "tests/github.mjs": {
-      "sha256": "1af6bb7f1136b7ff9c18c91e948697962d5e331d9440ef4c6a688620d2c6c2af",
+      "sha256": "04a908d641dd71eab9e6745ccf453a7a1fe02c373ca6af2f936644fa93dcd6e8",
       "executable": false
     },
     "tests/handover.mjs": {
       "sha256": "1fdd2ea4245e573f915b8672a37f1c7ce1064b4aeb7d5ad16e115427399a57ec",
+      "executable": false
+    },
+    "tests/helpers/collection-journey.mjs": {
+      "sha256": "2a714d4529a0ad0d22a798f07ece636cf546d54fdfb99565e3402f0bfd9c7648",
       "executable": false
     },
     "tests/helpers/collector-browser.mjs": {
@@ -6046,6 +6065,10 @@
     },
     "tests/helpers/framework-journey.mjs": {
       "sha256": "2247a083ff15ce557560b5e55fd5ba12e7d553a406cdb49dc0126cf402e6d235",
+      "executable": false
+    },
+    "tests/helpers/github-fixture.mjs": {
+      "sha256": "530d92da4d20faabe15361e4c80088633bf6b6698bf8f1a5e0f6c6c010d38a2b",
       "executable": false
     },
     "tests/helpers/inventory-fixture.mjs": {
