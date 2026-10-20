@@ -129,7 +129,7 @@ try {
    resources[0].attributes.secure=true;await v1(push.token,'PUT','/v1/resources/'+groupType,{resources})
    groupRemote.closed=true;const closedAt=Date.parse(edge.state.clock)
    await at(closedAt+10*60000);await app.tick()
-   assert.equal(groupRemote.closed,false,provider+' whole-test ticket was not reopened')
+   assert.equal(groupRemote.closed,false,provider+' whole-test ticket was not reopened: '+(await get('/api/trackers/'+dest.id)).destination.last_error)
    assert.match(groupRemote.comments.at(-1).body,/Re-test still fails for:/)
    assert.ok(groupRemote.comments.at(-1).body.includes(provider+' still_bad'));assert.ok(!groupRemote.comments.at(-1).body.includes(provider+' fixed'))
    const groupView=await get('/api/tests/'+groupTest.id)

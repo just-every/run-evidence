@@ -6335,7 +6335,7 @@
       "executable": false
     },
     "tests/helpers/tracker-fixture.mjs": {
-      "sha256": "04eaa3eed4b86ad0d04ffc1e8657276fa2430cc01ac8cf2cb3613ccd14c6b801",
+      "sha256": "1e805c0f9f24d80b8a6a2c4d6462ceb082a5e3636d587c479dc4d7c0faf8f1eb",
       "executable": false
     },
     "tests/helpers/worker.ts": {
@@ -6415,7 +6415,7 @@
       "executable": false
     },
     "tests/trackers.mjs": {
-      "sha256": "c9fc256359a21338b4964f875e33d6be512154f2c3de7bfe9677ed997b07efb5",
+      "sha256": "da1f38b15d8b03905cbd0d89b91046140b0058da422eba1a006af8c276b07f11",
       "executable": false
     },
     "tests/training.mjs": {

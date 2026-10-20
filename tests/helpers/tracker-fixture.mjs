@@ -27,7 +27,7 @@ export function trackerFixture() {
  async function outbound(request) {
   const u=new URL(request.url),p=Object.keys(configs).find(p=>u.origin===new URL(configs[p].base).origin)
   if(!p)return null
-  const c=configs[p],path=u.pathname.slice(new URL(c.base).pathname.replace(/\/$/,'').length),method=request.method,body=request.body?await request.json():null
+  const c=configs[p],path=u.pathname.slice(new URL(c.base).pathname.replace(/\/$/,'').length),method=request.method,raw=await request.text(),body=raw?JSON.parse(raw):null
   calls.push({provider:p,method,path})
   const expected=p==='freshservice'?'Basic '+Buffer.from(keys[p]+':X').toString('base64'):p==='azure-boards'?'Basic '+Buffer.from(':'+keys[p]).toString('base64'):['monday','clickup'].includes(p)?keys[p]:p==='shortcut'?keys[p]:'Bearer '+keys[p]
   if(request.headers.get(p==='shortcut'?'shortcut-token':'authorization')!==expected)return reply(401,{message:'Credential revoked'})
