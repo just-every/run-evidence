@@ -26,7 +26,7 @@ export async function availability(env: Bindings) {
 // A shipped revision applies only after an owner reviews and adopts it.
 export async function adopt(env: Bindings, actor: Actor, courseId: string, now: Date) {
  const c = course(courseId); if (!c) throw new Refusal('Course not found.', 404)
- await env.DB.batch([env.DB.prepare('INSERT INTO training_adoptions(course_id,revision,adopted_by,adopted_at) VALUES(?,?,?,?) ON CONFLICT DO NOTHING').bind(c.id, c.revision, actor.name, now.toISOString()), auditStatement(env, actor, 'training.adopted', 'course:' + c.id, now, 'succeeded', `revision ${c.revision}`)])
+ await env.DB.batch([env.DB.prepare('INSERT INTO training_adoptions(course_id,revision,adopted_by,adopted_at) VALUES(?,?,?,?) ON CONFLICT DO NOTHING').bind(c.id, c.revision, actor.name, now.toISOString()), auditStatement(env, actor, 'training.adopted', 'course:' + c.id, now, 'succeeded', `revision ${c.revision}`, { revision: c.revision })])
 }
 export async function createCampaign(env: Bindings, actor: Actor, input: Input, now: Date) {
  const courseId = text(input, 'course_id', 60), avail = (await availability(env)).find(c => c.id === courseId)
@@ -55,7 +55,7 @@ export async function amendSchedule(env: Bindings, actor: Actor, id: string, inp
  await env.DB.batch([
   env.DB.prepare('INSERT INTO training_schedule_changes(id,campaign_id,due_days,interval_months,reason,actor_name,at) VALUES(?,?,?,?,?,?,?)').bind(crypto.randomUUID(), id, due, interval, reason, actor.name, now.toISOString()),
   env.DB.prepare("UPDATE training_assignments SET due_date=date(assigned_at, '+' || ? || ' days') WHERE campaign_id=? AND state='assigned'").bind(due, id),
-  auditStatement(env, actor, 'training.schedule-changed', 'training-campaign:' + id, now, 'succeeded', `${due} days, every ${interval} months: ${reason}`),
+  auditStatement(env, actor, 'training.schedule-changed', 'training-campaign:' + id, now, 'succeeded', `${due} days, every ${interval} months: ${reason}`, { reason }),
  ])
 }
 const schedule = async (env: Bindings, c: { id: string; due_days: number; interval_months: number }) => (await env.DB.prepare('SELECT due_days,interval_months FROM training_schedule_changes WHERE campaign_id=? ORDER BY at DESC,rowid DESC LIMIT 1').bind(c.id).first<{ due_days: number; interval_months: number }>()) ?? c

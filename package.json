@@ -55,7 +55,8 @@
     "test:clouds": "node tests/clouds.mjs",
     "test:access": "node tests/access.mjs",
     "test:training": "node tests/training.mjs",
-    "check:library": "node scripts/library-check.mjs"
+    "check:library": "node scripts/library-check.mjs",
+    "test:inventory": "node tests/inventory.mjs"
   },
   "dependencies": {
     "@tanstack/react-router": "1.170.33",

@@ -50,3 +50,7 @@ In **Agent preparation**, give the agent a labelled, expiring **prepare-only** c
 Review the exact proposal in your owner session. **Approve exact proposal and create folder** issues the folder and shows its link once; **Reject proposal** records a final rejection. If evidence or gaps changed after preparation, prepare a new proposal for review. See [Agent folder preparation](AGENT-COMMANDS.md) for the command interface.
 
 Use [Move in from Drata](MOVE-IN.md) for existing evidence, and [Backup and restore](BACKUP-RESTORE.md) to keep the whole archive.
+
+## Audit
+
+**Audit** lists every recorded owner, API-token, system, reviewer-folder and agent-approval action, newest first, with actor, subject and outcome (succeeded, refused, failed or uncertain). Entries are append-only. Filter by UTC dates (both inclusive), an action prefix such as `import.` and an outcome, then **Export CSV** or **Export JSON**; each export is recorded as `audit.exported`. Move-in uploads, mapping, commits, resumes and undo are recorded with their outcome, including refusals. Every stored proof file and every replacement is recorded with its receipt and the receipt it supersedes.

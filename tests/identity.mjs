@@ -107,8 +107,9 @@ try {
   assert.equal(inactive['Ben'], 'fail'); assert.equal(inactive['Cy Park'], 'fail'); assert.equal(inactive['Ana'], 'pass'); assert.equal(inactive['Frank'], 'unknown')
   assert.ok((await get('/api/remediation')).open.some(o => o.resource_name.startsWith('Partner')))
  })
- await scenario('PORTABLE-001 / Matches are proposed by email and decided by a person; a duplicate is reconciled by human decisions, and a disabled account and a denied scope stay visible', async () => {
+ await scenario('INVENTORY-001 / PORTABLE-001 / IDENTITY-001: Matches are proposed by email and decided by a person; a duplicate is reconciled by human decisions, and a disabled account and a denied scope stay visible', async () => {
   const ana = await owner('/api/people', { name: 'Ana Ruiz', email: 'ana@northstar.test', kind: 'employee' }), dana = await owner('/api/people', { name: 'Dana Fox', email: 'dana@northstar.test', kind: 'contractor' })
+  const sameName=await owner('/api/people',{name:'Ana Ruiz',email:'ana-unmatched@northstar.test',kind:'employee'})
   await app.clock('2026-10-11T13:00:00Z'); await app.tick()
   let ids = await get('/api/identities')
   const anas = ids.accounts.filter(a => a.email === 'ana@northstar.test')
@@ -120,6 +121,11 @@ try {
   ids = await get('/api/identities')
   assert.deepEqual(ids.accounts.filter(a => a.email === 'ana@northstar.test').map(a => a.match.state).sort(), ['approved', 'proposed', 'rejected'])
   assert.equal(ids.accounts.find(a => a.email === 'dana@contract.test').match.basis, 'owner choice')
+  const inventory=await get('/api/inventory')
+  assert.equal(inventory.people.find(p=>p.id===ana.id).directory.length,1)
+  assert.deepEqual(inventory.people.find(p=>p.id===sameName.id).directory,[],'same-named People never borrow another person’s directory match')
+  assert.equal(inventory.people.find(p=>p.id===sameName.id).account_status,'no account found')
+
   dir.okta.find(u => u.id === 'o2').status = 'SUSPENDED'
   dir.entraDenied.add('mfa'); dir.groupsDenied.add('okta')
   await app.clock('2026-10-11T14:00:00Z'); await app.tick()

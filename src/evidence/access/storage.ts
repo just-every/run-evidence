@@ -10,7 +10,16 @@ import { sendFollowup, sent } from '../followup/send'
 // Resource owners decide each account with a reason; nobody reviews their own
 // access, and a delegation is an explicit record. A revocation closes only on
 // a fresh source read, or a newer uploaded list, that shows the account gone.
-export type Cadence = 'quarterly' | 'semi-annual' | 'annual' | 'one-off'
+export type Cadence = 'quarterly' | 'semi-annual' | 'annual' | 'one-off' | `every-${number}-months`
+// Owner-configured recurrence: every N whole calendar months, N from 1 to 24.
+const everyMonths = /^every-([1-9]|1\d|2[0-4])-months$/
+export const cadenceMonths = (cadence: string) => cadence === 'quarterly' ? 3 : cadence === 'semi-annual' ? 6 : cadence === 'annual' ? 12 : Number(everyMonths.exec(cadence)?.[1] ?? 0)
+export const cadenceLabel = (cadence: string) => cadence.replace(everyMonths, 'every $1 months')
+function cadenceOf(input: Input): Cadence {
+ if (input.cadence === 'custom') { const n = Number(input.every_months); if (!Number.isInteger(n) || n < 1 || n > 24) throw new Refusal('An owner-configured campaign repeats every 1 to 24 whole months.'); return `every-${n}-months` }
+ if (typeof input.cadence === 'string' && everyMonths.test(input.cadence)) return input.cadence as Cadence
+ return oneOf(input, 'cadence', ['quarterly', 'semi-annual', 'annual', 'one-off'] as const)
+}
 interface Source { key: string; label: string; provenance: 'source-observed' | 'manually-asserted' }
 interface Account { subject_ref: string; account_key: string; display_name: string; attributes: Record<string, unknown> }
 // Sources a campaign can freeze: directory connections and the latest list of each uploaded application.
@@ -31,7 +40,7 @@ const itemStatements = async (env: Bindings, review: string, chosen: Source[], r
  return statements
 }
 export async function startReview(env: Bindings, actor: Actor, input: Input, now: Date, previous: string | null = null) {
- const name = text(input, 'name', 200), cadence = oneOf(input, 'cadence', ['quarterly', 'semi-annual', 'annual', 'one-off'] as const), from = text(input, 'period_from', 10), to = text(input, 'period_to', 10), due = text(input, 'due_date', 10)
+ const name = text(input, 'name', 200), cadence = cadenceOf(input), from = text(input, 'period_from', 10), to = text(input, 'period_to', 10), due = text(input, 'due_date', 10)
  if (![from, to, due].every(validDate) || from > to) throw new Refusal('Give a real period and due date.')
  const available = await sources(env), chosen = available.filter(s => (Array.isArray(input.sources) ? input.sources : [input.sources]).includes(s.key))
  if (!chosen.length) throw new Refusal('Choose at least one directory or uploaded account list.')
@@ -43,13 +52,13 @@ export async function startReview(env: Bindings, actor: Actor, input: Input, now
  return { id, items: statements.length - 2 }
 }
 export async function requireReview(env: Bindings, id: string) { const row = await env.DB.prepare('SELECT * FROM access_reviews WHERE id=?').bind(id).first<{ id: string; name: string; cadence: Cadence; period_from: string; period_to: string; due_date: string; sources_json: string; reviewers_json: string; created_name: string; created_at: string; completed_at: string | null; previous_id: string | null }>(); if (!row) throw new Refusal('Access review not found.', 404); return row }
-export interface ItemView { id: string; source: string; source_label: string; provenance: string; account_key: string; display_name: string; attributes: Record<string, unknown>; reviewer_person_id: string | null; reviewer: string | null; delegated_to: string | null; delegation_reason: string | null; supplemental: boolean; decision: { decision: string; reason: string; by: string; at: string } | null; history: { decision: string; reason: string; by: string; at: string }[]; revocation: { state: string; requested_at: string; verified_at: string | null; evidence: string } | null; overdue: boolean }
+export interface ItemView { id: string; source: string; source_label: string; provenance: string; account_key: string; display_name: string; attributes: Record<string, unknown>; person: { id: string; name: string; match: string; departed_at: string | null } | null; reviewer_person_id: string | null; reviewer: string | null; delegated_to: string | null; delegation_reason: string | null; supplemental: boolean; decision: { decision: string; reason: string; by: string; at: string } | null; history: { decision: string; reason: string; by: string; at: string }[]; revocation: { state: string; requested_at: string; verified_at: string | null; evidence: string; receipt_id: string | null } | null; overdue: boolean }
 export async function items(env: Bindings, review: string, now: Date): Promise<ItemView[]> {
  const r = await requireReview(env, review), today = now.toISOString().slice(0, 10)
- const rows = (await env.DB.prepare('SELECT i.*,p.name AS reviewer,d.to_person_id,d.reason AS delegation_reason,q.name AS delegate,v.state AS rev_state,v.requested_at,v.verified_at,v.evidence FROM access_review_items i LEFT JOIN people p ON p.id=i.reviewer_person_id LEFT JOIN access_delegations d ON d.item_id=i.id LEFT JOIN people q ON q.id=d.to_person_id LEFT JOIN access_revocations v ON v.item_id=i.id WHERE i.review_id=? ORDER BY i.source,i.display_name').bind(review).all<Record<string, string | number | null>>()).results
+ const rows = (await env.DB.prepare('SELECT i.*,p.name AS reviewer,d.to_person_id,d.reason AS delegation_reason,q.name AS delegate,v.state AS rev_state,v.requested_at,v.verified_at,v.evidence,mp.id AS match_person_id,mp.name AS match_person_name,COALESCE(pm.state,im.state) AS match_state,dp.departed_at AS match_departed_at FROM access_review_items i LEFT JOIN people p ON p.id=i.reviewer_person_id LEFT JOIN access_delegations d ON d.item_id=i.id LEFT JOIN people q ON q.id=d.to_person_id LEFT JOIN access_revocations v ON v.item_id=i.id LEFT JOIN population_matches pm ON pm.row_id=i.subject_ref AND pm.state!=\'rejected\' AND pm.person_id IS NOT NULL LEFT JOIN identity_matches im ON im.resource_id=i.subject_ref AND im.state!=\'rejected\' LEFT JOIN people mp ON mp.id=COALESCE(pm.person_id,im.person_id) LEFT JOIN people_departures dp ON dp.person_id=mp.id WHERE i.review_id=? ORDER BY i.source,i.display_name').bind(review).all<Record<string, string | number | null>>()).results
  const decisions = (await env.DB.prepare('SELECT d.item_id,d.decision,d.reason,d.decided_by_name,d.at FROM access_decisions d JOIN access_review_items i ON i.id=d.item_id WHERE i.review_id=? ORDER BY d.at,d.rowid').bind(review).all<{ item_id: string; decision: string; reason: string; decided_by_name: string; at: string }>()).results
  return rows.map(i => { const history = decisions.filter(d => d.item_id === i.id).map(d => ({ decision: d.decision, reason: d.reason, by: d.decided_by_name, at: d.at })), decision = history.at(-1) ?? null
-  return { id: String(i.id), source: String(i.source), source_label: String(i.source_label), provenance: String(i.provenance), account_key: String(i.account_key), display_name: String(i.display_name), attributes: JSON.parse(String(i.attributes_json)), reviewer_person_id: i.reviewer_person_id as string | null, reviewer: i.reviewer as string | null, delegated_to: i.delegate as string | null, delegation_reason: i.delegation_reason as string | null, supplemental: !!i.supplemental, decision, history, revocation: i.rev_state ? { state: String(i.rev_state), requested_at: String(i.requested_at), verified_at: i.verified_at as string | null, evidence: String(i.evidence) } : null, overdue: !decision && today > r.due_date } })
+  return { id: String(i.id), source: String(i.source), source_label: String(i.source_label), provenance: String(i.provenance), account_key: String(i.account_key), display_name: String(i.display_name), attributes: JSON.parse(String(i.attributes_json)), person: i.match_person_id ? { id: String(i.match_person_id), name: String(i.match_person_name), match: String(i.match_state), departed_at: i.match_departed_at as string | null } : null, reviewer_person_id: i.reviewer_person_id as string | null, reviewer: i.reviewer as string | null, delegated_to: i.delegate as string | null, delegation_reason: i.delegation_reason as string | null, supplemental: !!i.supplemental, decision, history, revocation: i.rev_state ? { state: String(i.rev_state), requested_at: String(i.requested_at), verified_at: i.verified_at as string | null, evidence: String(i.evidence), receipt_id: /kept as receipt ([a-f0-9-]{36})/.exec(String(i.evidence))?.[1] ?? null } : null, overdue: !decision && today > r.due_date } })
 }
 // Only the assigned resource owner (or the explicit delegate) decides, never about their own account.
 export async function decide(env: Bindings, person: { id: string; name: string; email: string }, itemId: string, input: Input, now: Date) {
@@ -61,13 +70,13 @@ export async function decide(env: Bindings, person: { id: string; name: string; 
  await env.DB.batch([
   env.DB.prepare('INSERT INTO access_decisions(id,item_id,decision,reason,decided_by_person,decided_by_name,decided_by_email,at) VALUES(?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), itemId, decision, reason, person.id, person.name, person.email, at),
   ...(decision === 'revoke' ? [env.DB.prepare("INSERT INTO access_revocations(item_id,state,requested_at) VALUES(?,'requested',?) ON CONFLICT(item_id) DO NOTHING").bind(itemId, at)] : [env.DB.prepare("DELETE FROM access_revocations WHERE item_id=? AND state!='verified'").bind(itemId)]),
-  auditStatement(env, { id: person.id, name: person.name }, 'access-review.decided', 'access-item:' + itemId, now, 'succeeded', `${decision}: ${reason}`.slice(0, 400)),
+  auditStatement(env, { id: person.id, name: person.name }, 'access-review.decided', 'access-item:' + itemId, now, 'succeeded', `${decision}: ${reason}`.slice(0, 400), { reason }),
  ])
 }
 export async function exclude(env: Bindings, actor: Actor, itemId: string, input: Input, now: Date) {
  if (!await env.DB.prepare('SELECT 1 FROM access_review_items WHERE id=?').bind(itemId).first()) throw new Refusal('Item not found.', 404)
  const reason = text(input, 'reason', 1000)
- await env.DB.batch([env.DB.prepare("INSERT INTO access_decisions(id,item_id,decision,reason,decided_by_person,decided_by_name,decided_by_email,at) VALUES(?,?,'excluded',?,NULL,?,'',?)").bind(crypto.randomUUID(), itemId, reason, actor.name, now.toISOString()), auditStatement(env, actor, 'access-review.excluded', 'access-item:' + itemId, now, 'succeeded', reason)])
+ await env.DB.batch([env.DB.prepare("INSERT INTO access_decisions(id,item_id,decision,reason,decided_by_person,decided_by_name,decided_by_email,at) VALUES(?,?,'excluded',?,NULL,?,'',?)").bind(crypto.randomUUID(), itemId, reason, actor.name, now.toISOString()), auditStatement(env, actor, 'access-review.excluded', 'access-item:' + itemId, now, 'succeeded', reason, { reason })])
 }
 export async function delegate(env: Bindings, actor: Actor, itemId: string, input: Input, now: Date) {
  const item = await env.DB.prepare('SELECT attributes_json FROM access_review_items WHERE id=?').bind(itemId).first<{ attributes_json: string }>()
@@ -76,7 +85,7 @@ export async function delegate(env: Bindings, actor: Actor, itemId: string, inpu
  if (!to) throw new Refusal('Choose the person who decides instead.')
  if (String(JSON.parse(item.attributes_json).email ?? '').toLowerCase() === to.email.toLowerCase()) throw new Refusal('Nobody can be delegated their own access.', 409)
  const reason = text(input, 'reason', 500)
- await env.DB.batch([env.DB.prepare('INSERT INTO access_delegations(item_id,to_person_id,reason,by_name,at) VALUES(?,?,?,?,?) ON CONFLICT(item_id) DO UPDATE SET to_person_id=excluded.to_person_id,reason=excluded.reason,by_name=excluded.by_name,at=excluded.at').bind(itemId, to.id, reason, actor.name, now.toISOString()), auditStatement(env, actor, 'access-review.delegated', 'access-item:' + itemId, now, 'succeeded', reason)])
+ await env.DB.batch([env.DB.prepare('INSERT INTO access_delegations(item_id,to_person_id,reason,by_name,at) VALUES(?,?,?,?,?) ON CONFLICT(item_id) DO UPDATE SET to_person_id=excluded.to_person_id,reason=excluded.reason,by_name=excluded.by_name,at=excluded.at').bind(itemId, to.id, reason, actor.name, now.toISOString()), auditStatement(env, actor, 'access-review.delegated', 'access-item:' + itemId, now, 'succeeded', reason, { reason })])
 }
 // Scheduler work: revocation readback, late-discovered accounts, completion, reminders and recurrence.
 export async function accessReviewWork(env: Bindings, now: Date) {
@@ -110,11 +119,14 @@ export async function accessReviewWork(env: Bindings, now: Date) {
    if (email && (overdue || soon) && sent(await sendFollowup(env, { kind: overdue ? 'access-review-overdue' : 'access-review-due', subject: `${review.id}:${person}`, cycle: review.due_date, recipient: email, title: `${overdue ? 'Overdue' : 'Due soon'}: ${n} access decisions in ${review.name}`, text: `${n} accounts in ${review.name} wait for your decision (due ${review.due_date}).\n\nSign in to Evidence: ${env.AUTH_ORIGIN}/me`, link: `${env.AUTH_ORIGIN}/me` }, now))) count++
   }
  }
- // CADENCE-001: a recurring campaign starts its next period once the current one ends.
+ // CADENCE-001: a recurring (or owner-configured every-N-months) campaign starts its next period once the current one ends.
  for (const r of (await env.DB.prepare("SELECT * FROM access_reviews a WHERE cadence!='one-off' AND period_to<? AND NOT EXISTS(SELECT 1 FROM access_reviews b WHERE b.previous_id=a.id)").bind(today).all<{ id: string; name: string; cadence: Cadence; period_from: string; period_to: string; due_date: string; sources_json: string; reviewers_json: string; created_by: string }>()).results) {
-  const step = r.cadence === 'quarterly' ? 3 : r.cadence === 'semi-annual' ? 6 : 12, shift = (d: string) => addMonths(new Date(d + 'T00:00:00Z'), step).toISOString().slice(0, 10)
+  // Start and due date move N months, day clamped to the month's end; the period
+  // ends the day before the month-shifted day after it ended (30 Sep -> 31 Dec).
+  const step = cadenceMonths(r.cadence), shift = (d: string) => addMonths(new Date(d + 'T00:00:00Z'), step).toISOString().slice(0, 10)
+  const end = new Date(addMonths(new Date(Date.parse(r.period_to + 'T00:00:00Z') + 86400000), step).getTime() - 86400000).toISOString().slice(0, 10)
   const reviewers = JSON.parse(r.reviewers_json) as Record<string, string>
-  await startReview(env, { id: 'system', name: 'Evidence (recurring campaign)' }, { name: r.name, cadence: r.cadence, period_from: shift(r.period_from), period_to: shift(r.period_to), due_date: shift(r.due_date), sources: JSON.parse(r.sources_json), ...Object.fromEntries(Object.entries(reviewers).map(([k, v]) => ['reviewer_' + k, v])) }, now, r.id).catch(error => { if (!(error instanceof Refusal)) throw error })
+  await startReview(env, { id: 'system', name: 'Evidence (recurring campaign)' }, { name: r.name, cadence: r.cadence, period_from: shift(r.period_from), period_to: end, due_date: shift(r.due_date), sources: JSON.parse(r.sources_json), ...Object.fromEntries(Object.entries(reviewers).map(([k, v]) => ['reviewer_' + k, v])) }, now, r.id).catch(error => { if (!(error instanceof Refusal)) throw error })
   count++
  }
  return count

@@ -53,6 +53,8 @@ export async function appendReceipt(env: Bindings, r: { requirement: string; byt
    env.DB.prepare('INSERT INTO exhibits(id,object_key,filename,size,media_type) VALUES(?,?,?,?,?)').bind(exhibitId,objectKey,filename,actual.byteLength,r.mediaType || 'application/octet-stream'),
    env.DB.prepare('INSERT INTO receipts(id,requirement_id,exhibit_id,origin,source,covered_from,covered_to,added_by,added_by_name,added_at,sha256,supersedes) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)').bind(id,requirement,exhibitId,r.origin,source,from,to,operator.id,operator.displayName,now.toISOString(),hash,supersedes),
    ...(effective ? [env.DB.prepare('INSERT INTO receipt_effective_dates(receipt_id,effective_date) VALUES(?,?)').bind(id,effective)] : []),
+   // LOG-001: each receipt and each replacement is audited in the same batch.
+   env.DB.prepare("INSERT INTO product_audit(id,actor_kind,actor_id,actor_name,action,subject,outcome,detail,at) VALUES(?,'owner',?,?,?,?,'succeeded',?,?)").bind(crypto.randomUUID(), operator.id, operator.displayName, supersedes ? 'receipt.superseded' : 'receipt.added', 'receipt:' + id, `sha256 ${hash.slice(0, 16)}${supersedes ? ' supersedes receipt:' + supersedes : ''}`, now.toISOString()),
    ...(extra ? extra(id) : []),
   ])
  } catch { throw new Refusal('Receipt could not be appended. A concurrent replacement may already exist.', 409) }

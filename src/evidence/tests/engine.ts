@@ -2,11 +2,13 @@ import { runDefinitions } from '../control-definition/storage'
 import type { Bindings } from '../../auth.server'
 import type { Resource } from '../resources'
 import { remediationStatements } from '../remedy/storage'
+import { acceptedLibraryRevision } from '../program/library-revision'
 import { evaluate, parseCriteria } from './criteria'
 import { activeExceptions, CADENCE_MS, exclusions, latestRevision, requireTest, type Observation, type TestRow } from './storage'
 type Trigger = 'schedule' | 'source-change' | 'manual' | 'retest'
 // One run evaluates the declared population under the latest revision and
-// appends immutable observations. Remediation follows in the same transaction.
+// appends immutable observations, stamped with the library revision in force
+// (LIBRARY-001). Remediation follows in the same transaction.
 export async function runTest(env: Bindings, testId: string, trigger: Trigger, now: Date, only?: string | string[]) {
  const row = await requireTest(env, testId), revision = (await latestRevision(env, testId))!
  const criteria = parseCriteria(revision.criteria_json), excluded = exclusions(revision.excluded_json)
@@ -26,6 +28,7 @@ export async function runTest(env: Bindings, testId: string, trigger: Trigger, n
  const count = (result: string) => observations.filter(o => o.result === result).length
  await env.DB.batch([
   env.DB.prepare("INSERT INTO test_runs(id,test_id,revision,trigger,started_at,finished_at,outcome,population,passed,failed,unknown,not_applicable) VALUES(?,?,?,?,?,?,'complete',?,?,?,?,?)").bind(run, testId, revision.revision, trigger, at, at, observations.length, count('pass'), count('fail'), count('unknown'), count('not applicable')),
+  env.DB.prepare('INSERT INTO run_library_revisions(run_id,library_revision) VALUES(?,?)').bind(run, await acceptedLibraryRevision(env)),
   ...(observations.length ? [env.DB.prepare("INSERT INTO observations(id,run_id,test_id,revision,resource_id,result,expected_json,actual_json,reason,source_kind,source_ref,observed_at,exception_id,interval_from) SELECT value->>'id',value->>'run_id',value->>'test_id',value->>'revision',value->>'resource_id',value->>'result',value->>'expected_json',value->>'actual_json',value->>'reason',value->>'source_kind',value->>'source_ref',value->>'observed_at',value->>'exception_id',value->>'interval_from' FROM json_each(?)").bind(JSON.stringify(observations))] : []),
   ...await runDefinitions(env, testId, run, now),
   ...await remediationStatements(env, row, observations, now),

@@ -7,6 +7,7 @@ import { controlsFor, edition, frameworks } from '../library'
 import { controlTestStatus, type ControlTestStatus } from '../tests/storage'
 import { obligations } from '../remedy/storage'
 import { applicability, type ProgramRow } from './storage'
+import { acceptedLibraryRevision } from './library-revision'
 import { libraryControl } from '../library'
 import { policyList } from '../policy/storage'
 // READINESS-001 (program view): recorded proof completeness and automated test
@@ -31,18 +32,18 @@ export async function controlStates(env: Bindings, now: Date) {
  return { states, desk: data, queue }
 }
 export async function readiness(env: Bindings, row: ProgramRow, now: Date) {
- const { states, queue } = await controlStates(env, now), { current } = await applicability(env, row.id)
+ const { states, queue } = await controlStates(env, now), { current } = await applicability(env, row.id), revision = await acceptedLibraryRevision(env)
  const libraryToControl = new Map([...states.values()].filter(s => s.library_id).map(s => [s.library_id!, s.id]))
  const custom = (await env.DB.prepare('SELECT control_id,ref FROM control_mappings WHERE framework=? AND edition=? AND removed_at IS NULL').bind(row.framework, row.edition).all<{ control_id: string; ref: string }>()).results
  // POLICY-001: a requirement whose controls call for policies is met only by approved, published, in-review revisions.
  const policyState = new Map((await policyList(env, now)).map(p => [p.title.toLowerCase(), p.review_state]))
  const requirements: RequirementState[] = edition(row.framework, row.edition)!.requirements.map(r => {
   const decision = current.get(r.ref)
-  const ids = new Set([...controlsFor(row.framework, row.edition, r.ref).map(c => libraryToControl.get(c.id)).filter((x): x is string => !!x), ...custom.filter(m => m.ref === r.ref).map(m => m.control_id)])
+  const ids = new Set([...controlsFor(row.framework, row.edition, r.ref, revision).map(c => libraryToControl.get(c.id)).filter((x): x is string => !!x), ...custom.filter(m => m.ref === r.ref).map(m => m.control_id)])
   const controls = [...ids].map(id => states.get(id)).filter((x): x is ControlState => !!x)
   const tested = controls.filter(c => c.tests && c.tests.tests > 0)
   const testing = tested.some(c => c.tests!.fail) ? 'failing' : tested.some(c => c.tests!.unknown || c.tests!.untested || !c.tests!.pass) ? 'unknown' : tested.length !== controls.length || !tested.length ? 'untested' : 'passing'
-  const required = [...new Set([...controlsFor(row.framework, row.edition, r.ref).flatMap(c => libraryControl(c.id)?.policies ?? []), ...controls.flatMap(c => c.library_id ? libraryControl(c.library_id)?.policies ?? [] : [])])], missing = required.filter(t => policyState.get(t.toLowerCase()) !== 'current')
+  const required = [...new Set([...controlsFor(row.framework, row.edition, r.ref, revision).flatMap(c => libraryControl(c.id)?.policies ?? []), ...controls.flatMap(c => c.library_id ? libraryControl(c.library_id)?.policies ?? [] : [])])], missing = required.filter(t => policyState.get(t.toLowerCase()) !== 'current')
   const proof = !controls.length ? 'unmapped' : controls.every(c => c.proof === 'current') ? 'current' : 'not current'
   return { ready: decision?.state !== 'excluded' && proof === 'current' && testing === 'passing' && !missing.length, ref: r.ref, title: r.title, section: r.section, state: decision?.state === 'excluded' ? 'excluded' : 'included', rationale: decision?.rationale ?? '', controls, proof: !controls.length ? 'unmapped' : controls.every(c => c.proof === 'current') ? 'current' : 'not current', testing, failing_sources: [...new Set(tested.flatMap(c => c.tests!.failingSources))], policy: !required.length ? 'none required' : missing.length ? 'missing' : 'current', policies_missing: missing }
  })

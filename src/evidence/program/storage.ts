@@ -2,8 +2,9 @@ import type { Bindings } from '../../auth.server'
 import { validDate } from '../model'
 import { Refusal } from '../upload'
 import { auditStatement, list, oneOf, parseList, text, type Actor, type Input } from '../door'
-import { edition, editionChange, frameworks, frameworkIds, latestEdition, mappedControls, libraryRevision, type FrameworkId, type LibraryControl } from '../library'
+import { edition, editionChange, frameworks, frameworkIds, latestEdition, mappedControls, type FrameworkId, type LibraryControl } from '../library'
 import { requirePerson } from './people'
+import { acceptedLibraryRevision } from './library-revision'
 export interface ProgramRow { id: string; framework: FrameworkId; edition: string; name: string; legal_entity: string; report_type: string | null; categories: string; products: string; teams: string; regions: string; systems: string; audit_from: string; audit_to: string; assessor: string; lead_person_id: string | null; milestones: string; created_at: string; updated_at: string }
 export const reportTypes = ['Type I', 'Type II'] as const
 export const programs = async (env: Bindings) => (await env.DB.prepare('SELECT * FROM programs ORDER BY created_at,id').all<ProgramRow>()).results
@@ -11,8 +12,10 @@ export const program = (env: Bindings, id: string) => env.DB.prepare('SELECT * F
 export async function requireProgram(env: Bindings, id: string) { const row = await program(env, id); if (!row) throw new Refusal('Program not found.', 404); return row }
 
 // Adopt shipped library controls this installation does not hold yet: one
-// control and its named proof each, with the library revision recorded.
-export async function adoptionStatements(env: Bindings, controls: LibraryControl[], now: Date) {
+// control and its named proof each, with the library revision in force (the
+// installation's accepted revision unless a revision is being accepted).
+export async function adoptionStatements(env: Bindings, controls: LibraryControl[], now: Date, revision?: number) {
+ const libraryRevision = revision ?? await acceptedLibraryRevision(env)
  const adopted = new Set((await env.DB.prepare('SELECT library_id FROM library_adoptions').all<{ library_id: string }>()).results.map(r => r.library_id))
  const rows = controls.filter(c => !adopted.has(c.id)).map(c => ({ control: crypto.randomUUID(), requirement: crypto.randomUUID(), library: c.id, name: c.id + ' · ' + c.title, group: c.group, proof: c.proof, cadence: c.cadence }))
  if (!rows.length) return []
@@ -54,7 +57,7 @@ export async function createProgram(env: Bindings, actor: Actor, input: Input, n
   env.DB.prepare('INSERT INTO program_editions(id,program_id,edition,effective_at,change_id) VALUES(?,?,?,?,NULL)').bind(crypto.randomUUID(), id, editionId, at),
   revisionStatement(env, id, 1, row, actor, 'Program created', now),
   ...excluded.map(r => env.DB.prepare('INSERT INTO program_applicability(id,program_id,ref,state,rationale,actor_id,actor_name,decided_at) VALUES(?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), id, r.ref, 'excluded', `Trust services category ${r.optional} is not in this report's scope.`, actor.id, actor.name, at)),
-  ...await adoptionStatements(env, mappedControls(framework, editionId), now),
+  ...await adoptionStatements(env, mappedControls(framework, editionId, await acceptedLibraryRevision(env)), now),
   auditStatement(env, actor, 'program.created', 'program:' + id, now, 'succeeded', frameworks[framework].name + ' ' + editionId),
  ])
  return { id }
@@ -67,7 +70,7 @@ export async function updateProgram(env: Bindings, actor: Actor, id: string, inp
  await env.DB.batch([
   env.DB.prepare('UPDATE programs SET name=?,legal_entity=?,report_type=?,categories=?,products=?,teams=?,regions=?,systems=?,audit_from=?,audit_to=?,assessor=?,lead_person_id=?,milestones=?,updated_at=? WHERE id=?').bind(row.name, row.legal_entity, row.report_type, row.categories, row.products, row.teams, row.regions, row.systems, row.audit_from, row.audit_to, row.assessor, lead, row.milestones, row.updated_at, id),
   revisionStatement(env, id, revision, row, actor, reason, now),
-  auditStatement(env, actor, 'program.updated', 'program:' + id, now, 'succeeded', reason),
+  auditStatement(env, actor, 'program.updated', 'program:' + id, now, 'succeeded', reason, { reason, revision }),
  ])
 }
 
@@ -107,7 +110,7 @@ export async function proposeEdition(env: Bindings, actor: Actor, id: string, in
  const change = crypto.randomUUID()
  await env.DB.batch([
   env.DB.prepare('INSERT INTO edition_changes(id,program_id,from_edition,to_edition,diff_json,proposed_by,proposed_name,proposed_at) VALUES(?,?,?,?,?,?,?,?)').bind(change, id, row.edition, to, JSON.stringify(diff), actor.id, actor.name, now.toISOString()),
-  auditStatement(env, actor, 'program.edition-proposed', 'program:' + id, now, 'succeeded', `${row.edition} -> ${to}`),
+  auditStatement(env, actor, 'program.edition-proposed', 'program:' + id, now, 'succeeded', `${row.edition} -> ${to}`, { revision: row.edition }),
  ])
  return { id: change, diff }
 }
@@ -119,7 +122,7 @@ export async function decideEdition(env: Bindings, actor: Actor, id: string, cha
  if (change.from_edition !== row.edition) throw new Refusal('The program edition moved since this change was proposed; propose it again.', 409)
  const at = now.toISOString(), statements = [
   env.DB.prepare('UPDATE edition_changes SET decision=?,decided_by=?,decided_name=?,decided_at=?,reason=? WHERE id=? AND decision IS NULL').bind(decision, actor.id, actor.name, at, reason, changeId),
-  auditStatement(env, actor, 'program.edition-' + decision, 'program:' + id, now, 'succeeded', `${change.from_edition} -> ${change.to_edition}`),
+  auditStatement(env, actor, 'program.edition-' + decision, 'program:' + id, now, 'succeeded', `${change.from_edition} -> ${change.to_edition}`, { reason, revision: decision === 'accepted' ? change.to_edition : change.from_edition }),
  ]
  if (decision === 'accepted') {
   const diff = JSON.parse(change.diff_json) as NonNullable<ReturnType<typeof editionChange>>
@@ -131,7 +134,7 @@ export async function decideEdition(env: Bindings, actor: Actor, id: string, cha
    env.DB.prepare('INSERT INTO program_editions(id,program_id,edition,effective_at,change_id) VALUES(?,?,?,?,?)').bind(crypto.randomUUID(), id, change.to_edition, at, changeId),
    revisionStatement(env, id, revision, { ...row, edition: change.to_edition, updated_at: at }, actor, 'Edition change accepted: ' + reason, now),
    ...carried.map(r => env.DB.prepare('INSERT INTO program_applicability(id,program_id,ref,state,rationale,actor_id,actor_name,decided_at) VALUES(?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), id, r.ref, 'excluded', `Carried at edition change from excluded ${r.from.join(', ')}: ${current.get(r.from[0])!.rationale}`, actor.id, actor.name, at)),
-   ...await adoptionStatements(env, mappedControls(row.framework, change.to_edition), now),
+   ...await adoptionStatements(env, mappedControls(row.framework, change.to_edition, await acceptedLibraryRevision(env)), now),
   )
  }
  await env.DB.batch(statements)

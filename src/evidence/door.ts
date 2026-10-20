@@ -3,7 +3,7 @@ import { boundedBody, Refusal } from './upload'
 import { headers, page, escape, signedOutPage } from './view'
 export interface Actor { id: string; name: string }
 export interface OwnerContext { env: Bindings; actor: Actor; now: Date; url: URL; request: Request; isApi: boolean }
-export interface Route { method: 'GET' | 'POST'; pattern: RegExp; run: (context: OwnerContext, match: RegExpExecArray) => Promise<Response> }
+export interface Route { method: 'GET' | 'POST'; pattern: RegExp; errorReturn?: string; run: (context: OwnerContext, match: RegExpExecArray) => Promise<Response> }
 export type Input = Record<string, string | string[]>
 export const json = (data: unknown, status = 200) => Response.json(data, { status, headers })
 export const redirect = (location: string) => new Response(null, { status: 303, headers: { ...headers, location } })
@@ -29,8 +29,12 @@ export function ownerRoutes(routes: Route[], clock: () => Date) {
   const context: OwnerContext = { env, actor: { id: session.operator.id, name: session.operator.displayName }, now: clock(), url, request, isApi }
   try { return await hit.route.run(context, hit.match!) }
   catch (error) {
-   if (!(error instanceof Refusal)) { console.error('Evidence operation failed', error instanceof Error ? error.message : ''); return json({ error: 'Storage unavailable; no result is claimed.' }, 503) }
-   return isApi ? json({ error: error.message, ...(error.details ? { details: error.details } : {}) }, error.status) : page('Could not save', `<p role="alert">${escape(error.message)}</p>${Array.isArray(error.details) ? `<ul>${error.details.map(d => `<li>${escape(typeof d === 'string' ? d : JSON.stringify(d))}</li>`).join('')}</ul>` : ''}<p><a href="${escape(request.headers.get('referer') && new URL(request.headers.get('referer')!).origin === env.AUTH_ORIGIN ? new URL(request.headers.get('referer')!).pathname : '/app')}">Go back</a></p>`, error.status)
+   // LOG-001: a refused or failed owner write is recorded with its outcome,
+   // naming the door (method and path, never the query or body).
+   const record = (outcome: 'refused' | 'failed', detail: string) => method === 'GET' ? Promise.resolve() : auditStatement(env, context.actor, 'door.' + outcome, `${method} ${url.pathname}`, context.now, outcome, detail).run().then(() => undefined, failure => console.error('Evidence audit write failed', failure instanceof Error ? failure.message : ''))
+   if (!(error instanceof Refusal)) { console.error('Evidence operation failed', error instanceof Error ? error.message : ''); await record('failed', 'Storage unavailable; no result is claimed.'); return json({ error: 'Storage unavailable; no result is claimed.' }, 503) }
+   await record('refused', `${error.status}: ${error.message}`)
+   return isApi ? json({ error: error.message, ...(error.details ? { details: error.details } : {}) }, error.status) : page('Could not save', `<p role="alert">${escape(error.message)}</p>${Array.isArray(error.details) ? `<ul>${error.details.map(d => `<li>${escape(typeof d === 'string' ? d : JSON.stringify(d))}</li>`).join('')}</ul>` : ''}<p><a href="${escape(hit.route.errorReturn ?? (request.headers.get('referer') && new URL(request.headers.get('referer')!).origin === env.AUTH_ORIGIN ? new URL(request.headers.get('referer')!).pathname : '/app'))}">Go back</a></p>`, error.status)
   }
  }
 }
@@ -67,8 +71,12 @@ export const oneOf = <T extends string>(input: Input, key: string, values: reado
 }
 
 // Permanent product action audit (LOG-001). Detail never carries credentials.
-export function auditStatement(env: Bindings, actor: Actor & { kind?: 'owner' | 'token' | 'system' }, action: string, subject: string, at: Date, outcome: 'succeeded' | 'refused' | 'failed' | 'uncertain' = 'succeeded', detail = '') {
- return env.DB.prepare('INSERT INTO product_audit(id,actor_kind,actor_id,actor_name,action,subject,outcome,detail,at) VALUES(?,?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), actor.kind ?? 'owner', actor.id, actor.name, action, subject, outcome, detail.slice(0, 500), at.toISOString())
+// The reason is the one the actor entered where the door asks for one; the
+// revision is the subject's exact stored revision, version or edition that the
+// action produced or acted on. Both stay empty where neither exists.
+export interface AuditContext { reason?: string; revision?: string | number }
+export function auditStatement(env: Bindings, actor: Actor & { kind?: 'owner' | 'token' | 'system' }, action: string, subject: string, at: Date, outcome: 'succeeded' | 'refused' | 'failed' | 'uncertain' = 'succeeded', detail = '', context: AuditContext = {}) {
+ return env.DB.prepare('INSERT INTO product_audit(id,actor_kind,actor_id,actor_name,action,subject,outcome,detail,at,reason,revision) VALUES(?,?,?,?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), actor.kind ?? 'owner', actor.id, actor.name, action, subject, outcome, detail.slice(0, 500), at.toISOString(), (context.reason ?? '').slice(0, 1000), String(context.revision ?? '').slice(0, 100))
 }
 export const parseList = (value: string): string[] => { try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed.map(String) : [] } catch { return [] } }
 export const uuid = /[a-f0-9-]{36}/.source

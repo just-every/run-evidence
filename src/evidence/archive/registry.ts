@@ -2,13 +2,19 @@ import schemaData from './schema.json'
 import { columns } from './format'
 import { agentColumns } from '../agent/archive'
 import { importTableColumns } from '../import/archive-schema'
-import { programColumns } from './program'
+import { programColumns, libraryColumns } from './program'
 import { fail } from './format'
 import type { Bindings } from '../../auth.server'
 export type Store = Pick<Bindings,'DB'|'EXHIBITS'> & {ARCHIVE_COPY?:(source:string,key:string,size:number,session:string)=>Promise<boolean>}
 type Definition = {columns:{name:string;type:string;pk:number}[];foreignKeys:{id:number;seq:number;table:string;from:string;to:string}[];sql:string}
 export const schema = schemaData as Record<string,Definition>
-export const registry:Record<string,readonly string[]> = {...columns,...agentColumns,...importTableColumns,...programColumns,tests:[...programColumns.tests,'remediation']}
+export const registry:Record<string,readonly string[]> = {...columns,...agentColumns,...importTableColumns,...programColumns,...libraryColumns,tests:[...programColumns.tests,'remediation'],product_audit:[...programColumns.product_audit,'reason','revision']}
+// LOG-001: v10 archives written before audit reasons and revisions list
+// product_audit without them; their entries restore with both empty.
+export const auditColumnsBefore:readonly string[] = programColumns.product_audit
+// The destination owner's own sign-in is recorded before a restore, so audit
+// entries of destination authentication (auth.*) never make it non-empty.
+export const businessRows=(t:string,table=quote(t))=>t==='product_audit'?`(SELECT COUNT(*) FROM ${table} WHERE action NOT LIKE 'auth.%')`:`(SELECT COUNT(*) FROM ${table})`
 export const portableTables = Object.keys(registry)
 export const localTables = Object.keys(schema).filter(t=>!Object.hasOwn(registry,t))
 export const portableLocal:Record<string,string[]> = {

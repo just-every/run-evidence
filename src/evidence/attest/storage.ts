@@ -29,7 +29,7 @@ export async function assign(env: Bindings, actor: Actor, policy: string, input:
  const at = now.toISOString()
  const results = await env.DB.batch([
   ...people.map(p => env.DB.prepare("INSERT INTO policy_assignments(id,policy_id,revision_id,person_id,assigned_by,assigned_at,due_date,state) VALUES(?,?,?,?,?,?,?,'pending') ON CONFLICT(revision_id,person_id) DO NOTHING RETURNING id").bind(crypto.randomUUID(), policy, revision.id, p.id, actor.name, at, due)),
-  auditStatement(env, actor, 'policy.assigned', 'policy:' + policy, now, 'succeeded', `version ${revision.version} to ${audience} (${people.length}) due ${due}`),
+  auditStatement(env, actor, 'policy.assigned', 'policy:' + policy, now, 'succeeded', `version ${revision.version} to ${audience} (${people.length}) due ${due}`, { revision: revision.version }),
   ...await catalogueStatements(env, 'attestations', actor, now),
  ])
  await syncAttestations(env, now)
@@ -44,7 +44,7 @@ export async function reassignOnPublish(env: Bindings, actor: Actor, policy: str
  await env.DB.batch([
   env.DB.prepare("UPDATE policy_assignments SET state='superseded',closed_at=? WHERE policy_id=? AND revision_id!=? AND state IN ('pending','acknowledged')").bind(at, policy, revision.id),
   ...earlier.map(r => env.DB.prepare("INSERT INTO policy_assignments(id,policy_id,revision_id,person_id,assigned_by,assigned_at,due_date,state) VALUES(?,?,?,?,?,?,?,'pending') ON CONFLICT(revision_id,person_id) DO NOTHING").bind(crypto.randomUUID(), policy, revision.id, r.person_id, actor.name, at, due)),
-  auditStatement(env, actor, 'policy.reassigned', 'policy:' + policy, now, 'succeeded', `version ${revision.version} to ${earlier.length} people due ${due}`),
+  auditStatement(env, actor, 'policy.reassigned', 'policy:' + policy, now, 'succeeded', `version ${revision.version} to ${earlier.length} people due ${due}`, { revision: revision.version }),
  ])
  await syncAttestations(env, now)
  return earlier.length
@@ -60,7 +60,7 @@ export async function acknowledge(env: Bindings, operator: { id: string; email: 
  await env.DB.batch([
   env.DB.prepare('INSERT INTO policy_acknowledgments(id,assignment_id,person_id,operator_id,operator_email,revision_id,version,body_sha256,acknowledged_at) VALUES(?,?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), assignment, person, operator.id, operator.email, row.revision_id, row.version, row.body_sha256, at),
   env.DB.prepare("UPDATE policy_assignments SET state='acknowledged',closed_at=? WHERE id=? AND state='pending'").bind(at, assignment),
-  auditStatement(env, { id: operator.id, name: operator.displayName }, 'policy.acknowledged', 'policy:' + row.policy_id, now, 'succeeded', `version ${row.version} by ${operator.email}`),
+  auditStatement(env, { id: operator.id, name: operator.displayName }, 'policy.acknowledged', 'policy:' + row.policy_id, now, 'succeeded', `version ${row.version} by ${operator.email}`, { revision: row.version }),
  ])
  await syncAttestations(env, now)
 }
@@ -68,7 +68,8 @@ export async function addException(env: Bindings, actor: Actor, policy: string, 
  const person = typeof input.person_id === 'string' && input.person_id ? input.person_id : null, until = text(input, 'expires_at', 10)
  if (person && !await env.DB.prepare('SELECT 1 FROM people WHERE id=?').bind(person).first()) throw new Refusal('Choose a person from People.')
  if (!validDate(until) || until <= now.toISOString().slice(0, 10)) throw new Refusal('An exception needs a future expiry date.')
- await env.DB.batch([env.DB.prepare('INSERT INTO policy_exceptions(id,policy_id,person_id,reason,approved_by,approved_at,expires_at) VALUES(?,?,?,?,?,?,?)').bind(crypto.randomUUID(), policy, person, text(input, 'reason', 500), actor.name, now.toISOString(), until + 'T23:59:59.999Z'), auditStatement(env, actor, 'policy.exception', 'policy:' + policy, now, 'succeeded', `${person ?? 'everyone'} until ${until}`)])
+ const reason = text(input, 'reason', 500)
+ await env.DB.batch([env.DB.prepare('INSERT INTO policy_exceptions(id,policy_id,person_id,reason,approved_by,approved_at,expires_at) VALUES(?,?,?,?,?,?,?)').bind(crypto.randomUUID(), policy, person, reason, actor.name, now.toISOString(), until + 'T23:59:59.999Z'), auditStatement(env, actor, 'policy.exception', 'policy:' + policy, now, 'succeeded', `${person ?? 'everyone'} until ${until}`, { reason })])
  await syncAttestations(env, now)
 }
 // A departure closes open work, keeps every acknowledgment, ends sign-in access
@@ -85,7 +86,7 @@ export async function depart(env: Bindings, actor: Actor, request: Request, pers
  await env.DB.batch([
   env.DB.prepare('INSERT INTO people_departures(person_id,departed_at,recorded_by,reason,access_outcome) VALUES(?,?,?,?,?)').bind(person, at, actor.name, reason, outcome),
   env.DB.prepare("UPDATE policy_assignments SET state='departed',closed_at=? WHERE person_id=? AND state='pending'").bind(at, person),
-  auditStatement(env, actor, 'person.departed', 'person:' + person, now, 'succeeded', outcome),
+  auditStatement(env, actor, 'person.departed', 'person:' + person, now, 'succeeded', outcome, { reason }),
  ])
  await syncAttestations(env, now)
  const handover = await requestHandover(env, person, now, false)

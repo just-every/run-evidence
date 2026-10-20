@@ -5,6 +5,7 @@ import { auditStatement, list, oneOf, parseList, text, type Actor, type Input } 
 import { controlsFor, edition, frameworks, isFramework } from '../library'
 import { requirePerson } from './people'
 import { programs } from './storage'
+import { acceptedLibraryRevision } from './library-revision'
 // PROGRAM-002: one control, mapped to several frameworks, with an accountable
 // owner, contributors and scope whose every change keeps actor and reason.
 export async function requireControl(env: Bindings, id: string) {
@@ -13,8 +14,8 @@ export async function requireControl(env: Bindings, id: string) {
  return row
 }
 export async function controlMappings(env: Bindings, id: string, libraryId: string | null) {
- const active = await programs(env)
- const library = libraryId ? active.flatMap(p => edition(p.framework, p.edition)!.requirements.filter(r => controlsFor(p.framework, p.edition, r.ref).some(c => c.id === libraryId)).map(r => ({ program_id: p.id, program: p.name, framework: frameworks[p.framework].name, edition: p.edition, ref: r.ref, title: r.title, origin: 'library' as const }))) : []
+ const active = await programs(env), revision = await acceptedLibraryRevision(env)
+ const library = libraryId ? active.flatMap(p => edition(p.framework, p.edition)!.requirements.filter(r => controlsFor(p.framework, p.edition, r.ref, revision).some(c => c.id === libraryId)).map(r => ({ program_id: p.id, program: p.name, framework: frameworks[p.framework].name, edition: p.edition, ref: r.ref, title: r.title, origin: 'library' as const }))) : []
  const custom = (await env.DB.prepare('SELECT * FROM control_mappings WHERE control_id=? ORDER BY added_at,rowid').bind(id).all<{ id: string; framework: string; edition: string; ref: string; added_name: string; added_at: string; reason: string; removed_name: string | null; removed_at: string | null; removal_reason: string | null }>()).results
  return { library, custom }
 }
@@ -24,14 +25,14 @@ export async function addMapping(env: Bindings, actor: Actor, id: string, input:
  if (!isFramework(framework) || !edition(framework, editionId)?.requirements.some(r => r.ref === ref)) throw new Refusal('Choose a requirement of a shipped framework edition.')
  if (await env.DB.prepare('SELECT 1 FROM control_mappings WHERE control_id=? AND framework=? AND edition=? AND ref=? AND removed_at IS NULL').bind(id, framework, editionId, ref).first()) throw new Refusal('That mapping already exists.', 409)
  const mapping = crypto.randomUUID()
- await env.DB.batch([env.DB.prepare('INSERT INTO control_mappings(id,control_id,framework,edition,ref,added_by,added_name,added_at,reason) VALUES(?,?,?,?,?,?,?,?,?)').bind(mapping, id, framework, editionId, ref, actor.id, actor.name, now.toISOString(), reason), auditStatement(env, actor, 'control.mapped', 'control:' + id, now, 'succeeded', `${framework} ${ref}: ${reason}`)])
+ await env.DB.batch([env.DB.prepare('INSERT INTO control_mappings(id,control_id,framework,edition,ref,added_by,added_name,added_at,reason) VALUES(?,?,?,?,?,?,?,?,?)').bind(mapping, id, framework, editionId, ref, actor.id, actor.name, now.toISOString(), reason), auditStatement(env, actor, 'control.mapped', 'control:' + id, now, 'succeeded', `${framework} ${ref}: ${reason}`, { reason })])
  return mapping
 }
 export async function removeMapping(env: Bindings, actor: Actor, id: string, mapping: string, input: Input, now: Date) {
  const reason = text(input, 'reason', 500)
  const changed = await env.DB.prepare('UPDATE control_mappings SET removed_by=?,removed_name=?,removed_at=?,removal_reason=? WHERE id=? AND control_id=? AND removed_at IS NULL').bind(actor.id, actor.name, now.toISOString(), reason, mapping, id).run()
  if (!changed.meta.changes) throw new Refusal('Active mapping not found.', 404)
- await auditStatement(env, actor, 'control.unmapped', 'control:' + id, now, 'succeeded', reason).run()
+ await auditStatement(env, actor, 'control.unmapped', 'control:' + id, now, 'succeeded', reason, { reason }).run()
 }
 export async function assignOwner(env: Bindings, actor: Actor, id: string, input: Input, now: Date) {
  await requireControl(env, id)
@@ -55,7 +56,7 @@ export async function changeScope(env: Bindings, actor: Actor, id: string, input
  const inScope = (await scopeAt(env, id, now.toISOString())).includes(asset)
  if (action === 'added' && inScope) throw new Refusal('That asset is already in scope.', 409)
  if (action === 'removed' && !inScope) throw new Refusal('That asset is not in scope.', 409)
- await env.DB.batch([env.DB.prepare('INSERT INTO control_scope(id,control_id,asset,action,reason,effective_at,actor_id,actor_name) VALUES(?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), id, asset, action, reason, now.toISOString(), actor.id, actor.name), auditStatement(env, actor, 'control.scope-' + action, 'control:' + id, now, 'succeeded', `${asset}: ${reason}`)])
+ await env.DB.batch([env.DB.prepare('INSERT INTO control_scope(id,control_id,asset,action,reason,effective_at,actor_id,actor_name) VALUES(?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), id, asset, action, reason, now.toISOString(), actor.id, actor.name), auditStatement(env, actor, 'control.scope-' + action, 'control:' + id, now, 'succeeded', `${asset}: ${reason}`, { reason })])
 }
 const scopeRows = async (env: Bindings, id: string) => (await env.DB.prepare('SELECT asset,action,reason,effective_at,actor_name FROM control_scope WHERE control_id=? ORDER BY effective_at,rowid').bind(id).all<{ asset: string; action: 'added' | 'removed'; reason: string; effective_at: string; actor_name: string }>()).results
 export async function scopeAt(env: Bindings, id: string, at: string) {

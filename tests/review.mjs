@@ -133,7 +133,7 @@ try {
    } finally {await app.db.prepare('DROP TRIGGER review_test_revoke_during_log').run()}
   }
  })
- await scenario('Refused known excluded receipts retain owner-only exhibit attribution',async()=>{
+ await scenario('LOG-001 / Refused known excluded receipts retain owner-only exhibit attribution, and every folder read and refusal is on the owner Audit without the grant',async()=>{
   const audit=await issue(input([chosen.control_id])), seen=new Set()
   const cases=[outside,spanning,{id:'00000000-0000-0000-0000-000000000000',exhibit_id:null}]
   for(const row of cases)for(const [suffix,action] of [['','receipt'],['/view','receipt'],['/download','download']]){
@@ -149,6 +149,10 @@ try {
   }
   for(const path of ['/api/folders/'+audit.folder.id+'/events','/app/folders/'+audit.folder.id+'/events'])assert.equal((await viewer(path,{headers:{'sec-fetch-site':'same-origin'}})).status,401)
   assert.deepEqual(await denial(audit.path+'/events'),expected404)
+  const trail=await (await app.fetch('/api/audit?action=review.')).text(),entries=JSON.parse(trail).entries
+  assert.ok(entries.some(e=>e.subject==='exhibit:'+outside.exhibit_id&&e.action==='review.receipt'&&e.outcome==='refused'&&e.actor_name==='Review folder · Independent reviewer'))
+  assert.ok(entries.some(e=>e.outcome==='succeeded'&&e.actor_kind==='reviewer'))
+  assert.ok(!trail.includes(audit.path.split('/').at(-1)),'the owner Audit never contains the grant')
  })
  await scenario('All six original gap outcomes remain honest without exposing hidden superseders',async()=>{
   await app.clock('2026-10-11T12:00:00Z')

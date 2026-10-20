@@ -28,13 +28,14 @@ try {
   contributor = await post('/api/people', { name: 'Sam Ortiz', email: 'sam@northstar.test', kind: 'contractor' })
   assert.equal((await app.fetch('/api/people', { method: 'POST', headers: { origin: app.origin, 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Dup', email: 'PRIYA@northstar.test', kind: 'employee' }) })).status, 409)
  })
- await scenario('Each core program starts pre-mapped to the library with no unmapped requirement and no certification claim', async () => {
+ await scenario('LIBRARY-001: Each core program starts pre-mapped to the library with no unmapped requirement, a test or named proof on every mapped control, and no certification claim', async () => {
   soc2 = (await program('soc2', { categories: ['Availability'], lead_person_id: owner.id })).id
   iso = (await program('iso27001')).id; hipaa = (await program('hipaa')).id; pci = (await program('pci', { audit_from: '2026-01-01', audit_to: '2026-12-31' })).id
   for (const [id, total] of [[soc2, 61], [iso, 118], [hipaa, 67], [pci, 71]]) {
    const { program: row, readiness } = await get('/api/programs/' + id)
    assert.equal(readiness.totals.requirements, total); assert.equal(readiness.totals.unmapped, 0)
    assert.ok(readiness.requirements.filter(r => r.state === 'included').every(r => r.controls.length > 0))
+   assert.ok(readiness.requirements.flatMap(r => r.controls).every(c => c.evidence.length > 0 || c.tests?.tests > 0))
    assert.deepEqual(JSON.parse(row.products), ['Web app', 'API'])
   }
   const soc = (await get('/api/programs/' + soc2)).readiness
@@ -89,6 +90,36 @@ try {
   assert.ok(hostile.id)
   const after = await get('/api/controls/' + control)
   assert.equal(after.mappings.custom[0].removal_reason, 'Covered by AC-02 instead'); assert.deepEqual(after.scope, ['prod-db'])
+ })
+ await scenario('BOUNDARY-001: a US business scopes HIPAA and PCI, inspects BAA/DPA, regional and licensed-content prerequisites and the assessor handoff, reviews USD costs and exports an assessor pack that claims no certification', async () => {
+  const claims = /\b(?:certified|guaranteed?|(?:HIPAA|PCI)[- ]compliant|legally sufficient)\b/i, words = html => html.replace(/<[^>]+>/g, ' ')
+  const html = await (await app.fetch('/app/programs/' + hipaa)).text()
+  assert.match(html, /Business associate agreements \(BAAs\)/); assert.match(html, /US-first regional scope.*us-east-1/s); assert.match(html, /HIPAA has no certification/)
+  assert.match(html, /Not verified by Evidence/); assert.match(html, /Evidence charges USD 0/); assert.match(html, /data-cost-provider="cloudflare"/); assert.match(html, /data-cost-provider="resend"/)
+  assert.doesNotMatch(words(html), claims)
+  // Follow each specialist link to the page where that provider's records live.
+  const start = html.indexOf('id="boundary"'), panel = html.slice(start, html.indexOf('</section>', start))
+  const links = [...panel.matchAll(/href="(\/app\/[a-z]+)"/g)].map(m => m[1])
+  for (const path of ['/app/vulnerabilities', '/app/connections', '/app/remediation', '/app/folders']) assert.ok(links.includes(path), path)
+  for (const path of links) { const page = await app.fetch(path); assert.equal(page.status, 200, path); assert.doesNotMatch(words(await page.text()), claims, path) }
+  const abroad = (await program('pci', { name: 'PCI card data', regions: ['us-east-1', 'eu-west-1'] })).id
+  const pciPage = await (await app.fetch('/app/programs/' + abroad)).text()
+  assert.match(pciPage, /Regions outside the US are in scope: eu-west-1\./); assert.match(pciPage, /PCI DSS standard/); assert.match(pciPage, /Third-party service provider agreements/)
+  assert.equal((await app.fetch(`/api/programs/${abroad}/handoff`, { headers: { cookie: '' } })).status, 401)
+  assert.equal((await app.fetch('/api/programs/00000000-0000-4000-8000-000000000000/handoff')).status, 404)
+  const download = async () => { const r = await app.fetch(`/api/programs/${abroad}/handoff`); assert.equal(r.status, 200); assert.match(r.headers.get('content-disposition'), /^attachment; filename="assessor-handoff-/); return r.json() }
+  const pack = await download()
+  assert.equal(pack.format, 'evidence-assessor-handoff'); assert.match(pack.certification, /^None asserted\. The merchant or a PCI QSA signs/)
+  assert.deepEqual(pack.prerequisites.map(p => p.kind), ['agreement', 'licensed content', 'regional']); assert.ok(pack.prerequisites.every(p => p.status === 'not verified by Evidence'))
+  assert.equal(pack.costs.evidence, 'USD 0'); assert.ok(pack.costs.providers.some(p => p.provider === 'cloudflare')); assert.ok(pack.costs.providers.every(p => /USD/.test(p.basis)))
+  assert.deepEqual(pack.program.regions, ['us-east-1', 'eu-west-1']); assert.equal(pack.assessor.named, 'Harbour Assurance LLP')
+  assert.equal(pack.unresolved.length, pack.readiness.included - pack.readiness.ready); assert.ok(pack.unresolved.length > 0)
+  const access = pack.evidence.find(e => e.library_id === 'AC-04'); assert.ok(access.exhibits.length); assert.match(access.exhibits[0].sha256, /^[a-f0-9]{64}$/)
+  assert.doesNotMatch(JSON.stringify(pack), claims)
+  // A restart keeps the pack's evidence index, and each download is audited.
+  await app.clock('2026-11-15T09:00:00Z')
+  assert.deepEqual((await download()).evidence, pack.evidence)
+  assert.equal((await app.db.prepare("SELECT COUNT(*) AS n FROM product_audit WHERE action='program.handoff-exported' AND subject=?").bind('program:' + abroad).first()).n, 2)
  })
  await scenario('An eight-month-old pentest report covers four months, then due soon and overdue each remind the owner once', async () => {
   await app.clock('2026-10-11T12:00:00Z')

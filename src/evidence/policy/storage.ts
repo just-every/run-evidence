@@ -19,7 +19,7 @@ export async function draftPolicy(env: Bindings, actor: Actor, input: Input, now
  await env.DB.batch([
   existing ? env.DB.prepare('UPDATE policies SET owner_person_id=?,updated_at=? WHERE id=?').bind(owner, at, policy) : env.DB.prepare('INSERT INTO policies(id,title,owner_person_id,created_at,updated_at) VALUES(?,?,?,?,?)').bind(policy, title, owner, at, at),
   env.DB.prepare("INSERT INTO policy_revisions(id,policy_id,version,body,body_sha256,status,drafted_by,drafted_at) VALUES(?,?,?,?,?,'draft',?,?)").bind(revision, policy, version, body, await digest(body), actor.name, at),
-  auditStatement(env, actor, 'policy.drafted', 'policy:' + policy, now, 'succeeded', `version ${version}`),
+  auditStatement(env, actor, 'policy.drafted', 'policy:' + policy, now, 'succeeded', `version ${version}`, { revision: version }),
  ])
  return { policy, revision, version }
 }
@@ -30,10 +30,10 @@ export async function requireRevision(env: Bindings, policy: string, revision: s
 }
 // A decision names the exact text it read; a changed fingerprint is refused.
 export async function decide(env: Bindings, actor: Actor, policy: string, revision: string, input: Input, now: Date) {
- const row = await requireRevision(env, policy, revision), decision = oneOf(input, 'decision', ['approved', 'rejected'] as const)
+ const row = await requireRevision(env, policy, revision), decision = oneOf(input, 'decision', ['approved', 'rejected'] as const), note = text(input, 'note', 1000, true)
  if (row.status !== 'draft') throw new Refusal('Only a draft revision can be decided.', 409)
  if (input.body_sha256 !== row.body_sha256) throw new Refusal('Review the exact revision: its text fingerprint does not match what you approved.', 409)
- await env.DB.batch([env.DB.prepare("UPDATE policy_revisions SET status=?,decided_by=?,decided_at=?,decision_note=?,approved_sha256=? WHERE id=? AND status='draft'").bind(decision, actor.name, now.toISOString(), text(input, 'note', 1000, true), decision === 'approved' ? row.body_sha256 : null, revision), auditStatement(env, actor, 'policy.' + decision, 'policy:' + policy, now, 'succeeded', `version ${row.version}`)])
+ await env.DB.batch([env.DB.prepare("UPDATE policy_revisions SET status=?,decided_by=?,decided_at=?,decision_note=?,approved_sha256=? WHERE id=? AND status='draft'").bind(decision, actor.name, now.toISOString(), note, decision === 'approved' ? row.body_sha256 : null, revision), auditStatement(env, actor, 'policy.' + decision, 'policy:' + policy, now, 'succeeded', `version ${row.version}`, { reason: note, revision: row.version })])
 }
 export async function publish(env: Bindings, actor: Actor, policy: string, revision: string, input: Input, now: Date) {
  const row = await requireRevision(env, policy, revision)
@@ -45,7 +45,7 @@ export async function publish(env: Bindings, actor: Actor, policy: string, revis
   env.DB.prepare("UPDATE policy_revisions SET status='superseded' WHERE policy_id=? AND status='published'").bind(policy),
   env.DB.prepare("UPDATE policy_revisions SET status='published',published_at=?,effective_date=?,review_due=? WHERE id=? AND status='approved'").bind(now.toISOString(), effective, due.toISOString().slice(0, 10), revision),
   env.DB.prepare('UPDATE policies SET updated_at=? WHERE id=?').bind(now.toISOString(), policy),
-  auditStatement(env, actor, 'policy.published', 'policy:' + policy, now, 'succeeded', `version ${row.version}`),
+  auditStatement(env, actor, 'policy.published', 'policy:' + policy, now, 'succeeded', `version ${row.version}`, { revision: row.version }),
  ])
 }
 export async function policyList(env: Bindings, now: Date) {

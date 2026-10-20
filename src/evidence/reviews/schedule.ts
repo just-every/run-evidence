@@ -64,7 +64,7 @@ export async function scheduleReview(env: Bindings, actor: Actor, kind: Kind, id
  const owner = input.owner_person_id ? (await requirePerson(env, input.owner_person_id, 'review owner')).id : null
  await env.DB.batch([
   env.DB.prepare('INSERT INTO review_schedules(id,subject_kind,subject_id,cadence,anchor,fiscal_start_month,window_start,program_id,reminder_lead_days,owner_person_id,effective_from,actor_id,actor_name,reason) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), kind, id, cadence, anchor, month, windowStart, program, lead, owner, now.toISOString(), actor.id, actor.name, reason),
-  auditStatement(env, actor, kind + '.review-scheduled', `${kind}:${id}`, now, 'succeeded', `${cadence} ${anchor}: ${reason}`),
+  auditStatement(env, actor, kind + '.review-scheduled', `${kind}:${id}`, now, 'succeeded', `${cadence} ${anchor}: ${reason}`, { reason }),
  ])
 }
 export async function completeReview(env: Bindings, actor: Actor, kind: Kind, id: string, input: Input, now: Date) {
@@ -80,8 +80,9 @@ export async function overrideReview(env: Bindings, actor: Actor, kind: Kind, id
  if (current.review.schedule.anchor !== 'effective-date' || !current.review.due) throw new Refusal('One-off review dates apply to reviews anchored to the last review date.', 409)
  const due = text(input, 'due_date', 10)
  if (!validDate(due)) throw new Refusal('Choose a real review date.')
+ const reason = text(input, 'reason', 500)
  const cycle = day(addMonths(new Date(Date.parse(current.review.last_review! + 'T00:00:00Z')), months(current.review.schedule.cadence)))
- await env.DB.batch([env.DB.prepare('INSERT INTO review_overrides(id,subject_kind,subject_id,cycle_due,due_date,reason,actor_name,at) VALUES(?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), kind, id, cycle, due, text(input, 'reason', 500), actor.name, now.toISOString()), auditStatement(env, actor, kind + '.review-date', `${kind}:${id}`, now, 'succeeded', `${cycle} -> ${due}`)])
+ await env.DB.batch([env.DB.prepare('INSERT INTO review_overrides(id,subject_kind,subject_id,cycle_due,due_date,reason,actor_name,at) VALUES(?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), kind, id, cycle, due, reason, actor.name, now.toISOString()), auditStatement(env, actor, kind + '.review-date', `${kind}:${id}`, now, 'succeeded', `${cycle} -> ${due}`, { reason })])
 }
 // Reminders at the lead and at the deadline, to the review owner, once per cycle.
 export async function reviewReminders(env: Bindings, now: Date) {

@@ -16,7 +16,7 @@ export async function registerCollector(env: Bindings, actor: Actor, input: Inpu
  await declareType(env, resourceType, schema, 'reviewed collector ' + revision, now)
  await env.DB.batch([
   env.DB.prepare("INSERT INTO connections(id,provider,label,account,api_base,granted_scopes,status,created_by,created_name,created_at,collector_token_hash,config_json) VALUES(?,?,?,?,?,?,'active',?,?,?,?,?)").bind(id, provider, label, label, env.AUTH_ORIGIN, JSON.stringify(['local Git metadata: read only', 'one registered repository label']), actor.id, actor.name, at, await digest(token), JSON.stringify({ revision, reviewed_by: actor.name, reviewed_at: at })),
-  auditStatement(env, actor, 'collector.registered', 'connection:' + id, now, 'succeeded', revision),
+  auditStatement(env, actor, 'collector.registered', 'connection:' + id, now, 'succeeded', revision, { revision }),
  ])
  return { id, token }
 }

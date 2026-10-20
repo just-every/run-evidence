@@ -1,12 +1,12 @@
 import { fail,stream,sha } from './format'
 import { PART_BYTES } from './framing'
-import { assertSchema,portableTables,staged,type Store } from './registry'
+import { assertSchema,businessRows,portableTables,staged,type Store } from './registry'
 import { assertBucket } from './files'
 import { dropStages } from './staging'
 export interface Session {id:string;owner_id:string;state:string;parts:number;bytes:number;created_at:string;updated_at:string;header:string|null;result:string|null;error:string|null}
 export async function emptyPortableTarget(env:Store){
  for(let i=0;i<portableTables.length;i+=25){
-  const counts=await env.DB.batch<{n:number}>(portableTables.slice(i,i+25).map(t=>env.DB.prepare(`SELECT count(*) AS n FROM "${t}"`)))
+  const counts=await env.DB.batch<{n:number}>(portableTables.slice(i,i+25).map(t=>env.DB.prepare(`SELECT ${businessRows(t)} AS n`)))
   if(counts.some(r=>r.results[0].n>0))fail('Restore requires an empty Evidence database. Destination authentication is allowed.')
  }
  await assertBucket(env,true)

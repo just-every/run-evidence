@@ -4,6 +4,7 @@ import { createOperatorAuth, createAuthHandler, createSignInHandler, devNotFound
 import { operatorMail } from './mail.server.mjs'
 import { createOwnerClaimHandler } from './modules/owner-claim/index.mjs'
 import branding from './branding.json'
+import { auditedAuthentication } from './evidence/audit/auth'
 
 // The edition's declared theme (public/rer-theme.css), as Base frames link it.
 const theme = { href: '/rer-theme.css', productName: branding.name, accentColor: branding.primaryColor }
@@ -42,9 +43,17 @@ export function operatorAuth(env: Bindings) {
  return createOperatorAuth({ db: env.DB, config: authConfig(env), mailSender: operatorMail(env), clientIp: request => request.headers.get('CF-Connecting-IP') ?? '' })
 }
 
-export async function authResponse(request: Request, original: Bindings): Promise<Response | null> {
+// LOG-001: every write through the sign-in, first-run and owner-claim doors is
+// audited with what it changed (src/evidence/audit/auth.ts).
+export async function authResponse(request: Request, original: Bindings, clock: () => Date = () => new Date()): Promise<Response | null> {
  const env = runtimeBindings(original), url = new URL(request.url)
  if (url.pathname.startsWith('/__dev/')) return devNotFound()
+ if (['GET', 'HEAD'].includes(request.method) || !(url.pathname.startsWith('/auth/') || url.pathname === '/signin' || url.pathname === '/setup')) return authAnswer(request, env, url)
+ const session = await operatorAuth(env).getSession(request).catch(() => null)
+ return auditedAuthentication(env, request, session ? { id: session.operator.id, name: session.operator.displayName } : null, clock, () => authAnswer(request, env, url))
+}
+
+async function authAnswer(request: Request, env: Bindings, url: URL): Promise<Response | null> {
  // The shared server-rendered sign-in page: plain forms that work before any script.
  if (url.pathname === '/signin') {
   const page = await createSignInHandler(operatorAuth(env), {

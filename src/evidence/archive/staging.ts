@@ -11,9 +11,11 @@ export async function createStages(env:Store,id:string) {
  for(let i=0;i<statements.length;i+=20)await env.DB.batch(statements.slice(i,i+20))
 }
 export async function dropStages(env:Store,id:string) {for(let i=0;i<portableTables.length;i+=20)await env.DB.batch(portableTables.slice(i,i+20).map(t=>env.DB.prepare('DROP TABLE IF EXISTS '+staged(id,t))))}
-export async function stageRows(env:Store,id:string,table:string,rows:unknown) {
+// cols are the columns the archive's own registry lists for the table; staged
+// columns it predates take their schema default.
+export async function stageRows(env:Store,id:string,table:string,rows:unknown,cols:readonly string[]=registry[table]) {
  if(!Array.isArray(rows)||!rows.length||rows.length>128)fail('Invalid archive row page.')
- const cols=registry[table];if(!cols)fail('Unknown archive table.')
+ if(!cols)fail('Unknown archive table.')
  for(const row of rows){if(!row||typeof row!=='object'||Array.isArray(row)||Object.keys(row).length!==cols.length||cols.some(c=>!Object.hasOwn(row,c)))fail('Unaccounted archive columns.');baseRow(table,row);for(const c of cols){const v=row[c];if(v!==null&&typeof v!=='string'&&!(typeof v==='number'&&Number.isFinite(v)))fail('Invalid portable value.');if(blobColumn(table,c)&&v!==null&&(typeof v!=='string'||! /^(?:[0-9A-F]{2})*$/.test(v)))fail('Invalid portable BLOB encoding.')}}
  // D1's JSON expansion admits a bounded page in one statement. Blob values
  // use SQLite unhex, preserving NULL separately from the empty byte string.

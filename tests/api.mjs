@@ -41,7 +41,7 @@ try {
   const calls = (await app.db.prepare('SELECT * FROM api_calls').all()).results
   assert.deepEqual(calls.map(c => c.status).sort(), [401, 401, 401, 401, 403]); assert.ok(!JSON.stringify(calls).includes(push.token) && !JSON.stringify(calls).includes(stored.token_hash))
  })
- await scenario('Fifty pushed resources are idempotent, a full sync marks the absent one removed, and invalid items are refused one by one', async () => {
+ await scenario('API-001 / INVENTORY-001: pushed resource identity survives token replacement; full sync and invalid items retain their semantics', async () => {
   assert.equal((await v1(push.token, 'PUT', '/v1/resource-types/internal_service', { schema: { fields: { mfa_enforced: 'boolean', owner: 'string', tier: 'number' }, required: ['mfa_enforced'] } })).status, 200)
   const first = await (await v1(push.token, 'PUT', '/v1/resources/internal_service', { resources: services(50) })).json()
   assert.equal(first.created, 50)
@@ -54,6 +54,13 @@ try {
   assert.equal(sync.removed, 1); assert.equal(sync.results.find(r => r.outcome === 'removed').uniqueId, 'svc-50')
   const removed = await app.db.prepare("SELECT id,removed_at FROM resources WHERE unique_id='svc-50'").first()
   assert.ok(removed.removed_at); assert.deepEqual((await app.db.prepare('SELECT change FROM resource_versions WHERE resource_id=? ORDER BY at,rowid').bind(removed.id).all()).results.map(r => r.change), ['created', 'removed'])
+  const before = (await get('/api/inventory')).records.find(r => r.source_id === sync.results.find(r => r.uniqueId === 'svc-49').id)
+  const replacement = await owner('/api/api-tokens', { name: 'Replacement inventory sync', scopes: ['resource-push'], expires_at: '2027-04-01' })
+  const replaced = await (await v1(replacement.token, 'PUT', '/v1/resources/internal_service', { resources: [{ ...services(49)[48], displayName: 'Replacement Service 49' }] })).json()
+  assert.equal(replaced.updated, 1); assert.equal(replaced.results[0].id, before.source_id)
+  assert.equal(await count('SELECT COUNT(*) AS n FROM resources'), 50)
+  const after = (await get('/api/inventory')).records.find(r => r.source_id === before.source_id)
+  assert.equal(after.source_key, before.source_key); assert.match(after.source_label, /Replacement inventory sync/)
   const mixed = await v1(push.token, 'PUT', '/v1/resources/internal_service', { resources: [{ uniqueId: 'svc-90', attributes: { mfa_enforced: 'yes' } }, { uniqueId: 'svc-91', attributes: { unknown_field: true, mfa_enforced: true } }, { attributes: { mfa_enforced: true } }, { uniqueId: 'svc-92', attributes: { mfa_enforced: true } }] })
   const outcome = await mixed.json()
   assert.deepEqual(outcome.results.map(r => r.outcome), ['rejected', 'rejected', 'rejected', 'created'])

@@ -31,7 +31,7 @@ async function acceptInvitation(email) {
 }
 let ownerCookie, soc2, iso, aup
 try {
- await scenario('A fresh program lists every requirement lacking a published policy; the builder tailors templates; only the exact approved revision publishes and passes its policy test', async () => {
+ await scenario('LOG-001 / A fresh program lists every requirement lacking a published policy; the builder tailors templates; only the exact approved revision publishes, passes its policy test and is audited with its version', async () => {
   ownerCookie = await app.signin()
   soc2 = (await post('/api/programs', { framework: 'soc2', name: 'SOC 2', legal_entity: 'Northstar Labs Inc.', report_type: 'Type II', products: 'Northstar Billing', systems: 'billing-api, ledger-db', audit_from: '2026-07-01', audit_to: '2027-06-30' })).id
   iso = (await post('/api/programs', { framework: 'iso27001', name: 'ISO 27001', legal_entity: 'Northstar Labs Inc.', audit_from: '2026-07-01', audit_to: '2027-06-30' })).id
@@ -51,6 +51,8 @@ try {
   await post(`/api/policies/${draft.policy}/revisions/${draft.revision}/decision`, { decision: 'approved', body_sha256: revision.body_sha256 }, 200)
   await post(`/api/policies/${draft.policy}/revisions/${draft.revision}/publish`, { effective_date: '2026-10-11' }, 200)
   assert.deepEqual(await latest('policy.access-control'), [['Access control policy', 'pass']])
+  const decisions = (await get('/api/audit?action=policy.')).entries.map(e => [e.action, e.actor_name, e.reason, e.revision])
+  for (const expected of [['policy.rejected', 'Evidence owner', 'Not reviewed', String(changedRevision.version)], ['policy.approved', 'Evidence owner', '', String(revision.version)], ['policy.published', 'Evidence owner', '', String(revision.version)]]) assert.ok(decisions.some(d => JSON.stringify(d) === JSON.stringify(expected)), expected.join(' '))
   for (const t of builder.templates.filter(t => t.id !== 'access-control')) { const adopted = await adopt(t.id, soc2); if (t.id === 'acceptable-use') aup = adopted }
   for (const id of [soc2, iso]) { const r = (await get('/api/programs/' + id)).readiness; assert.equal(r.totals.policy_missing, 0, id); assert.ok(r.requirements.every(x => x.policy !== 'missing')) }
   await app.clock('2027-10-12T12:00:00Z'); await app.tick()
