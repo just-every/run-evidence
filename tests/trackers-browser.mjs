@@ -37,6 +37,10 @@ try {
  browser=await chromium.launch({headless:true,args:['--use-mock-keychain','--password-store=basic']})
  await mkdir(output,{recursive:true})
  for(const width of [1440,390]) {
+  if(width===390) {
+   const c=configs.asana,r=await app.fetch('/api/trackers',{method:'POST',headers:{cookie,origin:app.origin,'content-type':'application/json'},body:JSON.stringify({provider:'asana',project:c.project,token:edge.keys.asana,label:'Asana phone registration'})})
+   assert.equal(r.status,201);dest.asana=await r.json()
+  }
   const context=await browser.newContext({viewport:{width,height:1000}})
   await context.addCookies(cookie.split('; ').map(pair=>{const index=pair.indexOf('=');return {name:pair.slice(0,index),value:pair.slice(index+1),url:origin}}))
   const page=await context.newPage(),errors=[]
@@ -58,7 +62,7 @@ try {
    assert.ok(await page.getByRole('heading',{name:'Field rules and mapping'}).count())
    assert.match(await page.locator('main').innerText(),/polled every 10 minutes|polling every 10 minutes|ten-minute polling/)
    if(c.textDue)assert.match(await page.locator('main').innerText(),/written into the ticket text/)
-   if(provider==='asana'&&width===1440) {
+   if(provider==='asana') {
     await capture('asana-before-registration')
     await page.getByRole('button',{name:'Register Asana webhook'}).click()
     await page.waitForURL(origin+'/app/trackers/'+dest[provider].id)
