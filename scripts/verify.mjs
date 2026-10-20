@@ -14,6 +14,7 @@ if (shard && !shards[shard]) { console.error(`Unknown VERIFY_SHARD ${shard}; use
 // The production build comes first in every shard: rer verify then serves it.
 for (const [command, ...args] of [['pnpm', 'run', 'build'], ...(shard ? shards[shard] : Object.values(shards).flat())]) {
  console.log(`\n> ${[command, ...args].join(' ')}`)
+ if(command==='pnpm'&&args.join(' ')==='run build')console.log('OPS-001: documented production build must succeed before journeys')
  const result = spawnSync(command === 'rer' ? 'pnpm' : command, command === 'rer' ? ['exec', 'rer', ...args] : args, { stdio: 'inherit', env: process.env })
  if (result.status !== 0) process.exit(result.status ?? 1)
 }

@@ -2961,7 +2961,7 @@
       "executable": false
     },
     "docs/OPERATIONS.md": {
-      "sha256": "9c38dfd688b4ef34d5e3b4ea597e0dd120c64ee796d1590c0c2290390e20e2a1",
+      "sha256": "2d3001e908839102d7b08ae1a61f9bcb0d1a4f3fce11997e12c1c7450e272b81",
       "executable": false
     },
     "docs/PRIVATE-COLLECTOR.md": {
@@ -3637,7 +3637,7 @@
       "executable": false
     },
     "scripts/verify.mjs": {
-      "sha256": "75d20d47b8dadcba70d1c5b1ccf031d2f2eaa4c82c87182baf5f8109f4f71ed7",
+      "sha256": "273db8fa6e4087c9b04e7562052c87038213133a082ce797dec29fa83f2ea6c2",
       "executable": false
     },
     "SEED-COMMAND-CONTRACT.md": {
@@ -6433,7 +6433,7 @@
       "executable": false
     },
     "tests/ops.mjs": {
-      "sha256": "3a4589a32de3f992c119c23a184ab059f7e9210f23709f841dc133854b79e260",
+      "sha256": "b09cf97e93514ce62f7daf2c09864eea4f20d07e9b3dacebf849696079755aed",
       "executable": false
     },
     "tests/policy.mjs": {

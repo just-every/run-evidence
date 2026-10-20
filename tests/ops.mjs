@@ -156,6 +156,7 @@ try {
  await scenario('independent process death during collection and notification preserves claims and reconciles without replay',async()=>{
   for(const [edge,time] of [['collection','2026-10-15T16:00:00Z'],['notification','2026-10-16T16:00:00Z']]) {
    await at(time)
+   if(edge==='notification')await owner('/api/followups/settings',{timezone:'America/New_York',business_days:'1,2,3,4,5',repeat_days:1},200)
    const state=app.harnessState(),cookie=await app.fetch('/api/operations')
    assert.equal(cookie.status,200)
    // Capture the existing owner session via a fresh sign-in request instead of
@@ -195,7 +196,7 @@ try {
   assert.ok(h.limits.exhibit_mib>0)
   const page=await app.fetch('/app/operations');assert.equal(page.status,200)
   assert.match(await page.text(),/USD 0/)
-  const blocked=await app.fetch('/app/requirements/00000000-0000-0000-0000-000000000000/uploads',{method:'POST',headers:{origin:app.origin,'content-type':'multipart/form-data; boundary=x','content-length':String(11*1024*1024)},body:'x'})
+  const blocked=await app.fetch('/app/requirements/00000000-0000-0000-0000-000000000000/uploads',{method:'POST',headers:{origin:app.origin,'content-type':'multipart/form-data; boundary=x'},body:new Uint8Array(11*1024*1024)})
   assert.equal(blocked.status,413)
  })
  await scenario('complete backup retains operational history beside product facts and restores without replay',async()=>{
