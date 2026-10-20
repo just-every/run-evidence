@@ -6345,7 +6345,7 @@
       "executable": false
     },
     "tests/helpers/ops-crash-child.mjs": {
-      "sha256": "6d7d150dd421723ba8afacf04875d512813d7d1122a1b0ee77314d7f0cbfdd47",
+      "sha256": "89c9db09925da597cde1bde6efb4ce11ede8fd9b0e10418460378dbc85c45cc7",
       "executable": false
     },
     "tests/helpers/population-browser.mjs": {
@@ -6433,7 +6433,7 @@
       "executable": false
     },
     "tests/ops.mjs": {
-      "sha256": "b09cf97e93514ce62f7daf2c09864eea4f20d07e9b3dacebf849696079755aed",
+      "sha256": "dc73b4d4b941ec339822b98dcf55329177711bc79e788326aff65f58602da3ab",
       "executable": false
     },
     "tests/policy.mjs": {

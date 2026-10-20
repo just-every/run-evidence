@@ -156,7 +156,7 @@ try {
  await scenario('independent process death during collection and notification preserves claims and reconciles without replay',async()=>{
   for(const [edge,time] of [['collection','2026-10-15T16:00:00Z'],['notification','2026-10-16T16:00:00Z']]) {
    await at(time)
-   if(edge==='notification')await owner('/api/followups/settings',{timezone:'America/New_York',business_days:'1,2,3,4,5',repeat_days:1},200)
+   if(edge==='notification')await owner('/api/followups/settings',{timezone:'America/New_York',business_days:'1,2,3,4,5',digest_day:5,repeat_days:0},200)
    const state=app.harnessState(),cookie=await app.fetch('/api/operations')
    assert.equal(cookie.status,200)
    // Capture the existing owner session via a fresh sign-in request instead of

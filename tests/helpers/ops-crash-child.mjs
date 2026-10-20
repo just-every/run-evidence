@@ -13,6 +13,6 @@ process.once('message',async({state,edge})=>{
  }
  const app=await runtime({...state,outbound:network,mailOutbound:network})
  await app.tick()
- process.send({unexpectedCompletion:true})
+ process.send({unexpectedCompletion:true,steps:(await app.db.prepare('SELECT step,outcome FROM operation_steps ORDER BY rowid DESC LIMIT 17').all()).results,deliveries:(await app.db.prepare('SELECT kind,state FROM followups ORDER BY rowid DESC LIMIT 5').all()).results})
  await app.close()
 })
