@@ -55,7 +55,7 @@ export const pausedSubjects = async (env: Bindings) => new Set((await env.DB.pre
 export async function pause(env: Bindings, actor: Actor, subject: string, reason: string, now: Date) {
  const done = await env.DB.prepare('INSERT INTO followup_pauses(id,subject_id,reason,paused_by,paused_at) VALUES(?,?,?,?,?) ON CONFLICT DO NOTHING').bind(crypto.randomUUID(), subject, reason, actor.name, now.toISOString()).run()
  if (!done.meta.changes) throw new Refusal('Follow-ups are already paused here.', 409)
- await auditStatement(env, actor, 'followup.paused', subject, now, 'succeeded', reason).run()
+ await auditStatement(env, actor, 'followup.paused', subject, now, 'succeeded', reason, { reason }).run()
 }
 export async function resume(env: Bindings, actor: Actor, subject: string, now: Date) {
  const done = await env.DB.prepare('UPDATE followup_pauses SET resumed_by=?,resumed_at=? WHERE subject_id=? AND resumed_at IS NULL').bind(actor.name, now.toISOString(), subject).run()

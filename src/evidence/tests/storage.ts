@@ -86,7 +86,7 @@ export async function reviseTest(env: Bindings, id: string, change: { criteria?:
  await env.DB.batch([
   env.DB.prepare('INSERT INTO test_revisions(id,test_id,revision,criteria_json,excluded_json,cadence,actor,reason,at) VALUES(?,?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), id, revision, criteria, excluded, cadence, actor.name, reason, now.toISOString()),
   env.DB.prepare('UPDATE tests SET revision=?,criteria_json=?,cadence=?,remediation=? WHERE id=? AND revision=?').bind(revision, criteria, cadence, change.remediation === undefined ? row.remediation : change.remediation, id, row.revision),
-  auditStatement(env, actor, 'test.revised', 'test:' + id, now, 'succeeded', reason),
+  auditStatement(env, actor, 'test.revised', 'test:' + id, now, 'succeeded', reason, { reason, revision }),
  ])
  return revision
 }

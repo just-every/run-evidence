@@ -25,7 +25,7 @@ export async function scheduleRequirement(env: Bindings, actor: Actor, id: strin
  const owner = input.owner_person_id ? (await requirePerson(env, input.owner_person_id, 'requirement owner')).id : null
  await env.DB.batch([
   env.DB.prepare('INSERT INTO requirement_schedules(id,requirement_id,cadence,anchor,fiscal_start_month,window_start,program_id,reminder_lead_days,owner_person_id,effective_from,actor_id,actor_name,reason) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), id, cadence, anchor, month, windowStart, program, lead, owner, now.toISOString(), actor.id, actor.name, reason),
-  auditStatement(env, actor, 'requirement.scheduled', 'requirement:' + id, now, 'succeeded', `${cadence} ${anchor}: ${reason}`),
+  auditStatement(env, actor, 'requirement.scheduled', 'requirement:' + id, now, 'succeeded', `${cadence} ${anchor}: ${reason}`, { reason }),
  ])
 }
 // A one-off renewal date moves only the current cycle's deadline.
@@ -41,6 +41,6 @@ export async function overrideRenewal(env: Bindings, actor: Actor, id: string, i
  if (!state.due) throw new Refusal('There is no current cycle to move; upload proof with an effective date first.', 409)
  await env.DB.batch([
   env.DB.prepare('INSERT INTO renewal_overrides(id,requirement_id,cycle_due,due_date,reason,actor_id,actor_name,at) VALUES(?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), id, state.due, due, reason, actor.id, actor.name, now.toISOString()),
-  auditStatement(env, actor, 'requirement.renewal-date', 'requirement:' + id, now, 'succeeded', `${state.due} -> ${due}: ${reason}`),
+  auditStatement(env, actor, 'requirement.renewal-date', 'requirement:' + id, now, 'succeeded', `${state.due} -> ${due}: ${reason}`, { reason }),
  ])
 }

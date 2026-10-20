@@ -80,7 +80,7 @@ async function move(env: Bindings, actor: Actor, item: Flagged, to: { id: string
  const id = crypto.randomUUID()
  statements.push(
   env.DB.prepare('INSERT INTO handover_events(id,person_id,kind,item_id,role,label,to_person_id,reason,bulk,actor_id,actor_name,at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)').bind(id, item.person_id, item.kind, item.item_id, item.role, item.label, to.id, reason, bulk ? 1 : 0, actor.id, actor.name, at),
-  auditStatement(env, actor, 'handover.reassigned', `${item.kind}:${item.item_id}`, now, 'succeeded', `${item.role} ${item.person_email} -> ${to.email}: ${reason}`.slice(0, 400)),
+  auditStatement(env, actor, 'handover.reassigned', `${item.kind}:${item.item_id}`, now, 'succeeded', `${item.role} ${item.person_email} -> ${to.email}: ${reason}`.slice(0, 400), { reason }),
  )
  return { id, statements }
 }

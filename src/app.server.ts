@@ -60,7 +60,7 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
   if (state) return state
   const lobby = await lobbyResponse(request,installed,identity)
   if (lobby) return lobby
-  const auth = await authResponse(request,env)
+  const auth = await authResponse(request,env,clock)
   if (auth) return auth
   const prepared = await agents(request,env)
   if (prepared) return prepared

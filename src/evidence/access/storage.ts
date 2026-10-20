@@ -70,13 +70,13 @@ export async function decide(env: Bindings, person: { id: string; name: string; 
  await env.DB.batch([
   env.DB.prepare('INSERT INTO access_decisions(id,item_id,decision,reason,decided_by_person,decided_by_name,decided_by_email,at) VALUES(?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), itemId, decision, reason, person.id, person.name, person.email, at),
   ...(decision === 'revoke' ? [env.DB.prepare("INSERT INTO access_revocations(item_id,state,requested_at) VALUES(?,'requested',?) ON CONFLICT(item_id) DO NOTHING").bind(itemId, at)] : [env.DB.prepare("DELETE FROM access_revocations WHERE item_id=? AND state!='verified'").bind(itemId)]),
-  auditStatement(env, { id: person.id, name: person.name }, 'access-review.decided', 'access-item:' + itemId, now, 'succeeded', `${decision}: ${reason}`.slice(0, 400)),
+  auditStatement(env, { id: person.id, name: person.name }, 'access-review.decided', 'access-item:' + itemId, now, 'succeeded', `${decision}: ${reason}`.slice(0, 400), { reason }),
  ])
 }
 export async function exclude(env: Bindings, actor: Actor, itemId: string, input: Input, now: Date) {
  if (!await env.DB.prepare('SELECT 1 FROM access_review_items WHERE id=?').bind(itemId).first()) throw new Refusal('Item not found.', 404)
  const reason = text(input, 'reason', 1000)
- await env.DB.batch([env.DB.prepare("INSERT INTO access_decisions(id,item_id,decision,reason,decided_by_person,decided_by_name,decided_by_email,at) VALUES(?,?,'excluded',?,NULL,?,'',?)").bind(crypto.randomUUID(), itemId, reason, actor.name, now.toISOString()), auditStatement(env, actor, 'access-review.excluded', 'access-item:' + itemId, now, 'succeeded', reason)])
+ await env.DB.batch([env.DB.prepare("INSERT INTO access_decisions(id,item_id,decision,reason,decided_by_person,decided_by_name,decided_by_email,at) VALUES(?,?,'excluded',?,NULL,?,'',?)").bind(crypto.randomUUID(), itemId, reason, actor.name, now.toISOString()), auditStatement(env, actor, 'access-review.excluded', 'access-item:' + itemId, now, 'succeeded', reason, { reason })])
 }
 export async function delegate(env: Bindings, actor: Actor, itemId: string, input: Input, now: Date) {
  const item = await env.DB.prepare('SELECT attributes_json FROM access_review_items WHERE id=?').bind(itemId).first<{ attributes_json: string }>()
@@ -85,7 +85,7 @@ export async function delegate(env: Bindings, actor: Actor, itemId: string, inpu
  if (!to) throw new Refusal('Choose the person who decides instead.')
  if (String(JSON.parse(item.attributes_json).email ?? '').toLowerCase() === to.email.toLowerCase()) throw new Refusal('Nobody can be delegated their own access.', 409)
  const reason = text(input, 'reason', 500)
- await env.DB.batch([env.DB.prepare('INSERT INTO access_delegations(item_id,to_person_id,reason,by_name,at) VALUES(?,?,?,?,?) ON CONFLICT(item_id) DO UPDATE SET to_person_id=excluded.to_person_id,reason=excluded.reason,by_name=excluded.by_name,at=excluded.at').bind(itemId, to.id, reason, actor.name, now.toISOString()), auditStatement(env, actor, 'access-review.delegated', 'access-item:' + itemId, now, 'succeeded', reason)])
+ await env.DB.batch([env.DB.prepare('INSERT INTO access_delegations(item_id,to_person_id,reason,by_name,at) VALUES(?,?,?,?,?) ON CONFLICT(item_id) DO UPDATE SET to_person_id=excluded.to_person_id,reason=excluded.reason,by_name=excluded.by_name,at=excluded.at').bind(itemId, to.id, reason, actor.name, now.toISOString()), auditStatement(env, actor, 'access-review.delegated', 'access-item:' + itemId, now, 'succeeded', reason, { reason })])
 }
 // Scheduler work: revocation readback, late-discovered accounts, completion, reminders and recurrence.
 export async function accessReviewWork(env: Bindings, now: Date) {

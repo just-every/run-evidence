@@ -70,7 +70,7 @@ export async function updateProgram(env: Bindings, actor: Actor, id: string, inp
  await env.DB.batch([
   env.DB.prepare('UPDATE programs SET name=?,legal_entity=?,report_type=?,categories=?,products=?,teams=?,regions=?,systems=?,audit_from=?,audit_to=?,assessor=?,lead_person_id=?,milestones=?,updated_at=? WHERE id=?').bind(row.name, row.legal_entity, row.report_type, row.categories, row.products, row.teams, row.regions, row.systems, row.audit_from, row.audit_to, row.assessor, lead, row.milestones, row.updated_at, id),
   revisionStatement(env, id, revision, row, actor, reason, now),
-  auditStatement(env, actor, 'program.updated', 'program:' + id, now, 'succeeded', reason),
+  auditStatement(env, actor, 'program.updated', 'program:' + id, now, 'succeeded', reason, { reason, revision }),
  ])
 }
 
@@ -110,7 +110,7 @@ export async function proposeEdition(env: Bindings, actor: Actor, id: string, in
  const change = crypto.randomUUID()
  await env.DB.batch([
   env.DB.prepare('INSERT INTO edition_changes(id,program_id,from_edition,to_edition,diff_json,proposed_by,proposed_name,proposed_at) VALUES(?,?,?,?,?,?,?,?)').bind(change, id, row.edition, to, JSON.stringify(diff), actor.id, actor.name, now.toISOString()),
-  auditStatement(env, actor, 'program.edition-proposed', 'program:' + id, now, 'succeeded', `${row.edition} -> ${to}`),
+  auditStatement(env, actor, 'program.edition-proposed', 'program:' + id, now, 'succeeded', `${row.edition} -> ${to}`, { revision: row.edition }),
  ])
  return { id: change, diff }
 }
@@ -122,7 +122,7 @@ export async function decideEdition(env: Bindings, actor: Actor, id: string, cha
  if (change.from_edition !== row.edition) throw new Refusal('The program edition moved since this change was proposed; propose it again.', 409)
  const at = now.toISOString(), statements = [
   env.DB.prepare('UPDATE edition_changes SET decision=?,decided_by=?,decided_name=?,decided_at=?,reason=? WHERE id=? AND decision IS NULL').bind(decision, actor.id, actor.name, at, reason, changeId),
-  auditStatement(env, actor, 'program.edition-' + decision, 'program:' + id, now, 'succeeded', `${change.from_edition} -> ${change.to_edition}`),
+  auditStatement(env, actor, 'program.edition-' + decision, 'program:' + id, now, 'succeeded', `${change.from_edition} -> ${change.to_edition}`, { reason, revision: decision === 'accepted' ? change.to_edition : change.from_edition }),
  ]
  if (decision === 'accepted') {
   const diff = JSON.parse(change.diff_json) as NonNullable<ReturnType<typeof editionChange>>

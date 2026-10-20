@@ -71,8 +71,12 @@ export const oneOf = <T extends string>(input: Input, key: string, values: reado
 }
 
 // Permanent product action audit (LOG-001). Detail never carries credentials.
-export function auditStatement(env: Bindings, actor: Actor & { kind?: 'owner' | 'token' | 'system' }, action: string, subject: string, at: Date, outcome: 'succeeded' | 'refused' | 'failed' | 'uncertain' = 'succeeded', detail = '') {
- return env.DB.prepare('INSERT INTO product_audit(id,actor_kind,actor_id,actor_name,action,subject,outcome,detail,at) VALUES(?,?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), actor.kind ?? 'owner', actor.id, actor.name, action, subject, outcome, detail.slice(0, 500), at.toISOString())
+// The reason is the one the actor entered where the door asks for one; the
+// revision is the subject's exact stored revision, version or edition that the
+// action produced or acted on. Both stay empty where neither exists.
+export interface AuditContext { reason?: string; revision?: string | number }
+export function auditStatement(env: Bindings, actor: Actor & { kind?: 'owner' | 'token' | 'system' }, action: string, subject: string, at: Date, outcome: 'succeeded' | 'refused' | 'failed' | 'uncertain' = 'succeeded', detail = '', context: AuditContext = {}) {
+ return env.DB.prepare('INSERT INTO product_audit(id,actor_kind,actor_id,actor_name,action,subject,outcome,detail,at,reason,revision) VALUES(?,?,?,?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), actor.kind ?? 'owner', actor.id, actor.name, action, subject, outcome, detail.slice(0, 500), at.toISOString(), (context.reason ?? '').slice(0, 1000), String(context.revision ?? '').slice(0, 100))
 }
 export const parseList = (value: string): string[] => { try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed.map(String) : [] } catch { return [] } }
 export const uuid = /[a-f0-9-]{36}/.source

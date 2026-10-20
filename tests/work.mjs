@@ -119,7 +119,7 @@ try {
   assert.ok(stored.secret_ciphertext && !stored.secret_ciphertext.includes(tracker.tokens.jira))
   assert.match(await (await app.fetch('/app/trackers/' + dest.jira.id)).text(), /Due date.*Evidence owns it/s)
  })
- await scenario('BOUNDARY-001 / A failed control opens one linked Vector ticket with source links; tracker assignee and status arrive by signed webhook, and a replay changes nothing', async () => {
+ await scenario('BOUNDARY-001 / LOG-001 / A failed control opens one audited, linked Vector ticket with source links; tracker assignee and status arrive by signed webhook, and a replay changes nothing', async () => {
   const created = await owner(`/api/remediation/${ob2}/tickets`, { destination_id: dest.vector.id })
   await owner(`/api/remediation/${ob2}/tickets`, { destination_id: dest.vector.id }, 409)
   const remote = find('vector', created.key)
@@ -138,6 +138,8 @@ try {
   assert.deepEqual([ticket.remote_key, ticket.remote_assignee, ticket.remote_status, ticket.sync_state, ticket.stale], [created.key, 'Dana Lee', 'In Progress (started)', 'linked', false])
   assert.equal([...tracker.issues.values()].filter(i => i.provider === 'vector').length, 1)
   assert.ok((await detail(ob2)).events.some(e => e.kind === 'tracker assignee' && /Dana Lee/.test(e.body)))
+  const writes = (await get('/api/audit?action=ticket.created')).entries.filter(e => e.subject === 'obligation:' + ob2)
+  assert.deepEqual(writes.map(e => [e.actor_name, e.outcome, e.detail]), [['Evidence owner', 'succeeded', 'vector ' + created.key]])
  })
  await scenario('REMEDY-002: Closing Vector, Jira, GitHub Issues and Asana tickets automatically re-tests within 15 minutes; failure keeps the original item clock', async () => {
   const jira = await owner(`/api/remediation/${ob2}/tickets`, { destination_id: dest.jira.id }), github = await owner(`/api/remediation/${ob2}/tickets`, { destination_id: dest.github.id }), asana = await owner(`/api/remediation/${ob2}/tickets`, { destination_id: dest.asana.id })

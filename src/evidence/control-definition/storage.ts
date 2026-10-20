@@ -18,7 +18,7 @@ export async function reviseControl(env: Bindings, actor: Actor, id: string, inp
  const rows=await definitions(env,id), prior=rows.at(-1)!, expected=Number(input.revision)
  if (expected!==prior.revision) throw new Refusal('The control changed; review its current revision.',409)
  const revision=prior.revision+1, row: Definition={id:crypto.randomUUID(),control_id:id,revision,name:text(input,'name'),group_name:oneOf(input,'group',groups),applicability:text(input,'applicability',1000),test_intent:text(input,'test_intent',3000),evaluation_criteria:text(input,'evaluation_criteria',3000),actor_id:actor.id,actor_name:actor.name,reason:text(input,'reason',500),effective_at:now.toISOString()}
- await env.DB.batch([...(rows[0].id ? [] : [definitionStatement(env,rows[0])]),definitionStatement(env,row),env.DB.prepare('UPDATE controls SET name=?,group_name=? WHERE id=?').bind(row.name,row.group_name,id),auditStatement(env,actor,'control.revised','control:'+id,now,'succeeded',row.reason)])
+ await env.DB.batch([...(rows[0].id ? [] : [definitionStatement(env,rows[0])]),definitionStatement(env,row),env.DB.prepare('UPDATE controls SET name=?,group_name=? WHERE id=?').bind(row.name,row.group_name,id),auditStatement(env,actor,'control.revised','control:'+id,now,'succeeded',row.reason,{reason:row.reason,revision:row.revision})])
  return {revision}
 }
 export async function addRequirement(env: Bindings, actor: Actor, control: string, input: Input, now: Date) {
@@ -32,7 +32,7 @@ export async function reviseRequirement(env: Bindings, actor: Actor, id: string,
  if(!row)throw new Refusal('Requirement not found.',404)
  const prior=await env.DB.prepare('SELECT MAX(revision) AS revision FROM requirement_revisions WHERE requirement_id=?').bind(id).first<{revision:number|null}>(),name=text(input,'name'),reason=text(input,'reason',500)
  const insert=(revision:number,n:string,a:Actor,r:string,at:string)=>env.DB.prepare('INSERT INTO requirement_revisions(id,requirement_id,revision,name,actor_id,actor_name,reason,effective_at) VALUES(?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(),id,revision,n,a.id,a.name,r,at)
- await env.DB.batch([...(prior?.revision ? [] : [insert(1,row.name,{id:'not recorded',name:'Not recorded in original definition'},'Original stored definition',row.created_at)]),insert((prior?.revision??1)+1,name,actor,reason,now.toISOString()),env.DB.prepare('UPDATE requirements SET name=? WHERE id=?').bind(name,id),auditStatement(env,actor,'requirement.revised','requirement:'+id,now,'succeeded',reason)])
+ await env.DB.batch([...(prior?.revision ? [] : [insert(1,row.name,{id:'not recorded',name:'Not recorded in original definition'},'Original stored definition',row.created_at)]),insert((prior?.revision??1)+1,name,actor,reason,now.toISOString()),env.DB.prepare('UPDATE requirements SET name=? WHERE id=?').bind(name,id),auditStatement(env,actor,'requirement.revised','requirement:'+id,now,'succeeded',reason,{reason,revision:(prior?.revision??1)+1})])
 }
 // A run retains the actual control/evidence definitions and structured test
 // criteria it evaluated. Future edits never reinterpret its earlier result.

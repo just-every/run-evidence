@@ -48,7 +48,7 @@ export async function decide(env: Bindings, actor: Actor, input: Input, now: Dat
  const decision: Decision = { id: crypto.randomUUID(), source_key, canonical_key: record.canonical_key, revision: (record.history.decisions.at(-1)?.revision ?? 0) + 1, owner_person_id, criticality: oneOf(input, 'criticality', criticalities), scope: oneOf(input, 'scope', scopes), lifecycle: oneOf(input, 'lifecycle', lifecycles), reason: text(input, 'reason', 1000), actor_id: actor.id, actor_name: actor.name, at: now.toISOString() }
  await env.DB.batch([
   env.DB.prepare('INSERT INTO inventory_decisions(id,source_key,canonical_key,revision,owner_person_id,criticality,scope,lifecycle,reason,actor_id,actor_name,at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)').bind(decision.id, source_key, decision.canonical_key, decision.revision, owner_person_id, decision.criticality, decision.scope, decision.lifecycle, decision.reason, actor.id, actor.name, decision.at),
-  auditStatement(env, actor, 'inventory.metadata-decided', source_key, now, 'succeeded', decision.reason),
+  auditStatement(env, actor, 'inventory.metadata-decided', source_key, now, 'succeeded', decision.reason, { reason: decision.reason, revision: decision.revision }),
  ])
  return decision
 }
@@ -69,7 +69,7 @@ export async function group(env: Bindings, actor: Actor, input: Input, now: Date
  const events: GroupEvent[] = selected.map(r => ({ id: crypto.randomUUID(), operation_id, source_key: r.source_key, canonical_key: action === 'group' ? canonical_key : r.source_key, previous_canonical_key: r.canonical_key, revision: (r.history.grouping.at(-1)?.revision ?? 0) + 1, action, reason, actor_id: actor.id, actor_name: actor.name, at: now.toISOString() }))
  await env.DB.batch([
   ...events.map(e => env.DB.prepare('INSERT INTO inventory_group_events(id,operation_id,source_key,canonical_key,previous_canonical_key,revision,action,reason,actor_id,actor_name,at) VALUES(?,?,?,?,?,?,?,?,?,?,?)').bind(e.id, e.operation_id, e.source_key, e.canonical_key, e.previous_canonical_key, e.revision, e.action, reason, actor.id, actor.name, e.at)),
-  auditStatement(env, actor, 'inventory.' + action, operation_id, now, 'succeeded', reason),
+  auditStatement(env, actor, 'inventory.' + action, operation_id, now, 'succeeded', reason, { reason }),
  ])
  return { operation_id, action, events }
 }

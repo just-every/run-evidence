@@ -8,9 +8,10 @@ import { MAGIC,Reader,decoder,encoder,sha,fail,MAX_METADATA,MAX_TOTAL,pathOK,col
 import { archiveFiles, extensionTables, validateExtensions, extensionStatements } from './extensions'
 import { validateManifest } from './validate'
 import { summary } from './inventory'
+import { businessRows } from './registry'
 type Store = Pick<Bindings,'DB'|'EXHIBITS'>
 export async function emptyTarget(env:Store) {
- for(const table of [...tables,...extensionTables]) if(await env.DB.prepare(`SELECT 1 FROM ${table} LIMIT 1`).first()) fail('Restore requires an empty Evidence database. Destination authentication is allowed.')
+ for(const table of [...tables,...extensionTables]) if((await env.DB.prepare(`SELECT ${businessRows(table,table)} AS n`).first<{n:number}>())!.n) fail('Restore requires an empty Evidence database. Destination authentication is allowed.')
  if((await env.EXHIBITS.list({limit:1})).objects.length) fail('Restore requires an empty exhibit bucket.')
 }
 export async function restoreArchive(env:Store, body:ReadableStream<Uint8Array>, dryRun=false, now=new Date(), maxTotal=MAX_TOTAL) {
@@ -64,7 +65,7 @@ export async function restoreArchive(env:Store, body:ReadableStream<Uint8Array>,
   // D1 batch is transactional. Check emptiness again inside that transaction,
   // so a concurrent upload/control creation cannot admit a mixed installation.
   // Sums grouped by ten keep the expression within SQLite's depth limit.
-  const counts=[...tables,...extensionTables].map(t=>`(SELECT COUNT(*) FROM ${t})`), groups:string[]=[]
+  const counts=[...tables,...extensionTables].map(t=>businessRows(t,t)), groups:string[]=[]
   for(let i=0;i<counts.length;i+=10) groups.push('('+counts.slice(i,i+10).join('+')+')')
   const statements=[env.DB.prepare(`INSERT INTO custody_admission(singleton,empty_check) VALUES(1,CASE WHEN (${groups.join('+')})=0 THEN 1 ELSE 0 END)`)]
   for(const table of tables) for(const row of manifest.rows[table]) {

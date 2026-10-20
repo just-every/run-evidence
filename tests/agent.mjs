@@ -52,13 +52,15 @@ try {
   assert.equal((await owner('/api/agent/proposals/'+proposal.id+'/approve',{snapshot_hash:proposal.snapshot_hash})).status,409)
   proposal=await prepare()
  })
- await scenario('Only exact owner approval creates one folder and the reviewer sees current honest gaps',async()=>{
+ await scenario('LOG-001 / Only exact owner approval creates one folder, is on the owner Audit with the snapshot it approved, and the reviewer sees current honest gaps',async()=>{
   const path='/api/agent/proposals/'+proposal.id+'/approve'
   for(const extra of [{},{cookie:ownerCookie,origin:app.origin}])assert.equal((await agent(path,{snapshot_hash:proposal.snapshot_hash},undefined,extra)).status,403)
   assert.equal((await owner(path,{snapshot_hash:'0'.repeat(64)})).status,409)
   const count=async()=>Number((await app.db.prepare('SELECT COUNT(*) AS n FROM review_folders').first()).n),before=await count()
   const answers=await Promise.all([owner(path,{snapshot_hash:proposal.snapshot_hash}),owner(path,{snapshot_hash:proposal.snapshot_hash})]);assert.deepEqual(answers.map(r=>r.status).sort(),[201,409]);assert.equal(await count(),before+1)
   const approved=await answers.find(r=>r.status===201).json();assert.equal(approved.decision.actor_name,'Evidence owner');assert.equal(approved.decision.snapshot_hash,proposal.snapshot_hash)
+  const decided=(await (await app.fetch('/api/audit?action=agent.proposal-approved')).json()).entries.filter(e=>e.subject==='proposal:'+proposal.id)
+  assert.deepEqual(decided.map(e=>[e.actor_name,e.outcome,e.revision]),[['Evidence owner','succeeded','snapshot '+proposal.snapshot_hash.slice(0,16)]])
   const viewer=await app.fetch(new URL(approved.review_url).pathname+'/exhibits',{headers:{cookie:''}});assert.equal(viewer.status,200);assert.equal((await viewer.json()).requirements[0].gap,'unavailable bytes')
   const persisted=await (await app.fetch('/api/agent/proposals/'+proposal.id)).text();assert.ok(!persisted.includes(approved.review_url));assert.ok(!persisted.includes(new URL(approved.review_url).pathname.split('/').at(-1)))
   await assert.rejects(app.db.prepare('UPDATE agent_proposals SET snapshot_hash=? WHERE id=?').bind('a'.repeat(64),proposal.id).run(),/immutable_agent_proposal/)

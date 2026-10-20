@@ -128,8 +128,11 @@ try {
   const restored = await target.fetch('/api/archive/restore', { method: 'POST', headers: { origin: target.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore', 'x-evidence-erasure-history':'unverified acknowledged' }, body: exported })
   assert.equal(restored.status, 200, await restored.clone().text())
   for (const table of ['people', 'programs', 'program_revisions', 'library_adoptions', 'tests', 'test_runs', 'observations', 'obligations', 'obligation_events', 'collection_runs', 'policy_revisions', 'product_audit', 'resources']) {
-   const rows = async db => (await db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all()).results
-   assert.deepEqual(await rows(target.db), await rows(app.db), table)
+   const rows = async db => (await db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all()).results, source = await rows(app.db), ids = new Set(source.map(r => r.id))
+   // The destination owner's own sign-in entries (LOG-001) precede the restored audit.
+   const all = await rows(target.db)
+   if (table === 'product_audit') assert.ok(all.filter(r => !ids.has(r.id)).every(r => r.action.startsWith('auth.')))
+   assert.deepEqual(table === 'product_audit' ? all.filter(r => ids.has(r.id)) : all, source, table)
   }
   assert.equal((await target.db.prepare('SELECT COUNT(*) AS n FROM api_tokens WHERE token_hash IS NULL').first()).n, (await app.db.prepare('SELECT COUNT(*) AS n FROM api_tokens').first()).n)
   assert.equal((await target.fetch('/v1/programs', { headers: { cookie: '', authorization: 'Bearer ' + token.token } })).status, 401)

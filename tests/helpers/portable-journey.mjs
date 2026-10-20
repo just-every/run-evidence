@@ -10,10 +10,12 @@ const MAGIC_BYTES=Buffer.byteLength('EVIDENCE-ARCHIVE\n')
 const hash=()=>createHash('sha256')
 const digest=b=>hash().update(b).digest('hex')
 const normal=(table,row)=>Object.fromEntries(Object.entries(row).map(([k,v])=>[k,table==='review_folders'&&k==='closed_at'?'closed':['connections','tracker_destinations','followup_channels'].includes(table)&&k==='status'?'inactive after restore':table==='connections'&&k==='next_attempt_at'?null:v]))
-async function readArchive(path){
+// skip: audit entry ids of the destination's own sign-in (LOG-001), which a
+// restored installation records before the source history it receives.
+async function readArchive(path,skip=new Set()){
  const fd=await open(path),size=(await fd.stat()).size;let at=MAGIC_BYTES,header,fileHash,fileBytes=0,bytes=0,count=0;const rows={},counts={},files={},h=hash()
  const read=async n=>{const b=Buffer.alloc(n);let offset=0;while(offset<n){const r=await fd.read(b,offset,n-offset,at);if(!r.bytesRead)throw Error('truncated portable file');offset+=r.bytesRead;at+=r.bytesRead}return b}
- try{while(at<size){const prefix=await read(4),body=await read(prefix.readUInt32BE(0)),f=JSON.parse(body);if(f.type==='end'){assert.equal(f.sha256,h.digest('hex'));assert.equal(f.bytes,bytes);assert.equal(f.rows,count);assert.equal(at,size);break}h.update(prefix).update(body);if(!header){header=f;for(const t of Object.keys(f.tables)){rows[t]=hash();counts[t]=0}}if(f.type==='rows')for(const row of f.rows){rows[f.table].update(JSON.stringify(normal(f.table,row))+'\n');counts[f.table]++;count++}if(f.type==='file'){if(f.file.available){fileHash=hash();fileBytes=0}files[f.file.object_key]={...f.file}}if(f.type==='file-part'){const b=Buffer.from(f.data,'base64');fileHash.update(b);fileBytes+=b.length}if(f.type==='file-end'){const file=Object.values(files).at(-1);assert.equal(fileHash.digest('hex'),file.sha256);assert.equal(fileBytes,file.size);bytes+=fileBytes}}
+ try{while(at<size){const prefix=await read(4),body=await read(prefix.readUInt32BE(0)),f=JSON.parse(body);if(f.type==='end'){assert.equal(f.sha256,h.digest('hex'));assert.equal(f.bytes,bytes);assert.equal(f.rows,count);assert.equal(at,size);break}h.update(prefix).update(body);if(!header){header=f;for(const t of Object.keys(f.tables)){rows[t]=hash();counts[t]=0}}if(f.type==='rows')for(const row of f.rows){if(f.table==='product_audit'&&skip.has(row.id)){count++;continue}rows[f.table].update(JSON.stringify(normal(f.table,row))+'\n');counts[f.table]++;count++}if(f.type==='file'){if(f.file.available){fileHash=hash();fileBytes=0}files[f.file.object_key]={...f.file}}if(f.type==='file-part'){const b=Buffer.from(f.data,'base64');fileHash.update(b);fileBytes+=b.length}if(f.type==='file-end'){const file=Object.values(files).at(-1);assert.equal(fileHash.digest('hex'),file.sha256);assert.equal(fileBytes,file.size);bytes+=fileBytes}}
  return {header,counts,rows:Object.fromEntries(Object.entries(rows).map(([t,h])=>[t,h.digest('hex')])),files,bytes}
  }finally{await fd.close()}
 }
@@ -41,7 +43,7 @@ export async function portableJourney({runtime,cli,dir}){
   const direct=async header=>target.fetch('/api/archive/restore',{method:'POST',headers:{origin:target.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged',...header},body:first})
   let refused=await direct({'x-evidence-journal':JSON.stringify(later)});assert.equal(refused.status,400);assert.match((await refused.json()).error,/later source erasure journal/);await empty(target)
   refused=await direct({});assert.equal(refused.status,400);assert.match((await refused.json()).error,/later source erasure journal/);await empty(target);await target.close();target=null
-  target=await runtime({ownerEmail:'receiver@portable.test'});await target.signin();const receiving=await authFingerprint(target)
+  target=await runtime({ownerEmail:'receiver@portable.test'});await target.signin();const receiving=await authFingerprint(target),destinationAudit=new Set((await target.db.prepare("SELECT id FROM product_audit WHERE action LIKE 'auth.%'").all()).results.map(r=>r.id))
   assert.notEqual((await source.db.prepare('SELECT id FROM oa_operators WHERE role=\'owner\'').first()).id,(await target.db.prepare('SELECT id FROM oa_operators WHERE role=\'owner\'').first()).id)
   // A late digest failure has already staged every row and original, but must
   // admit none. The complete upload survives a Worker restart between chunks.
@@ -51,7 +53,7 @@ export async function portableJourney({runtime,cli,dir}){
   const dry=await json(target,`/api/archive/uploads/${upload.id}/validate`,{});assert.equal(dry.erasure_history,'unverified');assert.equal(dry.requires_latest_journal,true);await empty(target)
   const missingHistory=await json(target,`/api/archive/uploads/${upload.id}/restore`,{},400,{'x-evidence-confirm':'restore'});assert.match(missingHistory.error,/history unverified/);await empty(target)
   const restored=await json(target,`/api/archive/uploads/${upload.id}/restore`,{journal},200,{'x-evidence-confirm':'restore'});assert.equal(restored.bytes,expected.bytes);assert.deepEqual(restored.counts,expected.counts);assert.equal(await authFingerprint(target),receiving)
-  const actualPath=join(dir,'portable-http-roundtrip.evidence');await download(target,actualPath);const actual=await readArchive(actualPath);assert.deepEqual(actual.rows,expected.rows);assert.deepEqual(actual.files,expected.files)
+  const actualPath=join(dir,'portable-http-roundtrip.evidence');await download(target,actualPath);assert.ok(destinationAudit.size>0);const actual=await readArchive(actualPath,destinationAudit);assert.deepEqual(actual.rows,expected.rows);assert.deepEqual(actual.files,expected.files)
   for(const file of fixture.files){
    const r=await target.fetch(file.url)
    if(file.kind==='import'){
@@ -77,12 +79,12 @@ export async function portableJourney({runtime,cli,dir}){
   const sourceState=source.persistencePath;await stop(source);await stop(target)
   const config=join(dir,'portable-wrangler.jsonc');await writeFile(config,JSON.stringify({name:'portable-proof',compatibility_date:'2026-09-08',compatibility_flags:['nodejs_compat'],d1_databases:[{binding:'DB',database_name:'evidence-tests',database_id:'evidence-tests'}],r2_buckets:[{binding:'EXHIBITS',bucket_name:'exhibits'}]}))
   const cliPath=join(dir,'portable-cli.evidence'),exported=await cli(['export','--output',cliPath,'--state',sourceState,'--config',config]);assert.equal(exported.code,0,exported.error);const cliSource=await readArchive(cliPath);assert.deepEqual(cliSource.rows,expected.rows);assert.deepEqual(cliSource.files,expected.files)
-  offline=await runtime({ownerEmail:'offline-receiver@portable.test'});await offline.signin();const state=offline.persistencePath;await stop(offline)
+  offline=await runtime({ownerEmail:'offline-receiver@portable.test'});await offline.signin();const state=offline.persistencePath,offlineAudit=new Set((await offline.db.prepare("SELECT id FROM product_audit WHERE action LIKE 'auth.%'").all()).results.map(r=>r.id));await stop(offline)
   const flags=['--input',cliPath,'--state',state,'--config',config]
   const check=await cli(['restore',...flags,'--dry-run']);assert.equal(check.code,0,check.error);assert.equal(JSON.parse(check.output).erasure_history,'unverified')
   const denied=await cli(['restore',...flags,'--yes']);assert.equal(denied.code,1);assert.match(denied.error,/history unverified/)
   const admitted=await cli(['restore',...flags,'--yes','--journal',journalPath]);assert.equal(admitted.code,0,admitted.error)
-  const roundtrip=join(dir,'portable-cli-roundtrip.evidence'),again=await cli(['export','--output',roundtrip,'--state',state,'--config',config]);assert.equal(again.code,0,again.error);const last=await readArchive(roundtrip);assert.deepEqual(last.rows,expected.rows);assert.deepEqual(last.files,expected.files)
+  const roundtrip=join(dir,'portable-cli-roundtrip.evidence'),again=await cli(['export','--output',roundtrip,'--state',state,'--config',config]);assert.equal(again.code,0,again.error);assert.ok(offlineAudit.size>0);const last=await readArchive(roundtrip,offlineAudit);assert.deepEqual(last.rows,expected.rows);assert.deepEqual(last.files,expected.files)
   console.log(JSON.stringify({portable_native_resources:expected.counts.resources,portable_actual_original_bytes:expected.bytes,portable_tables:Object.keys(expected.counts).length,http_roundtrip:true,offline_cli_roundtrip:true,late_corruption_refused:true,known_later_erasure_refused:true,selective_collection_reauthorization:true}))
  }finally{await source?.close();await target?.close();await offline?.close()}
 }

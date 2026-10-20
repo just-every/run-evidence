@@ -29,7 +29,7 @@ export async function acceptLibraryRevision(env: Bindings, actor: Actor, revisio
  await env.DB.batch([
   env.DB.prepare('INSERT INTO library_acceptances(id,revision,from_revision,changes_json,actor_id,actor_name,reason,at) VALUES(?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), revision, accepted, JSON.stringify(changes), actor.id, actor.name, reason, now.toISOString()),
   ...await adoptionStatements(env, adopt, now, revision),
-  auditStatement(env, actor, 'library.revision-accepted', 'library:' + revision, now, 'succeeded', `${accepted} -> ${revision}: ${reason}`),
+  auditStatement(env, actor, 'library.revision-accepted', 'library:' + revision, now, 'succeeded', `${accepted} -> ${revision}: ${reason}`, { reason, revision }),
  ])
  return { accepted: revision, from: accepted, changes }
 }

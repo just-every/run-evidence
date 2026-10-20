@@ -24,7 +24,7 @@ export function revisionStatements(env: Bindings, framework: Framework, rows: Fr
   // Unique revision is the transactional concurrency fence for the full batch.
   env.DB.prepare('INSERT INTO custom_framework_revisions(id,framework_id,revision,snapshot_json,diff_json,actor_id,actor_name,at,reason,object_key,filename,size,media_type,sha256) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), framework.id, revision, JSON.stringify({ framework: { ...framework, revision }, requirements: rows }), JSON.stringify(diff), actor.id, actor.name, now.toISOString(), reason, exhibit?.object_key ?? null, exhibit?.filename ?? null, exhibit?.size ?? null, exhibit?.media_type ?? null, exhibit?.sha256 ?? null),
   env.DB.prepare('UPDATE custom_frameworks SET revision=? WHERE id=? AND revision=?').bind(revision, framework.id, framework.revision),
-  auditStatement(env, actor, 'framework.revised', 'framework:' + framework.id, now, 'succeeded', reason),
+  auditStatement(env, actor, 'framework.revised', 'framework:' + framework.id, now, 'succeeded', reason, { reason, revision }),
  ]
 }
 export async function commit(env: Bindings, statements: D1PreparedStatement[]) { try { await env.DB.batch(statements) } catch (error) { if (/UNIQUE constraint failed: custom_framework_revisions/.test(String(error))) throw new Refusal('The framework changed after review. Review the current revision again.', 409); throw error } }
