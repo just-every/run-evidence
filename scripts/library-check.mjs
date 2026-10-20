@@ -7,7 +7,7 @@
 import { createRequire } from 'node:module'
 const require = createRequire(import.meta.url)
 const { build } = createRequire(require.resolve('wrangler/package.json'))('esbuild')
-const bundled = await build({ stdin: { contents: "export * from './src/evidence/library/index.ts'; export { catalogue } from './src/evidence/tests/catalogue.ts'; export { riskLibrary } from './src/evidence/risk/library.ts'; export { templates } from './src/evidence/policy/templates.ts'", resolveDir: process.cwd(), loader: 'ts' }, bundle: true, write: false, format: 'esm', platform: 'neutral' })
+const bundled = await build({ stdin: { contents: "export * from './src/evidence/library/index.ts'; export { catalogue } from './src/evidence/tests/catalogue.ts'; export { riskLibrary } from './src/evidence/risk/library.ts'; export { templates } from './src/evidence/policy/templates.ts'", resolveDir: process.cwd(), loader: 'ts' }, bundle: true, write: false, format: 'esm', platform: 'node' })
 const { frameworks, controlsFor, libraryControls, libraryRevisions, latestLibraryRevision, catalogue, riskLibrary, templates } = await import('data:text/javascript;base64,' + Buffer.from(bundled.outputFiles[0].text).toString('base64'))
 const failures = []
 let requirements = 0

@@ -3621,7 +3621,7 @@
       "executable": false
     },
     "scripts/library-check.mjs": {
-      "sha256": "410cc37840a4e0b198b04b196ee01bc84fd6d733a1a30b9426be49571c24b9f6",
+      "sha256": "d3e7cd9ab1db8ffd5a110f139761040a0ceef8269d3daf2b79d39ab820af07ad",
       "executable": false
     },
     "scripts/operations-config.mjs": {
