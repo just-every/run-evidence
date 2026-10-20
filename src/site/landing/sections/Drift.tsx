@@ -8,7 +8,7 @@ export function Drift() {
       lede="The agent traces a failed test to its cause, asks for one narrow fix and tests the real system again. The original failure stays on the record." />
     <div className="drift-figure">
       <div className="card drift-card">
-        <h3><Icon name="sparkles" className="sparkles" />Investigation&nbsp;· CC7.2 Monitoring</h3>
+        <h3><Icon name="sparkles" className="sparkles" /><span>Investigation<span className="drift-sep">&nbsp;· </span><span className="drift-topic">CC7.2&nbsp;Monitoring</span></span></h3>
         <ol>
           <li><Status kind="fail" label="Failed" /><p><span className="time">2:00&nbsp;AM&nbsp;· </span><b>Observed</b></p><p>CloudTrail off in <span className="nowrap">us-west-2</span></p></li>
           <li><span className="step-mark"><Mark name="github" /></span><p><span className="time">2:06&nbsp;AM&nbsp;· </span><b>Traced</b></p><p>region added in Terraform PR #482 without a trail</p></li>

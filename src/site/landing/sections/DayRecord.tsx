@@ -41,7 +41,7 @@ export function DayRecord() {
         <p className="record-foot">86 controls&nbsp;· 15,738 daily results&nbsp;· 1 failure, fixed the same day&nbsp;· every result kept with its source</p>
       </div>
       <div className="record-phone">
-        <h3>CC7.2&nbsp;·&nbsp;Monitoring</h3>
+        <h3>CC7.2&nbsp;· Monitoring</h3>
         <p className="record-sub">183 of 183 days tested&nbsp;· Apr 1&nbsp;– Sep 30</p>
         <ul>{months.map(([name, length]) => <li key={name} style={{ '--at': 13.5 / 31 } as CSSProperties}>
           <span className="record-month">{name}</span>

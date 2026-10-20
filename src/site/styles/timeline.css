@@ -90,6 +90,8 @@
   .tl-rail { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(3, auto); grid-auto-flow: column; column-gap: 40px; }
   .tl-rail li:nth-child(3)::before, .tl-rail li:nth-child(6)::before { display: none; }
   .tl-rail .tl-window-closes::after { height: 11px; }
+  .tl-rail .split-sep { display: none; }
+  .tl-rail .split { display: block; }
 }
 @media (max-width: 760px) {
   .band-timeline { padding: 52px 0 48px; }

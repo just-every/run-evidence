@@ -25,13 +25,13 @@ const scale: Milestone[] = [
 
 const rail: { date: string; note: string; kind: Kind; window?: 'opens' | 'inside' | 'closes' }[] = [
   { date: 'Mar 3', note: 'A bank asks for a SOC 2 report', kind: 'open' },
-  { date: 'Mar 4', note: 'rer setup\u00a0· first scan: 31 gaps', kind: 'fail' },
+  { date: 'Mar 4', note: 'rer setup\u00a0·\u00a0first scan: 31 gaps', kind: 'fail' },
   { date: 'Mar 30', note: '0 gaps open', kind: 'pass' },
-  { date: 'Apr 1', note: 'Window opens\u00a0· every control tested daily', kind: 'blue', window: 'opens' },
+  { date: 'Apr 1', note: 'Window opens\u00a0·\u00a0every control tested daily', kind: 'blue', window: 'opens' },
   { date: 'Jul 14', note: '1 drift, fixed by 11:40\u00a0AM', kind: 'drift', window: 'inside' },
-  { date: 'Sep 30', note: 'Window closes\u00a0· 15,738 daily results kept', kind: 'pass', window: 'closes' },
-  { date: 'Nov 2', note: 'Fieldwork\u00a0· Harbor & Lane CPAs', kind: 'blue' },
-  { date: 'Dec 9', note: 'Report issued\u00a0· no exceptions', kind: 'report' },
+  { date: 'Sep 30', note: 'Window closes\u00a0·\u00a015,738 daily results kept', kind: 'pass', window: 'closes' },
+  { date: 'Nov 2', note: 'Fieldwork\u00a0·\u00a0Harbor & Lane CPAs', kind: 'blue' },
+  { date: 'Dec 9', note: 'Report issued\u00a0·\u00a0no exceptions', kind: 'report' },
 ]
 
 const months = ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']

@@ -65,3 +65,9 @@
   .drift-diff { float: none; display: block; margin: 12px 0 0; padding: 14px 16px; white-space: normal; }
   .drift-diff code { font-size: 13px; line-height: 1.5; }
 }
+/* Below 380 the heading breaks at its separator: "Investigation" over "CC7.2 Monitoring". */
+.drift-topic { white-space: nowrap; }
+@media (max-width: 379px) {
+  .drift-sep { display: none; }
+  .drift-topic { display: block; }
+}
