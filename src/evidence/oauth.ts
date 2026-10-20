@@ -1,3 +1,4 @@
+import { scopedFetch } from './ops/execution'
 // Service-to-service OAuth for read-only provider APIs: Google's JWT bearer
 // grant signed with a service account key (RS256), and Microsoft identity
 // platform client credentials. Failures name the cause without the secret.
@@ -12,7 +13,7 @@ export function serviceAccount(secret: string): ServiceAccount {
 }
 async function exchange(url: string, body: URLSearchParams, provider: string, refusal: string) {
  let response: Response
- try { response = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body, signal: AbortSignal.timeout(20000) }) } catch { throw new OAuthFailure('unavailable', `${provider} could not be reached`) }
+ try { response = await scopedFetch(url, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body, signal: AbortSignal.timeout(20000) }) } catch { throw new OAuthFailure('unavailable', `${provider} could not be reached`) }
  if (response.status === 400 || response.status === 401) throw new OAuthFailure('unauthorized', refusal)
  if (response.status !== 200) throw new OAuthFailure('unavailable', `${provider} answered ${response.status}`)
  return String((await response.json() as { access_token?: string }).access_token ?? '')

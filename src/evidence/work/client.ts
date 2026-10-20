@@ -1,3 +1,4 @@
+import { scopedFetch } from '../ops/execution'
 import type { Severity } from '../tests/storage'
 // WORK-001 tracker adapters share one HTTP edge. Failures are classified, never
 // guessed: a lost credential, a deleted ticket and a refused field mapping are
@@ -31,7 +32,7 @@ const short = (value: unknown) => String(value ?? '').replace(/\s+/g, ' ').trim(
 // One call to a tracker. Bodies are parsed as JSON when they are JSON.
 export async function call(url: string, init: RequestInit & { label: string }) {
  let response: Response
- try { response = await fetch(url, { ...init, redirect: 'manual' }) } catch { throw new TrackerFailure('unavailable', 0, `${init.label} could not be reached.`) }
+ try { response = await scopedFetch(url, { ...init, redirect: 'manual' }) } catch { throw new TrackerFailure('unavailable', 0, `${init.label} could not be reached.`) }
  let body: unknown = null
  const text = await response.text()
  try { body = text ? JSON.parse(text) : null } catch { body = text }

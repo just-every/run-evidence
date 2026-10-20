@@ -12,7 +12,7 @@ const app = await runtime({ outbound: async request => {
  throw Error('Unexpected GitHub call: ' + url.pathname)
 } })
 let passed = 0
-const scenario = async (name, fn) => { await fn(); passed++; console.log('PASS ' + name) }
+const scenario = async (name, fn) => { await fn(); passed++; console.log('PASS OPS-001: ' + name) }
 const post = async (path, body) => {
  const response = await app.fetch(path, { method: 'POST', headers: { origin: app.origin, 'content-type': 'application/json' }, body: JSON.stringify(body) })
  assert.equal(response.status, 201, path + ': ' + await response.clone().text())

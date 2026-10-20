@@ -15,7 +15,7 @@ export function decodeArchive(bytes){
  while(at<bytes.length){const start=at,f=JSON.parse(take(number()));if(f.type==='end'){end=f;break}h.update(bytes.subarray(start,at));if(f.type==='rows')allRows[f.table].push(...f.rows);if(f.type==='file'){files.push(f.file);file=f.file;parts=[]}if(f.type==='file-part')parts.push(Buffer.from(f.data,'base64'));if(f.type==='file-end'){const body=Buffer.concat(parts);assert.equal(body.length,file.size);assert.equal(digest(body),file.sha256);entries.push({path:file.path,bytes:body})}}
  assert.ok(end,'complete end frame');assert.equal(end.sha256,h.digest('hex'),'complete stream digest');assert.equal(at,bytes.length,'no trailing frames')
  for(const [table,rows]of Object.entries(allRows))rows.sort((a,b)=>{for(const key of table==='review_folder_controls'?['folder_id','control_id']:[first.tables[table][0]]){if(a[key]<b[key])return -1;if(a[key]>b[key])return 1}return 0})
- const importNames=Object.keys(allRows).filter(t=>t.startsWith('ik_')||t.startsWith('import_')),programNames=Object.keys(allRows).filter(t=>!base.includes(t)&&!agents.includes(t)&&!importNames.includes(t)&&!['inventory_decisions','inventory_group_events','library_acceptances','run_library_revisions'].includes(t))
+ const importNames=Object.keys(allRows).filter(t=>t.startsWith('ik_')||t.startsWith('import_')),programNames=Object.keys(allRows).filter(t=>!base.includes(t)&&!agents.includes(t)&&!importNames.includes(t)&&!['inventory_decisions','inventory_group_events','library_acceptances','run_library_revisions','operation_steps'].includes(t))
  const manifest={format:'evidence-custody',version:9,created_at:first.created_at,rows:Object.fromEntries(base.map(t=>[t,allRows[t]])),files:files.filter(f=>f.path.startsWith('files/')).map(({object_key,...f})=>({...f,exhibit_id:f.path.slice(6)})),extensions:{agent:{rows:Object.fromEntries(agents.map(t=>[t,allRows[t]]))},imports:{rows:Object.fromEntries(importNames.map(t=>[t,allRows[t]])),files:files.filter(f=>f.path.startsWith('import-sources/')).map(({reason,...f})=>f)},program:{rows:Object.fromEntries(programNames.map(t=>[t,allRows[t].map(r=>t==='tests'?Object.fromEntries(Object.entries(r).filter(([c])=>c!=='remediation')):r)])),files:files.filter(f=>!f.path.startsWith('files/')&&!f.path.startsWith('import-sources/'))}}}
  const text=JSON.stringify(manifest)
  return {header:first,allRows,envelope:{manifest:text,sha256:digest(text)},manifest,entries}
@@ -29,7 +29,7 @@ export function preInventoryArchive(bytes) {
  const magic=Buffer.from('EVIDENCE-ARCHIVE\n'),prefix=n=>{const b=Buffer.alloc(4);b.writeUInt32BE(n);return b},pack=v=>{const b=Buffer.from(JSON.stringify(v));return Buffer.concat([prefix(b.length),b])}
  let at=magic.length
  const next=()=>{const size=bytes.readUInt32BE(at);at+=4;const raw=bytes.subarray(at,at+size);at+=size;return JSON.parse(raw)}
- const head=next(),removed=new Set(['inventory_decisions','inventory_group_events','library_acceptances','run_library_revisions'])
+ const head=next(),removed=new Set(['inventory_decisions','inventory_group_events','library_acceptances','run_library_revisions','operation_steps'])
  let dropped=0
  assert.equal(head.version,10)
  const first=pack({...head,tables:Object.fromEntries(Object.entries(head.tables).filter(([t])=>!removed.has(t)))}),parts=[magic,first],hash=createHash('sha256').update(first)

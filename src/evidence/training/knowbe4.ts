@@ -1,3 +1,4 @@
+import { scopedFetch } from '../ops/execution'
 import type { Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
 import { auditStatement, text, type Actor, type Input } from '../door'
@@ -12,7 +13,7 @@ const regions = ['us', 'eu', 'ca', 'uk', 'de'] as const
 const base = (region: string) => `https://${region}.api.knowbe4.com`
 async function get(url: string, key: string) {
  let response: Response
- try { response = await fetch(url, { headers: { authorization: 'Bearer ' + key, accept: 'application/json' }, redirect: 'manual', signal: AbortSignal.timeout(20000) }) } catch { return { status: 0, body: null } }
+ try { response = await scopedFetch(url, { headers: { authorization: 'Bearer ' + key, accept: 'application/json' }, redirect: 'manual', signal: AbortSignal.timeout(20000) }) } catch { return { status: 0, body: null } }
  return { status: response.status, body: response.status === 200 ? await response.json() as unknown : null }
 }
 const config = (c: Pick<Connection, 'config_json'>) => { try { return JSON.parse(c.config_json) as { region: string; modules: Record<string, string> } } catch { return { region: 'us', modules: {} } } }

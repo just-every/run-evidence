@@ -1,21 +1,23 @@
 import type { Bindings } from '../../auth.server'
+import { ExecutionScope, ExecutionStopped, EXECUTION_TIMEOUT_MS } from './execution'
 
 export const LEASE_MINUTES = 15
 export interface StepOutcome { id: string; step: string; scheduled_at: string; lease_until: string; finished_at: string | null; outcome: string; processed_count: number | null; detail: string }
 // Each step claims before invoking product work. A lost completion write leaves
 // its claim running until reconciliation; it can never be mistaken for success.
-export async function runStep(env: Bindings, name: string, now: Date, work: () => Promise<number>) {
+export async function runStep(env: Bindings, name: string, now: Date, work: (scopedEnv: Bindings) => Promise<number>, deadline = Date.now() + EXECUTION_TIMEOUT_MS) {
  const at = now.toISOString(), id = crypto.randomUUID()
  await env.DB.prepare("UPDATE operation_steps SET outcome='unknown',finished_at=?,detail='Execution interrupted or lease expired; inspect the underlying records before retrying effects.' WHERE outcome='running' AND lease_until<=?").bind(at, at).run()
  const claim = await env.DB.prepare("INSERT INTO operation_steps(id,step,scheduled_at,lease_until,outcome,detail) VALUES(?,?,?,?,'running','') ON CONFLICT DO NOTHING").bind(id, name, at, new Date(now.getTime() + LEASE_MINUTES * 60000).toISOString()).run()
  if (!claim.meta.changes) return 'already running'
  let count: number
- try { count = await work() }
- catch {
+ try { count = await new ExecutionScope(env, id, deadline).run(work) }
+ catch (error) {
   // Exception messages from providers and storage may contain secrets. Only
   // this fixed description crosses the durable/public owner boundary.
-  await env.DB.prepare("UPDATE operation_steps SET outcome='failed',finished_at=?,detail='Step failed; inspect its collection, ticket or delivery records. No completeness is claimed.' WHERE id=? AND outcome='running'").bind(at, id).run()
-  return 'failed'
+  const uncertain = error instanceof ExecutionStopped
+  const saved = await env.DB.prepare('UPDATE operation_steps SET outcome=?,finished_at=?,detail=? WHERE id=? AND outcome=\'running\'').bind(uncertain ? 'unknown' : 'failed', at, uncertain ? 'Execution stopped or its claim was lost. Effects already submitted may have completed; inspect underlying records before retrying.' : 'Step failed; inspect its collection, ticket or delivery records. No completeness is claimed.', id).run()
+  return !saved.meta.changes || uncertain ? 'unknown' : 'failed'
  }
  // Do not catch a storage failure here: the caller must see failure and the
  // retained running claim becomes Unknown on the next tick after its lease.
@@ -40,5 +42,5 @@ export async function reconcileDeliveries(env: Bindings, now: Date) {
 }
 export async function operationOutcomes(env: Bindings) {
  const rows = (await env.DB.prepare('SELECT * FROM operation_steps ORDER BY scheduled_at DESC,rowid DESC LIMIT 101').all<StepOutcome>()).results
- return { steps: rows.slice(0,100), more: rows.length > 100, lease_minutes: LEASE_MINUTES, custody: 'Installation-local execution metadata; not included in evidence custody archives.' }
+ return { steps: rows.slice(0,100), more: rows.length > 100, lease_minutes: LEASE_MINUTES, custody: 'Execution history is included in complete custody archives; restoration never replays attempts.' }
 }

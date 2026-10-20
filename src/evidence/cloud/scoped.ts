@@ -1,3 +1,4 @@
+import { scopedFetch } from '../ops/execution'
 import type { Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
 import { auditStatement, text, type Actor, type Input } from '../door'
@@ -26,7 +27,7 @@ export interface ScopedCloud {
 // A provider HTTP read: 401 lost credential, 403 denied or API disabled, 429 throttled.
 export async function cloudCall(url: string, token: string, label: string, init: RequestInit = {}) {
  let response: Response
- try { response = await fetch(url, { ...init, headers: { authorization: 'Bearer ' + token, accept: 'application/json', ...(init.body ? { 'content-type': 'application/json' } : {}) }, redirect: 'manual', signal: AbortSignal.timeout(20000) }) } catch { throw new CloudFailure('unavailable', `${label} could not be reached`) }
+ try { response = await scopedFetch(url, { ...init, headers: { authorization: 'Bearer ' + token, accept: 'application/json', ...(init.body ? { 'content-type': 'application/json' } : {}) }, redirect: 'manual', signal: AbortSignal.timeout(20000) }) } catch { throw new CloudFailure('unavailable', `${label} could not be reached`) }
  const body = await response.json().catch(() => ({})) as Record<string, unknown>
  if (response.status === 401) throw new CloudFailure('unauthorized', `${label} rejected the credential`)
  if (response.status === 403) { const detail = JSON.stringify(body.error ?? ''); throw new CloudFailure(/accessNotConfigured|SERVICE_DISABLED|MissingSubscriptionRegistration/.test(detail) ? 'disabled' : 'denied', `${label} refused the read (403)`) }

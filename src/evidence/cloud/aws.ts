@@ -1,3 +1,4 @@
+import { scopedFetch } from '../ops/execution'
 import { sign, type Credentials } from './sigv4'
 import { at, items, list, parseXml, textAt, type XmlNode, type XmlValue } from './xml'
 // Read-only AWS calls for CLOUD-001. Every call is a Describe, List or Get;
@@ -16,7 +17,7 @@ export function awsClient(credentials: Credentials, now: () => Date) {
  async function send(service: string, region: string, method: string, url: URL, body = '', headers: Record<string, string> = {}) {
   const signed = await sign({ method, url, headers, body, region, service, credentials, now: now() })
   let response: Response
-  try { response = await fetch(url, { method, headers: signed, body: method === 'GET' ? undefined : body, redirect: 'manual', signal: AbortSignal.timeout(20000) }) }
+  try { response = await scopedFetch(url, { method, headers: signed, body: method === 'GET' ? undefined : body, redirect: 'manual', signal: AbortSignal.timeout(20000) }) }
   catch { throw new AwsFailure('unavailable', 'transport', `${service} could not be reached`) }
   return { status: response.status, text: await response.text() }
  }

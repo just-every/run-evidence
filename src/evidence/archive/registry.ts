@@ -8,7 +8,7 @@ import type { Bindings } from '../../auth.server'
 export type Store = Pick<Bindings,'DB'|'EXHIBITS'> & {ARCHIVE_COPY?:(source:string,key:string,size:number,session:string)=>Promise<boolean>}
 type Definition = {columns:{name:string;type:string;pk:number}[];foreignKeys:{id:number;seq:number;table:string;from:string;to:string}[];sql:string}
 export const schema = schemaData as Record<string,Definition>
-export const registry:Record<string,readonly string[]> = {...columns,...agentColumns,...importTableColumns,...programColumns,...libraryColumns,tests:[...programColumns.tests,'remediation'],product_audit:[...programColumns.product_audit,'reason','revision']}
+export const registry:Record<string,readonly string[]> = {...columns,...agentColumns,...importTableColumns,...programColumns,...libraryColumns,tests:[...programColumns.tests,'remediation'],product_audit:[...programColumns.product_audit,'reason','revision'],operation_steps:['id','step','scheduled_at','lease_until','finished_at','outcome','processed_count','detail']}
 // LOG-001: v10 archives written before audit reasons and revisions list
 // product_audit without them; their entries restore with both empty.
 export const auditColumnsBefore:readonly string[] = programColumns.product_audit
@@ -18,8 +18,7 @@ export const businessRows=(t:string,table=quote(t))=>t==='product_audit'?`(SELEC
 export const portableTables = Object.keys(registry)
 export const localTables = Object.keys(schema).filter(t=>!Object.hasOwn(registry,t))
 export const portableLocal:Record<string,string[]> = {
- // OPS-001: execution attempts belong to this installation; restoration never replays them.
- operation_steps:['id','step','scheduled_at','lease_until','finished_at','outcome','processed_count','detail'],
+ operation_recovery:['singleton','restored_at'],
  portable_journal_stage:['session_id','lineage','sequence','recorded_at','receipt'],
  portable_state:['singleton','lineage','generation'], portable_journal:['lineage','sequence','recorded_at','receipt'],
  portable_history:['lineage','sequence','checked_at'], portable_capabilities:['capability','subject','authorized_by','authorized_at'],

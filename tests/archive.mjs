@@ -29,7 +29,7 @@ try{
  dir=await mkdtemp(join(tmpdir(),'evidence-archive-proof-'))
  app=await runtime({migrationThrough:'0007'});await app.signin()
  let first,second,third,missing,raw,parsed,before,reviewPath
- await scenario('Prior r1 records and bytes survive additive migration and retain immutable facts',async()=>{
+ await scenario('OPS-001: Prior r1 records and bytes survive additive migration and retain immutable facts',async()=>{
   const a=await createControl(app,'Access review'),b=await createControl(app,'Vendor review'),c=await createControl(app,'Data review')
   first=await upload(app,a,Buffer.alloc(2*1024*1024,11));second=await upload(app,a,Buffer.alloc(2*1024*1024,12),first.id);third=await upload(app,b,Buffer.alloc(2*1024*1024,13));missing=await upload(app,c,'missing original')
   const old=Object.fromEntries(await Promise.all(['controls','requirements','exhibits','receipts'].map(async t=>[t,await rows(app,t)])))
@@ -97,7 +97,7 @@ try{
   assert.equal((await restore(target,raw)).status,503);await assertEmpty(target)
   await target.db.prepare('DROP TRIGGER archive_test_refusal').run()
  })
- await scenario('Dry-run is read-only; restore preserves exact receipts, bytes and logs with permanently closed folders',async()=>{
+ await scenario('OPS-001: Dry-run is read-only; restore preserves exact receipts, bytes and logs with permanently closed folders',async()=>{
   const dry=await restore(target,raw,true);assert.equal(dry.status,200,await dry.clone().text());await assertEmpty(target)
   const ownersBefore=(await target.db.prepare('SELECT * FROM oa_operators ORDER BY id').all()).results
   const response=await restore(target,raw);assert.equal(response.status,200,await response.clone().text())

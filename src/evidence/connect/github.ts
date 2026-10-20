@@ -1,3 +1,4 @@
+import { scopedFetch } from '../ops/execution'
 import { natural, protectionFields, record } from './github-schema'
 // Read-only GitHub REST client for collection. Every call is a GET; nothing in
 // this file can write to GitHub. Unreadable fields are null, never a pass.
@@ -8,7 +9,7 @@ export class Unauthorized extends Error {}
 interface Reply { status: number; body: unknown; message: string; next: string | null; scopes: string | null }
 export function githubClient(base: string, token: string, now: () => number) {
  async function get(path: string): Promise<Reply> {
-  const response = await fetch(path.startsWith('http') ? path : base + path, { headers: { authorization: 'Bearer ' + token, accept: 'application/vnd.github+json', 'x-github-api-version': '2022-11-28', 'user-agent': 'evidence-collector' } })
+  const response = await scopedFetch(path.startsWith('http') ? path : base + path, { headers: { authorization: 'Bearer ' + token, accept: 'application/vnd.github+json', 'x-github-api-version': '2022-11-28', 'user-agent': 'evidence-collector' } })
   const remaining = response.headers.get('x-ratelimit-remaining'), reset = Number(response.headers.get('x-ratelimit-reset') ?? 0) * 1000
   if (response.status === 429 || (response.status === 403 && remaining === '0')) throw new Throttled(reset > now() ? reset : now() + 60000)
   if (response.status === 401) throw new Unauthorized('GitHub rejected the credential')

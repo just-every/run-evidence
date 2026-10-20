@@ -1,5 +1,6 @@
 import { configurationFailures } from './ops/configuration'
 import { runStep, reconcileDeliveries } from './ops/outcomes'
+import { EXECUTION_TIMEOUT_MS } from './ops/execution'
 import { capabilityAllowed } from './archive/capabilities'
 import type { Bindings } from '../auth.server'
 import { runDueTests, runTest } from './tests/engine'
@@ -24,24 +25,25 @@ export async function scheduledWork(env: Bindings, now: Date) {
  const missing = configurationFailures(env)
  if (missing.length) throw new Error('Required configuration is missing or invalid: ' + missing.join(', '))
  const outcome: Record<string, number | string> = {}
- const step = async (name: string, work: () => Promise<number>) => { outcome[name] = await runStep(env, name, now, work) }
- await step('delivery reconciliation', () => reconcileDeliveries(env, now))
- await step('collections', () => collectDue(env, now))
- await step('tickets', () => syncDue(env, now))
+ const deadline = Date.now() + EXECUTION_TIMEOUT_MS
+ const step = async (name: string, work: (scopedEnv: Bindings) => Promise<number>) => { outcome[name] = Date.now() >= deadline ? 'not run: execution deadline reached' : await runStep(env, name, now, work, deadline) }
+ await step('delivery reconciliation', scoped => reconcileDeliveries(scoped, now))
+ await step('collections', scoped => collectDue(scoped, now))
+ await step('tickets', scoped => syncDue(scoped, now))
  if (!await capabilityAllowed(env,'schedules')) return outcome
- await step('policies', async () => (await syncPolicies(env, now)) + (await syncAttestations(env, now)))
- await step('tests', () => runDueTests(env, now))
- await step('access reviews', () => accessReviewWork(env, now))
- await step('training', () => trainingWork(env, now))
- await step('retests', () => runRetests(env, now, (test, resource) => runTest(env, test, 'retest', now, resource)))
- await step('ticket automation', () => ticketAutomation(env, now))
- await step('escalations', () => escalate(env, now))
- await step('renewals', () => renewalReminders(env, now))
- await step('risk acceptances', () => escalateRiskAcceptances(env, now))
- await step('weekly digest', () => weeklyDigest(env, now))
- await step('attestation reminders', () => attestationReminders(env, now))
- await step('review reminders', () => reviewReminders(env, now))
- await step('handovers', () => handoverWork(env, now))
- await step('readiness snapshots', () => snapshotReadiness(env, now))
+ await step('policies', async scoped => (await syncPolicies(scoped, now)) + (await syncAttestations(scoped, now)))
+ await step('tests', scoped => runDueTests(scoped, now))
+ await step('access reviews', scoped => accessReviewWork(scoped, now))
+ await step('training', scoped => trainingWork(scoped, now))
+ await step('retests', scoped => runRetests(scoped, now, (test, resource) => runTest(scoped, test, 'retest', now, resource)))
+ await step('ticket automation', scoped => ticketAutomation(scoped, now))
+ await step('escalations', scoped => escalate(scoped, now))
+ await step('renewals', scoped => renewalReminders(scoped, now))
+ await step('risk acceptances', scoped => escalateRiskAcceptances(scoped, now))
+ await step('weekly digest', scoped => weeklyDigest(scoped, now))
+ await step('attestation reminders', scoped => attestationReminders(scoped, now))
+ await step('review reminders', scoped => reviewReminders(scoped, now))
+ await step('handovers', scoped => handoverWork(scoped, now))
+ await step('readiness snapshots', scoped => snapshotReadiness(scoped, now))
  return outcome
 }

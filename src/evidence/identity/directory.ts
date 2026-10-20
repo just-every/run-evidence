@@ -1,3 +1,4 @@
+import { scopedFetch } from '../ops/execution'
 // IDENTITY-001 directory readers share one shape: every account with its
 // status, population (person, guest, service, contractor), admin roles, MFA
 // and last sign-in. An attribute a directory does not expose is null and
@@ -16,7 +17,7 @@ export interface Directory {
 // One directory HTTP call: 401 is a lost credential, 403 a missing permission.
 export async function call(url: string, init: RequestInit, label: string) {
  let response: Response
- try { response = await fetch(url, { ...init, redirect: 'manual', signal: AbortSignal.timeout(20000) }) } catch { throw new DirectoryFailure('unavailable', `${label} could not be reached`) }
+ try { response = await scopedFetch(url, { ...init, redirect: 'manual', signal: AbortSignal.timeout(20000) }) } catch { throw new DirectoryFailure('unavailable', `${label} could not be reached`) }
  if (response.status === 401) throw new DirectoryFailure('unauthorized', `${label} rejected the credential`)
  if (response.status === 403) throw new DirectoryFailure('denied', `${label} refused the read (403): a permission is missing`)
  if (response.status === 429) throw new DirectoryFailure('throttled', `${label} is rate limiting this credential`)
