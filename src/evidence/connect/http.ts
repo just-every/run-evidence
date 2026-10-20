@@ -1,5 +1,6 @@
 import { done, json, ownerRoutes, readInput, uuid, type Route } from '../door'
 import { apiTokens, issueApiToken, revokeApiToken } from '../api/tokens'
+import { saveCollectionSchedule } from './schedule'
 import { runCollection } from './collect'
 import { connectGithub, connections, repositories, requireConnection, revokeConnection, rotateCredential, runs, selectRepositories } from './storage'
 import { connectionPage, connectionsPage } from './view'
@@ -25,6 +26,7 @@ export function connectHandler(clock: () => Date) {
   } },
   { method: 'GET', pattern: both(`/connections/${id}`), run: async (c, m) => { const row = await requireConnection(c.env, m[1]), repos = await repositories(c.env, row.id), history = await runs(c.env, row.id); return c.isApi ? json({ connection: safe(row), repositories: repos, runs: history }) : connectionPage(row, repos, history, c.actor.name) } },
   { method: 'POST', pattern: both(`/connections/${id}/repositories`), run: async (c, m) => { await selectRepositories(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/connections/' + m[1], { saved: true }) } },
+  { method: 'POST', pattern: both(`/connections/${id}/schedule`), run: async (c, m) => done(c, '/app/connections/' + m[1] + '#schedule-title', await saveCollectionSchedule(c.env, c.actor, m[1], await readInput(c.request), c.now), 200) },
   { method: 'POST', pattern: both(`/connections/${id}/collect`), run: async (c, m) => done(c, '/app/connections/' + m[1] + '#runs-title', await runCollection(c.env, await requireConnection(c.env, m[1]), 'manual', c.now), 201) },
   { method: 'POST', pattern: both(`/connections/${id}/rotate`), run: async (c, m) => { await rotateCredential(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/connections/' + m[1], { rotated: true }) } },
   { method: 'POST', pattern: both(`/connections/${id}/revoke`), run: async (c, m) => { await revokeConnection(c.env, c.actor, m[1], c.now); return done(c, '/app/connections/' + m[1], { revoked: true }) } },

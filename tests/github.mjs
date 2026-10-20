@@ -5,33 +5,9 @@
 process.env.RER_SERVER_JOURNEY = '1'
 import assert from 'node:assert/strict'
 import { runtime } from './helpers/runtime.mjs'
-const github = { tokens: new Set(['github_pat_good']), throttleUntil: 0, methods: [], hidden: new Set(), org: { login: 'northstar', two_factor_requirement_enabled: false }, repos: {
- 'northstar/web': { private: true, protection: { reviews: 1, checks: ['ci'] }, dependabot: 0, secrets: 0 },
- 'northstar/site': { private: false, protection: null, dependabot: 2, secrets: 0 },
- 'northstar/tools': { private: true, protection: null, dependabot: 0, secrets: 0 },
-} }
-const reply = (status, body, headers = {}) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', 'x-ratelimit-remaining': '4999', ...headers } })
-async function fakeGitHub(request) {
- const url = new URL(request.url)
- if (url.origin !== 'https://api.github.com') return null
- github.methods.push(request.method)
- const now = Date.parse(github.clock)
- if (github.throttleUntil > now) return reply(403, { message: 'API rate limit exceeded' }, { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': String(Math.floor(github.throttleUntil / 1000)) })
- if (!github.tokens.has((request.headers.get('authorization') ?? '').replace('Bearer ', ''))) return reply(401, { message: 'Bad credentials' })
- const path = url.pathname
- if (path === '/orgs/northstar') return reply(200, github.org)
- if (path === '/orgs/northstar/repos') {
-  const names = Object.keys(github.repos), page = Number(url.searchParams.get('page') ?? 1), slice = names.slice((page - 1) * 2, page * 2)
-  return reply(200, slice.map(full_name => ({ full_name })), page * 2 < names.length ? { link: `<https://api.github.com/orgs/northstar/repos?per_page=100&type=all&page=${page + 1}>; rel="next"` } : {})
- }
- const match = /^\/repos\/(northstar\/[a-z]+)(\/.*)?$/.exec(path), repo = match && github.repos[match[1]]
- if (!repo || github.hidden.has(match[1])) return reply(404, { message: 'Not Found' })
- if (!match[2]) return reply(200, { full_name: match[1], private: repo.private, archived: false, default_branch: 'main' })
- if (match[2] === '/branches/main/protection') return repo.protection ? reply(200, { required_pull_request_reviews: { required_approving_review_count: repo.protection.reviews }, required_status_checks: { contexts: repo.protection.checks }, enforce_admins: { enabled: true } }) : reply(404, { message: 'Branch not protected' })
- if (match[2] === '/dependabot/alerts') return reply(200, Array.from({ length: repo.dependabot }, (_, i) => ({ number: i + 1, state: 'open' })))
- if (match[2] === '/secret-scanning/alerts') return reply(200, Array.from({ length: repo.secrets }, (_, i) => ({ number: i + 1, state: 'open' })))
- return reply(404, { message: 'Not Found' })
-}
+import { collectionJourney } from './helpers/collection-journey.mjs'
+import { githubFixture } from './helpers/github-fixture.mjs'
+const { github, outbound: fakeGitHub } = githubFixture()
 const app = await runtime({ outbound: fakeGitHub })
 github.clock = '2026-10-11T12:00:00Z'
 const at = async time => { github.clock = time; await app.clock(time) }
@@ -115,6 +91,7 @@ try {
   const latest = (await get('/api/tests/' + (await testByCatalogue('github.branch-protection')).id)).latest
   assert.ok(latest.every(o => /stale/.test(o.reason)))
  })
+ await scenario('COLLECTION-001: configurable elapsed schedules retain schema and pagination gaps, recover only on fresh reads, and survive restart and restore', collectionJourney)
  await scenario('PORTABLE-001 / CONNECT-001: a custody archive carries every program record; restored tokens and connections hold no authority', async () => {
   const program = await owner('/api/programs', { framework: 'soc2', name: 'SOC 2', legal_entity: 'Northstar', report_type: 'Type I', audit_from: '2026-10-01', audit_to: '2026-10-01' })
   const token = await owner('/api/api-tokens', { name: 'Restore probe', scopes: ['read'], expires_at: '2027-04-01' })
