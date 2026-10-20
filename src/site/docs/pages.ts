@@ -55,6 +55,10 @@ function resolveLink(href: string, file: string) {
 }
 const escape = (value: string) => value.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]!))
 
+/** Prose typesetting outside tags and code: a number keeps the word after it ("90 days") and an arrow keeps its neighbours. */
+const typeset = (html: string) => html.split(/(<pre[\s\S]*?<\/pre>|<code[\s\S]*?<\/code>|<[^>]+>)/).map((part, index) => index % 2 ? part
+  : part.replace(/(\d) (?=[a-z%])/g, '$1\u00a0').replace(/ → /g, '\u00a0→\u00a0')).join('')
+
 /** The page's Markdown as HTML (its own H1 dropped: the page head carries the title), with its H2s for "On this page". */
 export function renderMarkdown(page: DocsPage): { html: string; toc: TocEntry[] } {
   const headingIds = new Map<string, number>()
@@ -78,6 +82,6 @@ export function renderMarkdown(page: DocsPage): { html: string; toc: TocEntry[] 
       return `<div class="docs-code"><pre${lang ? ` data-lang="${escape(lang)}"` : ''}><code>${escape(text)}</code></pre><button class="docs-copy" type="button" hidden>Copy</button></div>`
     },
   } })
-  const html = (markdown.parse(page.source, { async: false }) as string).replace(/<table>/g, '<div class="docs-table"><table>').replace(/<\/table>/g, '</table></div>')
+  const html = typeset(markdown.parse(page.source, { async: false }) as string).replace(/<table>/g, '<div class="docs-table"><table>').replace(/<\/table>/g, '</table></div>')
   return { html, toc }
 }
