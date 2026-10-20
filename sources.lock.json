@@ -6445,7 +6445,7 @@
       "executable": false
     },
     "tests/trackers.mjs": {
-      "sha256": "6952d47a8ab23a0ff475a18ecfa076b450c4050345d7b16253d4d4823b7c374a",
+      "sha256": "4caadd6837a3d4c275263722e786996b93664a01f6ced711a6d21cf7e72bb0af",
       "executable": false
     },
     "tests/training.mjs": {

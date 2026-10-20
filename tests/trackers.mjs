@@ -1,6 +1,6 @@
 process.env.RER_SERVER_JOURNEY='1'
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
+import { readFile, readdir } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { createHmac } from 'node:crypto'
 import { runtime } from './helpers/runtime.mjs'
@@ -11,6 +11,7 @@ const edge=trackerFixture(),app=await runtime({outbound:edge.outbound,migrationT
 const owner=async(path,body,status=201)=>{const r=await app.fetch(path,{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify(body)});const s=await r.text();assert.equal(r.status,status,path+' '+s);return s?JSON.parse(s):null}
 const get=async path=>{const r=await app.fetch(path);assert.equal(r.status,200,path);return r.json()}
 const at=async time=>{edge.state.clock=new Date(time).toISOString();await app.clock(edge.state.clock)}
+const tick=async()=>assert.equal((await app.tick()).outcome,'ok','Cron must complete after all retained migrations')
 const v1=async(token,method,path,body)=>{const r=await app.fetch(path,{method,headers:{cookie:'',authorization:'Bearer '+token,'content-type':'application/json'},body:JSON.stringify(body)});const text=await r.text();assert.ok([200,201].includes(r.status),text);return JSON.parse(text)}
 const hook=(id,body,headers={})=>app.fetch('/hooks/trackers/'+id,{method:'POST',headers:{cookie:'','content-type':'application/json',...headers},body})
 const sign=(secret,body)=>createHmac('sha256',secret).update(body).digest('hex')
@@ -29,8 +30,10 @@ try {
   await owner(`/api/remediation/${o.id}/comments`,{body:'Preserve this existing link.'})
   const tables=['tracker_destinations','tickets','ticket_events','ticket_comments'],before={}
   for(const table of tables)before[table]=(await app.db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all()).results
-  const sql=await readFile('migrations/core/0047_trackers.sql','utf8')
-  await app.db.batch(unstable_splitSqlQuery(sql).map(sql=>app.db.prepare(sql)))
+  for(const file of (await readdir('migrations/core')).filter(file=>file.endsWith('.sql')&&file.slice(0,4)>'0046').sort()) {
+   const sql=await readFile('migrations/core/'+file,'utf8')
+   await app.db.batch(unstable_splitSqlQuery(sql).map(sql=>app.db.prepare(sql)))
+  }
   for(const table of tables)assert.deepEqual((await app.db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all()).results,before[table],table)
   assert.deepEqual((await app.db.prepare('PRAGMA foreign_key_check').all()).results,[])
   await at(edge.state.clock)
@@ -68,7 +71,7 @@ try {
    if(provider==='freshservice')remote.comments.push({id:'requester-note',author:'Requester',body:'Requester question.',at:edge.state.clock})
    remote.assignee='Lena Ortiz';remote.status=provider==='monday'?'Working':'In Progress'
    const started=Date.parse(edge.state.clock)
-   await at(started+10*60000);await app.tick()
+   await at(started+10*60000);await tick()
    const detail=()=>get('/api/remediation/'+ob.id)
    let view=await detail(),r=view.tickets.find(t=>t.id===ticket.id)
    assert.equal(r.remote_assignee,'Lena Ortiz',provider);assert.ok(r.remote_status)
@@ -97,7 +100,7 @@ try {
    }
    const prior=await detail(),untouched=await get('/api/remediation/'+other.id),closed=Date.parse(edge.state.clock)
    remote.closed=true
-   await at(closed+10*60000);await app.tick()
+   await at(closed+10*60000);await tick()
    view=await detail();assert.equal(view.tickets.find(t=>t.id===ticket.id).remote_closed,1);assert.equal(view.obligation.state,'open');assert.equal(view.observations[0].result,'fail');assert.equal(view.observations[0].run_trigger,'retest')
    assert.ok(Date.parse(view.observations[0].observed_at)-closed<=15*60000)
    assert.equal(view.obligation.clock_started_at,prior.obligation.clock_started_at);assert.equal(view.obligation.sla.due,prior.obligation.sla.due)
@@ -132,7 +135,7 @@ try {
    for(const item of groupItems)assert.ok(groupRemote.description.includes(item.resource_name+': remediate by '+item.sla.due.slice(0,10)))
    resources[0].attributes.secure=true;await v1(push.token,'PUT','/v1/resources/'+groupType,{resources})
    groupRemote.closed=true;const closedAt=Date.parse(edge.state.clock)
-   await at(closedAt+10*60000);await app.tick()
+   await at(closedAt+10*60000);await tick()
    assert.equal(groupRemote.closed,false,provider+' whole-test ticket was not reopened: '+(await get('/api/trackers/'+dest.id)).destination.last_error)
    assert.match(groupRemote.comments.at(-1).body,/Re-test still fails for:/)
    assert.ok(groupRemote.comments.at(-1).body.includes(provider+' still_bad'));assert.ok(!groupRemote.comments.at(-1).body.includes(provider+' fixed'))
