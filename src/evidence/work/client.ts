@@ -2,7 +2,7 @@ import type { Severity } from '../tests/storage'
 // WORK-001 tracker adapters share one HTTP edge. Failures are classified, never
 // guessed: a lost credential, a deleted ticket and a refused field mapping are
 // each shown on the obligation with the tracker's own reason.
-export type Provider = 'vector' | 'jira' | 'linear' | 'github' | 'asana'
+export type Provider = 'vector' | 'jira' | 'linear' | 'github' | 'asana' | 'gitlab' | 'azure-boards' | 'shortcut' | 'clickup' | 'monday' | 'basecamp' | 'freshservice' | 'youtrack'
 export type FailureKind = 'unauthorized' | 'not found' | 'invalid' | 'throttled' | 'unavailable'
 export class TrackerFailure extends Error { constructor(public kind: FailureKind, public status: number, message: string, public body: unknown = null) { super(message) } }
 export interface Mapping { issue_type: string; labels: string[]; priorities: Record<Severity, string>; assignees: Record<string, string> }
@@ -17,7 +17,7 @@ export interface Adapter {
  name: string
  // What the owner creates at the tracker, and the least authority it needs.
  credential: string; permissions: string; projectLabel: string; baseLabel: string; defaultBase: string
- supportsDue: boolean; commentText: boolean; webhook: string
+ supportsDue: boolean; commentText: boolean; webhook: string; fieldNotes?: string
  defaultPriorities: Record<Severity, string>
  verify(base: string, secret: string, account: string, project: string): Promise<{ account: string; projectName: string }>
  create(d: DestinationRef, secret: string, draft: Draft): Promise<Created>
@@ -40,7 +40,7 @@ export async function call(url: string, init: RequestInit & { label: string }) {
  if (response.status === 404 || response.status === 410) throw new TrackerFailure('not found', response.status, `${init.label} has no such record (${response.status}).`)
  if (response.status === 400 || response.status === 409 || response.status === 422) throw new TrackerFailure('invalid', response.status, `${init.label} refused the request: ${short(problem(body)) || response.status}`, body)
  if (response.status >= 300) throw new TrackerFailure('unavailable', response.status, `${init.label} answered ${response.status}.`)
- return { status: response.status, body: body as Record<string, unknown> }
+ return { status: response.status, body: body as Record<string, unknown>, headers: response.headers }
 }
 // Field-level reasons as trackers return them, without echoing credentials.
 function problem(body: unknown): string {

@@ -95,7 +95,7 @@ const services = broken => Array.from({ length: 4 }, (_, i) => ({ uniqueId: 'svc
 const dest = {}
 let push, ob2, ob3
 try {
- await scenario('Each tracker is kept only after a real read of its project; credentials stay sealed and webhook secrets are shown once', async () => {
+ await scenario('WORK-001 / Each tracker is kept only after a real read of its project; credentials stay sealed and webhook secrets are shown once', async () => {
   await app.signin()
   push = await owner('/api/api-tokens', { name: 'Inventory', scopes: ['resource-push', 'test-write', 'read'], expires_at: '2027-04-01' })
   assert.equal((await v1(push.token, 'PUT', '/v1/resource-types/internal_service', { schema: { fields: { mfa_enforced: 'boolean' } } })).status, 200)
@@ -119,7 +119,7 @@ try {
   assert.ok(stored.secret_ciphertext && !stored.secret_ciphertext.includes(tracker.tokens.jira))
   assert.match(await (await app.fetch('/app/trackers/' + dest.jira.id)).text(), /Due date.*Evidence owns it/s)
  })
- await scenario('BOUNDARY-001 / LOG-001 / A failed control opens one audited, linked Vector ticket with source links; tracker assignee and status arrive by signed webhook, and a replay changes nothing', async () => {
+ await scenario('WORK-001 / BOUNDARY-001 / LOG-001 / A failed control opens one audited, linked Vector ticket with source links; tracker assignee and status arrive by signed webhook, and a replay changes nothing', async () => {
   const created = await owner(`/api/remediation/${ob2}/tickets`, { destination_id: dest.vector.id })
   await owner(`/api/remediation/${ob2}/tickets`, { destination_id: dest.vector.id }, 409)
   const remote = find('vector', created.key)
@@ -141,7 +141,7 @@ try {
   const writes = (await get('/api/audit?action=ticket.created')).entries.filter(e => e.subject === 'obligation:' + ob2)
   assert.deepEqual(writes.map(e => [e.actor_name, e.outcome, e.detail]), [['Evidence owner', 'succeeded', 'vector ' + created.key]])
  })
- await scenario('REMEDY-002: Closing Vector, Jira, GitHub Issues and Asana tickets automatically re-tests within 15 minutes; failure keeps the original item clock', async () => {
+ await scenario('WORK-001 / REMEDY-002: Closing Vector, Jira, GitHub Issues and Asana tickets automatically re-tests within 15 minutes; failure keeps the original item clock', async () => {
   const jira = await owner(`/api/remediation/${ob2}/tickets`, { destination_id: dest.jira.id }), github = await owner(`/api/remediation/${ob2}/tickets`, { destination_id: dest.github.id }), asana = await owner(`/api/remediation/${ob2}/tickets`, { destination_id: dest.asana.id })
   assert.deepEqual(find('jira', jira.key).labels, ['evidence', 'compliance']); assert.ok(find('github', github.url.split('/').pop()).labels.includes('priority: high'))
   const original = (await detail(ob2)).obligation
@@ -177,7 +177,7 @@ try {
   const kinds = (await detail(ob2)).events.map(e => e.kind)
   assert.equal(kinds.filter(k => k === 'retest failed').length, 4); assert.ok(!kinds.includes('verified'))
  })
- await scenario('REMEDY-002: Linear closure automatically re-tests its item within 15 minutes and keeps the clock; comments, due conflicts and refused mappings remain visible', async () => {
+ await scenario('WORK-001 / REMEDY-002: Linear closure automatically re-tests its item within 15 minutes and keeps the clock; comments, due conflicts and refused mappings remain visible', async () => {
   const lin = await owner(`/api/remediation/${ob3}/tickets`, { destination_id: dest.linear.id })
   await owner(`/api/remediation/${ob3}/comments`, { body: 'Rotating the service account today.' })
   const remote = [...tracker.issues.values()].find(i => i.provider === 'linear' && i.key === lin.key)
@@ -208,7 +208,7 @@ try {
   await owner(`/api/remediation/${ob3}/tickets`, { destination_id: dest.jira.id })
   assert.equal((await detail(ob3)).tickets.find(t => t.destination_id === dest.jira.id).sync_state, 'linked')
  })
- await scenario('REMEDY-002: A source change verifies closure automatically within 15 minutes; revoked grants and deleted tickets remain visible', async () => {
+ await scenario('WORK-001 / REMEDY-002: A source change verifies closure automatically within 15 minutes; revoked grants and deleted tickets remain visible', async () => {
   tracker.tokens.linear = 'rotated-elsewhere'
   const github = (await detail(ob2)).tickets.find(t => t.destination_id === dest.github.id); find('github', github.remote_id).deleted = true
   await at('2026-10-11T12:55:00Z'); await app.tick()
@@ -232,7 +232,7 @@ try {
   await owner(`/api/tickets/${lin.id}/sync`, {}, 200)
   assert.equal((await detail(ob3)).tickets.find(t => t.id === lin.id).sync_state, 'linked')
  })
- await scenario('REMEDY-002 / WORK-002: Every current tracker gives each item its due date and re-tests only its own item within 15 minutes while both original clocks keep running', async () => {
+ await scenario('WORK-001 / REMEDY-002 / WORK-002: Every current tracker gives each item its due date and re-tests only its own item within 15 minutes while both original clocks keep running', async () => {
   for (const provider of ['vector', 'jira', 'linear', 'github', 'asana']) {
    const type = 'endpoint_' + provider, name = uniqueId => `Endpoint ${provider} ${uniqueId}`
    const resources = ['e1', 'e2'].map(uniqueId => ({ uniqueId, displayName: name(uniqueId), attributes: { patched: false } }))
@@ -290,7 +290,7 @@ try {
    assert.equal((await detail(items[0].id)).obligation.state, 'open')
   }
  })
- await scenario('REMEDY-002 / WORK-002: A whole-test ticket lists every item with its deadline; closing it with one item fixed re-tests all, closes only the fixed one and reopens the ticket naming the rest', async () => {
+ await scenario('WORK-001 / REMEDY-002 / WORK-002: A whole-test ticket lists every item with its deadline; closing it with one item fixed re-tests all, closes only the fixed one and reopens the ticket naming the rest', async () => {
   assert.equal((await v1(push.token, 'PUT', '/v1/resource-types/bucket', { schema: { fields: { private: 'boolean' } } })).status, 200)
   assert.equal((await v1(push.token, 'PUT', '/v1/resources/bucket', { resources: ['b1', 'b2', 'b3'].map(u => ({ uniqueId: u, displayName: 'Bucket ' + u, attributes: { private: false } })) })).status, 200)
   const test = await (await v1(push.token, 'POST', '/v1/tests', { name: 'Buckets are private', resourceType: 'bucket', criteria: [{ attribute: 'private', op: 'equals', value: true }], cadence: 'daily', category: 'cloud', severity: 'high', controls: ['DAT-08'] })).json()
@@ -324,7 +324,7 @@ try {
   const group = (await get('/api/tests/' + test.id)).tickets.groups[0]
   assert.equal(group.state, 'open'); assert.equal(group.item_list.split(',').length, 4)
  })
- await scenario('PORTABLE-001 / Tickets and their sync history travel in the archive; restored destinations hold no credentials', async () => {
+ await scenario('WORK-001 / PORTABLE-001 / Tickets and their sync history travel in the archive; restored destinations hold no credentials', async () => {
   const exported = Buffer.from(await (await app.fetch('/api/archive/export')).arrayBuffer())
   for (const secret of [...Object.values(tracker.tokens), dest.jira.webhook.secret]) assert.ok(!exported.includes(secret))
   const target = await runtime(); await target.signin()

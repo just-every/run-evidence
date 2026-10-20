@@ -1,3 +1,4 @@
+import { registerAsanaWebhook } from './asana-webhook'
 import { done, json, oneOf, ownerRoutes, readInput, text, uuid, type Route } from '../door'
 import { connectDestination, destinations, requireDestination, requireTicket, revokeDestination, rotateDestination, safeDestination, updateMapping, type TicketRow } from './storage'
 import { createTicket, resolveConflict, syncTicket } from './sync'
@@ -17,6 +18,7 @@ export function workHandler(clock: () => Date) {
    const tickets = (await c.env.DB.prepare('SELECT k.*,r.display_name AS resource_name,t.name AS test_name FROM tickets k JOIN obligations o ON o.id=k.obligation_id JOIN resources r ON r.id=o.resource_id JOIN tests t ON t.id=o.test_id WHERE k.destination_id=? ORDER BY k.created_at DESC LIMIT 200').bind(row.id).all<TicketRow & { resource_name: string; test_name: string }>()).results
    return c.isApi ? json({ destination: safeDestination(row), tickets }) : trackerPage(row, tickets, c.actor.name)
   } },
+  { method: 'POST', pattern: both(`/trackers/${id}/asana-webhook`), run: async (c,m) => done(c, '/app/trackers/'+m[1], await registerAsanaWebhook(c.env,c.actor,m[1],c.now),201) },
   { method: 'POST', pattern: both(`/trackers/${id}/mapping`), run: async (c, m) => { await updateMapping(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/trackers/' + m[1], { saved: true }) } },
   { method: 'POST', pattern: both(`/trackers/${id}/rotate`), run: async (c, m) => { await rotateDestination(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/trackers/' + m[1], { rotated: true }) } },
   { method: 'POST', pattern: both(`/trackers/${id}/revoke`), run: async (c, m) => { await revokeDestination(c.env, c.actor, m[1], c.now); return done(c, '/app/trackers/' + m[1], { revoked: true }) } },

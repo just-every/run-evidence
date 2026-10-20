@@ -11,7 +11,15 @@ import { jira } from './jira'
 import { linear } from './linear'
 import { githubIssues } from './github-issues'
 import { asana } from './asana'
-export const adapters: Record<Provider, Adapter> = { vector, jira, linear, github: githubIssues, asana }
+import { gitlab } from './gitlab'
+import { azureBoards } from './azure-boards'
+import { shortcut } from './shortcut'
+import { clickup } from './clickup'
+import { monday } from './monday'
+import { basecamp } from './basecamp'
+import { freshservice } from './freshservice'
+import { youtrack } from './youtrack'
+export const adapters: Record<Provider, Adapter> = { vector, jira, linear, github: githubIssues, asana, gitlab, 'azure-boards': azureBoards, shortcut, clickup, monday, basecamp, freshservice, youtrack }
 export const providers = Object.keys(adapters) as Provider[]
 // Field rules are fixed and shown with every destination: Evidence owns what it
 // writes, the tracker owns who works on it and its status. A change on the
@@ -54,7 +62,7 @@ const randomHex = () => Array.from(crypto.getRandomValues(new Uint8Array(32)), b
 // Linear and Vector generate their own, which the owner pastes here.
 async function hookSecret(provider: Provider, input: Input) {
  if (provider === 'github' || provider === 'jira') return { secret: randomHex(), shown: true, audience: '' }
- if (provider === 'asana') return { secret: null, shown: false, audience: '' }
+ if (!['vector', 'linear', 'clickup', 'gitlab'].includes(provider)) return { secret: null, shown: false, audience: '' }
  const pasted = text(input, 'hook_secret', 200, true)
  if (provider === 'vector' && pasted && !/^[0-9a-f]{64,}$/i.test(pasted)) throw new Refusal('Paste the Vector destination signing secret exactly as Vector shows it (hexadecimal).')
  const audience = provider === 'vector' ? text(input, 'hook_audience', 200, true) : ''
@@ -74,7 +82,7 @@ export async function connectDestination(env: Bindings, actor: Actor, input: Inp
  const verified = await check(adapter, base, secret, account, project), id = crypto.randomUUID(), sealed = await seal(env, secret, id), sealedHook = hook.secret ? await seal(env, hook.secret, id + ':hook') : null
  await env.DB.batch([
   env.DB.prepare("INSERT INTO tracker_destinations(id,provider,label,api_base,account,project,project_name,mapping_json,secret_ciphertext,secret_iv,hook_ciphertext,hook_iv,hook_audience,status,created_by,created_name,created_at,last_success_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,'active',?,?,?,?)")
-   .bind(id, provider, text(input, 'label', 120, true) || `${adapter.name} ${verified.projectName}`, base, provider === 'jira' ? account : verified.account, project, verified.projectName, JSON.stringify(mapping), sealed.ciphertext, sealed.iv, sealedHook?.ciphertext ?? null, sealedHook?.iv ?? null, hook.audience, actor.id, actor.name, now.toISOString(), now.toISOString()),
+   .bind(id, provider, text(input, 'label', 120, true) || `${adapter.name} ${verified.projectName}`, base, provider === 'jira' || provider === 'freshservice' ? account : verified.account, project, verified.projectName, JSON.stringify(mapping), sealed.ciphertext, sealed.iv, sealedHook?.ciphertext ?? null, sealedHook?.iv ?? null, hook.audience, actor.id, actor.name, now.toISOString(), now.toISOString()),
   auditStatement(env, actor, 'tracker.connected', 'tracker:' + id, now, 'succeeded', `${provider} ${verified.projectName}`),
  ])
  return { id, webhook: { url: `${env.AUTH_ORIGIN}/hooks/trackers/${id}`, secret: hook.shown ? hook.secret : null } }

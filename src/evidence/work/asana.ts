@@ -8,7 +8,7 @@ const data = <T>(reply: { body: Record<string, unknown> }) => reply.body.data as
 export const asana: Adapter = {
  name: 'Asana', credential: 'An Asana personal access token (My settings → Apps → Developer apps)', permissions: 'Read and write tasks and comments in the chosen project',
  projectLabel: 'Project GID', baseLabel: 'Asana API', defaultBase: 'https://app.asana.com/api/1.0',
- supportsDue: true, commentText: true, webhook: 'polling every 10 minutes',
+ supportsDue: true, commentText: true, webhook: 'owner-registered Asana webhook (X-Hook-Signature), with ten-minute polling fallback',
  defaultPriorities: { critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low' },
  async verify(base, token, _account, project) {
   if (!/^\d{1,30}$/.test(project)) throw new TrackerFailure('invalid', 400, 'Give the Asana project GID (the number in the project URL).')

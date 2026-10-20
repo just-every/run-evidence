@@ -1,3 +1,4 @@
+import { asanaHandshake } from './asana-webhook'
 import { runtimeBindings, type Bindings } from '../../auth.server'
 import { boundedBody, Refusal } from '../upload'
 import { hookSecretOf, type DestinationRow, type TicketRow } from './storage'
@@ -10,7 +11,7 @@ const hex = (bytes: ArrayBuffer) => Array.from(new Uint8Array(bytes), b => b.toS
 async function hmac(key: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>) { return hex(await crypto.subtle.sign('HMAC', await crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']), data)) }
 function same(a: string, b: string) { if (a.length !== b.length) return false; let diff = 0; for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i); return diff === 0 }
 const plain = (status: number, body: Record<string, unknown>) => Response.json(body, { status, headers: { 'cache-control': 'no-store' } })
-interface Verified { delivery: string; ref: string | null }
+interface Verified { delivery: string; ref: string | null; refs?: string[] }
 type Payload = Record<string, any>
 // Returns the delivery identity and the ticket the event concerns, or null when unverified.
 async function verify(d: DestinationRow, secret: string, request: Request, bytes: Uint8Array<ArrayBuffer>, now: Date): Promise<Verified | null> {
@@ -23,6 +24,25 @@ async function verify(d: DestinationRow, secret: string, request: Request, bytes
   if (!payload || !delivery) return null
   if (d.provider === 'github') return { delivery, ref: payload.repository?.full_name?.toLowerCase() === d.project.toLowerCase() && payload.issue?.number ? String(payload.issue.number) : null }
   return { delivery, ref: typeof payload.issue?.key === 'string' ? payload.issue.key : null }
+ }
+ if (d.provider === 'gitlab') {
+  if (!same(h('x-gitlab-token'), secret)) return null
+  const p=parse(), delivery=h('x-gitlab-event-uuid')
+  if (!p || !delivery || String(p.project?.id) !== d.project && p.project?.path_with_namespace !== d.project) return null
+  return { delivery, ref: p.object_kind === 'issue' ? String(p.object_attributes?.iid ?? '') : p.object_kind === 'note' ? String(p.issue?.iid ?? '') : null }
+ }
+ if (d.provider === 'clickup') {
+  if (!same(h('x-signature'), await hmac(encoder.encode(secret), bytes))) return null
+  const p=parse()
+  if (!p || !p.webhook_id) return null
+  return { delivery: await hmac(encoder.encode(secret), bytes), ref: p.task_id ? String(p.task_id) : null }
+ }
+ if (d.provider === 'asana') {
+  if (!same(h('x-hook-signature'), await hmac(encoder.encode(secret), bytes))) return null
+  const p=parse()
+  if (!p || !Array.isArray(p.events)) return null
+  const refs=[...new Set<string>(p.events.flatMap((e:Payload)=>e.resource?.resource_type==='task'?[String(e.resource.gid)]:e.parent?.resource_type==='task'?[String(e.parent.gid)]:[]))]
+  return { delivery: await hmac(encoder.encode(secret),bytes),ref:refs[0]??null,refs }
  }
  if (d.provider === 'linear') {
   if (!same(h('linear-signature'), await hmac(encoder.encode(secret), bytes))) return null
@@ -51,6 +71,7 @@ export function hookHandler(clock: () => Date) {
   if (request.method !== 'POST') return plain(405, { error: 'Method not allowed.' })
   const env = runtimeBindings(original), now = clock()
   const d = await env.DB.prepare("SELECT * FROM tracker_destinations WHERE id=? AND status='active'").bind(match[1]).first<DestinationRow>()
+  if (d?.provider==='asana' && request.headers.has('x-hook-secret')) return await asanaHandshake(env,d,request) ?? plain(401,{error:'Handshake not authorized.'})
   const secret = d ? await hookSecretOf(env, d).catch(() => null) : null
   if (!d || !secret) return plain(404, { error: 'Not found.' })
   let bytes: Uint8Array<ArrayBuffer>
@@ -59,9 +80,13 @@ export function hookHandler(clock: () => Date) {
   if (!verified) return plain(401, { error: 'Signature not verified.' })
   const admitted = await env.DB.prepare("INSERT INTO tracker_deliveries(destination_id,delivery_id,ticket_ref,outcome,received_at) VALUES(?,?,?,'admitted',?) ON CONFLICT DO NOTHING").bind(d.id, verified.delivery.slice(0, 200), verified.ref ?? '', now.toISOString()).run()
   if (!admitted.meta.changes) return plain(200, { duplicate: true })
-  const ticket = verified.ref ? await env.DB.prepare('SELECT * FROM tickets WHERE destination_id=? AND (remote_id=? OR remote_key=?)').bind(d.id, verified.ref, verified.ref).first<TicketRow>() : null
-  if (!ticket) { await env.DB.prepare("UPDATE tracker_deliveries SET outcome='no linked ticket' WHERE destination_id=? AND delivery_id=?").bind(d.id, verified.delivery.slice(0, 200)).run(); return plain(202, { linked: false }) }
-  const state = await syncTicket(env, ticket, 'webhook', now)
+  const states:string[]=[]
+  for (const ref of verified.refs ?? (verified.ref ? [verified.ref] : [])) {
+   const ticket=await env.DB.prepare('SELECT * FROM tickets WHERE destination_id=? AND (remote_id=? OR remote_key=?)').bind(d.id,ref,ref).first<TicketRow>()
+   if(ticket) states.push(await syncTicket(env,ticket,'webhook',now))
+  }
+  if (!states.length) { await env.DB.prepare("UPDATE tracker_deliveries SET outcome='no linked ticket' WHERE destination_id=? AND delivery_id=?").bind(d.id, verified.delivery.slice(0, 200)).run(); return plain(202, { linked: false }) }
+  const state=states.join(', ')
   await env.DB.prepare('UPDATE tracker_deliveries SET outcome=? WHERE destination_id=? AND delivery_id=?').bind('synced: ' + state, d.id, verified.delivery.slice(0, 200)).run()
   return plain(202, { linked: true, state })
  }
