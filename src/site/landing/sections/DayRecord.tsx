@@ -21,11 +21,11 @@ function Ticks({ count, fail }: { count: number; fail?: number }) {
   return <span className="ticks">{Array.from({ length: count }, (_, index) => <i key={index} className={index === fail ? 'tick-fail' : undefined} />)}</span>
 }
 
-const Callout = () => <p className="record-callout"><Status kind="fail" label="Failed" /><span>Jul 14, 02:00&nbsp;· CloudTrail off in <span className="nowrap">us-west-2<span className="split-sep">&nbsp;→</span></span> <span className="split nowrap">fixed 11:40</span></span><Status kind="pass" label="Fixed" /></p>
+const Callout = () => <p className="record-callout"><Status kind="fail" label="Failed" /><span>Jul 14, 2:00&nbsp;AM&nbsp;· CloudTrail off in <span className="nowrap">us-west-2<span className="split-sep">&nbsp;→</span></span> <span className="split nowrap">fixed 11:40&nbsp;AM</span></span><Status kind="pass" label="Fixed" /></p>
 
 export function DayRecord() {
   return <Band id="observation" className="band-record">
-    <Head id="observation" className="head-wide" eyebrow="Apr 1&nbsp;– Sep 30&nbsp;· Observation window" title="183 days, tested every day."
+    <Head id="observation" className="head-wide" eyebrow={<>Apr 1&nbsp;– Sep 30<span className="narrow-sep">&nbsp;· </span><span className="narrow-line">Observation window</span></>} title="183 days, tested every day."
       lede="A Type II report covers months, not a moment. Evidence tests every control around the clock and keeps each day's result with its time and source." />
     <div className="card record-card">
       <div className="record-desk">
@@ -41,7 +41,7 @@ export function DayRecord() {
         <p className="record-foot">86 controls&nbsp;· 15,738 daily results&nbsp;· 1 failure, fixed the same day&nbsp;· every result kept with its source</p>
       </div>
       <div className="record-phone">
-        <h3>CC7.2&nbsp;· Monitoring</h3>
+        <h3>CC7.2&nbsp;·&nbsp;Monitoring</h3>
         <p className="record-sub">183 of 183 days tested&nbsp;· Apr 1&nbsp;– Sep 30</p>
         <ul>{months.map(([name, length]) => <li key={name} style={{ '--at': 13.5 / 31 } as CSSProperties}>
           <span className="record-month">{name}</span>

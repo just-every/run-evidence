@@ -72,7 +72,7 @@
 @media (max-width: 760px) {
   .record-card { margin-top: 24px; }
   .record-phone { padding: 20px 16px 0; }
-  .record-phone h3 { font-size: 26px; }
+  .record-phone h3 { font-size: min(26px, calc(7.4vw - 3px)); }
   .record-sub { font-size: 14px; }
   .record-phone ul { gap: 20px; margin-top: 20px; }
   .record-phone li { grid-template-columns: 44px minmax(0, 1fr); }

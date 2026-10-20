@@ -33,9 +33,10 @@
 .roster-totals .status { width: 25px; height: 25px; }
 .roster-notes { display: grid; gap: 8px; }
 .roster-notes li { display: grid; grid-template-columns: 22px 24px minmax(0, 1fr); column-gap: 18px; align-items: center; min-height: 39px; padding: 0 22px; border-radius: 8px; }
-.roster-notes p { display: flex; flex-wrap: wrap; column-gap: .5em; color: #4b5568; font-size: 15px; }
+.roster-notes p { display: flex; flex-wrap: wrap; column-gap: .32em; color: #4b5568; font-size: 15px; }
 .roster-notes p b { font-weight: 500; color: #2b3447; }
-.roster-notes p b::after { content: ' ·'; color: #8a93a6; }
+/* The separator sits one even gap from the name and from the note (" · ", as drawn). */
+.roster-notes p b::after { content: '·'; margin-left: .32em; color: #8a93a6; }
 .roster-notes .status { width: 23px; height: 23px; }
 .roster-icon { display: grid; place-items: center; width: 22px; height: 22px; }
 .roster-icon svg { width: 20px; height: 20px; }

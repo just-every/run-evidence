@@ -12,11 +12,11 @@
 .hero .site-brand img { width: calc(42 * var(--u)); height: calc(42 * var(--u)); }
 .hero .site-header nav { gap: calc(57 * var(--u)); font-size: calc(20 * var(--u)); }
 
-/* Copy, right of the board. */
+/* Copy, right of the board. The headline is set at 80 desk px so "day." ends 64 desk px (60 px at 1440) short of the edge. */
 .hero-copy { position: absolute; left: calc(946 * var(--u)); top: calc(196 * var(--u)); width: calc(590 * var(--u)); }
-.hero h1 { font: 800 calc(89 * var(--u))/.98 var(--font-head); letter-spacing: -.05em; word-spacing: .03em; /* .03em keeps "audit, any day." on the desk's second line */ color: var(--site-ink); }
+.hero h1 { margin-top: calc(9 * var(--u)); font: 800 calc(80 * var(--u))/.98 var(--font-head); letter-spacing: -.05em; word-spacing: .03em; /* .03em keeps "audit, any day." on the desk's second line */ color: var(--site-ink); }
 .hero h1 .accent { background-image: linear-gradient(92deg, #0a6fd8 0%, #0897c6 100%); }
-.hero-sub { margin-top: calc(38 * var(--u)); max-width: calc(540 * var(--u)); color: var(--site-body); font-size: calc(23.5 * var(--u)); line-height: 1.43; }
+.hero-sub { margin-top: calc(47 * var(--u)); max-width: calc(540 * var(--u)); color: var(--site-body); font-size: calc(23.5 * var(--u)); line-height: 1.43; }
 .hero-alt { position: relative; margin-top: calc(76 * var(--u)); color: var(--site-ink); font-size: calc(21 * var(--u)); line-height: 1.5; max-width: calc(380 * var(--u)); }
 .hero-alt::before { content: ''; position: absolute; left: 0; top: calc(-38 * var(--u)); width: calc(204 * var(--u)); border-top: 1px solid color-mix(in srgb, var(--site-ink) 16%, transparent); }
 .hero-alt strong { font-weight: 700; }
@@ -97,7 +97,7 @@
   .hero .site-brand img { width: 34px; height: 34px; }
   .hero .site-header nav { gap: 28px; font-size: 17px; }
   .hero-copy { grid-area: copy; position: static; width: auto; max-width: 640px; padding: 28px var(--gutter) 40px; }
-  .hero h1 { font-size: 64px; }
+  .hero h1 { margin-top: 0; font-size: 64px; }
   .hero-sub { margin-top: 22px; max-width: none; font-size: 20px; }
   .hero-alt { margin-top: 44px; font-size: 18px; max-width: none; }
   .hero-alt::before { top: -22px; width: 160px; }
@@ -128,13 +128,8 @@
 }
 @media (max-width: 760px) {
   .hero-stage { --u: .7px; }
-  .hero .site-brand { font-size: 23px; gap: 9px; }
-  .hero .site-brand img { width: 30px; height: 30px; }
-  .hero .site-header nav { gap: 18px; font-size: 15.5px; }
-}
-@media (max-width: 400px) {
-  .hero .site-brand { font-size: 22px; }
-  .hero .site-header nav { gap: 13px; font-size: 15px; }
+  /* Live's header up to 760; the links close up only where the row would overflow (below about 424 px). */
+  .hero .site-header nav { gap: clamp(13px, calc(50vw - 186px), 28px); }
   .hero-copy { padding: 18px var(--gutter) 34px; }
   .hero h1 { font-size: 46px; line-height: 1; }
   .hero-sub { margin-top: 18px; font-size: 18px; line-height: 1.5; }
@@ -147,10 +142,17 @@
   .board { gap: 22px 10px; padding: 26px 10px 22px; }
   .board-cc61, .board-cc72 { padding: 13px 10px; gap: 10px; }
   .board-exA, .board-exB, .board-exC, .board-soc2 { padding: 13px 11px 12px; }
-  .board-foot { flex-wrap: wrap; white-space: normal; row-gap: 6px; }
+  .board-foot { flex-wrap: wrap; }
+  .board-note p { font-size: 26px; }
+}
+/* At 400 and below the header tightens so Evidence and Docs keep apart; the board's footers and strip wrap within their cards. */
+@media (max-width: 400px) {
+  .hero .site-brand { font-size: 22px; gap: 9px; }
+  .hero .site-brand img { width: 30px; height: 30px; }
+  .hero .site-header nav { gap: 13px; font-size: 15px; }
+  .board-foot { white-space: normal; row-gap: 6px; }
   .board-foot .when { white-space: nowrap; }
   .hero-strip { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 10px; }
   .hero-strip li, .hero-strip li + li { white-space: normal; gap: 10px; }
   .hero-strip svg { width: 26px; height: 26px; }
-  .board-note p { font-size: 26px; }
 }

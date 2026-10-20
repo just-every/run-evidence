@@ -101,3 +101,9 @@
   .docs-card-summary { font-size: 15.5px; }
   .docs-card-go { right: 20px; top: 20px; }
 }
+/* At 400 and below the docs header takes the homepage's tightened lockup and links. */
+@media (max-width: 400px) {
+  .docs .site-brand { font-size: 22px; gap: 9px; }
+  .docs .site-brand img { width: 30px; height: 30px; }
+  .docs .site-header nav { gap: 13px; font-size: 15px; }
+}

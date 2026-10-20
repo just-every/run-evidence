@@ -29,8 +29,9 @@
 .iso-card ul { margin-top: 18px; }
 .iso-card li { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 16px; align-items: center; min-height: 55px; border-top: 1px solid var(--site-line); }
 .iso-card li p { font-size: 16.5px; color: #1f2a3d; line-height: 1.35; }
-.iso-from { display: inline-flex; align-items: center; gap: 8px; margin-left: 14px; color: #6b7488; }
-.iso-from svg { width: 15px; height: 15px; }
+/* Inline, so "← CC6.1" sits on the control's baseline. */
+.iso-from { margin-left: 14px; color: #6b7488; white-space: nowrap; }
+.iso-from svg { display: inline-block; width: 15px; height: 15px; margin-right: 8px; vertical-align: -1px; }
 .iso-new { color: #6b7488; }
 .iso-card li .status { width: 26px; height: 26px; }
 
@@ -70,17 +71,31 @@
   .iso-from { margin-left: 8px; }
   .iso-card li .status { width: 24px; height: 24px; }
 }
+/* The cards keep page-09's one-line rows wherever the card holds them at its drawn size (about 1360 px and up for the
+   answers, 1340 for ISO), and give each answer its own line below that. */
 @container (max-width: 640px) {
   .answers-card li { column-gap: 14px; padding: 8px 0; }
   .answers-card li p { font-size: 15px; }
+}
+@container (max-width: 519px) {
   .answers-card li p span { display: block; }
   .answers-card li p .answers-sep { display: none; }
 }
-@container (max-width: 600px) {
-  .answers-card .cq-sep { display: none; }
-  .answers-card .cq-split { display: block; }
+@container (max-width: 409px) {
+  .answers-foot .cq-sep { display: none; }
+  .answers-foot .cq-split { display: block; }
 }
-@container (max-width: 660px) {
+@media (min-width: 1181px) {
+  @container (max-width: 539px) {
+    .answers-card h3 .cq-sep { display: none; }
+    .answers-card h3 .cq-split { display: block; }
+  }
+}
+@container (max-width: 384px) {
+  .answers-card h3 .cq-sep { display: none; }
+  .answers-card h3 .cq-split { display: block; }
+}
+@container (max-width: 524px) {
   .iso-card .cq-sep { display: none; }
   .iso-card .cq-split { display: block; margin-top: 2px; }
 }

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 
 /** A section's words: the dated eyebrow, the one-size heading and its lede. */
-export function Head({ id, eyebrow, title, lede, className = '' }: { id: string; eyebrow: string; title: ReactNode; lede: ReactNode; className?: string }) {
+export function Head({ id, eyebrow, title, lede, className = '' }: { id: string; eyebrow: ReactNode; title: ReactNode; lede: ReactNode; className?: string }) {
   return <div className={`head ${className}`.trim()}>
     <p className="eyebrow">{eyebrow}</p>
     <h2 id={`${id}-title`}>{title}</h2>

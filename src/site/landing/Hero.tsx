@@ -25,7 +25,7 @@ function Board() {
     <Exhibit id="cc61" at={{ x: 124, y: 162, w: 273, h: 114, r: 1.2 }} tone="blue" icon="lock"><strong>CC6.1</strong><span>Logical access</span></Exhibit>
     <Exhibit id="cc72" at={{ x: 538, y: 177, w: 252, h: 110, r: 0.9 }} tone="violet" icon="bars"><strong>CC7.2</strong><span>Monitoring</span></Exhibit>
     <div className="pin-card board-exA" style={place({ x: 304, y: 303, w: 260, h: 176, r: 0.6 })}>
-      <div className="board-head"><span className="tile tone-green"><Icon name="people" /></span><div><strong>Exhibit A</strong><span>MFA enforced for all 42 users</span></div></div>
+      <div className="board-head"><span className="tile tone-green"><Icon name="people" /></span><div><strong>Exhibit A</strong><span>MFA enforced for all 42&nbsp;users</span></div></div>
       <div className="board-foot"><span className="source"><Icon name="key" />Okta</span><span className="when">Checked 9:00 AM</span><Status kind="pass" label="Passing" /></div>
     </div>
     <div className="pin-card board-soc2" style={place({ x: 629, y: 327, w: 248, h: 113, r: 0.9 })}>
@@ -62,7 +62,7 @@ export function Hero() {
       <div className="hero-art"><Art name="hero" width={1536} height={1024} eager phone={{ name: 'board-phone', width: 866, height: 788 }} /></div>
       <SiteHeader />
       <div className="hero-copy">
-        <h1 id="hero-title">Ready for the audit, <span className="accent">any day.</span></h1>
+        <h1 id="hero-title">Ready for the audit, <span className="accent">any&nbsp;day.</span></h1>
         <p className="hero-sub">Evidence tests your controls around the clock, collects the proof, fixes what drifts, and hands your auditor everything they ask for.</p>
         <p className="hero-alt">100% free, open source alternative to <strong>Vanta</strong>, <strong>Drata</strong> and <strong>Secureframe</strong></p>
         <Actions />

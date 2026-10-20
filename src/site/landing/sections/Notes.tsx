@@ -10,7 +10,7 @@ export function Notes() {
       <div className="card note-card note-import">
         <span className="note-icon"><Icon name="signIn" /></span>
         <div className="note-copy">
-          <h3>Coming from Vanta, Drata or Secureframe?</h3>
+          <h3>Coming from Vanta, Drata&nbsp;or&nbsp;Secureframe?</h3>
           <p>Import controls, policies, evidence and vendors, and check every count before you switch.</p>
         </div>
         <ul className="note-counts" aria-label="Checked after import">{counts.map(count => <li key={count}><Status kind="pass" label="Checked" />{count}</li>)}</ul>

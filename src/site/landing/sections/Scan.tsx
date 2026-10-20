@@ -15,10 +15,10 @@ const gaps: [MarkName | 'policies', string, number, string][] = [
 export function FirstScan() {
   return <Band id="first-scan" className="band-half band-scan">
     <Head id="first-scan" eyebrow="Mar 4&nbsp;· Day one" title="Every gap, found on day one."
-      lede="Connect your cloud, code, identity, HR and device systems once. The first scan tests every SOC 2 control and names what fails." />
+      lede="Connect your cloud, code, identity, HR and device systems once. The first scan tests every SOC&nbsp;2&nbsp;control and names what fails." />
     <div className="scan-figure">
       <div className="card scan-card">
-        <p className="scan-when">First scan&nbsp;· Mar 4, 10:12</p>
+        <p className="scan-when">First scan&nbsp;· Mar 4, 10:12&nbsp;AM</p>
         <p className="scan-total"><b>86 controls</b>&nbsp;· <span className="pass">55 passing</span>&nbsp;· <span className="fail">31 to fix</span></p>
         <ul>{gaps.map(([mark, name, count, note]) => <li key={name}>
           <span className="scan-mark">{mark === 'policies' ? <Icon name="doc" /> : <Mark name={mark} />}</span>
@@ -44,7 +44,7 @@ export function Fixing() {
             <span className="app-tile"><img src="/brand/mark.svg" alt="" width="24" height="24" /></span>
             <div>
               <b>Evidence</b>
-              <p>GitHub&nbsp;· branch protection off on 3 of 14 <span className="nowrap">repos&nbsp;· CC8.1</span></p>
+              <p>GitHub&nbsp;· branch protection off on <span className="nowrap">3 of 14 repos&nbsp;· CC8.1</span></p>
               <p className="slack-owner"><span className="avatar tone-blue" aria-hidden="true">SP</span>Owner: Sam Patel&nbsp;· due Mar 12</p>
             </div>
           </div>
@@ -52,7 +52,7 @@ export function Fixing() {
             <span className="app-tile"><img src="/brand/mark.svg" alt="" width="24" height="24" /></span>
             <div>
               <b>Evidence</b>
-              <p className="slack-pass"><Status kind="pass" label="Passing" /><span>Re-tested Mar 11, 10:42<span className="cq-sep">&nbsp;· </span><span className="cq-split">14 of 14 protected</span></span></p>
+              <p className="slack-pass"><Status kind="pass" label="Passing" /><span>Re-tested Mar 11, 10:42&nbsp;AM<span className="cq-sep">&nbsp;· </span><span className="cq-split">14 of 14 protected</span></span></p>
             </div>
           </div>
         </div>

@@ -3,7 +3,8 @@
    1536, so the heading follows it there and holds above, where the bands keep their 1320 wrap. */
 .landing { --h2: min(4.3457vw, 66.75px); }
 .band { position: relative; padding: 92px 0; }
-.band::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(48% 42% at 100% 0%, rgba(200, 225, 252, .5), transparent 72%), radial-gradient(40% 36% at 0% 100%, rgba(214, 232, 252, .35), transparent 72%); }
+/* The corner glows fade to the paper before the band's edges, so bands meet without a seam. */
+.band::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(48% 42% at 100% 0%, rgba(200, 225, 252, .5), transparent 72%), radial-gradient(40% 36% at 0% 100%, rgba(214, 232, 252, .35), transparent 72%); -webkit-mask-image: linear-gradient(transparent, #000 min(160px, 30%), #000 calc(100% - min(160px, 30%)), transparent); mask-image: linear-gradient(transparent, #000 min(160px, 30%), #000 calc(100% - min(160px, 30%)), transparent); }
 .landing main { position: relative; z-index: 0; }
 .wrap { max-width: calc(var(--wrap) + 2 * var(--gutter)); margin: 0 auto; padding: 0 var(--gutter); }
 .band h2 { font-size: var(--h2); line-height: 1.02; }
@@ -16,7 +17,7 @@
 .band-fixing .head, .band-drift .head, .band-framework .head { order: 2; }
 .nowrap { white-space: nowrap; }
 /* A separator that gives way to a line break where its line would wrap (.split at 760, .narrow-split at 400). */
-.split { white-space: nowrap; }
+.split, .narrow-line { white-space: nowrap; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 /* Closing over the auditor's desk (page-s1 page-11, unchanged). */
@@ -53,6 +54,7 @@
 @media (max-width: 400px) {
   .narrow-sep { display: none; }
   .narrow-split { display: flex !important; }
+  .narrow-line { display: block; }
 }
 @media (max-width: 760px) {
   .band { padding: 52px 0; }

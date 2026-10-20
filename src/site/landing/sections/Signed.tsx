@@ -12,19 +12,21 @@ const people = [
   'DM', 'RV', 'KB', 'LT', 'AS', 'BH', 'MJ',
   'EP', 'RG', 'SK', 'TW', 'CM', 'AL', 'JH',
 ]
-const tones = ['blue', 'mint', 'amber', 'violet', 'sky', 'rose', 'green']
+// Each face's tint, in roster order: six of each, never the same tint beside, above or diagonal to its neighbour.
+const tints = 'vgbvamgbsarbvaarmgsrmmvbavgbrgsrmassmvbsrg'
+const tones: Record<string, string> = { b: 'blue', m: 'mint', a: 'amber', v: 'violet', s: 'sky', r: 'rose', g: 'green' }
 const faces = ['DL', 'SP', 'AK', 'MR', 'PS', 'TO']
 const policies = ['Access Control', 'Incident Response', 'Change Management', 'Vendor Management', 'Business Continuity', 'Data Retention', 'Acceptable Use', 'Encryption']
 const phonePolicies = new Set(['Access Control', 'Incident Response', 'Change Management', 'Encryption'])
-const tone = (initials: string) => tones[people.indexOf(initials) * 3 % tones.length]
+const tone = (initials: string) => tones[tints[people.indexOf(initials)]]
 
 export function Signed() {
   return <Band id="policies" className="band-signed">
-    <Head id="policies" className="head-wide" eyebrow="Mar 16&nbsp;– Mar 25&nbsp;· Policies and people" title="Signed by everyone."
+    <Head id="policies" className="head-wide" eyebrow={<>Mar 16&nbsp;– Mar 25<span className="narrow-sep">&nbsp;· </span><span className="narrow-line">Policies and people</span></>} title="Signed by everyone."
       lede="Start from templates, approve each policy once, then every person signs and finishes training. New hires get the same list on day one." />
     <div className="card roster-card">
       <header className="roster-head">
-        <h3>Information Security Policy&nbsp;· v1</h3>
+        <h3>Information Security Policy&nbsp;·&nbsp;v1</h3>
         <p>Approved Mar 16 by Dana Lee, CEO</p>
       </header>
       <div className="roster-body">
@@ -46,7 +48,7 @@ export function Signed() {
       <footer className="roster-foot">
         <p className="roster-totals"><span><Status kind="pass" label="Done" />42 of 42 signed</span><span><Status kind="pass" label="Done" />42 of 42 trained</span></p>
         <ul className="roster-notes">
-          <li className="roster-reminded"><span className="roster-icon"><Icon name="bell" /></span><Status kind="pass" label="Signed" /><p><b>RV&nbsp;· Riya Varma</b><span>reminded Mar 20&nbsp;· signed Mar 21</span></p></li>
+          <li className="roster-reminded"><span className="roster-icon"><Icon name="bell" /></span><Status kind="pass" label="Signed" /><p><b>RV&nbsp;· Riya Varma</b><span>reminded Mar 19&nbsp;· signed Mar 20</span></p></li>
           <li className="roster-joined"><span className="roster-icon"><Icon name="user" /></span><Status kind="pass" label="Signed and trained" /><p><b>JL&nbsp;· Jenna Lopez</b><span>joined Mar 25&nbsp;· signed and trained day one</span></p></li>
         </ul>
       </footer>

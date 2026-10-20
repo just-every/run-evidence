@@ -18,7 +18,7 @@ const requests: Request[] = [
 
 export function Fieldwork() {
   return <Band id="auditor" className="band-fieldwork">
-    <Head id="auditor" className="head-wide" eyebrow="Nov 2&nbsp;· Fieldwork" title={<>121 requests, <br />answered from proof.</>}
+    <Head id="auditor" className="head-wide" eyebrow="Nov 2&nbsp;· Fieldwork" title={<>121 requests, <br />answered from&nbsp;proof.</>}
       lede="Your auditor gets a workspace for your audit period. Each request links to tested proof with its source and time." />
     <div className="card pbc-card">
       <div className="pbc-head">

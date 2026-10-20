@@ -52,6 +52,11 @@
   .scan-count { grid-area: count; }
   .scan-note { grid-area: note; font-size: 14.5px; }
 }
+/* 1000-1099: the Slack card takes the figure's full width so "Re-tested Mar 11, 10:42 AM" keeps one line. */
+@media (min-width: 1000px) and (max-width: 1099px) {
+  .slack-card { width: 100%; }
+  .slack-reply { margin-left: 40px; }
+}
 @media (max-width: 999px) {
   .band-scan { padding: 40px 0; }
   .band-fixing { padding: 40px 0 60px; }

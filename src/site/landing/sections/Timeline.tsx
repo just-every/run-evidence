@@ -17,7 +17,7 @@ const scale: Milestone[] = [
   { date: 'Mar 3', note: 'A bank asks for a SOC 2 report', kind: 'open', at: day(3, 4), side: 'up', align: 'end', pair: 'before' },
   { date: 'Mar 4', note: 'rer setup\u00a0· first scan: 31 gaps', kind: 'fail', at: day(3, 4), side: 'down', align: 'start', pair: 'after' },
   { date: 'Mar 30', note: '0 gaps open', kind: 'pass', at: day(3, 30) + .5, side: 'up', align: 'start' },
-  { date: 'Jul 14', note: '1 drift, fixed by 11:40', kind: 'drift', at: day(7, 14) + .5, side: 'up', align: 'end' },
+  { date: 'Jul 14', note: '1 drift, fixed by 11:40\u00a0AM', kind: 'drift', at: day(7, 14) + .5, side: 'up', align: 'end' },
   { date: 'Sep 30\u00a0· window closes', note: '15,738 daily results kept', kind: 'pass', at: day(10, 1), side: 'up', align: 'end' },
   { date: 'Nov 2', note: 'Fieldwork\u00a0· Harbor & Lane CPAs', kind: 'blue', at: day(11, 2) + .5, side: 'down', align: 'center' },
   { date: 'Dec 9', note: 'Report issued\u00a0· no exceptions', kind: 'report', at: day(12, 9) + .5, side: 'up', align: 'center' },
@@ -28,7 +28,7 @@ const rail: { date: string; note: string; kind: Kind; window?: 'opens' | 'inside
   { date: 'Mar 4', note: 'rer setup\u00a0· first scan: 31 gaps', kind: 'fail' },
   { date: 'Mar 30', note: '0 gaps open', kind: 'pass' },
   { date: 'Apr 1', note: 'Window opens\u00a0· every control tested daily', kind: 'blue', window: 'opens' },
-  { date: 'Jul 14', note: '1 drift, fixed by 11:40', kind: 'drift', window: 'inside' },
+  { date: 'Jul 14', note: '1 drift, fixed by 11:40\u00a0AM', kind: 'drift', window: 'inside' },
   { date: 'Sep 30', note: 'Window closes\u00a0· 15,738 daily results kept', kind: 'pass', window: 'closes' },
   { date: 'Nov 2', note: 'Fieldwork\u00a0· Harbor & Lane CPAs', kind: 'blue' },
   { date: 'Dec 9', note: 'Report issued\u00a0· no exceptions', kind: 'report' },
@@ -47,7 +47,7 @@ function Dot({ kind }: { kind: Kind }) {
 
 export function Timeline() {
   return <Band id="first-soc2" className="band-timeline">
-    <Head id="first-soc2" className="head-wide" eyebrow="Your first SOC 2&nbsp;· March to December" title={<>From first scan <br />to signed report.</>}
+    <Head id="first-soc2" className="head-wide" eyebrow={<>Your first SOC 2<span className="narrow-sep">&nbsp;· </span><span className="narrow-line">March to December</span></>} title={<>From first scan <br />to signed report.</>}
       lede="Your first SOC 2 Type II, from the day a customer asks for it." />
     <div className="card tl-card">
       <div className="tl-scale">

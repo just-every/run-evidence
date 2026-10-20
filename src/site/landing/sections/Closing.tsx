@@ -8,7 +8,7 @@ export function Closing() {
         <Art name="closing" width={1536} height={914} phone={{ name: 'closing-phone', width: 1536, height: 584 }} />
         <div className="closing-copy">
           <h2 id="closing-title">Walk into every audit <span className="accent">calm.</span></h2>
-          <p>Open source compliance for SOC 2, ISO 27001 and HIPAA.</p>
+          <p>Open source compliance for SOC 2, ISO&nbsp;27001 and HIPAA.</p>
           <Actions demo={false} />
           <p className="closing-note">Free and open source, MIT licensed.</p>
         </div>
