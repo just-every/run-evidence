@@ -26,7 +26,7 @@ export async function runCollection(env: Bindings, connection: Connection, trigg
  if (connection.provider === 'knowbe4') return runKnowBe4(env, connection, trigger, now)
  if (isDirectory(connection.provider)) return runDirectoryCollection(env, connection, trigger, now)
  if (isScopedCloud(connection.provider)) return runScopedCollection(env, connection, scopedClouds[connection.provider], trigger, now)
- const at = now.toISOString(), started = await startRun(env, connection, connectorRevision, trigger, now)
+ const at = now.toISOString(), started = await startRun(env, connection, connectorRevision, trigger, now, { interval_minutes: collectionMinutes(connection), gaps: [] })
  if (!started) return { run: null, outcome: 'already running' }
  const { finish } = started
  if (connection.status !== 'active' || !connection.secret_ciphertext || !connection.secret_iv) return finish('failed', {}, 'connection is ' + connection.status)

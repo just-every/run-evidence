@@ -2840,7 +2840,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "2f2cd39c0aa1a688ac61b3debd56790d7949446a8ff752fb894b39f3edac189d",
+      "sha256": "5e28f6a378e999709aef095912ba1c3d40c996fb17457baf5a64ec23c4c8293c",
       "executable": false
     },
     "AGENTS.md": {
@@ -3868,7 +3868,7 @@
       "executable": false
     },
     "src/evidence/connect/collect.ts": {
-      "sha256": "42decd91de23e797730b8059d138aad3b5c16f1aee44fc912b9e1da567683113",
+      "sha256": "4ac83d45e3a6884c260673661d6193029922b20a19a78f3c96dbbda54a31d4c5",
       "executable": false
     },
     "src/evidence/connect/custody.ts": {
@@ -3888,7 +3888,7 @@
       "executable": false
     },
     "src/evidence/connect/runs.ts": {
-      "sha256": "a49d2d2432798bddc0300db3549532039486e26bc906830929e4e19e5afa4fe6",
+      "sha256": "5de31b7dd3505f38ced8ba821ec44de7feef1e3c17aab9c87c4b8083cc4fe942",
       "executable": false
     },
     "src/evidence/connect/schedule.ts": {
