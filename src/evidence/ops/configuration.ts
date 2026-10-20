@@ -1,3 +1,4 @@
+import { mailConfigurationFailures } from './mail-configuration.mjs'
 import type { Bindings } from '../../auth.server'
 import { isLoopbackHost, normalizeEmail } from '../../modules/operator-auth/index.mjs'
 
@@ -15,15 +16,7 @@ export function configurationFailures(env: Bindings): string[] {
  try { normalizeEmail(env.OWNER_EMAIL) } catch { bad('OWNER_EMAIL') }
  if (typeof env.SESSION_SECRET !== 'string' || env.SESSION_SECRET.length < 32 || env.SESSION_SECRET.length > 1024) bad('SESSION_SECRET')
  if (env.SETUP_TOKEN !== undefined && (typeof env.SETUP_TOKEN !== 'string' || env.SETUP_TOKEN.length < 32 || env.SETUP_TOKEN.length > 1024)) bad('SETUP_TOKEN')
- if (env.MAIL_PROVIDER) {
-  if (!['development','resend','sendgrid','cloudflare'].includes(env.MAIL_PROVIDER)) bad('MAIL_PROVIDER')
-  if (env.MAIL_PROVIDER !== 'development') {
-   const key=env.MAIL_API_KEY
-   if (typeof key!=='string'||!key.trim()||key.length>4096||/\s|[\x00-\x1f\x7f]/.test(key)) bad('MAIL_API_KEY')
-  }
-  if (env.MAIL_PROVIDER==='cloudflare' && !/^[a-f0-9]{32}$/i.test(env.MAIL_ACCOUNT_ID??'')) bad('MAIL_ACCOUNT_ID')
-  try { normalizeEmail(env.MAIL_FROM) } catch { bad('MAIL_FROM') }
- }
+ failures.push(...mailConfigurationFailures(env))
  return failures
 }
 export function configurationRefusal(settings: string[]) {

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "ad11c93953add6cb03e769d043111aa5c0916f418fbf6b785a825f75b50340cc",
+  "manifest": "6ef39497c39eef8e3e6626eab893f4be5747b4497f9637c26d77d907d9650eb7",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2660,6 +2660,8 @@
           "src/evidence/ops/execution.ts",
           "src/evidence/ops/health.ts",
           "src/evidence/ops/http.ts",
+          "src/evidence/ops/mail-configuration.d.mts",
+          "src/evidence/ops/mail-configuration.mjs",
           "src/evidence/ops/outcomes.ts",
           "src/evidence/ops/view.ts",
           "src/evidence/policy/builder.ts",
@@ -2979,7 +2981,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "ad11c93953add6cb03e769d043111aa5c0916f418fbf6b785a825f75b50340cc",
+      "sha256": "6ef39497c39eef8e3e6626eab893f4be5747b4497f9637c26d77d907d9650eb7",
       "executable": false
     },
     "LICENSE": {
@@ -4911,7 +4913,7 @@
       "executable": false
     },
     "src/evidence/ops/configuration.ts": {
-      "sha256": "306acb84763d5f4e4a8e5e02243b1dc745e69dd0e91709f504563dc4e7b7dd63",
+      "sha256": "39f17c506946028cdc5a02d3429db659cfc25ffb4b889dad425ab8258812d240",
       "executable": false
     },
     "src/evidence/ops/execution.ts": {
@@ -4924,6 +4926,14 @@
     },
     "src/evidence/ops/http.ts": {
       "sha256": "b6eb844b8ee107398bae56aabf099d7f9ac2c0a1aa8e6433f8ddb5283dfb75af",
+      "executable": false
+    },
+    "src/evidence/ops/mail-configuration.d.mts": {
+      "sha256": "d2121b511053e94daf474402072ba16473432e29c68271914be74156a9bd425e",
+      "executable": false
+    },
+    "src/evidence/ops/mail-configuration.mjs": {
+      "sha256": "71a1d8ce765f596947319c670393d00f1935b17fbdb51a99797a3a751ca27d43",
       "executable": false
     },
     "src/evidence/ops/outcomes.ts": {
@@ -6423,7 +6433,7 @@
       "executable": false
     },
     "tests/ops.mjs": {
-      "sha256": "db1b750858851ce08a9f2e7eaf7fad0e0afc7e4dc34d90d9ec1b81e0ea0ccb14",
+      "sha256": "3a4589a32de3f992c119c23a184ab059f7e9210f23709f841dc133854b79e260",
       "executable": false
     },
     "tests/policy.mjs": {

@@ -2652,6 +2652,8 @@
           "src/evidence/ops/execution.ts",
           "src/evidence/ops/health.ts",
           "src/evidence/ops/http.ts",
+          "src/evidence/ops/mail-configuration.d.mts",
+          "src/evidence/ops/mail-configuration.mjs",
           "src/evidence/ops/outcomes.ts",
           "src/evidence/ops/view.ts",
           "src/evidence/policy/builder.ts",
