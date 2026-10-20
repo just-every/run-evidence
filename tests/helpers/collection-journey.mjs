@@ -80,6 +80,11 @@ export async function collectionJourney() {
   // Restart reopens real D1/R2 without changing the schedule or run facts.
   await at('2026-10-11T13:30:00Z'); assert.equal(JSON.parse((await get(path)).connection.config_json).collection_minutes, 15)
   assert.deepEqual((await get(path)).runs.find(r => r.id === failed.id), failed)
+  await send(path + '/revoke', {})
+  await send(path + '/collect', {}, 201)
+  const refused = (await get(path)).runs[0]
+  assert.equal(refused.outcome, 'failed')
+  assert.equal(JSON.parse(refused.coverage_json).interval_minutes, 15, 'COLLECTION-001 retains the schedule even when authority is revoked before any provider read')
   await target.signin()
   const restored = await target.fetch('/api/archive/restore', { method: 'POST', headers: { origin: target.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore', 'x-evidence-erasure-history': 'unverified acknowledged' }, body: await (await app.fetch('/api/archive/export')).arrayBuffer() })
   assert.equal(restored.status, 200, await restored.clone().text())

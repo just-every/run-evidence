@@ -6040,7 +6040,7 @@
       "executable": false
     },
     "tests/helpers/collection-journey.mjs": {
-      "sha256": "2a714d4529a0ad0d22a798f07ece636cf546d54fdfb99565e3402f0bfd9c7648",
+      "sha256": "3a9cd67e38cef5e7b6ba1581a524350782909212bcc2593b158c9424a673eece",
       "executable": false
     },
     "tests/helpers/collector-browser.mjs": {
