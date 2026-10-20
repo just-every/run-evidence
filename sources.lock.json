@@ -6017,7 +6017,7 @@
       "executable": false
     },
     "src/site/landing/sections/Timeline.tsx": {
-      "sha256": "75e8b4011b2717fd28ad1466b7ccbb00984db929e28b842227cacb5f281d364e",
+      "sha256": "3407969ba0c66459d578c49cf1d4dc53fd65b4576c590b100019113fe81fd2e9",
       "executable": false
     },
     "src/site/landing/sections/TrustCenter.tsx": {
@@ -6065,7 +6065,7 @@
       "executable": false
     },
     "src/site/styles/hero.css": {
-      "sha256": "77d420eb005b59ba345efcd1ab75f03eeeb6d7627b4d609b1b0422eaf7a603c9",
+      "sha256": "a22944538dc9395c655d7244752824fcf2992e001cd91be26a1940fba2b16bb5",
       "executable": false
     },
     "src/site/styles/interlude.css": {
@@ -6097,7 +6097,7 @@
       "executable": false
     },
     "src/site/styles/timeline.css": {
-      "sha256": "2e5fa2987224bced463362f7f7afcfb3d8cdae27d61a6a63ceee6b5f216088f8",
+      "sha256": "2acb482c0586389cc7491ede3aea8e83bdbeffb28cfa9dba45b0c48e2062945a",
       "executable": false
     },
     "src/site/styles/trust.css": {

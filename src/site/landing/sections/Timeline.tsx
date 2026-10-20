@@ -14,7 +14,7 @@ type Milestone = { date: string; note: string; kind: Kind; at: number; side: 'up
 
 // Mar 3 and Mar 4 are one day apart: their markers sit edge to edge, centred on the day line between them.
 const scale: Milestone[] = [
-  { date: 'Mar 3', note: 'A bank asks for a SOC 2 report', kind: 'open', at: day(3, 4), side: 'up', align: 'end', pair: 'before' },
+  { date: 'Mar 3', note: 'A bank asks for a SOC\u00a02 report', kind: 'open', at: day(3, 4), side: 'up', align: 'end', pair: 'before' },
   { date: 'Mar 4', note: 'rer setup\u00a0· first scan: 31 gaps', kind: 'fail', at: day(3, 4), side: 'down', align: 'start', pair: 'after' },
   { date: 'Mar 30', note: '0 gaps open', kind: 'pass', at: day(3, 30) + .5, side: 'up', align: 'start' },
   { date: 'Jul 14', note: '1 drift, fixed by 11:40\u00a0AM', kind: 'drift', at: day(7, 14) + .5, side: 'up', align: 'end' },
@@ -24,7 +24,7 @@ const scale: Milestone[] = [
 ]
 
 const rail: { date: string; note: string; kind: Kind; window?: 'opens' | 'inside' | 'closes' }[] = [
-  { date: 'Mar 3', note: 'A bank asks for a SOC 2 report', kind: 'open' },
+  { date: 'Mar 3', note: 'A bank asks for a SOC\u00a02 report', kind: 'open' },
   { date: 'Mar 4', note: 'rer setup\u00a0·\u00a0first scan: 31 gaps', kind: 'fail' },
   { date: 'Mar 30', note: '0 gaps open', kind: 'pass' },
   { date: 'Apr 1', note: 'Window opens\u00a0·\u00a0every control tested daily', kind: 'blue', window: 'opens' },

@@ -5,6 +5,8 @@
 .hero-stage { --u: calc(100cqw / 1536); position: relative; container-type: inline-size; aspect-ratio: 1536 / 1024; }
 .hero-art { position: absolute; inset: 0; }
 .hero-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* The painting's last rows fade into the paper, so the first band starts without a seam (below the strip). */
+.hero-art::after { content: ''; position: absolute; inset: auto 0 0; height: 4%; background: linear-gradient(transparent, var(--site-paper)); pointer-events: none; }
 
 .hero .site-header { position: absolute; inset: 0 0 auto; }
 .hero .site-header-row { max-width: none; height: calc(94 * var(--u)); padding: 0 calc(75 * var(--u)) 0 calc(72 * var(--u)); }
@@ -108,6 +110,7 @@
   .hero .site-link::before { height: 28px; margin-top: -14px; }
   .hero .site-pill + .site-link { margin-left: 8px; }
   .hero-art { grid-area: board; position: relative; inset: auto; overflow: hidden; margin: 0 var(--gutter); border-radius: 16px; }
+  .hero-art::after { display: none; }
   .board { grid-area: board; position: relative; inset: auto; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 26px 14px; margin: 0 var(--gutter); padding: 30px 14px 28px; }
   .pin-card { position: relative; left: auto; top: auto; width: auto; height: auto; min-height: 0; transform: rotate(calc(var(--r) * .5)); }
   .pin-card::before { content: ''; position: absolute; left: 50%; top: -7px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: radial-gradient(circle at 34% 30%, rgba(255, 255, 255, .85) 0 12%, #1f6ff2 34%, #123f8a 100%); box-shadow: 1px 2px 3px rgba(10, 20, 40, .3); }
