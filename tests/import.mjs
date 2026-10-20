@@ -82,7 +82,7 @@ try{
   const desk=await(await app.fetch('/api/desk?date=2026-10-11')).json();assert.ok(desk.requirements.some(r=>r.id===later.requirement_id&&['covered','due soon'].includes(r.gap)))
   assert.ok((await rows(app,'ik_originals')).length>=2);assert.ok((await rows(app,'import_reviews'))[0].approved_at)
  })
- await scenario('LOG-001 / Uploads, refused and approved commits and undo are audited with outcomes; the owner filters and exports the audit, each export is recorded, and a restart keeps it',async()=>{
+ await scenario('LOG-001 / Uploads, refused and approved commits, undo and evidence replacement are audited with outcomes; the owner filters and exports the audit, each export is recorded, and a restart keeps it',async()=>{
   assert.equal((await app.fetch('/api/audit',{headers:{cookie:''}})).status,401)
   assert.equal((await app.fetch('/api/audit?from=2026-10-12&to=2026-10-11')).status,400)
   const trail=async query=>(await(await app.fetch('/api/audit'+query)).json()).entries
@@ -97,6 +97,11 @@ try{
   assert.equal(exported.format,'evidence-audit');assert.deepEqual(exported.entries.filter(e=>e.action==='audit.exported').map(e=>e.detail).sort(),['csv','json'])
   assert.doesNotMatch(JSON.stringify(exported),/token=|Bearer |session=|"cookie"/i)
   const html=await(await app.fetch('/app/audit?outcome=refused')).text();assert.match(html,/import\.undo/);assert.match(html,/href="\/app\/audit"/)
+  const later=(await rows(app,'receipts')).find(r=>r.origin==='manually-asserted'),form=new FormData();form.set('file',new File(['Corrected owner evidence'],'corrected.txt'));form.set('source','Corrected review');form.set('covered_from','2026-10-01');form.set('covered_to','2026-10-31');form.set('supersedes',later.id)
+  assert.equal((await app.fetch('/app/requirements/'+later.requirement_id+'/uploads',{method:'POST',headers:{origin:app.origin},body:form})).status,303)
+  const replacement=(await rows(app,'receipts')).find(r=>r.supersedes===later.id),receipts=await trail('?action=receipt.')
+  assert.ok(receipts.some(e=>e.action==='receipt.added'&&e.subject==='receipt:'+later.id))
+  assert.ok(receipts.some(e=>e.action==='receipt.superseded'&&e.subject==='receipt:'+replacement.id&&e.detail===`sha256 ${replacement.sha256.slice(0,16)} supersedes receipt:${later.id}`))
   await app.clock('2026-10-11T12:05:00Z')
   assert.deepEqual(await trail('?action=import.'),imports)
  })
