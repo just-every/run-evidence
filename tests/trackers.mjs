@@ -65,6 +65,7 @@ try {
    await owner(`/api/remediation/${ob.id}/comments`,{body:'Fixing the source.'})
    assert.ok(remote.comments.some(c=>/Evidence owner in Evidence: Fixing the source/.test(c.body)))
    remote.comments.push({id:'remote-note',author:'Dana Lee',body:'Source fix in progress.',at:edge.state.clock})
+   if(provider==='freshservice')remote.comments.push({id:'requester-note',author:'Requester',body:'Requester question.',at:edge.state.clock})
    remote.assignee='Lena Ortiz';remote.status=provider==='monday'?'Working':'In Progress'
    const started=Date.parse(edge.state.clock)
    await at(started+10*60000);await app.tick()
@@ -73,6 +74,7 @@ try {
    assert.equal(r.remote_assignee,'Lena Ortiz',provider);assert.ok(r.remote_status)
    assert.ok(Date.parse(r.last_synced_at)-started<=15*60000)
    assert.equal(view.events.filter(e=>e.kind==='tracker comment'&&e.body==='Source fix in progress.').length,1)
+   if(provider==='freshservice')assert.ok(view.events.some(e=>e.kind==='tracker comment'&&e.body==='Requester question.'&&e.actor_name.includes('Freshservice user 99')))
    assert.equal(view.events.filter(e=>e.kind==='tracker comment'&&/Fixing the source/.test(e.body)).length,0)
    const events=async()=> (await detail()).events
    const before=await events()

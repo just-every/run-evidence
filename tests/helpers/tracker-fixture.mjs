@@ -94,11 +94,12 @@ export function trackerFixture() {
   }
   if(p==='freshservice') {
    if(path==='/groups/42')return reply(200,{group:{id:42,name:'Security'}})
+   if(path==='/agents/99')return reply(404,{message:'Not an agent'})
    if(path.startsWith('/agents/'))return reply(200,{agent:{first_name:path.endsWith('/2')?'Lena':'Dana',last_name:path.endsWith('/2')?'Ortiz':'Lee'}})
    if(path==='/tickets'&&method==='POST'){if(!body.priority)return reply(400,{message:'Invalid priority'});assert.equal(body.email,c.account);assert.equal(body.group_id,42);const i=create(p,{title:body.subject,description:strip(body.description),priority:String(body.priority),labels:body.tags,due:body.due_by?.slice(0,10),assignee:body.responder_id?'Dana Lee':null});return reply(201,{ticket:{id:Number(i.id)}})}
    const m=/^\/tickets\/(\d+)(\/conversations|\/notes)?$/.exec(path),i=m&&find(p,m[1]);if(!i||i.deleted)return reply(404,{message:'Ticket not found'})
    if(m[2]==='/notes'){assert.equal(body.private,true);return reply(201,{conversation:{id:note(i,strip(body.body)).id}})}
-   if(m[2]==='/conversations')return reply(200,{conversations:i.comments.map(n=>({id:n.id,user_id:n.author==='Dana Lee'?1:2,body_text:n.body,created_at:n.at}))})
+   if(m[2]==='/conversations')return reply(200,{conversations:i.comments.map(n=>({id:n.id,user_id:n.id==='requester-note'?99:n.author==='Dana Lee'?1:2,body_text:n.body,created_at:n.at}))})
    if(method==='PUT'){if(Object.hasOwn(body,'due_by'))i.due=body.due_by?.slice(0,10)??null;if(body.status===2)i.closed=false;return reply(200,{ticket:{id:Number(i.id)}})}
    return reply(200,{ticket:{id:Number(i.id),status:i.closed?4:2,responder_id:i.assignee?(i.assignee==='Dana Lee'?1:2):null,due_by:i.due?i.due+'T00:00:00Z':null}})
   }
