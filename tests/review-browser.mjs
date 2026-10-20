@@ -94,6 +94,10 @@ async function issue(page,origin,today,label,expiry) {
  await field.waitFor()
  const url=await field.inputValue()
  assert.ok(new URL(url).pathname.startsWith('/review/'),'issued reviewer URL')
+ // Clipboard access belongs to the active window. A reviewer context may
+ // have taken focus since the owner's previous navigation.
+ await page.bringToFront()
+ await page.waitForFunction(()=>document.hasFocus())
  await page.getByRole('button',{name:'Copy link',exact:true}).click()
  await page.waitForFunction(expected=>navigator.clipboard.readText().then(actual=>actual===expected),url)
  return url
