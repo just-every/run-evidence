@@ -13,11 +13,11 @@ export const configs = {
  asana: { base:'https://app.asana.com/api/1.0',project:'1200',priority:'High' },
 }
 const reply=(status,body)=>new Response(body===undefined?null:JSON.stringify(body),{status,headers:{'content-type':'application/json'}})
-const columns=[{id:'date1',title:'Due date',type:'date',settings_str:'{}'},{id:'person1',title:'Owner',type:'people',settings_str:'{}'},{id:'status1',title:'Status',type:'status',settings_str:JSON.stringify({labels:{0:'Working',1:'Done'},done_colors:[1]})},{id:'priority1',title:'Priority',type:'status',settings_str:'{}'}]
+const columns=[{id:'description1',title:'Description',type:'long_text',settings_str:'{}'},{id:'date1',title:'Due date',type:'date',settings_str:'{}'},{id:'person1',title:'Owner',type:'people',settings_str:'{}'},{id:'status1',title:'Status',type:'status',settings_str:JSON.stringify({labels:{0:'Working',1:'Done'},done_colors:[1]})},{id:'priority1',title:'Priority',type:'status',settings_str:'{}'}]
 export function trackerFixture() {
  let seq=0
  const issues=new Map(),keys=Object.fromEntries(Object.keys(configs).map(p=>[p,'test-only-'+p])),calls=[]
- const state={rejectCreate:null,clock:'2026-10-11T12:00:00Z',handshake:null,rejectRegistration:false}
+ const state={rejectCreate:null,clock:'2026-10-11T12:00:00Z',handshake:null,rejectRegistration:false,rejectComments:false}
  const create=(p,fields)=>{const i={id:String(++seq),provider:p,title:'',description:'',due:null,assignee:null,status:'Open',closed:false,comments:[],labels:[],...fields};issues.set(p+':'+i.id,i);return i}
  const note=(i,body)=>{const c={id:'c'+ ++seq,body,author:'Evidence owner',at:state.clock};i.comments.push(c);return c}
  const board={id:'42',name:'Security',columns}
@@ -30,7 +30,7 @@ export function trackerFixture() {
   const c=configs[p],path=u.pathname.slice(new URL(c.base).pathname.replace(/\/$/,'').length),method=request.method,raw=await request.text(),body=raw?JSON.parse(raw):null
   calls.push({provider:p,method,path})
   const expected=p==='freshservice'?'Basic '+Buffer.from(keys[p]+':X').toString('base64'):p==='azure-boards'?'Basic '+Buffer.from(':'+keys[p]).toString('base64'):['monday','clickup'].includes(p)?keys[p]:p==='shortcut'?keys[p]:'Bearer '+keys[p]
-  if(request.headers.get(p==='shortcut'?'shortcut-token':'authorization')!==expected)return reply(401,{message:'Credential revoked'})
+  if(request.headers.get(p==='shortcut'?'shortcut-token':'authorization')!==expected)return p==='monday'?reply(200,{errors:[{message:'Not authenticated',extensions:{code:'NOT_AUTHENTICATED'}}]}):reply(401,{message:'Credential revoked'})
   const creating=method==='POST' && (path==='/projects/42/issues'||path==='/Security/_apis/wit/workitems/$Task'||path==='/stories'||path==='/list/42/task'||p==='monday'&&body.query.includes('create_item(')||path==='/100/buckets/200/todolists/300/todos.json'||path==='/tickets'||path==='/issues'||path==='/tasks')
   if(state.rejectCreate===p&&creating)return p==='monday'?reply(200,{errors:[{message:'Column mapping is not valid'}]}):reply(422,{message:'Field mapping is not valid'})
   if(p==='gitlab') {
@@ -75,9 +75,9 @@ export function trackerFixture() {
    const q=body.query,v=body.variables??{},data=x=>reply(200,{data:x})
    if(q.includes('boards('))return data({boards:[board]})
    if(q==='{me{name}}')return data({me:{name:'Dana Lee'}})
-   if(q.includes('create_item(')){const f=JSON.parse(v.values);if(f.priority1.label==='invalid-priority')return reply(200,{errors:[{message:'Invalid priority label'}]});const i=create(p,{title:v.name,priority:f.priority1.label,due:f.date1.date,assignee:f.person1?'Dana Lee':null});return data({create_item:{id:i.id,url:`https://northstar.monday.com/boards/42/pulses/${i.id}`}})}
+   if(q.includes('create_item(')){const f=JSON.parse(v.values);if(f.priority1.label==='invalid-priority')return reply(200,{errors:[{message:'Invalid priority label'}]});const i=create(p,{title:v.name,description:f.description1.text,priority:f.priority1.label,due:f.date1.date,assignee:f.person1?'Dana Lee':null});return data({create_item:{id:i.id,url:`https://northstar.monday.com/boards/42/pulses/${i.id}`}})}
    const n=v.item??v.ids?.[0],i=find(p,String(n));if(!i||i.deleted)return data({items:[]})
-   if(q.includes('create_update(')){const c=note(i,strip(v.body));if(!i.description)i.description=c.body;return data({create_update:{id:c.id}})}
+   if(q.includes('create_update(')){if(state.rejectComments)return reply(200,{errors:[{message:'Update is not permitted'}]});const c=note(i,strip(v.body));if(!i.description)i.description=c.body;return data({create_update:{id:c.id}})}
    if(q.includes('change_multiple_column_values(')){const f=JSON.parse(v.values);if(f.date1)i.due=f.date1.date;if(f.status1)i.closed=f.status1.index===1;return data({change_multiple_column_values:{id:i.id}})}
    if(q.includes('updates('))return data({items:[{updates:i.comments.map(n=>({id:n.id,text_body:n.body,created_at:n.at,creator:{name:n.author}}))}]})
    return data({items:[{id:i.id,column_values:[{id:'date1',value:JSON.stringify({date:i.due}),text:i.due},{id:'person1',value:'{}',text:i.assignee??''},{id:'status1',value:JSON.stringify({index:i.closed?1:0}),text:i.closed?'Done':i.status}]}]})

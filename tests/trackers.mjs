@@ -52,10 +52,12 @@ try {
    assert.equal(items.length,2)
    const ob=items.find(o=>o.resource_name===provider+' a'),other=items.find(o=>o.resource_name===provider+' b')
    await owner(`/api/remediation/${ob.id}/assign`,{owner_person_id:person.id,next_action:'Remediate',target_date:'2026-12-01'},200)
+   if(provider==='monday')edge.state.rejectComments=true
    const ticket=await owner(`/api/remediation/${ob.id}/tickets`,{destination_id:dest.id})
+   if(provider==='monday')edge.state.rejectComments=false
    await owner(`/api/remediation/${ob.id}/tickets`,{destination_id:dest.id},409)
    const row=(await get('/api/remediation/'+ob.id)).tickets.find(t=>t.id===ticket.id),remote=edge.find(provider,row.remote_id)
-   assert.ok(remote,provider);assert.equal([...edge.issues.values()].filter(i=>i.provider===provider).length,countBefore+1)
+   assert.ok(remote,provider);if(provider==='monday')assert.equal(remote.comments.length,0,'item creation must not depend on a second update call');assert.equal([...edge.issues.values()].filter(i=>i.provider===provider).length,countBefore+1)
    assert.match(remote.description,new RegExp('/app/remediation/'+ob.id));assert.match(remote.description,/AC-05/);assert.match(remote.description,/2026-12-01/)
    if(provider!=='asana')assert.equal(remote.priority,c.priority,provider)
    if(!c.textDue)assert.equal(remote.due,'2026-12-01')
