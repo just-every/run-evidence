@@ -8,6 +8,7 @@ import { archiveHandler } from './evidence/archive/http'
 import { agentHandler } from './evidence/agent/http'
 import { importHandler } from './evidence/import/http'
 import { programHandler } from './evidence/program/http'
+import { auditHandler } from './evidence/audit/http'
 import { testHandler } from './evidence/tests/http'
 import { remedyHandler } from './evidence/remedy/http'
 import { connectHandler } from './evidence/connect/http'
@@ -41,7 +42,7 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
  const evidence = evidenceHandler(clock)
  const review = reviewHandler(clock)
  const archive = archiveHandler(clock)
- const program = [frameworkHandler(clock), collectorOwnerHandler(clock), programHandler(clock), testHandler(clock), remedyHandler(clock), connectHandler(clock), riskHandler(clock), policyHandler(clock), workHandler(clock), followupHandler(clock), identityHandler(clock), attestHandler(clock), recurringReviews(clock), populationHandler(clock), inventoryHandler(clock), accessHandler(clock), trainingHandler(clock), handoverHandler(clock), vulnHandler(clock)]
+ const program = [frameworkHandler(clock), collectorOwnerHandler(clock), programHandler(clock), auditHandler(clock), testHandler(clock), remedyHandler(clock), connectHandler(clock), riskHandler(clock), policyHandler(clock), workHandler(clock), followupHandler(clock), identityHandler(clock), attestHandler(clock), recurringReviews(clock), populationHandler(clock), inventoryHandler(clock), accessHandler(clock), trainingHandler(clock), handoverHandler(clock), vulnHandler(clock)]
  const api = apiHandler(clock)
  const hooks = hookHandler(clock)
  const member = memberHandler(clock)

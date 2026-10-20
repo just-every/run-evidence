@@ -6,6 +6,7 @@ import { validateMapping } from './plan'
 import { commit, jobAction, readSource, reviewById, reviews, saveMapping, stage } from './storage'
 import { importPage, reviewPage, shapePage } from './view'
 import type { Mapping, Review } from './types'
+import { auditStatement } from '../door'
 const json=(value:unknown,status=200)=>Response.json(value,{status,headers})
 const redirect=(id:string)=>new Response(null,{status:303,headers:{...headers,location:'/app/import/'+id}})
 async function input(request:Request,review:Review){
@@ -24,10 +25,28 @@ export function importHandler(clock:()=>Date=()=>new Date()){
   const env=runtimeBindings(original),api=path.startsWith('/api/')
   if(url.origin!==env.AUTH_ORIGIN||(request.headers.has('host')&&request.headers.get('host')?.toLowerCase()!==url.host.toLowerCase()))return json({error:'Invalid host.'},403)
   if(request.headers.get('sec-fetch-site')==='cross-site'||(request.headers.has('origin')&&request.headers.get('origin')!==env.AUTH_ORIGIN)||(!['GET','HEAD'].includes(request.method)&&request.headers.get('origin')!==env.AUTH_ORIGIN))return json({error:'Same-origin request required.'},403)
-  const session=await operatorAuth(env).getSession(request)
-  if(!session)return json({error:'Owner sign-in required.'},401)
-  if(session.operator.role!=='owner')return json({error:'Owner access required.'},403)
+  const signedIn=await operatorAuth(env).getSession(request)
+  if(!signedIn)return json({error:'Owner sign-in required.'},401)
+  if(signedIn.operator.role!=='owner')return json({error:'Owner access required.'},403)
+  const session=signedIn
+  // LOG-001: every import write (upload, mapping, commit, resume, undo) is
+  // audited with its outcome, including refusals and storage failures.
+  const write=request.method==='POST'?(/^\/(?:app|api)\/import\/(?:drata|[a-f0-9-]+\/(mapping|commit|resume|undo))$/.exec(path)):null
+  const audit=(outcome:'succeeded'|'refused'|'failed',detail='')=>write?auditStatement(env,{id:session.operatorId,name:session.operator.displayName},'import.'+(write[1]??'staged'),'import:'+(/\/import\/([a-f0-9-]{36})/.exec(path)?.[1]??'upload'),clock(),outcome,detail).run():Promise.resolve()
   try{
+   const response=await route()
+   if(response.status<400)await audit('succeeded');else await audit('refused','HTTP '+response.status)
+   return response
+  }catch(error){
+   if(error instanceof Refusal){await audit('refused',error.message);return json({error:error.message},error.status)}
+   // Never expose raw provider errors, source contents, cookie/session IDs or URLs.
+   const code=error instanceof Error?error.message:''
+   const conflicts=['REVIEW_FINGERPRINT_MISMATCH','SOURCE_ID_CONTENT_CONFLICT','OPERATION_KEY_CONFLICT','NATIVE_EDIT_CONFLICT','TARGET_REVISION_CONFLICT','IMPORT_ALREADY_REVERSING','UNDO_REQUIRES_COMPLETED_IMPORT','JOB_BINDING_MISMATCH','REVERSAL_MODE_CONFLICT']
+   if(conflicts.includes(code)){await audit('refused','conflict with retained history');return json({error:'Import conflicts with retained history or a changed plan. Review this import before continuing.'},409)}
+   await audit('failed','storage or integrity check failed')
+   return json({error:'Import storage or integrity check failed. Retained history has not been discarded; retry the durable operation.'},503)
+  }
+  async function route():Promise<Response>{
    if(['/app/import','/api/import'].includes(path)&&['GET','HEAD'].includes(request.method))return api?json({imports:await reviews(env)}):importPage(await reviews(env),session.operator.displayName)
    if(path==='/app/import/shape'&&['GET','HEAD'].includes(request.method))return shapePage(session.operator.displayName)
    if(['/app/import/drata','/api/import/drata'].includes(path)&&request.method==='POST'){
@@ -65,13 +84,6 @@ export function importHandler(clock:()=>Date=()=>new Date()){
     const job=await jobAction(env,review,session,action);return api?json({job}):redirect(review.id)
    }
    return json({error:'Method not allowed.'},405)
-  }catch(error){
-   if(error instanceof Refusal)return json({error:error.message},error.status)
-   // Never expose raw provider errors, source contents, cookie/session IDs or URLs.
-   const code=error instanceof Error?error.message:''
-   const conflicts=['REVIEW_FINGERPRINT_MISMATCH','SOURCE_ID_CONTENT_CONFLICT','OPERATION_KEY_CONFLICT','NATIVE_EDIT_CONFLICT','TARGET_REVISION_CONFLICT','IMPORT_ALREADY_REVERSING','UNDO_REQUIRES_COMPLETED_IMPORT','JOB_BINDING_MISMATCH','REVERSAL_MODE_CONFLICT']
-   if(conflicts.includes(code))return json({error:'Import conflicts with retained history or a changed plan. Review this import before continuing.'},409)
-   return json({error:'Import storage or integrity check failed. Retained history has not been discarded; retry the durable operation.'},503)
   }
  }
 }

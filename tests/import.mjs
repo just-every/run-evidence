@@ -82,5 +82,23 @@ try{
   const desk=await(await app.fetch('/api/desk?date=2026-10-11')).json();assert.ok(desk.requirements.some(r=>r.id===later.requirement_id&&['covered','due soon'].includes(r.gap)))
   assert.ok((await rows(app,'ik_originals')).length>=2);assert.ok((await rows(app,'import_reviews'))[0].approved_at)
  })
+ await scenario('LOG-001 / Uploads, refused and approved commits and undo are audited with outcomes; the owner filters and exports the audit, each export is recorded, and a restart keeps it',async()=>{
+  assert.equal((await app.fetch('/api/audit',{headers:{cookie:''}})).status,401)
+  assert.equal((await app.fetch('/api/audit?from=2026-10-12&to=2026-10-11')).status,400)
+  const trail=async query=>(await(await app.fetch('/api/audit'+query)).json()).entries
+  const imports=await trail('?action=import.'),seen=imports.map(e=>e.action+' '+e.outcome)
+  for(const expected of ['import.staged succeeded','import.staged refused','import.mapping succeeded','import.commit refused','import.commit succeeded','import.undo refused','import.undo succeeded'])assert.ok(seen.includes(expected),expected)
+  assert.ok(imports.every(e=>e.actor_kind==='owner'&&e.actor_name==='Evidence owner'&&/^import:/.test(e.subject)))
+  assert.ok((await trail('?outcome=refused')).every(e=>e.outcome==='refused'))
+  assert.deepEqual(await trail('?action=import.&from=2026-10-12'),[])
+  const csv=await app.fetch('/app/audit/export.csv?action=import.');assert.equal(csv.status,200);assert.match(csv.headers.get('content-disposition'),/^attachment; filename="audit-2026-10-11\.csv"/)
+  const text=await csv.text();assert.equal(text.trim().split('\r\n').length,imports.length+1);assert.match(text,/"import\.undo","import:[a-f0-9-]+","refused"/)
+  const exported=await(await app.fetch('/api/audit/export')).json()
+  assert.equal(exported.format,'evidence-audit');assert.deepEqual(exported.entries.filter(e=>e.action==='audit.exported').map(e=>e.detail).sort(),['csv','json'])
+  assert.doesNotMatch(JSON.stringify(exported),/token=|Bearer |session=|"cookie"/i)
+  const html=await(await app.fetch('/app/audit?outcome=refused')).text();assert.match(html,/import\.undo/);assert.match(html,/href="\/app\/audit"/)
+  await app.clock('2026-10-11T12:05:00Z')
+  assert.deepEqual(await trail('?action=import.'),imports)
+ })
  console.log(`${passed} import scenarios passed`)
 }finally{await app?.close();await target?.close()}

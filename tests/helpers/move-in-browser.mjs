@@ -62,4 +62,9 @@ export async function moveInAndPrepare(page, origin, width, capture, scratch) {
  await capture(page,`${width}-agent-approved`)
  await page.goto(origin+'/app/agent')
  for(const button of await page.getByRole('button',{name:'Revoke access',exact:true}).all()) { await button.click(); break }
+ // LOG-001: the import, its undo and the agent approval are on the owner's audit.
+ await page.goto(origin+'/app/audit')
+ const audit=await page.locator('main').innerText()
+ for(const action of ['import.commit','import.undo','agent.proposal-approved']) assert.ok(audit.includes(action),action)
+ await capture(page,`${width}-audit`)
 }

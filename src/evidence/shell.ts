@@ -7,7 +7,7 @@ export interface ShellFacts { programs: ShellProgram[]; selected: ShellProgram |
 let readFacts: () => Promise<ShellFacts | null> = async () => null
 export const provideShellFacts = (reader: typeof readFacts) => { readFacts = reader }
 export const shellFacts = () => readFacts()
-export type NavKey = 'desk' | 'programs' | 'tests' | 'remediation' | 'vulnerabilities' | 'policies' | 'people' | 'vendors' | 'risks' | 'connections' | 'folders' | 'agent' | 'import' | 'archive'
+export type NavKey = 'desk' | 'programs' | 'tests' | 'remediation' | 'vulnerabilities' | 'policies' | 'people' | 'vendors' | 'risks' | 'connections' | 'folders' | 'agent' | 'import' | 'archive' | 'audit'
 export interface PageOptions {
  active?: NavKey
  owner?: string
@@ -34,6 +34,7 @@ const custody: [NavKey, string, string, IconName][] = [
  ['agent', '/app/agent', 'Agent preparation', 'spark'],
  ['import', '/app/import', 'Move in', 'move'],
  ['archive', '/app/archive', 'Yours', 'archive'],
+ ['audit', '/app/audit', 'Audit', 'shield'],
 ]
 function navLinks(items: typeof work, active: NavKey, failing: number) {
  return items.map(([key, href, label, glyph]) => `<a href="${href}"${active === key ? ' aria-current="page"' : ''}>${icon(glyph)}<span>${label}</span>${key === 'tests' && failing ? `<span class="nav-count" aria-label="${failing} failing">${failing}</span>` : ''}</a>`).join('')
