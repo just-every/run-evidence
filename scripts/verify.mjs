@@ -7,7 +7,7 @@ const shards = {
  people: [['node', 'tests/policy.mjs'], ['node', 'tests/handover.mjs'], ['node', 'tests/cadence.mjs'], ['node', 'tests/population.mjs'], ['node', 'tests/inventory.mjs'], ['node', 'tests/access.mjs'], ['node', 'tests/training.mjs']],
  integrations: [['node', 'tests/work.mjs'], ['node', 'tests/followup.mjs'], ['node', 'tests/failure-notices.mjs'], ['node', 'tests/cloud.mjs'], ['node', 'tests/identity.mjs'], ['node', 'tests/clouds.mjs'], ['node', 'tests/vulns.mjs']],
  trackers: [['node', 'tests/trackers.mjs'], ['node', 'tests/trackers-browser.mjs']],
- browser: [ ['node', 'tests/vendor-browser.mjs'], ['node', 'tests/period-agent-browser.mjs'], ['node', 'tests/ops-browser.mjs'], ['node', 'tests/email-link.mjs'], ['node', 'tests/browser.mjs'], ['node', 'tests/readiness-browser.mjs'], ['node', 'tests/review-browser.mjs'], ['node', 'tests/inventory-browser.mjs']],
+ browser: [ ['node', 'tests/vendor-browser.mjs'], ['node', 'tests/program-documents-browser.mjs'], ['node', 'tests/period-agent-browser.mjs'], ['node', 'tests/ops-browser.mjs'], ['node', 'tests/email-link.mjs'], ['node', 'tests/browser.mjs'], ['node', 'tests/readiness-browser.mjs'], ['node', 'tests/review-browser.mjs'], ['node', 'tests/inventory-browser.mjs']],
 }
 const shard = process.env.VERIFY_SHARD
 if (shard && !shards[shard]) { console.error(`Unknown VERIFY_SHARD ${shard}; use ${Object.keys(shards).join(', ')}.`); process.exit(2) }

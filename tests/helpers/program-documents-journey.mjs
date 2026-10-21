@@ -1,0 +1,159 @@
+import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
+import { decodeArchive } from './portable-format.mjs'
+import { runtime } from './runtime.mjs'
+// PROGRAM-003 through Program -> Documents on real workerd, D1 and R2. Only the
+// mail edge is faked. Exports are opened as the files an assessor receives.
+const sha = bytes => createHash('sha256').update(bytes).digest('hex')
+const entries = bytes => { const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength), out = new Map(); let at = 0; while (view.getUint32(at, true) === 0x04034b50) { const size = view.getUint32(at + 18, true), name = view.getUint16(at + 26, true), extra = view.getUint16(at + 28, true), file = Buffer.from(bytes.subarray(at + 30, at + 30 + name)).toString(); out.set(file, Buffer.from(bytes.subarray(at + 30 + name + extra, at + 30 + name + extra + size)).toString()); at += 30 + name + extra + size } return out }
+const pdfText = bytes => [...Buffer.from(bytes).toString('latin1').matchAll(/\((.*)\) Tj/g)].map(m => m[1].replace(/\\([\\()])/g, '$1')).join('\n')
+const strip = xml => xml.replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ')
+export async function programDocumentsJourney() {
+ const app = await runtime()
+ try {
+  const post = async (path, body, status = 201) => { const r = await app.fetch(path, { method: 'POST', headers: { origin: app.origin, 'content-type': 'application/json' }, body: JSON.stringify(body) }); const text = await r.text(); assert.equal(r.status, status, path + ' ' + text); return text ? JSON.parse(text) : null }
+  const get = async (path, status = 200) => { const r = await app.fetch(path); assert.equal(r.status, status, path + ' ' + (status === 200 ? '' : await r.clone().text())); return status === 200 ? r.json() : r }
+  const file = async (path, status = 200) => { const r = await app.fetch(path); assert.equal(r.status, status, path + ' ' + (status === 200 ? '' : await r.clone().text())); return new Uint8Array(await r.arrayBuffer()) }
+  const form = async (path, fields, name, bytes, status = 201) => { const f = new FormData(); for (const [k, v] of Object.entries(fields)) f.set(k, v); f.set('file', new File([bytes], name)); const r = await app.fetch(path, { method: 'POST', headers: { origin: app.origin, accept: 'application/json' }, body: f }); const text = await r.text(); assert.equal(r.status, status, path + ' ' + text); return text ? JSON.parse(text) : null }
+  const v1 = (token, method, path, body) => app.fetch(path, { method, headers: { cookie: '', authorization: 'Bearer ' + token, 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })
+  await app.clock('2026-10-22T10:00:00Z'); await app.signin()
+  const owner = await post('/api/people', { name: 'Priya Shah', email: 'priya@northstar.test', kind: 'employee' }), approver = await post('/api/people', { name: 'Dana Okafor', email: 'dana@northstar.test', kind: 'employee' })
+  await post('/api/people', { name: 'Sam Ortiz', email: 'sam@northstar.test', kind: 'employee' })
+  const create = (framework, extra = {}) => post('/api/programs', { framework, name: framework + ' program', legal_entity: 'Northstar Studio, Inc.', report_type: 'Type II', categories: ['Availability'], products: ['Web app', 'API'], teams: ['Engineering'], regions: ['us-east-1'], systems: ['AWS production', 'GitHub'], audit_from: '2026-07-01', audit_to: '2027-06-30', assessor: 'Harbour Assurance LLP', lead_person_id: owner.id, ...extra })
+  const soc2 = (await create('soc2')).id, iso = (await create('iso27001')).id, hipaa = (await create('hipaa')).id, pci = (await create('pci', { audit_from: '2026-01-01', audit_to: '2026-12-31' })).id
+  // A populated program: inventory, a passing test, current proof, a published policy and a verified BAA.
+  const push = await post('/api/api-tokens', { name: 'Inventory', scopes: ['resource-push', 'test-write'], expires_at: '2027-04-01' })
+  assert.equal((await v1(push.token, 'PUT', '/v1/resource-types/internal_service', { schema: { fields: { mfa_enforced: 'boolean' } } })).status, 200)
+  const services = n => ({ resources: Array.from({ length: n }, (_, i) => ({ uniqueId: 'svc-' + i, attributes: { mfa_enforced: true } })) })
+  assert.equal((await v1(push.token, 'PUT', '/v1/resources/internal_service', services(3))).status, 200)
+  const gov = (await get('/api/desk')).requirements.find(r => r.library_id === 'GOV-01')
+  const t = await (await v1(push.token, 'POST', '/v1/tests', { name: 'Services enforce MFA', resourceType: 'internal_service', criteria: [{ attribute: 'mfa_enforced', op: 'equals', value: true }], category: 'identity', severity: 'high', controls: ['GOV-01'] })).json()
+  await form(`/app/requirements/${gov.id}/uploads`, { source: 'Signed security policy review', covered_from: '2026-01-01', covered_to: '2026-12-31' }, 'review.pdf', 'review bytes', 303)
+  await app.tick()
+  const draft = await post('/api/policies/templates/information-security', { program_id: soc2 }), revision = await get(`/api/policies/${draft.policy}/revisions/${draft.revision}`)
+  await post(`/api/policies/${draft.policy}/revisions/${draft.revision}/decision`, { decision: 'approved', body_sha256: revision.body_sha256 }, 200)
+  await post(`/api/policies/${draft.policy}/revisions/${draft.revision}/publish`, {}, 200)
+  const vendor = await post('/api/vendors', { name: 'Acme Notes', service: 'Clinical notes SaaS', criticality: 'high', data_types: ['PHI'], region: 'us-east-1', contact_email: 'security@acme.example', owner_person_id: owner.id })
+  const baa = await form(`/api/vendors/${vendor.id}/documents`, { kind: 'baa', effective_on: '2026-09-01', expires_on: '2027-09-01' }, 'acme-baa.pdf', 'Signed BAA')
+  await post(`/api/vendors/${vendor.id}/documents/${baa.id}/review`, { decision: 'verified', notes: 'Signed by both parties' }, 200)
+  const doc = (program, kind) => `/api/programs/${program}/documents/${kind}`, tip = async (program, kind) => (await get(doc(program, kind))).revision.revision
+  // SOC 2: pre-filled sections cite their records; unsupported ones block approval until the owner writes them.
+  assert.equal((await get(`/api/programs/${soc2}/documents`)).documents.length, 1)
+  await post(`/api/programs/${iso}/documents`, { kind: 'soc2-description' }, 400)
+  await post(`/api/programs/${soc2}/documents`, { kind: 'soc2-description' })
+  await post(`/api/programs/${soc2}/documents`, { kind: 'soc2-description' }, 409)
+  let sd = await get(doc(soc2, 'soc2-description')), sections = Object.fromEntries(sd.revision.content.sections.map(s => [s.id, s]))
+  assert.deepEqual(Object.keys(sections), ['services', 'commitments', 'infrastructure', 'software', 'people', 'data', 'procedures', 'subservice', 'cuec', 'changes'])
+  assert.ok(sections.software.statements.some(s => s.cites.some(c => c.kind === 'inventory' && c.ref === 'internal_service')))
+  assert.ok(sections.procedures.statements.some(s => s.cites.some(c => c.kind === 'policy' && c.ref === draft.policy && c.revision === 1)))
+  assert.ok(sections.services.statements[0].cites.some(c => c.kind === 'program' && c.ref === soc2))
+  assert.deepEqual(['commitments', 'data', 'cuec'].map(id => sections[id].status), ['owner-needed', 'owner-needed', 'owner-needed'])
+  await post(`${doc(soc2, 'soc2-description')}/approvals`, { revision: 1, approver_person_id: approver.id }, 409)
+  await post(`${doc(soc2, 'soc2-description')}/revisions`, { section_id: 'commitments', text: 'We commit to 99.9% monthly availability and to protect customer data under our MSA.', reason: 'Written from the customer MSA' })
+  await post(`${doc(soc2, 'soc2-description')}/revisions`, { section_id: 'data', text: 'Customer project data and account profiles.', reason: 'Data inventory review' })
+  await post(`${doc(soc2, 'soc2-description')}/revisions`, { inputs: JSON.stringify({ cuec: [{ control: 'Customers review their own user access quarterly.' }] }), reason: 'CUECs from the MSA' })
+  await post(`${doc(soc2, 'soc2-description')}/revisions`, { reason: 'No change' }, 409)
+  await post(`${doc(soc2, 'soc2-description')}/revisions`, { 'subservice.Acme Notes': 'inclusive', reason: 'Acme is included in the description' })
+  assert.ok((await get(doc(soc2, 'soc2-description'))).revision.content.sections.find(x => x.id === 'subservice').table.rows.some(r => r[0] === 'Acme Notes' && r[2] === 'inclusive'))
+  await post(`${doc(soc2, 'soc2-description')}/approvals`, { revision: 2, approver_person_id: approver.id }, 409)
+  const rev = await tip(soc2, 'soc2-description'), approved = await post(`${doc(soc2, 'soc2-description')}/approvals`, { revision: rev, approver_person_id: approver.id, effective_date: '2026-10-22', note: 'Approved for the Type II period' })
+  assert.equal(approved.review_due, '2027-10-22')
+  await post(`${doc(soc2, 'soc2-description')}/approvals`, { revision: rev, approver_person_id: approver.id }, 409)
+  const docx = await file(`/api/programs/${soc2}/documents/soc2-description/export?format=docx&revision=${rev}`), soc2Pdf = await file(`/api/programs/${soc2}/documents/soc2-description/export?format=pdf&revision=${rev}`)
+  const word = entries(docx).get('word/document.xml'), plain = strip(word)
+  assert.match(plain, /Services provided/); assert.match(plain, /Principal service commitments/); assert.match(plain, /99\.9% monthly availability/); assert.match(plain, /Information security policy/i); assert.match(plain, /Approver Dana Okafor/); assert.match(plain, /does not sign, attest or certify/)
+  const text = pdfText(soc2Pdf); assert.match(Buffer.from(soc2Pdf).toString('latin1'), /^%PDF-1\.4/); assert.match(Buffer.from(soc2Pdf).toString('latin1'), /%%EOF\s*$/); assert.match(text, /SOC 2 system description/); assert.match(text, /Source: Policy: /); assert.match(text, /Complementary user entity controls/)
+  // Drift: the inventory moves on, the document needs review, and the approved revision stays retrievable.
+  assert.equal((await get(`/api/programs/${soc2}/documents`)).documents[0].state, 'approved')
+  assert.equal((await v1(push.token, 'PUT', '/v1/resources/internal_service', services(5))).status, 200)
+  sd = await get(doc(soc2, 'soc2-description')); assert.equal(sd.state, 'needs review'); assert.ok(sd.drift.items.some(i => /internal service/i.test(i.label) && i.approved === '3' && i.live === '5'))
+  await post(`${doc(soc2, 'soc2-description')}/reconcile`, { reason: 'Inventory grew to five services' })
+  const old = await file(`/api/programs/${soc2}/documents/soc2-description/export?format=docx&revision=${rev}`); assert.match(strip(entries(old).get('word/document.xml')), /NEEDS REVIEW/)
+  assert.match(strip(entries(old).get('word/document.xml')), /3 internal service resources/)
+  assert.match(strip(entries(await file(`/api/programs/${soc2}/documents/soc2-description/export?format=docx`)).get('word/document.xml')), /5 internal service resources/)
+  assert.equal((await get(doc(soc2, 'soc2-description') + '?revision=' + rev)).approvals[0].revision_id, sd.approvals[0].revision_id)
+  // ISO 27001: all 93 Annex A controls, exclusions equal applicability, then a failing mapped test flags drift.
+  await post(`/api/programs/${iso}/applicability`, { ref: 'A.7.4', state: 'excluded', rationale: 'Remote-only company; no premises to monitor' }, 200)
+  await post(`/api/programs/${iso}/documents`, { kind: 'iso-soa' })
+  let soa = await get(doc(iso, 'iso-soa')); const table = soa.revision.content.sections.find(s => s.id === 'soa').table.rows
+  assert.equal(table.length, 93); assert.ok(table.some(r => r[0] === 'A.8.34'))
+  const a74 = table.find(r => r[0] === 'A.7.4'); assert.equal(a74[2], 'Excluded'); assert.match(a74[3], /Remote-only company/)
+  const a51 = table.find(r => r[0] === 'A.5.1'); assert.equal(a51[2], 'Included'); assert.equal(a51[4], 'implemented')
+  const applicability = (await get('/api/programs/' + iso)).applicability.filter(d => d.state === 'excluded').map(d => d.ref)
+  assert.deepEqual(table.filter(r => r[2] === 'Excluded').map(r => r[0]).sort(), applicability.filter(r => r.startsWith('A.')).sort())
+  const xlsx = entries(await file(`/api/programs/${iso}/documents/iso-soa/export?format=xlsx`)), sheet = [...xlsx].find(([name, xml]) => /sheet\d+\.xml$/.test(name) && xml.includes('A.8.34'))?.[1]; assert.ok(sheet, 'a sheet per tabular section'); assert.equal([...sheet.matchAll(/<row /g)].length, 94, 'a header and one row for each of the 93 controls'); assert.ok(sheet.includes('A.8.34') && sheet.includes('Excluded'))
+  assert.match(pdfText(await file(`/api/programs/${iso}/documents/iso-soa/export?format=pdf`)), /Statement of Applicability/)
+  // Clause 9.2 and 9.3 records.
+  await post(`/api/programs/${iso}/audits`, { title: 'Q3 ISMS internal audit', auditor_name: 'Jo Lim (Harbour Assurance)', independence: 'External; does not audit own work', scope: 'Access control and change management', performed_on: '2026-10-15', finding_kind: 'nonconformity', ref: 'A.5.15', finding_description: 'Access reviews skipped for two quarters', corrective_action: 'Run the quarterly access review and record it', owner_person_id: owner.id, due_date: '2026-11-30' })
+  await post(`/api/programs/${iso}/management-reviews`, { held_on: '2026-10-20', attendees: 'Priya Shah, Dana Okafor', decisions: 'Fund the access-review automation', actions: 'Enable access-review campaigns | Priya Shah | 2026-11-15', 'input.previous actions': 'All closed', 'input.external and internal issues': 'New supplier added', 'input.performance feedback': 'Two nonconformities', 'input.interested parties feedback': 'Customer questionnaire themes', 'input.risk assessment results and treatment status': 'Register reviewed', 'input.continual improvement opportunities': 'Automate evidence' })
+  await post(`/api/programs/${iso}/management-reviews`, { held_on: '2026-10-20', attendees: 'x', decisions: 'x' }, 400)
+  await post(`/api/programs/${iso}/documents`, { kind: 'iso-internal-audit' }); await post(`/api/programs/${iso}/documents`, { kind: 'iso-management-review' }); await post(`/api/programs/${iso}/documents`, { kind: 'iso-risk-treatment' })
+  const audit = (await get(doc(iso, 'iso-internal-audit'))).revision.content.sections; assert.match(JSON.stringify(audit), /Access reviews skipped/); assert.match(JSON.stringify(audit), /Run the quarterly access review/)
+  assert.match(JSON.stringify((await get(doc(iso, 'iso-management-review'))).revision.content.sections), /Enable access-review campaigns/)
+  const findingId = (await app.db.prepare('SELECT id FROM iso_audit_findings').first()).id
+  await post(`/api/programs/${iso}/audits/findings/${findingId}/close`, { note: 'Q3 review completed' }, 200)
+  await post(`/api/programs/${iso}/audits/findings/${findingId}/close`, { note: 'again' }, 404)
+  await post(`${doc(iso, 'iso-soa')}/approvals`, { revision: 1, approver_person_id: approver.id, effective_date: '2026-10-22' })
+  assert.equal((await get(doc(iso, 'iso-soa'))).state, 'approved')
+  assert.equal((await v1(push.token, 'PUT', '/v1/resources/internal_service', { resources: [{ uniqueId: 'svc-0', attributes: { mfa_enforced: false } }] })).status, 200)
+  await app.tick()
+  soa = await get(doc(iso, 'iso-soa')); assert.equal(soa.state, 'needs review')
+  const flagged = soa.drift.items.find(i => i.key === 'soa:A.5.1'); assert.ok(flagged); assert.match(flagged.approved, /implemented$/); assert.doesNotMatch(flagged.live, /\|implemented$/)
+  assert.match(pdfText(await file(`/api/programs/${iso}/documents/iso-soa/export?format=pdf&revision=1`)), /Statement of Applicability/)
+  assert.equal(sha(await file(`/api/programs/${iso}/documents/iso-soa/export?format=pdf&revision=1`)).length, 64)
+  // HIPAA: start the risk analysis and add the shipped library scenarios inside it; the BAA inventory comes from Vendors.
+  await post(`/api/programs/${hipaa}/documents`, { kind: 'hipaa-risk-analysis' })
+  let ra = await get(doc(hipaa, 'hipaa-risk-analysis')); assert.equal(ra.revision.content.sections.find(s => s.id === 'threats').status, 'owner-needed')
+  const added = await post(`${doc(hipaa, 'hipaa-risk-analysis')}/library-scenarios`, {}); assert.ok(added.added.length >= 2)
+  await post(`${doc(hipaa, 'hipaa-risk-analysis')}/library-scenarios`, {}, 409)
+  await post(`${doc(hipaa, 'hipaa-risk-analysis')}/revisions`, { inputs: JSON.stringify({ ephi_systems: [{ system: 'Clinical notes database', ephi: 'Visit notes', flow: 'Web app to database over TLS' }] }), reason: 'ePHI inventory walk-through' })
+  ra = await get(doc(hipaa, 'hipaa-risk-analysis')); const rs = Object.fromEntries(ra.revision.content.sections.map(s => [s.id, s]))
+  assert.ok(rs.threats.statements.length >= 2 && rs.threats.statements.every(s => s.cites[0].kind === 'risk')); assert.ok(rs.ephi.statements.some(s => s.cites.some(c => c.kind === 'vendor-document')))
+  assert.ok(rs.likelihood.table.rows.length >= 2); assert.ok(rs.safeguards.statements.length > 0)
+  const risk = (await get('/api/risks')).risks.find(r => r.origin === 'library' && /ePHI/.test(r.title))
+  await post(`/api/risks/${risk.id}/treatments`, { title: 'Encrypt ePHI exports', owner_person_id: owner.id, due_date: '2026-12-15' })
+  await post(`${doc(hipaa, 'hipaa-risk-analysis')}/reconcile`, { reason: 'Treatment plan added' })
+  await post(`${doc(hipaa, 'hipaa-risk-analysis')}/approvals`, { revision: await tip(hipaa, 'hipaa-risk-analysis'), approver_person_id: approver.id })
+  assert.match(pdfText(await file(`/api/programs/${hipaa}/documents/hipaa-risk-analysis/export?format=pdf`)), /Encrypt ePHI exports/)
+  await post(`/api/programs/${hipaa}/documents`, { kind: 'hipaa-baa-inventory' }); await post(`/api/programs/${hipaa}/documents`, { kind: 'hipaa-policy-set' })
+  const baas = (await get(doc(hipaa, 'hipaa-baa-inventory'))).revision.content.sections[0]; assert.ok(baas.statements.some(s => /Acme Notes/.test(s.text) && /BAA verified/.test(s.text) && s.cites.some(c => c.kind === 'vendor-document' && c.ref === baa.id)))
+  // PCI DSS: scope with exhibits, guided SAQ selection that changes the worksheet, and an unsigned AOC handoff.
+  await post(`/api/programs/${pci}/documents`, { kind: 'pci-cde-scope' })
+  const flow = await form(`${doc(pci, 'pci-cde-scope')}/exhibits`, { label: 'data-flow diagram' }, 'dataflow.png', 'png bytes one'); await form(`${doc(pci, 'pci-cde-scope')}/exhibits`, { label: 'network diagram' }, 'network.png', 'png bytes two')
+  assert.equal(Buffer.from(await file(`${doc(pci, 'pci-cde-scope')}/exhibits/${flow.id}`)).toString(), 'png bytes one')
+  await post(`${doc(pci, 'pci-cde-scope')}/revisions`, { inputs: JSON.stringify({ cde_systems: [{ system: 'Payment page', role: 'Hosted payment redirect', location: 'Provider' }] }), reason: 'CDE walkthrough' })
+  assert.match(JSON.stringify((await get(doc(pci, 'pci-cde-scope'))).revision.content.sections), /dataflow\.png/)
+  await post(`/api/programs/${pci}/documents`, { kind: 'pci-saq' })
+  const saq = async answers => { await post(`${doc(pci, 'pci-saq')}/revisions`, { inputs: JSON.stringify({ saq_answers: answers }), reason: 'SAQ answers' }); const s = (await get(doc(pci, 'pci-saq'))).revision.content.sections; return { selected: s.find(x => x.id === 'selected').statements[0].text, rows: s.find(x => x.id === 'worksheet').table?.rows ?? [] } }
+  const a = await saq({ role: 'merchant', channels: ['e-commerce'], stores_chd: 'no', p2pe: 'no', terminals: 'none', ecommerce: 'fully-outsourced' })
+  assert.match(a.selected, /^SAQ A\./); assert.deepEqual([...new Set(a.rows.map(r => r[0].split('.')[0]))], ['11', '12', '2', '3', '6', '8', '9'].sort((x, y) => x.localeCompare(y, 'en', { numeric: true })))
+  const b = await saq({ role: 'merchant', channels: ['card-present'], stores_chd: 'no', p2pe: 'no', terminals: 'standalone-dial-out', ecommerce: 'none' })
+  assert.match(b.selected, /^SAQ B\./); assert.notDeepEqual(b.rows.map(r => r[0]), a.rows.map(r => r[0])); assert.ok(b.rows.every(r => ['3', '4', '7', '9', '12'].includes(r[0].split('.')[0])))
+  await post(`${doc(pci, 'pci-saq')}/approvals`, { revision: await tip(pci, 'pci-saq'), approver_person_id: approver.id }, 409)
+  const responses = Object.fromEntries(b.rows.map(r => ['response.' + r[0], 'in place']))
+  await post(`${doc(pci, 'pci-saq')}/revisions`, { ...responses, reason: 'Responses from the QSA walkthrough' })
+  await post(`${doc(pci, 'pci-saq')}/approvals`, { revision: await tip(pci, 'pci-saq'), approver_person_id: approver.id })
+  await post(`/api/programs/${pci}/documents`, { kind: 'pci-aoc-handoff' })
+  const aoc = pdfText(await file(`/api/programs/${pci}/documents/pci-aoc-handoff/export?format=pdf`)); assert.match(aoc, /SAQ B/); assert.match(aoc, /NOT SIGNED/); assert.match(aoc, /cannot sign/)
+  assert.match(pdfText(await file(`/api/programs/${pci}/documents/pci-saq/export?format=pdf`)), /Requirement-by-requirement worksheet/)
+  // Every export and write is audited, the review deadline reminds the owner once, and the archive carries documents and exhibits.
+  const actions = (await app.db.prepare("SELECT action,revision FROM product_audit WHERE action LIKE 'program-document.%' OR action LIKE 'iso.%'").all()).results.map(a => a.action)
+  for (const name of ['program-document.generated', 'program-document.edited', 'program-document.reconciled', 'program-document.approved', 'program-document.exported', 'program-document.exhibit-added', 'iso.audit-recorded', 'iso.management-review-recorded']) assert.ok(actions.includes(name), name)
+  const exported = Buffer.from(await file('/api/archive/export')), decoded = decodeArchive(exported)
+  assert.ok(decoded.entries.some(e => e.path === 'program-exhibits/' + flow.id && Buffer.from(e.bytes).toString() === 'png bytes one'))
+  const target = await runtime()
+  try {
+   await target.signin()
+   const restored = await target.fetch('/api/archive/restore', { method: 'POST', headers: { origin: target.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore', 'x-evidence-erasure-history': 'unverified acknowledged' }, body: exported })
+   assert.equal(restored.status, 200, await restored.text())
+   const copy = await (await target.fetch(doc(soc2, 'soc2-description') + '?revision=' + rev)).json(), original = await get(doc(soc2, 'soc2-description') + '?revision=' + rev)
+   assert.deepEqual(copy.revision, original.revision); assert.deepEqual(copy.approvals, original.approvals)
+   assert.equal(Buffer.from(await (await target.fetch(`${doc(pci, 'pci-cde-scope')}/exhibits/${flow.id}`)).arrayBuffer()).toString(), 'png bytes one')
+   assert.equal((await (await target.fetch(doc(iso, 'iso-soa'))).json()).approvals.length, 1)
+  } finally { await target.close() }
+  await app.clock('2027-10-10T10:00:00Z'); await app.tick()
+  assert.equal(app.messages.filter(m => /Review due soon: SOC 2 system description/.test(m.subject) && m.to.includes('priya@northstar.test')).length, 1)
+  await app.tick(); assert.equal(app.messages.filter(m => /Review due soon: SOC 2 system description/.test(m.subject)).length, 1)
+  return { test: t.id }
+ } finally { await app.close() }
+}

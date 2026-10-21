@@ -17,6 +17,7 @@ import { syncPolicies } from './policy/builder'
 import { attestationReminders, syncAttestations } from './attest/storage'
 import { reviewReminders } from './reviews/schedule'
 import { vendorReminders } from './vendor/diligence'
+import { documentReminders } from './program/documents/storage'
 import { accessReviewWork } from './access/storage'
 import { trainingWork } from './training/storage'
 import { ticketAutomation } from './work/granularity'
@@ -46,7 +47,7 @@ export async function scheduledWork(env: Bindings, now: Date) {
  await step('risk acceptances', scoped => escalateRiskAcceptances(scoped, now))
  await step('weekly digest', scoped => weeklyDigest(scoped, now))
  await step('attestation reminders', scoped => attestationReminders(scoped, now))
- await step('review reminders', async scoped => (await reviewReminders(scoped, now)) + (await vendorReminders(scoped, now)))
+ await step('review reminders', async scoped => (await reviewReminders(scoped, now)) + (await vendorReminders(scoped, now)) + (await documentReminders(scoped, now)))
  await step('handovers', scoped => handoverWork(scoped, now))
  await step('readiness snapshots', scoped => snapshotReadiness(scoped, now))
  return outcome

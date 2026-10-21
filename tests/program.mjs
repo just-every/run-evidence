@@ -4,6 +4,7 @@
 process.env.RER_SERVER_JOURNEY = '1'
 import assert from 'node:assert/strict'
 import { runtime } from './helpers/runtime.mjs'
+import { programDocumentsJourney } from './helpers/program-documents-journey.mjs'
 const app = await runtime()
 let passed = 0
 const scenario = async (name, fn) => { await fn(); passed++; console.log('PASS ' + name) }
@@ -157,5 +158,6 @@ try {
   const before = (await desk('2026-11-20')).find(r => r.id === backups.id)
   assert.equal(before.renewal.cadence, 'quarterly'); assert.deepEqual(before.renewal.period, { from: '2026-10-01', to: '2026-12-31' })
  })
+ await scenario('PROGRAM-003: each core program generates, edits, approves, exports and reconciles its framework documents with cited sources, drift review and retained prior revisions', async () => { await programDocumentsJourney() })
  console.log(`${passed} program public-door scenarios passed with real workerd, D1, R2 and native owner sessions.`)
 } finally { await app.close() }

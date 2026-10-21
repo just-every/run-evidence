@@ -9,8 +9,9 @@ export function fileQuery(session?:string) {
  UNION ALL SELECT object_key,archive_size AS size,archive_sha256 AS sha256,'import-sources/'||id AS path FROM ${t('import_reviews')}
  UNION ALL SELECT object_key,size,sha256,'populations/'||id AS path FROM ${t('population_uploads')}
  UNION ALL SELECT object_key,size,sha256,'vulns/'||id AS path FROM ${t('vuln_documents')})
- UNION ALL SELECT object_key,size,sha256,'vendor-documents/'||id AS path FROM ${t('vendor_documents')}
- UNION ALL SELECT object_key,size,sha256,'framework-originals/'||id AS path FROM ${t('custom_framework_revisions')} WHERE object_key IS NOT NULL`
+ UNION ALL SELECT * FROM (SELECT object_key,size,sha256,'vendor-documents/'||id AS path FROM ${t('vendor_documents')}
+ UNION ALL SELECT object_key,size,sha256,'program-exhibits/'||id AS path FROM ${t('program_document_exhibits')}
+ UNION ALL SELECT object_key,size,sha256,'framework-originals/'||id AS path FROM ${t('custom_framework_revisions')} WHERE object_key IS NOT NULL)`
 }
 export async function* filePages(env:Store,session?:string) {
  let after=''
