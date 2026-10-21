@@ -6635,7 +6635,7 @@
       "executable": false
     },
     "tests/helpers/assurance-browser.mjs": {
-      "sha256": "3687ad55690dfe32b34076ae3d1d1ca884478f806d3d7b3a430ab6ead8c61e72",
+      "sha256": "de27a7f48318d09920736dd198cb27a416f0b68eb935fc331d1cfb4c779c5820",
       "executable": false
     },
     "tests/helpers/azure-deadline-browser.mjs": {

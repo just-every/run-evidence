@@ -40,7 +40,7 @@ export async function assuranceBrowser(){const app=await runtime(),output=resolv
    await prepare(0)
    await page.getByLabel('Named security/legal owner',{exact:true}).selectOption(fixture.owner.id);await page.getByLabel('Decision',{exact:true}).selectOption('approved');await page.getByLabel('Decision reason').fill('Approved exact passage, proposed risk and policy draft')
    await page.getByRole('button',{name:'Record individual decision'}).click();await page.getByRole('heading',{name:'approved',exact:true}).waitFor();await capture('tailoring-approved')
-   await page.getByRole('link',{name:'Proposals and structured obligations',exact:true}).click();await page.getByRole('heading',{name:'US-1',exact:true}).waitFor();await capture('tailoring-structured-obligation')
+   await page.getByRole('link',{name:'Proposals and structured obligations',exact:true}).click();await page.locator('section').filter({has:page.getByRole('heading',{name:'US-1',exact:true})}).filter({has:page.locator('a[href="/app/controls/'+fixture.control+'"]')}).waitFor();await capture('tailoring-structured-obligation')
    await fixture.post('/api/questionnaires/sources',{kind:'policy',source_id:fixture.policy.revision,quote:'Access reviews occur annually.'})
    await page.goto(origin+'/app/questionnaires');await page.getByRole('heading',{name:'Questionnaires',exact:true}).waitFor();await capture('questionnaires-workspace')
    const form=page.locator('form[action="/app/questionnaires"]'),rows=questionRows.map((r,i)=>i===1?[r[0],r[1],'Describe access reviews',r[3],r[4]]:r),bytes=Buffer.from(rows.map(r=>r.map(s=>'"'+s.replaceAll('"','""')+'"').join(',')).join('\r\n'))
