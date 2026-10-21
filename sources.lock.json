@@ -2999,7 +2999,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "c1c93670a93730346e4adfd5468dbca0eb43b93f29b139646847b3d329953f9f",
+      "sha256": "f64944908fb99824057b0b437f45c2aba34af8242fa9d03196b42b2610c71456",
       "executable": false
     },
     "DEMO.md": {
@@ -3947,7 +3947,7 @@
       "executable": false
     },
     "src/evidence/agent/tailoring-storage.ts": {
-      "sha256": "69c866d5fb8901a90fd39fdf4fb86534789acaf4dd67b507db39875012e4f20b",
+      "sha256": "26aa98e592782a17ca2654122b93cb25ac1d2d4c9e71de4bb431910dd6b37647",
       "executable": false
     },
     "src/evidence/agent/types.ts": {
@@ -5475,7 +5475,7 @@
       "executable": false
     },
     "src/evidence/vendor/review-storage.ts": {
-      "sha256": "8113ac2adc2bb735e56cc44ca389a442a2052b47ef5a7418ec3494a23b403c70",
+      "sha256": "0a982e80ba989f019a6ac56bad365d63a02c9c9a0805051125a89de2cf116eed",
       "executable": false
     },
     "src/evidence/vendor/storage.ts": {
@@ -6791,7 +6791,7 @@
       "executable": false
     },
     "tests/helpers/tailoring-journey.mjs": {
-      "sha256": "586cbc5a2b51d5bd5730deda41fddac9da98158dd141305e6aae3e06ad57e7c1",
+      "sha256": "a35f610fdff7b5f4bd021c0701d73e102b20c9517cc49f735ebc416bf470e454",
       "executable": false
     },
     "tests/helpers/tracker-fields-browser.mjs": {
@@ -6815,7 +6815,7 @@
       "executable": false
     },
     "tests/helpers/vendor-review-journey.mjs": {
-      "sha256": "870b87fa76b29de02f409c6433115f9f3ad3a35a99ffd58ade40e828b8b5a723",
+      "sha256": "28cfa3dcc127c3593ce804e614f208a10852cc6ab207d75184c149c2538eedb5",
       "executable": false
     },
     "tests/helpers/worker.ts": {

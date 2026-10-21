@@ -43,8 +43,8 @@ export async function tailoringJourney(){const app=await runtime();try{
  assert.deepEqual(await counts(),beforeReject);assert.deepEqual(beforeReject,{mappings:2,risks:2,obligations:2,policyDrafts:2})
  const rows=(await f.get('/api/frameworks/'+f.framework.id)).requirements
  assert.deepEqual(rows.filter(q=>q.mappings.includes(f.control)).map(q=>q.ref).sort(),['US-1','US-2'])
- const policy=await f.get(`/api/policies/${f.policy.policy}/revisions/${approved.policy_revision_id}`);assert.equal(policy.status,'draft');assert.equal(policy.body,snapshot.policy_diff.after);assert.equal(policy.published_at,null)
- const risk=await f.get('/api/risks/'+approved.risk_id);assert.ok(JSON.stringify(risk).includes(snapshot.citations[0].passage));assert.ok(JSON.stringify(risk).includes('2'))
+ const policy=await f.get(`/api/policies/${f.policy.policy}/revisions/${approved.policy_revision_id}`);assert.equal(policy.status,'draft');assert.equal(policy.body,snapshot.policy_diff.after);assert.equal(policy.published_at,null);assert.equal(policy.drafted_by,'Evidence owner')
+ const risk=await f.get('/api/risks/'+approved.risk_id);assert.ok(JSON.stringify(risk).includes(snapshot.citations[0].passage));assert.ok(JSON.stringify(risk).includes('2'));assert.equal(risk.risk.owner_person_id,null,'approval does not silently assign new work');assert.ok(risk.assessments.every(a=>a.actor_name==='Evidence owner'),'assessment actor is the signed-in owner; named reviewer remains separate')
  await f.post(`/api/tailoring/${proposals[0].id}/decision`,decision(proposals[0]),409)
  const stale=await f.post('/api/tailoring',{...f.input,requirement_id:f.requirements[2].id})
  await f.put('/v1/resources/'+f.type,{resources:[{uniqueId:'synthetic-evidence-production',displayName:'Production customer service changed',attributes:{secure:false,owner:'Platform'}}]})

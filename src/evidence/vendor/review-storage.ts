@@ -64,8 +64,8 @@ export async function decideReview(env:Bindings,vendor:string,id:string,input:In
    statements.push(env.DB.prepare('INSERT INTO vendor_cuecs(id,vendor_id,document_id,review_id,field_id,body,control_id,accepted_unaddressed,decided_at) VALUES(?,?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(),vendor,row.document_id,id,f.id,f.value,mapping&&!accepted?mapping:null,accepted?1:0,at))
   }
   const findings=snapshot.fields.filter(f=>f.kind==='exception'||f.kind==='finding'||(f.kind==='opinion'&&f.value!=='unqualified'))
-  for(const f of findings)statements.push(env.DB.prepare('INSERT INTO vendor_findings(id,vendor_id,source_kind,source_ref,severity,title,detail,recorded_by,recorded_at) VALUES(?,?,\'document\',?,\'high\',?,?,?,?)').bind(crypto.randomUUID(),vendor,row.document_id,`${f.kind}: ${f.value}`.slice(0,300),`Review ${id}, page ${f.page}: ${f.quote}`.slice(0,2000),reviewer.name,at))
-  if(findings.length){const p=await profileOf(env,vendor);if(p)statements.push(env.DB.prepare("UPDATE vendor_profiles SET risk_tier='high',tier_basis=?,revision=revision+1,updated_by=?,updated_at=? WHERE vendor_id=?").bind('Named reviewer approved report exceptions or a modified opinion; review '+id,reviewer.name,at,vendor))}
+  for(const f of findings)statements.push(env.DB.prepare('INSERT INTO vendor_findings(id,vendor_id,source_kind,source_ref,severity,title,detail,recorded_by,recorded_at) VALUES(?,?,\'document\',?,\'high\',?,?,?,?)').bind(crypto.randomUUID(),vendor,row.document_id,`${f.kind}: ${f.value}`.slice(0,300),`Review ${id}, page ${f.page}: ${f.quote}`.slice(0,2000),actor.name,at))
+  if(findings.length){const p=await profileOf(env,vendor);if(p)statements.push(env.DB.prepare("UPDATE vendor_profiles SET risk_tier='high',tier_basis=?,revision=revision+1,updated_by=?,updated_at=? WHERE vendor_id=?").bind('Named reviewer approved report exceptions or a modified opinion; review '+id,actor.name,at,vendor))}
  }
  statements.push(auditStatement(env,actor,'vendor.review-'+decision,'vendor:'+vendor,now,'succeeded','reviewer '+reviewer.name,{reason,revision:row.snapshot_hash}))
  await env.DB.batch(statements)

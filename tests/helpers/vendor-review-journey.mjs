@@ -37,7 +37,7 @@ export async function vendorReviewJourney() {
   await post(correctedPath+'/decision',{...decision,snapshot_hash:'0'.repeat(64)},409)
   await post(correctedPath+'/decision',decision,200)
   let obligations=(await get('/api/vendors/obligations')).obligations;assert.equal(obligations.length,2);assert.equal(obligations.filter(c=>!c.control_id).length,1);assert.equal(obligations.find(c=>!c.control_id).accepted_unaddressed,1)
-  let detail=await get('/api/vendors/'+vendor.id);assert.equal(detail.findings.length,1);assert.equal(detail.profile.risk_tier,'high')
+  let detail=await get('/api/vendors/'+vendor.id);assert.equal(detail.findings.length,1);assert.equal(detail.profile.risk_tier,'high');assert.equal(detail.findings[0].recorded_by,'Evidence owner');assert.equal(detail.profile.updated_by,'Evidence owner')
   await post(correctedPath+'/decision',decision,409)
   const program=await post('/api/programs',{framework:'soc2',report_type:'Type II',name:'Supplier obligation program',legal_entity:'Northstar Inc',audit_from:'2026-01-01',audit_to:'2026-12-31'})
   const report=await get('/api/programs/'+program.id);assert.equal(report.readiness.totals.vendor_cuecs_open,1)
