@@ -2983,7 +2983,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "778f5b4d73b4e1f1efd6e2032526f66f26af214cede99803997fe321d9a16d7d",
+      "sha256": "4cb616d4d12effc004f6131fc750ee9e61bb60e573dc107a2a86222f44a0827b",
       "executable": false
     },
     "AGENTS.md": {
@@ -2999,7 +2999,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "e2db84f1c2b4385b4b22f151316a88c544eb571b565d07d3077b1638cc8f57e8",
+      "sha256": "03f8c94e1a0de3e2e064c77ba42e6245a893b2b4595bbb5e30fce1760225d80e",
       "executable": false
     },
     "DEMO.md": {
@@ -5467,15 +5467,15 @@
       "executable": false
     },
     "src/evidence/vendor/review-http.ts": {
-      "sha256": "e88d404c9603f9392f6539bbd62989bbe0cbb6ea3722c52f64250bd0a47fbee5",
+      "sha256": "3f85bdfc5fdbdfed2f7d615661e04f293db3a7e5a87009babb2e85a9c172b069",
       "executable": false
     },
     "src/evidence/vendor/review-model.ts": {
-      "sha256": "e2fc10513f6835e9df82eeb53bd7343fe06d3a16fe4e32eec0c35154a8b880d2",
+      "sha256": "63a645dd086d506b7f1f21110010bc09748608799997ef17fba063aa3bf64bf1",
       "executable": false
     },
     "src/evidence/vendor/review-storage.ts": {
-      "sha256": "0a982e80ba989f019a6ac56bad365d63a02c9c9a0805051125a89de2cf116eed",
+      "sha256": "3b80506bd116e499d5c91c7acc84695d5ca4895a3dbe0ec642153f856c181bf8",
       "executable": false
     },
     "src/evidence/vendor/storage.ts": {
@@ -5491,7 +5491,7 @@
       "executable": false
     },
     "src/evidence/vendor/view.ts": {
-      "sha256": "73cba38f12ac0eb6752fede842d81c3a708f22117aa15944b902c9441a9dfbca",
+      "sha256": "222562b4c5a1dbd346aae3e53699992bf959db97c004f47450b0355b7673e338",
       "executable": false
     },
     "src/evidence/view.ts": {
@@ -6815,7 +6815,7 @@
       "executable": false
     },
     "tests/helpers/vendor-review-journey.mjs": {
-      "sha256": "28cfa3dcc127c3593ce804e614f208a10852cc6ab207d75184c149c2538eedb5",
+      "sha256": "bde5f004439bee195d1cd0f91a28067438f87a7fcf7d7db21e4d3e95f93f2e6e",
       "executable": false
     },
     "tests/helpers/worker.ts": {
@@ -6919,7 +6919,7 @@
       "executable": false
     },
     "tests/vendor-browser.mjs": {
-      "sha256": "fc79f5dfcf52b14b5d1ad5567bafdd163bab925bed6d5337d7bca04e101f19b9",
+      "sha256": "7521fbb6f342575ac5ad4f91afbfefd33a468f97c26e6eaf121d75d250a7d127",
       "executable": false
     },
     "tests/vulns.mjs": {

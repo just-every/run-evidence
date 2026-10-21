@@ -53,9 +53,48 @@ export async function vendorReviewJourney() {
   const q2=await post(`/api/vendors/${vendor.id}/documents/${qualified.id}/reviews`,{})
   await post(`/api/vendors/${vendor.id}/document-reviews/${q2.id}/decision`,{snapshot_hash:q2.snapshot_hash,decision:'approved',reviewer_person_id:reviewer.id,reason:'Qualified report reviewed'},200)
   assert.equal((await get('/api/vendors/'+vendor.id)).findings.length,3,'exception and qualified opinion only appear after approval')
+  // Every named document family is read through the same original-byte and
+  // cited proposal door. Informational scope/certificate fields do not create
+  // findings or change a tier; only an approved adverse finding may do that.
+  const families=[
+   ['soc1',['SOC 1 Type I','As-of date: 2026-10-01','Independent auditor: Bay CPA','In our opinion, except for the exception below, the controls are effective.','Exception 1: A financial access review was late.','Subservice organization: Bay Host, inclusive treatment.','CUEC 1: Reconcile settlement reports.']],
+   ['iso27001',['ISO 27001 certificate','Certificate number: synthetic-evidence-1','Certification body: Bay Certification','Certificate scope: US hosted application','Valid until: 2027-10-01','Limitation: The acquired subsidiary is outside the scope.']],
+   ['pentest',['Penetration test summary','Test scope: The public US application','Assessment dates: 2026-09-01 to 2026-09-08','Finding 1: An administrative endpoint lacked a rate limit.','Recommendation 1: Apply a per-account request limit.']],
+   ['dpa',['Data processing agreement','Processing scope: Customer contact details','Security measures: Restricted operational access','Deletion: Within 30 days after termination','Limitation: One support subprocessor is not listed.']],
+   ['baa',['Business associate agreement','Processing scope: Limited clinical records','Breach notification: Without unreasonable delay','Data return: Return customer files at termination','Limitation: The overseas support entity is not covered.']],
+  ]
+  for(const [kind,lines]of families){
+   const original=pdfFixture([lines]),record=await upload(vendor.id,kind,original),proposal=await post(`/api/vendors/${vendor.id}/documents/${record.id}/reviews`,{}),rp=`/api/vendors/${vendor.id}/document-reviews/${proposal.id}`,value=await get(rp)
+   assert.ok(value.snapshot.fields.some(f=>f.kind=== (kind==='soc1'?'exception':'finding')),kind+' structured finding')
+   for(const f of value.snapshot.fields)assert.ok((await get(rp+'/pages/'+f.page)).text.includes(f.quote),kind+' original passage')
+   if(kind!=='soc1')assert.ok(value.snapshot.fields.some(f=>f.kind==='detail'),kind+' scope metadata')
+   assert.equal((await get('/api/vendors/'+vendor.id)).findings.length,3,'preparation has no finding effect')
+   await post(rp+'/decision',{snapshot_hash:proposal.snapshot_hash,decision:'rejected',reviewer_person_id:reviewer.id,reason:'Corpus review rejected pending independent diligence'},200)
+   assert.deepEqual(Buffer.from(await (await app.fetch(`/app/vendors/${vendor.id}/documents/${record.id}/download`)).arrayBuffer()),original)
+  }
+  const unreadable=await upload(vendor.id,'other',Buffer.from('Not a readable PDF'))
+  await post(`/api/vendors/${vendor.id}/documents/${unreadable.id}/reviews`,{},422)
+  // Native questionnaire responses have a lossless original JSON transcript,
+  // one cited source page per question, and no findings before exact approval.
+  const template=await post('/api/vendor-templates',{name:'Synthetic supplier controls',questions:'MFA: Is MFA enforced?\nENC: Is customer data encrypted?\nPHI: Is this service used for PHI?'})
+  const issued=await post(`/api/vendors/${vendor.id}/requests`,{kinds:['questionnaire'],template_id:template.id,expires_at:'2026-11-09'}),request=issued.request_ids[0],nativePath=`/api/vendors/${vendor.id}/requests/${request}/reviews`
+  await post(nativePath,{},409)
+  const submitted=await app.fetch(new URL(issued.url).pathname+`/requests/${request}/answers`,{method:'POST',headers:{cookie:'',origin:'null',accept:'application/json','content-type':'application/json'},body:JSON.stringify({answers:{MFA:{answer:'no',comment:'Röle-based MFA is planned.'},ENC:{answer:'yes',comment:'Encrypted at rest.'},PHI:{answer:'na',comment:'No clinical data in scope.'}},submit:true,respondent_name:'Sam Rivera',respondent_email:'supplier@northstar.test'})});assert.equal(submitted.status,201,await submitted.clone().text())
+  const native=await post(nativePath,{}),np=`/api/vendors/${vendor.id}/document-reviews/${native.id}`,ns=await get(np)
+  assert.equal(ns.snapshot.pages.length,3);assert.equal(ns.snapshot.fields.length,2);assert.equal((await get('/api/vendors/'+vendor.id)).findings.length,3)
+  assert.match(ns.snapshot.fields[0].value,/Supplier answered no to MFA/)
+  assert.match((await get(np+'/pages/1')).text,/Röle-based MFA/)
+  const omitted=await post(np+'/correct',{snapshot_hash:native.snapshot_hash,field_id:'new:detail',value:'Encrypted at rest.',quote:'Comment: Encrypted at rest.',page:'2',reason:'Retain a source-supported omitted answer detail'})
+  const op=`/api/vendors/${vendor.id}/document-reviews/${omitted.id}`,os=await get(op)
+  assert.equal(os.snapshot.fields.length,3);assert.equal((await get(np)).snapshot.fields.length,2)
+  assert.equal(os.snapshot.fields.at(-1).kind,'detail')
+  const transcript=Buffer.from(await (await app.fetch(`/app/vendors/${vendor.id}/documents/${native.document_id}/download`)).arrayBuffer()),source=JSON.parse(transcript)
+  assert.equal(source.request_id,request);assert.equal(source.entries[0].comment,'Röle-based MFA is planned.');assert.equal(source.entries[0].answer,'no')
+  await post(op+'/decision',{snapshot_hash:omitted.snapshot_hash,decision:'approved',reviewer_person_id:reviewer.id,reason:'Review negative control and applicability response'},200)
+  assert.equal((await get('/api/vendors/'+vendor.id)).findings.length,5)
   await assert.rejects(app.db.prepare('UPDATE vendor_document_reviews SET snapshot_hash=? WHERE id=?').bind('a'.repeat(64),prepared.id).run(),/immutable_vendor_review/)
   const archive=Buffer.from(await (await app.fetch('/api/archive/export')).arrayBuffer()),dest=await runtime()
-  try{await dest.signin();const r=await dest.fetch('/api/archive/restore',{method:'POST',headers:{origin:dest.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:archive});assert.equal(r.status,200,await r.clone().text());assert.deepEqual((await (await dest.fetch(correctedPath)).json()).snapshot,(await get(correctedPath)).snapshot);assert.deepEqual((await (await dest.fetch('/api/vendors/obligations')).json()).obligations,(await get('/api/vendors/obligations')).obligations)}finally{await dest.close()}
+  try{await dest.signin();const r=await dest.fetch('/api/archive/restore',{method:'POST',headers:{origin:dest.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:archive});assert.equal(r.status,200,await r.clone().text());assert.deepEqual((await (await dest.fetch(correctedPath)).json()).snapshot,(await get(correctedPath)).snapshot);assert.deepEqual((await (await dest.fetch('/api/vendors/obligations')).json()).obligations,(await get('/api/vendors/obligations')).obligations);assert.deepEqual((await (await dest.fetch(np)).json()).snapshot,ns.snapshot);assert.deepEqual(Buffer.from(await (await dest.fetch(`/app/vendors/${vendor.id}/documents/${native.document_id}/download`)).arrayBuffer()),transcript)}finally{await dest.close()}
   console.log('PASS VENDOR-003: PDF page citations, review corrections, exact named approvals, CUECs in readiness, bridge letters, qualified findings and archive parity')
  }finally{await app.close()}
 }

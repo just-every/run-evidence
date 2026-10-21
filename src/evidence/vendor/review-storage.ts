@@ -4,8 +4,9 @@ import { Refusal } from '../upload'
 import { requirePerson } from '../program/people'
 import { addMonths } from '../cadence'
 import { sha } from '../archive/format'
-import { documentBytes,documents,profileOf,type DocumentRow } from './storage'
-import { extractFields,readPages,validateExtraction,type Extraction } from './review-model'
+import { documentBytes,documents,profileOf,storeDocument,type DocumentRow } from './storage'
+import { answersOf,requestsOf } from './diligence'
+import { extractFields,readPages,validateExtraction,fieldKinds,type Extraction } from './review-model'
 export interface Review {id:string;document_id:string;vendor_id:string;revision:number;snapshot_json:string;snapshot_hash:string;reason:string;proposed_by:string;proposed_at:string}
 const digest=(s:string)=>sha(new TextEncoder().encode(s))
 export async function reviewOf(env:Bindings,vendor:string,id:string) {const row=await env.DB.prepare('SELECT * FROM vendor_document_reviews WHERE vendor_id=? AND id=?').bind(vendor,id).first<Review>();if(!row)throw new Refusal('Document review not found.',404);return row}
@@ -26,20 +27,40 @@ export async function prepareReview(env:Bindings,vendor:string,document:string,a
  const pages=await readPages(bytes)
  return append(env,vendor,document,extractFields(document,doc.sha256,pages,doc.kind),'Initial extraction; all pages need human review',actor,now)
 }
+// Final supplier answers are immutable. Retain a lossless, paginated JSON
+// transcript beside them; citations resolve to this exact source snapshot.
+export async function prepareQuestionnaireReview(env:Bindings,vendor:string,request:string,actor:Actor,now:Date) {
+ const req=(await requestsOf(env,vendor)).find(r=>r.id===request&&r.kind==='questionnaire')
+ if(!req)throw new Refusal('Questionnaire request not found.',404)
+ if(!req.submitted_at)throw new Refusal('The supplier must submit the complete questionnaire before it can be reviewed.',409)
+ const questions=JSON.parse(req.questions_json??'[]') as {id:string;text:string}[],latest=new Map((await answersOf(env,request)).map(a=>[a.question_id,a]))
+ if(!questions.length||questions.some(q=>!latest.has(q.id)))throw new Refusal('The submitted questionnaire is incomplete.',409)
+ const entries=questions.map(q=>({...latest.get(q.id)!,question:q.text})),source={kind:'Evidence supplier questionnaire transcript',request_id:request,submitted_at:req.submitted_at,respondent_name:req.respondent_name,entries}
+ const file=new File([JSON.stringify(source,null,2)],`questionnaire-response-${request}.json`,{type:'application/json'})
+ const doc=await storeDocument(env,actor,{vendor,request,kind:'other',file,origin:'owner',providedBy:'Owner snapshot of immutable supplier submission; supplier statements are unverified',link:null,effective:null,expires:null},now)
+ const pages=entries.map(e=>`Question ${e.question_id}\n${e.question}\nSupplier answer: ${e.answer}\nComment: ${e.comment}\nAnswered: ${e.answered_at}`),fields:Extraction['fields']=[],unresolved:string[]=[]
+ for(const [i,e]of entries.entries()){
+  if(e.answer==='no'||e.answer==='na')fields.push({id:'field-'+(fields.length+1),kind:'finding',value:e.answer==='no'?`Supplier answered no to ${e.question_id}: ${e.question}`:`Applicability requires review for ${e.question_id}: ${e.question}`,page:i+1,quote:pages[i]})
+ }
+ unresolved.push('Supplier answers are unverified statements. Review every question, including yes answers and all comments; no affirmative answer is independent evidence.')
+ return append(env,vendor,doc.id,{document_id:doc.id,document_sha256:doc.sha256,pages,fields,unresolved},'Review immutable supplier questionnaire submission; one source page per question',actor,now)
+}
 export async function correctReview(env:Bindings,vendor:string,id:string,input:Input,actor:Actor,now:Date) {
  const prior=await reviewOf(env,vendor,id)
  if(input.snapshot_hash!==prior.snapshot_hash)throw new Refusal('Confirm the exact source proposal.',409)
  if(await env.DB.prepare('SELECT 1 FROM vendor_review_decisions WHERE review_id=?').bind(id).first())throw new Refusal('A decided proposal cannot be corrected. Prepare a new review.',409)
  const latest=await env.DB.prepare('SELECT MAX(revision) AS n FROM vendor_document_reviews WHERE document_id=?').bind(prior.document_id).first<{n:number}>();if(latest?.n!==prior.revision)throw new Refusal('Correct the latest proposal revision.',409)
- const snapshot=JSON.parse(prior.snapshot_json) as Extraction,field=snapshot.fields.find(f=>f.id===input.field_id)
- if(!field)throw new Refusal('Choose a proposed field.')
+ const snapshot=JSON.parse(prior.snapshot_json) as Extraction,field=snapshot.fields.find(f=>f.id===input.field_id),added=typeof input.field_id==='string'&&input.field_id.startsWith('new:')?input.field_id.slice(4):''
+ if(!field&&!fieldKinds.includes(added as typeof fieldKinds[number]))throw new Refusal('Choose a proposed field or the kind of an omitted field.')
  const value=text(input,'value',4000),quote=text(input,'quote',4000),page=Number(text(input,'page',3))
  if(!quote.toLowerCase().includes(value.toLowerCase())||!snapshot.pages[page-1]?.includes(quote))throw new Refusal('The corrected value must be supported by the cited original passage.')
- Object.assign(field,{value,quote,page})
+ if(field)Object.assign(field,{value,quote,page})
+ else {snapshot.fields.push({id:'field-'+(snapshot.fields.length+1),kind:added as typeof fieldKinds[number],value,quote,page});snapshot.unresolved=snapshot.unresolved.filter(s=>!s.startsWith(added+':'))}
  return append(env,vendor,prior.document_id,snapshot,text(input,'reason',500),actor,now)
 }
 export async function bridgeState(env:Bindings,vendor:string,snapshot:Extraction,now:Date) {
  const months=(await env.DB.prepare('SELECT bridge_months FROM vendor_review_settings WHERE vendor_id=?').bind(vendor).first<{bridge_months:number}>())?.bridge_months??3
+ if(!snapshot.fields.some(f=>f.kind==='report-type'))return {state:'not applicable',months,period_end:null,letter:null,message:'Bridge-letter windows apply to SOC reports, not this source.'}
  const period=snapshot.fields.find(f=>f.kind==='period')?.value??'',dates=period.match(/\d{4}-\d\d-\d\d/g),end=dates?.at(-1)
  if(!end||!Number.isFinite(Date.parse(end)))return {state:'unknown',months,period_end:null,letter:null,message:'Period end unavailable; bridge coverage must be reviewed.'}
  const letters=(await documents(env,vendor)).filter(d=>d.kind==='bridge'&&d.effective_on&&d.effective_on>=end&&(!d.expires_on||d.expires_on>=now.toISOString().slice(0,10)))
