@@ -27,7 +27,8 @@ export async function periodAgentFixture(app) {
  assert.equal(conflict.status,200)
  await put('/v1/resources/'+types[1],{resources:[{uniqueId:'northstar-1',displayName:'Privileged identity',attributes:{secure:true}}]})
  await put('/v1/resource-types/period_unobserved',{schema:{fields:{secure:'boolean'},required:[]}})
- await put('/v1/resources/period_unobserved',{resources:[{uniqueId:'unobserved-vault',displayName:'Unobserved vault',attributes:{secure:true}}]})
+ const neverObserved=await put('/v1/resources/period_unobserved',{resources:[{uniqueId:'unobserved-vault',displayName:'Unobserved vault',attributes:{secure:true}}]})
+ await post('/api/controls/'+control+'/scope',{asset:neverObserved.results[0].id,action:'added',reason:'Declared vault needs its own observation'})
  const unobserved=(await post('/api/tests',{name:'Vault evidence not collected yet',resourceType:'period_unobserved',criteria:JSON.stringify([{attribute:'secure',op:'equals',value:true}]),cadence:'hourly',category:'cloud',severity:'high',controls:[control]},201)).id
  await put('/v1/resource-types/period_unknown',{schema:{fields:{secure:'boolean'},required:[]}})
  await put('/v1/resources/period_unknown',{resources:[{uniqueId:'unknown-monitor',displayName:'Monitor omitted safeguard field',attributes:{}}]})
@@ -50,6 +51,12 @@ export async function periodAgentJourney(app) {
  assert.ok(snapshot.definitions.length>=2)
  assert.ok(snapshot.findings.some(r=>r.kind==='earlier-failure-latest-pass'))
  assert.ok(snapshot.findings.some(r=>r.kind==='missing-window'))
+ assert.ok(snapshot.findings.some(r=>r.kind==='unobserved-scoped-asset'))
+ const conflict=snapshot.findings.find(r=>r.kind==='contradictory-sources');assert.ok(conflict)
+ const conflicted=conflict.citations.filter(c=>c.kind==='observation').map(c=>snapshot.observations.find(o=>o.id===c.id))
+ assert.equal(new Set(conflicted.map(o=>o.source_ref)).size,2)
+ for(const o of snapshot.observations)assert.ok(o.observed_at.startsWith('2026-10-')&&o.source_kind==='source-reported'&&o.control_snapshot_json&&o.test_revision_id)
+ for(const c of snapshot.changes)assert.ok(c.source_ref&&c.at&&c.attributes_json)
  assert.ok(snapshot.findings.some(r=>r.kind==='unknown'&&r.test_id===f.unknown))
  assert.ok(snapshot.findings.some(r=>r.kind==='unobserved-population'&&r.test_id===f.unobserved))
  const text=JSON.stringify(snapshot.findings)
@@ -82,6 +89,12 @@ export async function periodAgentJourney(app) {
  for(const id of f.tests)assert.deepEqual((await get('/api/tests/'+id)).exceptions,[])
  assert.equal((await get('/api/audit?action=agent.period-rejected')).entries.filter(e=>e.subject==='investigation:'+investigation.id).length,1)
  const replay=await app.fetch(base+'/decision',{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify({snapshot_hash:investigation.snapshot_hash,action:'reviewed',reason:'Replay'})});assert.equal(replay.status,409)
+ // An exception requires its separate owner approval; recording a review never approves one.
+ const exceptionPath='/api/tests/'+f.tests[0]+'/exceptions',exception={reason:'Owner-approved time-limited mitigation after independent review',expires_at:'2026-10-20T12:00:00Z'}
+ assert.equal((await app.fetch(exceptionPath,{method:'POST',headers:{cookie:'',origin:app.origin,'content-type':'application/json'},body:JSON.stringify(exception)})).status,401)
+ await post(exceptionPath,exception,201)
+ assert.equal((await get('/api/tests/'+f.tests[0])).exceptions.length,1)
+ assert.deepEqual(await get('/api/controls/'+control+'/report?from=2026-10-12&to=2026-10-14'),before,'Owner exception approval preserves the original evaluated facts')
  const {runtime}=await import('./runtime.mjs'),destination=await runtime()
  try {
   await destination.signin()

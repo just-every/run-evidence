@@ -77,11 +77,17 @@ export async function investigatePeriod(env: Bindings, controlId: string, from: 
    if (a >= b) continue
    const revision = history.filter(r => r.at <= a).at(-1)
    if (!revision) { add('cadence-unavailable', `Cadence history is unavailable from ${a} to ${b}; no cadence is reconstructed.`, test.id, null, []); continue }
-   const rows = observations.filter(o => o.test_id === test.id && o.observed_at >= a && o.observed_at <= b)
-   const points = [a, ...[...new Set(rows.map(o => o.observed_at))], b]
-   for (let j = 0; j < points.length - 1; j++) {
-    const gapStart = Date.parse(points[j]) + CADENCE_MS[revision.cadence] * 1.5
-    if (gapStart < Date.parse(points[j + 1])) add('missing-window', `No recorded observation from ${new Date(gapStart).toISOString()} to ${points[j + 1]}; event coverage is unknown. Cadence is ${revision.cadence}.`, test.id, null, [cite('test-revision', revision.id, revision.at), ...rows.filter(o => o.observed_at === points[j] || o.observed_at === points[j + 1]).flatMap(proof)])
+   const allRows = observations.filter(o => o.test_id === test.id && o.observed_at >= a && o.observed_at <= b)
+   const population = resources.filter(r => r.type === test.resource_type && r.first_seen_at <= b)
+   // Each asset has its own coverage. A busy asset cannot fill another's gap.
+   for (const resource of population.length ? population : [null]) {
+    const rows = resource ? allRows.filter(o => o.resource_id === resource.id) : allRows
+    const begins = resource && resource.first_seen_at > a ? resource.first_seen_at : a
+    const points = [begins, ...[...new Set(rows.filter(o => o.observed_at >= begins).map(o => o.observed_at))], b]
+    for (let j = 0; j < points.length - 1; j++) {
+     const gapStart = Date.parse(points[j]) + CADENCE_MS[revision.cadence] * 1.5
+     if (gapStart < Date.parse(points[j + 1])) add('missing-window', `No recorded observation${resource ? ' for ' + resource.display_name : ''} from ${new Date(gapStart).toISOString()} to ${points[j + 1]}; event coverage is unknown. Cadence is ${revision.cadence}. A recorded retirement may explain part of this window; it does not supply an observation.`, test.id, resource?.id ?? null, [cite('test-revision', revision.id, revision.at), ...rows.filter(o => o.observed_at === points[j] || o.observed_at === points[j + 1]).flatMap(proof)])
+    }
    }
   }
  }
@@ -117,7 +123,7 @@ export async function investigatePeriod(env: Bindings, controlId: string, from: 
   for (const test of tests.filter(t => t.resource_type === resource.type)) if (!observations.some(o => o.test_id === test.id && o.resource_id === resource.id)) add('unobserved-population', `Mapped ${resource.type} resource ${resource.id} has no observation for this test in the selected period. Removed history is retained. Origin: ${resource.source_kind}.`, test.id, resource.id, versions.map(v => cite('resource-version', v.id, v.at)))
  }
  for (const d of definitions.filter(d => String(d.effective_at) <= stop)) add('control-revision', `Control revision ${d.revision} effective ${d.effective_at}; earlier observations retain their captured meaning.`, null, null, [cite('control-revision', String(d.id), String(d.effective_at))])
- const snapshot = { control_id: controlId, from, to, generated_at: now.toISOString(), method: 'Deterministic correlation of complete bounded stored observations, exact resource identities, immutable resource changes, captured run/control and test revisions, and historical scope. No model or external calls. Source-reported records remain source-reported. Observation intervals are recorded evaluation intervals, not proof of continuous provider-event coverage; all unrecorded coverage remains unknown. Current test mappings select candidate populations; captured run definitions preserve historical associations. Findings and exception text are proposals only; owners decide control meaning and exceptions, auditors decide sufficiency. Future period time is not investigated.', findings, observations, changes, definitions, scope }
+ const snapshot = { control_id: controlId, from, to, generated_at: now.toISOString(), method: 'Deterministic correlation of complete bounded stored observations, exact resource identities, immutable resource changes, captured run/control and test revisions, and historical scope. No model or external calls. Source-reported records remain source-reported. A missing observation window starts after 1.5 times the recorded hourly or daily cadence. Scope matching uses exact resource IDs, without inferring identities. Contradictions compare opposite results with identical serialized criteria on the same resource, at equal evaluation times or strictly overlapping recorded intervals. Observation intervals are recorded evaluation intervals, not proof of continuous provider-event coverage; all unrecorded coverage remains unknown. Current test mappings select candidate populations; captured run definitions preserve historical associations. Findings and exception text are proposals only; owners decide control meaning and exceptions, auditors decide sufficiency. Future period time is not investigated.', findings, observations, changes, definitions, scope }
  // Retain run snapshots even for zero-population runs without observations.
  const result = { ...snapshot, run_definitions: runDefinitions }
  if (new TextEncoder().encode(JSON.stringify(result)).byteLength > BYTE_LIMIT) throw new Refusal('Investigation snapshot exceeds 8 MiB; select a narrower audit period.', 413)

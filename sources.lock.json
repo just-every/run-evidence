@@ -3820,7 +3820,7 @@
       "executable": false
     },
     "src/evidence/agent/period-analysis.ts": {
-      "sha256": "14e89e9eba30c068903529a54dff74b238547249c589dbeaf1d20163b76fdd9e",
+      "sha256": "4cb7a5742bd45582a116e5a4efce5ea99d000e67548414bb03e47460e81ac763",
       "executable": false
     },
     "src/evidence/agent/period-archive.ts": {
@@ -3836,7 +3836,7 @@
       "executable": false
     },
     "src/evidence/agent/period-view.ts": {
-      "sha256": "67f8a708d6ee35d184e05307fe4140f1fb3dde4643ea06e7d0f9cb1e12a63bed",
+      "sha256": "d5034edd6d055fc916804fe3d8be0a69c482010a2f690e7f31c28be7a844c57f",
       "executable": false
     },
     "src/evidence/agent/storage.ts": {
@@ -6428,7 +6428,7 @@
       "executable": false
     },
     "tests/helpers/period-agent-journey.mjs": {
-      "sha256": "f9b11295cead811dcb3c9ae5af0a12c2d571b74b9f8380fe5a88dcf911940a99",
+      "sha256": "9a916cbfb2c9b0702f112ea6416590e7b9703fa72283a9cf09e8c8af265146aa",
       "executable": false
     },
     "tests/helpers/population-browser.mjs": {
@@ -6528,7 +6528,7 @@
       "executable": false
     },
     "tests/period-agent-browser.mjs": {
-      "sha256": "cc2c377555fc088fc4a0b9eb7718b23a836c9c237e46a1b93e02ec4c48bff825",
+      "sha256": "c6b3f222831ae9ab0d51152541ad7c6b74e449dbdbd6fa7dbe2d041baa3f1794",
       "executable": false
     },
     "tests/policy.mjs": {
