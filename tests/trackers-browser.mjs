@@ -7,6 +7,7 @@ import { readFile, mkdir } from 'node:fs/promises'
 import { resolve, extname, join } from 'node:path'
 import { chromium } from 'playwright'
 import { runtime } from './helpers/runtime.mjs'
+import { azureDeadlineBrowser } from './helpers/azure-deadline-browser.mjs'
 import { trackerFixture, configs } from './helpers/tracker-fixture.mjs'
 const edge=trackerFixture(),app=await runtime({outbound:edge.outbound})
 const output=resolve(process.env.EVIDENCE_BROWSER_OUTPUT??'.cache/browser/trackers')
@@ -69,6 +70,7 @@ try {
     assert.equal(await page.getByRole('button',{name:'Register Asana webhook'}).count(),0)
    }
    await capture(provider+'-details')
+   if(provider==='azure-boards')await azureDeadlineBrowser({page,app,edge,cookie,destination:dest[provider],width,capture})
   }
   assert.deepEqual(errors,[])
   console.log(`PASS WORK-001: tracker setup, all nine destination details, cost disclosures, field rules, keyboard access and overflow at ${width}`)

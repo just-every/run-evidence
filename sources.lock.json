@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "99e7dc8d1719870a527461cc56d0e13e71db7fd2a9b3444a67451f96ac15f6aa",
+  "manifest": "a3ecc9dce27bd462662b2640c4e6573e397cba1a6bdc4292980e56af30205111",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2817,6 +2817,7 @@
           "tests/followup.mjs",
           "tests/github.mjs",
           "tests/handover.mjs",
+          "tests/helpers/azure-deadline-browser.mjs",
           "tests/helpers/collection-journey.mjs",
           "tests/helpers/collector-browser.mjs",
           "tests/helpers/control-browser.mjs",
@@ -2982,7 +2983,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "99e7dc8d1719870a527461cc56d0e13e71db7fd2a9b3444a67451f96ac15f6aa",
+      "sha256": "a3ecc9dce27bd462662b2640c4e6573e397cba1a6bdc4292980e56af30205111",
       "executable": false
     },
     "LICENSE": {
@@ -6301,6 +6302,10 @@
       "sha256": "1fdd2ea4245e573f915b8672a37f1c7ce1064b4aeb7d5ad16e115427399a57ec",
       "executable": false
     },
+    "tests/helpers/azure-deadline-browser.mjs": {
+      "sha256": "a14159c4f839c333d190dd5c34c48d53b8af696c82d1a2028baecdd7ab99da3c",
+      "executable": false
+    },
     "tests/helpers/collection-journey.mjs": {
       "sha256": "3a9cd67e38cef5e7b6ba1581a524350782909212bcc2593b158c9424a673eece",
       "executable": false
@@ -6486,7 +6491,7 @@
       "executable": false
     },
     "tests/trackers-browser.mjs": {
-      "sha256": "88cbeb3f633d8abdde4b7a4c50deb00717b2ee9ae0daaa9397a5e90c499ecbfa",
+      "sha256": "cb9bd4edb35d169018a3d8541ecd0edad73efec3cbc457ce8fe077b2fca09f33",
       "executable": false
     },
     "tests/trackers.mjs": {

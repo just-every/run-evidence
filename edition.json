@@ -2809,6 +2809,7 @@
           "tests/followup.mjs",
           "tests/github.mjs",
           "tests/handover.mjs",
+          "tests/helpers/azure-deadline-browser.mjs",
           "tests/helpers/collection-journey.mjs",
           "tests/helpers/collector-browser.mjs",
           "tests/helpers/control-browser.mjs",
