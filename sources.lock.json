@@ -6444,7 +6444,7 @@
       "executable": false
     },
     "tests/helpers/portable-format.mjs": {
-      "sha256": "5f1826e626a478b9eed450f6b4aeaa6ffb2f7add839138953cba12a4019617c1",
+      "sha256": "ac31a28ebbf102806aa6f326e641cbef5c84941a142b6f4a5c8fff8906ae1b02",
       "executable": false
     },
     "tests/helpers/portable-journey.mjs": {
