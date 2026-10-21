@@ -57,6 +57,6 @@ export function exportAnswers(filename:string,bytes:Uint8Array,mapping:Mapping,a
 // A reviewer may map an exact cited passage to a declared binary choice.
 // Unknown formats remain flagged rather than guessing the buyer's vocabulary.
 export function choiceValues(format:string):string[] {
- const parts=format.trim().split(/\s*[/|,]\s*/)
- return parts.length>=2&&parts.length<=3&&/^yes$/i.test(parts[0])&&/^no$/i.test(parts[1])&&(parts.length===2||/^(?:na|n\/a|not applicable)$/i.test(parts[2]))?parts:[]
+ const match=/^(yes)\s*[/|,]\s*(no)(?:\s*[/|,]\s*(na|n\/a|not applicable))?$/i.exec(format.trim())
+ return match?match.slice(1).filter((s):s is string=>!!s):[]
 }

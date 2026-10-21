@@ -27,7 +27,7 @@ export async function uploadQuestionnaire(env:Bindings,request:Request,actor:Act
 const words=(s:string)=>new Set(s.toLowerCase().match(/[a-z]{4,}/g)?.filter(w=>!['what','does','your','with','that','this','have','from','please','describe','provide','which','when'].includes(w))??[])
 export function extractiveAnswers(questions:Question[],selected:Source[]):Answer[]{return questions.map(q=>{
  const terms=words(q.question),matches=selected.filter(s=>{const found=[...words(s.quote)].filter(w=>terms.has(w));return found.length>=2})
- if(!/^text$|free.?text|narrative/i.test(q.format))return {id:q.id,answer:'',state:'flagged',reason:'Required non-text answer format needs reviewed mapping; no value is inferred.',citations:[]}
+ if(!/^(?:text|free.?text|narrative)$/i.test(q.format))return {id:q.id,answer:'',state:'flagged',reason:'Required non-text answer format needs reviewed mapping; no value is inferred.',citations:[]}
  if(matches.some(s=>['fail','unknown'].includes(s.state)))return {id:q.id,answer:'',state:'conflicting',reason:'Matching evidence includes a failure or unknown; reconcile the contradiction.',citations:matches}
  const match=matches[0];return match?{id:q.id,answer:match.quote,state:'cited',reason:'Exact source excerpt; reviewer must assess relevance.',citations:[match]}:{id:q.id,answer:'',state:'flagged',reason:'No authorized matching source passage.',citations:[]}
 })}
@@ -40,7 +40,7 @@ export async function appendDraft(env:Bindings,q:string,answers:Answer[],actor:A
   if(a.state!=='cited')return a.answer!==''
   if(!a.citations.length)return true
   const q=questions[i]
-  if(/^text$|free.?text|narrative/i.test(q.format))return !!a.mapping||a.answer!==a.citations.map(c=>c.quote).join('\n\n')
+  if(/^(?:text|free.?text|narrative)$/i.test(q.format))return !!a.mapping||a.answer!==a.citations.map(c=>c.quote).join('\n\n')
   return !a.mapping||a.mapping.format!==q.format||a.mapping.value!==a.answer||!choiceValues(q.format).includes(a.answer)||!a.mapping.reason.trim()
  }))throw new Refusal('Each answer needs exact cited excerpts or an explicit reviewed mapping to its declared choice format; otherwise flag it.')
  await assertSources(env,answers.flatMap(a=>a.citations),now)
@@ -57,7 +57,7 @@ export async function editDraft(env:Bindings,q:string,id:string,input:Input,acto
  if(input.flag==='yes')Object.assign(answer,{answer:'',state:'flagged',reason:text(input,'reason',500),citations:[]})
  else {
   if(!src)throw new Refusal('Select an authorized source passage.')
-  if(/^text$|free.?text|narrative/i.test(question.format))Object.assign(answer,{answer:src.quote,state:'cited',reason:'Reviewer selected exact source passage',citations:[src]})
+  if(/^(?:text|free.?text|narrative)$/i.test(question.format))Object.assign(answer,{answer:src.quote,state:'cited',reason:'Reviewer selected exact source passage',citations:[src]})
   else {
    const value=text(input,'answer_value',100),reason=text(input,'reason',500)
    if(input.mapping_confirm!=='yes'||!choiceValues(question.format).includes(value))throw new Refusal('Explicitly confirm that the cited passage supports this exact declared choice. Unknown formats must stay flagged.')

@@ -15,7 +15,7 @@ export async function validateFeatureRecords(env:Store,id:string) {
    for(const [i,a]of value.answers.entries()){
     if(a.id!==value.questions[i].id||!['cited','flagged','conflicting'].includes(a.state)||!Array.isArray(a.citations))fail('Invalid retained questionnaire answer.')
     stats[a.state as 'cited'|'flagged'|'conflicting']++
-    if(a.state==='cited'&&(!a.citations.length||(a.mapping?(!choiceValues(value.questions[i].format).includes(a.answer)||a.mapping.value!==a.answer||a.mapping.format!==value.questions[i].format||!a.mapping.reason?.trim()):a.answer!==a.citations.map((c:any)=>c.quote).join('\n\n')))||a.state!=='cited'&&a.answer!=='')fail('Uncited retained questionnaire answer.')
+    if(a.state==='cited'&&(!a.citations.length||(a.mapping?(!choiceValues(value.questions[i].format).includes(a.answer)||a.mapping.value!==a.answer||a.mapping.format!==value.questions[i].format||(typeof a.mapping.reason!=='string'||!a.mapping.reason.trim())):a.answer!==a.citations.map((c:any)=>c.quote).join('\n\n')))||a.state!=='cited'&&a.answer!=='')fail('Uncited retained questionnaire answer.')
     for(const c of a.citations){
      let expected=''
      if(c.kind==='policy'){const p=await env.DB.prepare(`SELECT policy_id,body,body_sha256 FROM ${t('policy_revisions')} WHERE id=?`).bind(c.source_id).first<any>();if(!p||p.body_sha256!==c.revision||!p.body.includes(c.quote))fail('Invalid retained policy citation.');expected=`/app/policies/${p.policy_id}/revisions/${c.source_id}`}

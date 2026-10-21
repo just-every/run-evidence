@@ -67,6 +67,10 @@ export async function answerJourney(){const app=await runtime();try{
  assert.equal((await app.fetch(created[2].path+'/export?recipient=buyer@customer.test')).status,200)
  await uploadReport(socReport('qualified'))
  assert.equal((await app.fetch(created[2].path+'/export?recipient=buyer@customer.test')).status,409,'superseded report invalidates its exact answer set')
+ const undated=await uploadReport(pdfFixture([['SOC 2 Type II','Opinion: unqualified',quote]])),undatedReview=await post(`/api/vendors/${vendor.id}/documents/${undated.id}/reviews`,{})
+ await post(`/api/vendors/${vendor.id}/document-reviews/${undatedReview.id}/decision`,{snapshot_hash:undatedReview.snapshot_hash,decision:'approved',reviewer_person_id:reviewer.id,reason:'The source is retained, with period explicitly unresolved'},200)
+ await post('/api/questionnaires/sources',{kind:'audit-report',source_id:undatedReview.id,quote},409)
+
  // Contradictory source observations are not hidden by an approved policy.
  const token=await post('/api/api-tokens',{name:'Questionnaire observation feed',scopes:['resource-push','read'],expires_at:'2027-01-01'})
  const put=async(path,body)=>{const r=await app.fetch(path,{method:'PUT',headers:{cookie:'',authorization:'Bearer '+token.token,'content-type':'application/json'},body:JSON.stringify(body)});assert.equal(r.status,200,path+' '+await r.clone().text());return r.json()}

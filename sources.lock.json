@@ -3963,7 +3963,7 @@
       "executable": false
     },
     "src/evidence/answer/format.ts": {
-      "sha256": "4a590f64584045f07b2f7ea3a75802911cc6d3bb7e93f0eddb525e0152e83ebe",
+      "sha256": "b33409e94168b7dfd12719ec9ea8fa7d723932f7edfe92a11aa0440245632aa5",
       "executable": false
     },
     "src/evidence/answer/http.ts": {
@@ -3971,11 +3971,11 @@
       "executable": false
     },
     "src/evidence/answer/sources.ts": {
-      "sha256": "3f761958b4172c23015e174b538f661906a6dffb5953d861a68c077591273ec2",
+      "sha256": "00c90a46f1bdf2ed7160c192511e4694c9ce6765f3c1ae63373fc1a0b388386d",
       "executable": false
     },
     "src/evidence/answer/storage.ts": {
-      "sha256": "6d235aeab544f85067163f4ef33302e17b66abc7333ee7124ccbc0bd3631b453",
+      "sha256": "9ac333c6c9b33768e8aa7cc7c3c17bb14e2c1c89a1678dc18bd17105f4940b75",
       "executable": false
     },
     "src/evidence/api/collections.ts": {
@@ -4011,7 +4011,7 @@
       "executable": false
     },
     "src/evidence/archive/feature-records.ts": {
-      "sha256": "cb2fea476b5f4941989cabc428f3648fe1ad8f64618be6b19bcce00612dc6581",
+      "sha256": "7d951d24259f75bc87ce67b502e7e71e64a7f1ba1c9a0d60353ec095fbeb9d7a",
       "executable": false
     },
     "src/evidence/archive/files.ts": {
@@ -6631,7 +6631,7 @@
       "executable": false
     },
     "tests/helpers/answer-journey.mjs": {
-      "sha256": "6108b80d0c62303308b6f4731f0b9d6c4ccc48ac376a9e31a4df03d049ea09b2",
+      "sha256": "fb8b6a22caee0250e44910faef1a54257f3bd72ff64bab5dc34dc45dd37fa0c1",
       "executable": false
     },
     "tests/helpers/assurance-browser.mjs": {

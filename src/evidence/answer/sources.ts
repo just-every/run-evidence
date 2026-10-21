@@ -25,6 +25,7 @@ export async function resolveSource(env:Bindings,kind:string,id:string,quote:str
   const page=snapshot.pages.findIndex(p=>p.includes(quote));if(page<0)throw new Refusal('The passage is absent from the approved report.')
   body=snapshot.pages[page];revision=r.snapshot_hash+':'+doc.sha256
   const period=snapshot.fields.find(f=>f.kind==='period')?.value??'',dates=period.match(/\d{4}-\d\d-\d\d/g)
+  if(!period.trim())throw new Refusal('Review a cited report period or as-of date before using this report as an answer source.',409)
   from=dates?.[0]??period;to=dates?.at(-1)??''
   state=snapshot.fields.some(f=>(f.kind==='exception'||(f.kind==='opinion'&&f.value!=='unqualified'))&&(f.quote.includes(quote)||quote.includes(f.quote)))?'fail':'approved'
   href=`/app/vendors/${r.vendor_id}/document-reviews/${id}/pages/${page+1}`
