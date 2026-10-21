@@ -6510,7 +6510,7 @@
       "executable": false
     },
     "tests/helpers/tracker-fields-browser.mjs": {
-      "sha256": "1d76f5bb4037b1b38e4e459eb63593070c10aa86119fe21c7ada315d6aeb0987",
+      "sha256": "f9c8fb0a24d69711a22fd8d775e291c8d625dae8da7889819df67da4c8ae478e",
       "executable": false
     },
     "tests/helpers/tracker-fixture.mjs": {

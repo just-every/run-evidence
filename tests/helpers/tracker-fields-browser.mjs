@@ -22,10 +22,22 @@ export async function trackerFieldsBrowser({page,app,edge,cookie,destination,tic
  assert.ok((await detail()).tickets[0].remote_assignee)
  await capture(provider+'-fields-written')
  await page.getByRole('link',{name:'Edit tracker fields',exact:true}).click()
+ await page.getByLabel('Tracker assignee',{exact:true}).selectOption('lena@northstar.test')
+ await page.getByLabel('Reason',{exact:true}).fill('Check the provider confirmation before claiming this write.')
+ edge.state.unconfirmedFields=provider
+ await Promise.all([page.waitForNavigation(),page.getByRole('button',{name:'Write tracker fields',exact:true}).click()])
+ assert.match(await page.locator('main').innerText(),/did not confirm/)
+ await capture(provider+'-field-unconfirmed-error')
+ edge.state.unconfirmedFields=null
+ await page.goto(host+'/app/remediation/'+ob.id)
+ assert.match(await page.locator('main').innerText(),/field write uncertain/)
+ assert.equal((await detail()).obligation.state,'open')
+ await capture(provider+'-fields-uncertain')
+ await page.getByRole('link',{name:'Edit tracker fields',exact:true}).click()
  await page.getByLabel('Tracker assignee',{exact:true}).selectOption('dana@northstar.test')
  await page.getByLabel('Reason',{exact:true}).fill('Keep Dana after checking the source.')
  const remote=edge.find(provider,ticket.remote_id)
- remote.assignee='Lena Ortiz';remote.assigneeIds=[write.otherAssignee]
+ remote.assignee='Lena Ortiz'
  await Promise.all([page.waitForNavigation(),page.getByRole('button',{name:'Write tracker fields',exact:true}).click()])
  assert.equal(await page.getByRole('alert').count(),1)
  assert.match(await page.locator('main').innerText(),/Tracker fields changed/)
@@ -43,5 +55,12 @@ export async function trackerFieldsBrowser({page,app,edge,cookie,destination,tic
  assert.equal(view.obligation.state,'awaiting verification')
  assert.ok(view.events.some(e=>e.kind==='closed in tracker'))
  await capture(provider+'-closed-awaiting-verification')
+ assert.equal((await app.tick()).outcome,'ok')
+ await page.reload()
+ const retested=await detail()
+ assert.equal(retested.obligation.state,'open')
+ assert.equal(retested.observations[0].result,'fail')
+ assert.equal(retested.observations[0].run_trigger,'retest')
+ await capture(provider+'-closed-retested-open')
  console.log(`PASS WORK-001: ${provider} mapped assignee/status writes, conflict, fresh decision and unverified closure at ${width}`)
 }
