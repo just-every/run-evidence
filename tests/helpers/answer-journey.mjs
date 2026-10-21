@@ -29,6 +29,18 @@ export async function answerJourney(){const app=await runtime();try{
   const retained=await (await app.mf.getR2Bucket('EXHIBITS')).get(q.object_key);assert.deepEqual(Buffer.from(await retained.arrayBuffer()),Buffer.from(bytes))
   created.push({q,draft,path})
  }
+ // Contradictory source observations are not hidden by an approved policy.
+ const token=await post('/api/api-tokens',{name:'Questionnaire observation feed',scopes:['resource-push','read'],expires_at:'2027-01-01'})
+ const put=async(path,body)=>{const r=await app.fetch(path,{method:'PUT',headers:{cookie:'',authorization:'Bearer '+token.token,'content-type':'application/json'},body:JSON.stringify(body)});assert.equal(r.status,200,path+' '+await r.clone().text());return r.json()}
+ await put('/v1/resource-types/questionnaire_service',{schema:{fields:{access_reviews_quarterly:'boolean'},required:['access_reviews_quarterly']}})
+ await put('/v1/resources/questionnaire_service',{resources:[{uniqueId:'synthetic-evidence-questionnaire-service',displayName:'Questionnaire review source',attributes:{access_reviews_quarterly:false}}]})
+ const test=await post('/api/tests',{name:'Quarterly access reviews',resourceType:'questionnaire_service',criteria:JSON.stringify([{attribute:'access_reviews_quarterly',op:'equals',value:true}]),cadence:'hourly',category:'identity',severity:'high',controls:[]})
+ await post('/api/tests/'+test.id+'/run',{},200)
+ const observed=await app.fetch('/v1/test-results?limit=100',{headers:{cookie:'',authorization:'Bearer '+token.token}});assert.equal(observed.status,200)
+ const observation=(await observed.json()).data.find(o=>o.result==='fail');assert.ok(observation)
+ await post('/api/questionnaires/sources',{kind:'observation',source_id:observation.id,quote:'access_reviews_quarterly'})
+ const conflicting=await post(`/api/questionnaires/${created[2].q.id}/drafts`,{}),conflicts=(await get(`/api/questionnaires/${created[2].q.id}/drafts/${conflicting.id}`)).snapshot
+ assert.deepEqual(conflicts.stats,{cited:0,flagged:2,conflicting:1,total:3});assert.equal(conflicts.answers[0].answer,'');assert.ok(conflicts.answers[0].citations.some(c=>c.state==='fail'))
  const checklist=(await get('/api/programs/'+program.id)).readiness.checklist.find(a=>a.area==='Questionnaires');assert.equal(checklist.total,3);assert.equal(checklist.ready,0);assert.equal(checklist.records.length,3)
  const current=created[0],edit=await post(current.path+'/edit',{snapshot_hash:current.draft.snapshot_hash,question_id:'Q2',flag:'yes',reason:'Buyer asks about an unsupported activity'})
  assert.equal((await app.fetch(current.path+'/export?recipient=buyer@customer.test')).status,409,'a new draft requires a fresh decision')

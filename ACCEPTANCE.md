@@ -353,7 +353,7 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: `src/evidence/upload.ts`; `src/evidence/storage.ts`; `src/evidence/review/http.ts`; `tests/evidence.mjs`; `tests/review.mjs`. Current limit: Owner access, verified attachment responses and narrowly scoped reviewer projections exist; target record permissions, complete flow declarations and new provider/key custody do not.
 
-- **ERASE-001 — Explicit erasure, holds and restore fencing · partial.** In Privacy, preview and confirm each entity and business erasure with linked imports, receipts, blobs and active shares. Verify exact stored bytes/derivatives disappear, all grants fail, held items are disclosed and actor references anonymize. Restore a pre-erasure archive with the later journal: erased content and authority cannot resurrect. Interrupt a provider deletion and inspect pending work rather than a false completion.
+- **ERASE-001 — Explicit erasure, holds and restore fencing · partial.** In Privacy, preview and confirm each entity and business erasure with linked imports, mirrored tracker comment text (including held text), receipts, blobs and active shares. Verify exact stored bytes/derivatives disappear, all grants fail, held items are disclosed and actor references anonymize. Restore a pre-erasure archive with the later journal: erased content and authority cannot resurrect. Interrupt a provider deletion and inspect pending work rather than a false completion.
 
   Current evidence: —.
 
