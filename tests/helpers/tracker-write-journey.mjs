@@ -27,6 +27,7 @@ export async function trackerWriteJourney({provider,app,owner,get,remote,ticket,
  assert.equal(edge.fieldCalls.length,beforeRefused,'authority refusal must happen before provider access')
  await owner(path,{...request,assignee:'unmapped@northstar.test'},400)
  await owner(path,{...request,status:'unmapped-state'},400)
+ if(provider==='vector')await owner(path,{...request,snapshot:JSON.stringify({status_id:null,assignee_ids:null})},409)
  assert.equal(edge.fieldCalls.length,beforeRefused,'unmapped identities must be refused before provider access')
  const start=edge.fieldCalls.length
  await owner(path,request,200)

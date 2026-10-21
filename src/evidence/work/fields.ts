@@ -1,13 +1,13 @@
 import type { Bindings } from '../../auth.server'
 import { auditStatement, text, type Actor, type Input } from '../door'
 import { Refusal } from '../upload'
-import { TrackerFailure, type Remote, type FieldChanges } from './client'
+import { TrackerFieldConflict, TrackerFailure, type Remote, type FieldChanges } from './client'
 import { adapters, mappingOf, reference, requireDestination, requireTicket, secretOf } from './storage'
 import { syncTicket } from './sync'
 
 // WORK-001: a human edits explicit provider mappings against a fresh identity
 // snapshot. Display names never establish identity or authorize a tracker write.
-export const fieldSnapshot = (remote: Remote) => JSON.stringify({ status_id: remote.status_id, assignee_ids: remote.assignee_ids === null ? null : [...remote.assignee_ids].sort() })
+export const fieldSnapshot = (remote: Pick<Remote, 'status_id' | 'assignee_ids'>) => JSON.stringify({ status_id: remote.status_id, assignee_ids: remote.assignee_ids === null ? null : [...remote.assignee_ids].sort() })
 const targetRef = (ticket: Awaited<ReturnType<typeof requireTicket>>) => {
  if (!ticket.remote_id || !ticket.remote_key) throw new Refusal('Create a linked tracker ticket first.', 409)
  return { remote_id: ticket.remote_id, remote_key: ticket.remote_key }
@@ -26,6 +26,16 @@ function expectedSnapshot(input: Input) {
   if (!parsed || !Object.hasOwn(parsed, 'status_id') || !Object.hasOwn(parsed, 'assignee_ids') || (parsed.status_id !== null && typeof parsed.status_id !== 'string') || (parsed.assignee_ids !== null && (!Array.isArray(parsed.assignee_ids) || parsed.assignee_ids.some((id: unknown) => typeof id !== 'string')))) throw Error()
   return parsed as { status_id: string | null; assignee_ids: string[] | null }
  } catch { throw new Refusal('Read the tracker fields again before editing them.') }
+}
+async function conflict(env: Bindings, actor: Actor, ticketId: string, remote: Pick<Remote, 'status_id' | 'assignee_ids'>, expected: unknown, fields: FieldChanges, reason: string, now: Date): Promise<never> {
+ const at=now.toISOString()
+   const current = fieldSnapshot(remote), intended = JSON.stringify(fields)
+   await env.DB.batch([
+    env.DB.prepare("UPDATE tickets SET sync_state='field conflict',sync_error=?,last_attempt_at=? WHERE id=?").bind('Tracker fields changed after the displayed snapshot. Read again and explicitly choose the new change.', at, ticketId),
+    env.DB.prepare("INSERT INTO ticket_events(id,ticket_id,kind,remote_value,local_value,detail,trigger,at) VALUES(?,?,'field conflict',?,?,?,'owner',?)").bind(crypto.randomUUID(), ticketId, current, intended, `Expected ${JSON.stringify(expected)}; ${reason}`, at),
+    auditStatement(env, actor, 'ticket.fields', 'ticket:' + ticketId, now, 'refused', 'Read-before-write conflict; no fields written.', { reason, revision: JSON.stringify(expected) }),
+   ])
+ throw new Refusal('Tracker fields changed. Both values and the conflict time are in Sync history; read again before choosing a new change.', 409, { tracker: current, evidence: intended, at })
 }
 export async function writeFields(env: Bindings, actor: Actor, ticketId: string, input: Input, now: Date) {
  const expected = expectedSnapshot(input), reason = text(input, 'reason', 1000), at = now.toISOString()
@@ -53,15 +63,7 @@ export async function writeFields(env: Bindings, actor: Actor, ticketId: string,
   const secret = await secretOf(env, destination), remote = await adapter.read(reference(destination), secret, ref)
   const assigneeChanged = fields.assignee !== undefined && (remote.assignee_ids === null || JSON.stringify([...remote.assignee_ids].sort()) !== JSON.stringify([...(expected.assignee_ids ?? [])].sort()))
   const statusChanged = fields.status !== undefined && (remote.status_id === null || remote.status_id !== expected.status_id)
-  if (assigneeChanged || statusChanged) {
-   const current = fieldSnapshot(remote), intended = JSON.stringify(fields)
-   await env.DB.batch([
-    env.DB.prepare("UPDATE tickets SET sync_state='field conflict',sync_error=?,last_attempt_at=? WHERE id=?").bind('Tracker fields changed after the displayed snapshot. Read again and explicitly choose the new change.', at, ticketId),
-    env.DB.prepare("INSERT INTO ticket_events(id,ticket_id,kind,remote_value,local_value,detail,trigger,at) VALUES(?,?,'field conflict',?,?,?,'owner',?)").bind(crypto.randomUUID(), ticketId, current, intended, `Expected ${JSON.stringify(expected)}; ${reason}`, at),
-    auditStatement(env, actor, 'ticket.fields', 'ticket:' + ticketId, now, 'refused', 'Read-before-write conflict; no fields written.', { reason, revision: JSON.stringify(expected) }),
-   ])
-   throw new Refusal('Tracker fields changed. Both values and the conflict time are in Sync history; read again before choosing a new change.', 409, { tracker: current, evidence: intended, at })
-  }
+  if (assigneeChanged || statusChanged) return conflict(env,actor,ticketId,remote,expected,fields,reason,now)
   submitted = true
   await adapter.setFields(reference(destination), secret, ref, fields, remote)
   const observed = await adapter.read(reference(destination), secret, ref)
@@ -74,6 +76,7 @@ export async function writeFields(env: Bindings, actor: Actor, ticketId: string,
   await syncTicket(env, await requireTicket(env, ticketId), 'owner field write', now)
   return { written: true, remote: observed }
  } catch (error) {
+  if (error instanceof TrackerFieldConflict) return conflict(env,actor,ticketId,error.current,expected,fields,reason,now)
   if (error instanceof Refusal) {
    if (error.status !== 409 || !error.details) await env.DB.prepare('UPDATE tickets SET sync_state=? WHERE id=? AND sync_state=\'writing fields\'').bind(ticket.sync_state,ticketId).run()
    throw error

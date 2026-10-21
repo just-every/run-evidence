@@ -15,6 +15,9 @@ export interface RemoteComment { id: string; author: string; body: string; at: s
 // conflict baseline from a display name (multiple people can share one).
 export interface FieldChanges { assignee?: string | null; status?: string }
 export interface Remote { status_id: string | null; assignee_ids: string[] | null; status: string; closed: boolean; assignee: string | null; due: string | null; comments: RemoteComment[] }
+export class TrackerFieldConflict extends TrackerFailure {
+ constructor(public current: Pick<Remote, 'status_id' | 'assignee_ids'>, provider: string) { super('invalid',409,provider + ' changed the selected fields after the owner read; read the current values before writing.') }
+}
 export interface TicketRef { remote_id: string; remote_key: string }
 export interface Created { id: string; key: string; url: string }
 export interface HookRef { delivery: string; ref: string }
@@ -82,5 +85,5 @@ export function assertFieldBaseline(previous: Remote | undefined, current: Pick<
  if (!previous) return
  const changedAssignee = fields.assignee !== undefined && (current.assignee_ids === null || previous.assignee_ids === null || JSON.stringify([...current.assignee_ids].sort()) !== JSON.stringify([...previous.assignee_ids].sort()))
  const changedStatus = fields.status !== undefined && (current.status_id === null || previous.status_id === null || current.status_id !== previous.status_id)
- if (changedAssignee || changedStatus) throw new TrackerFailure('invalid', 409, provider + ' changed the selected fields after the owner read; read the current values before writing.')
+ if (changedAssignee || changedStatus) throw new TrackerFieldConflict(current, provider)
 }

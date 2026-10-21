@@ -11,12 +11,12 @@ const statuses={
 export const configs=Object.fromEntries(Object.entries(legacyConfigs).map(([p,c])=>[p,{...c,write:{open:statuses[p][0],working:statuses[p][1],done:statuses[p][2],assignee:p==='shortcut'?'u1':'1',otherAssignee:p==='shortcut'?'u2':'2'}}]))
 const response=(body,status=200)=>new Response(status===204?null:JSON.stringify(body),{status,headers:{'content-type':'application/json'}})
 const ids=(p,i)=>i.assignee?[i.assignee==='Dana Lee'?configs[p].write.assignee:configs[p].write.otherAssignee]:[]
-const status=(p,i)=>statuses[p][i.closed?2:/In Progress|Working|Pending/.test(i.status)?1:0]
+const status=(p,i)=>p==='freshservice'?(i.closed?'4':i.status==='Pending'?'3':'2'):p==='azure-boards'&&!i.closed?i.status:statuses[p][i.closed?2:/In Progress|Working/.test(i.status)?1:0]
 const field=(body,key)=>Object.hasOwn(body??{},key)
 export function trackerFixture() {
  const edge=legacyFixture(),outbound=edge.outbound,fieldCalls=[]
  const setAssignee=(p,i,value)=>{const values=Array.isArray(value)?value:value==null||value===''?[]:[value];assert.ok(values.every(v=>[configs[p].write.assignee,configs[p].write.otherAssignee].includes(String(v))),'native assignee identity');i.assignee=values.length?String(values[0])===configs[p].write.assignee?'Dana Lee':'Lena Ortiz':null}
- const setStatus=(p,i,value)=>{const index=statuses[p].findLastIndex(v=>v===String(value));assert.ok(index>=0,p+' native status '+value);i.closed=index===2;i.status=i.closed?(p==='youtrack'?'Fixed':'Done'):index===1?'In Progress':'Open';if(p==='monday'&&!i.closed)i.status='Working'}
+ const setStatus=(p,i,value)=>{const index=p==='azure-boards'&&value==='New'?0:statuses[p].findLastIndex(v=>v===String(value));assert.ok(index>=0,p+' native status '+value);i.closed=index===2;i.status=i.closed?(p==='youtrack'?'Fixed':'Done'):index===1?'In Progress':'Open';if(p==='monday'&&!i.closed)i.status='Working';if(p==='azure-boards'&&value==='New')i.status='New';if(p==='freshservice'&&index===1)i.status='Pending'}
  const matching=(p,path,b)=>{
   if(p==='linear')return edge.find(p,String(b?.variables?.id??b?.variables?.input?.issueId))
   if(p==='monday')return edge.find(p,String(b?.variables?.item??b?.variables?.ids?.[0]))
