@@ -1,4 +1,4 @@
-import { call, TrackerFailure, type Adapter } from './client'
+import { nativeId, nativeIds, stateValue, call, TrackerFailure, type Adapter } from './client'
 // GitHub Issues under a separate issue-write token: collection credentials
 // (CONNECT-001) never hold Issues write. GitHub issues have no due date field,
 // so the remediation deadline is written into the issue body and labels carry
@@ -30,12 +30,18 @@ export const githubIssues: Adapter = {
   return { id: String(created.number), key: `${d.project}#${created.number}`, url: created.html_url }
  },
  async read(d, token, t) {
-  const issue = (await call(`${repoPath(d)}/issues/${encodeURIComponent(t.remote_id)}`, { headers: headers(token), label })).body as { state?: string; state_reason?: string | null; assignee?: { login?: string } | null; body?: string | null }
+  const issue = (await call(`${repoPath(d)}/issues/${encodeURIComponent(t.remote_id)}`, { headers: headers(token), label })).body as { state?: string; state_reason?: string | null; assignee?: { login?: string } | null; assignees?: { login?: string }[]; body?: string | null }
   const comments = (await call(`${repoPath(d)}/issues/${encodeURIComponent(t.remote_id)}/comments?per_page=100`, { headers: headers(token), label })).body as unknown
   if (!Array.isArray(comments)) throw new TrackerFailure('unavailable', 200, 'GitHub returned no comment list.')
-  return { status: issue.state === 'closed' ? `closed (${issue.state_reason ?? 'completed'})` : 'open', closed: issue.state === 'closed', assignee: issue.assignee?.login ?? null, due: bodyDue(issue.body), comments: comments.map((c: { id: number; user?: { login?: string }; body?: string; created_at: string }) => ({ id: String(c.id), author: c.user?.login ?? 'GitHub user', body: String(c.body ?? ''), at: c.created_at })) }
+  return { status_id: nativeId(issue.state), assignee_ids: nativeIds(issue.assignees?.map(a => a.login)), status: issue.state === 'closed' ? `closed (${issue.state_reason ?? 'completed'})` : 'open', closed: issue.state === 'closed', assignee: issue.assignee?.login ?? null, due: bodyDue(issue.body), comments: comments.map((c: { id: number; user?: { login?: string }; body?: string; created_at: string }) => ({ id: String(c.id), author: c.user?.login ?? 'GitHub user', body: String(c.body ?? ''), at: c.created_at })) }
  },
  async comment(d, token, t, body) { return String(((await call(`${repoPath(d)}/issues/${encodeURIComponent(t.remote_id)}/comments`, { method: 'POST', headers: headers(token), body: JSON.stringify({ body }), label })).body as { id: number }).id) },
+ async setFields(d, token, t, fields) {
+  const values: Record<string, unknown> = {}
+  if (fields.assignee !== undefined) values.assignees = fields.assignee === null ? [] : [fields.assignee]
+  if (fields.status !== undefined) values.state = stateValue(fields.status, ['open', 'closed'], label)
+  await call(`${repoPath(d)}/issues/${encodeURIComponent(t.remote_id)}`, { method: 'PATCH', headers: headers(token), body: JSON.stringify(values), label })
+ },
  async setDue(d, token, t, due) {
   const url = `${repoPath(d)}/issues/${encodeURIComponent(t.remote_id)}`
   const issue = (await call(url, { headers: headers(token), label })).body as { body?: string | null }

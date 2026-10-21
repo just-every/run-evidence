@@ -1,4 +1,4 @@
-import { call, dateOnly, TrackerFailure, type Adapter } from './client'
+import { nativeId, nativeIds, call, dateOnly, TrackerFailure, type Adapter } from './client'
 import { namedIds } from './rest'
 // Linear's GraphQL API with a personal API key (sent as the Authorization
 // header, without a scheme). GraphQL errors are classified here: authentication, not found and invalid input stay distinct.
@@ -19,8 +19,8 @@ async function gql<T>(base: string, key: string, query: string, variables: Recor
  }
  return reply.data as T
 }
-const issueFields = 'id identifier url dueDate state { name type } assignee { name } comments(first: 100) { nodes { id body createdAt user { name } } }'
-type LinearIssue = { id: string; identifier: string; url: string; dueDate: string | null; state: { name: string; type: string }; assignee: { name: string } | null; comments: { nodes: { id: string; body: string; createdAt: string; user: { name: string } | null }[] } }
+const issueFields = 'id identifier url dueDate state { id name type } assignee { id name } comments(first: 100) { nodes { id body createdAt user { name } } }'
+type LinearIssue = { id: string; identifier: string; url: string; dueDate: string | null; state: { id: string; name: string; type: string }; assignee: { id: string; name: string } | null; comments: { nodes: { id: string; body: string; createdAt: string; user: { name: string } | null }[] } }
 export const linear: Adapter = {
  name: 'Linear', credential: 'A Linear personal API key (Settings → Security & access → Personal API keys)', permissions: 'Read and Create issues and comments for the chosen team',
  projectLabel: 'Team ID', baseLabel: 'Linear API', defaultBase: 'https://api.linear.app',
@@ -58,7 +58,7 @@ export const linear: Adapter = {
   const data = await gql<{ issue: LinearIssue | null }>(d.api_base, key, `query($id: String!) { issue(id: $id) { ${issueFields} } }`, { id: t.remote_id })
   if (!data.issue) throw new TrackerFailure('not found', 404, 'Linear has no such issue.')
   const i = data.issue
-  return { status: `${i.state.name} (${i.state.type})`, closed: i.state.type === 'completed' || i.state.type === 'canceled', assignee: i.assignee?.name ?? null, due: dateOnly(i.dueDate), comments: i.comments.nodes.map(c => ({ id: c.id, author: c.user?.name ?? 'Linear', body: c.body, at: c.createdAt })) }
+  return { status_id: nativeId(i.state.id), assignee_ids: i.assignee === null ? [] : nativeIds([i.assignee?.id]), status: `${i.state.name} (${i.state.type})`, closed: i.state.type === 'completed' || i.state.type === 'canceled', assignee: i.assignee?.name ?? null, due: dateOnly(i.dueDate), comments: i.comments.nodes.map(c => ({ id: c.id, author: c.user?.name ?? 'Linear', body: c.body, at: c.createdAt })) }
  },
  async comment(d, key, t, body) {
   const data = await gql<{ commentCreate: { success: boolean; comment: { id: string } | null } }>(d.api_base, key, 'mutation($input: CommentCreateInput!) { commentCreate(input: $input) { success comment { id } } }', { input: { issueId: t.remote_id, body } })
@@ -70,6 +70,13 @@ export const linear: Adapter = {
   const open = data.team?.states.nodes.find(s => s.type === 'unstarted') ?? data.team?.states.nodes.find(s => s.type === 'backlog')
   if (!open) throw new TrackerFailure('invalid', 400, 'The Linear team has no open state to reopen into.')
   await gql(d.api_base, key, 'mutation($id: String!, $input: IssueUpdateInput!) { issueUpdate(id: $id, input: $input) { success } }', { id: t.remote_id, input: { stateId: open.id } })
+ },
+ async setFields(d, key, t, fields) {
+  const input: Record<string, unknown> = {}
+  if (fields.assignee !== undefined) input.assigneeId = fields.assignee
+  if (fields.status !== undefined) input.stateId = fields.status
+  const data = await gql<{ issueUpdate: { success: boolean } }>(d.api_base, key, 'mutation($id: String!, $input: IssueUpdateInput!) { issueUpdate(id: $id, input: $input) { success } }', { id: t.remote_id, input })
+  if (!data.issueUpdate?.success) throw new TrackerFailure('invalid', 400, 'Linear did not update the issue fields.')
  },
  async setDue(d, key, t, due) { await gql(d.api_base, key, 'mutation($id: String!, $input: IssueUpdateInput!) { issueUpdate(id: $id, input: $input) { success } }', { id: t.remote_id, input: { dueDate: due } }) },
 }

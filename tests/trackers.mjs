@@ -1,3 +1,4 @@
+import { trackerWriteJourney } from './helpers/tracker-write-journey.mjs'
 process.env.RER_SERVER_JOURNEY='1'
 import assert from 'node:assert/strict'
 import { readFile, readdir } from 'node:fs/promises'
@@ -10,7 +11,7 @@ import { providerWebhookJourney } from './helpers/provider-webhook-journey.mjs'
 import { shortcutWebhookJourney } from './helpers/shortcut-webhook-journey.mjs'
 import { nativeFieldsFixture } from './helpers/native-fields-fixture.mjs'
 import { assertNativeFieldsCreate } from './helpers/native-fields-journey.mjs'
-import { trackerFixture, configs } from './helpers/tracker-fixture.mjs'
+import { trackerFixture, configs } from './helpers/tracker-matrix.mjs'
 const require=createRequire(import.meta.url),dependency=createRequire(require.resolve('wrangler/package.json'))
 const {unstable_splitSqlQuery}=dependency('wrangler')
 const edge=trackerFixture(),native=nativeFieldsFixture(edge.outbound),app=await runtime({outbound:native.outbound,migrationThrough:'0046',origin:'https://127.0.0.1:8787'})
@@ -73,6 +74,7 @@ try {
    if(provider!=='asana')assert.equal(remote.priority,c.priority,provider)
    assert.equal(remote.due,'2026-12-01')
    assert.equal(remote.assignee,'Dana Lee')
+   await trackerWriteJourney({provider,app,owner,get,remote,ticket,destination:dest,edge,person,config:connect})
    if(provider==='github')remote.description+='\n\nTracker context that must survive date updates.'
    await owner(`/api/remediation/${ob.id}/comments`,{body:'Fixing the source.'})
    assert.ok(remote.comments.some(c=>/Evidence owner in Evidence: Fixing the source/.test(c.body)))

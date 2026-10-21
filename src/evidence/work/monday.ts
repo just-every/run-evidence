@@ -1,4 +1,4 @@
-import { TrackerFailure, type Adapter } from './client'
+import { nativeId, nativeIds, numericField, TrackerFailure, type Adapter } from './client'
 import { json, metadata, requireId } from './rest'
 // https://developer.monday.com/api-reference/reference/items and /updates
 const name='monday.com'
@@ -37,8 +37,39 @@ export const monday: Adapter = {
   const {create_item:i}=await gql(d.api_base,key,'mutation($board:ID!,$name:String!,$values:JSON!){create_item(board_id:$board,item_name:$name,column_values:$values){id url}}',{board:d.project,name:draft.title,values:JSON.stringify(values)})
   return {id:requireId(i.id,name),key:String(i.id),url:i.url}
  },
- async read(d,key,t) {const b=await board(d.api_base,key,d.project),r=await gql(d.api_base,key,'query($ids:[ID!]!){items(ids:$ids){id column_values{id text value}}}',{ids:[t.remote_id]}),i=r.items?.[0];if(!i)throw new TrackerFailure('not found',404,'monday.com item no longer exists.');const value=(c:any)=>i.column_values.find((v:any)=>v.id===c.id),statusColumn=column(b,'status','status'),status=value(statusColumn),settings=JSON.parse(statusColumn.settings_str),index=JSON.parse(status.value??'null')?.index,comments=[];for(let page=1;;page++){const r=await gql(d.api_base,key,'query($ids:[ID!]!,$page:Int!){items(ids:$ids){updates(limit:100,page:$page){id text_body created_at creator{name}}}}',{ids:[t.remote_id],page}),rows=r.items[0].updates;comments.push(...rows.map((u:any)=>({id:u.id,author:u.creator.name,body:u.text_body,at:u.created_at})));if(rows.length<100)break}return {status:status.text,closed:(settings.done_colors??[1]).includes(index),assignee:value(column(b,'people')).text||null,due:JSON.parse(value(column(b,'date')).value??'null')?.date??null,comments}},
+ async read(d,key,t) {
+  const b=await board(d.api_base,key,d.project)
+  const r=await gql(d.api_base,key,'query($ids:[ID!]!){items(ids:$ids){id column_values{id text value}}}',{ids:[t.remote_id]}),i=r.items?.[0]
+  if(!i)throw new TrackerFailure('not found',404,'monday.com item no longer exists.')
+  const value=(c:any)=>i.column_values.find((v:any)=>v.id===c.id)
+  const statusColumn=column(b,'status','status'),status=value(statusColumn),settings=JSON.parse(statusColumn.settings_str)
+  const index=JSON.parse(status.value??'null')?.index,people=value(column(b,'people'))
+  const assigned=JSON.parse(people.value??'null')?.personsAndTeams
+  // Keep non-person identities distinct so an external team assignment also
+  // changes the conflict baseline, without making teams writable as people.
+  const assigneeIds=people.value===null?[]:Array.isArray(assigned)?nativeIds(assigned.map((p:any)=>{
+   const identity=nativeId(p?.id)
+   return identity===null||!['person','team','agent'].includes(p?.kind)?null:p.kind==='person'?identity:p.kind+':'+identity
+  })):null
+  const comments=[]
+  for(let page=1;;page++) {
+   const result=await gql(d.api_base,key,'query($ids:[ID!]!,$page:Int!){items(ids:$ids){updates(limit:100,page:$page){id text_body created_at creator{name}}}}',{ids:[t.remote_id],page}),rows=result.items[0].updates
+   comments.push(...rows.map((u:any)=>({id:u.id,author:u.creator.name,body:u.text_body,at:u.created_at})))
+   if(rows.length<100)break
+  }
+  return {status_id:nativeId(index),assignee_ids:assigneeIds,status:status.text,closed:(settings.done_colors??[1]).includes(index),assignee:people.text||null,due:JSON.parse(value(column(b,'date')).value??'null')?.date??null,comments}
+ },
  async comment(d,key,t,body) {return requireId((await gql(d.api_base,key,'mutation($item:ID!,$body:String!){create_update(item_id:$item,body:$body){id}}',{item:t.remote_id,body:body.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('\n','<br>')})).create_update.id,name)},
+ async setFields(d,key,t,fields) {
+  const b=await board(d.api_base,key,d.project),values:Record<string,unknown>={}
+  if(fields.assignee!==undefined)values[column(b,'people').id]={personsAndTeams:fields.assignee===null?[]:[{id:numericField(fields.assignee,name),kind:'person'}]}
+  if(fields.status!==undefined) {
+   const c=column(b,'status','status'),settings=JSON.parse(c.settings_str)
+   if(!/^\d+$/.test(fields.status)||!Object.hasOwn(settings.labels??{},fields.status))throw new TrackerFailure('invalid',400,'monday.com status mapping must be a native Status column label index.')
+   values[c.id]={index:Number(fields.status)}
+  }
+  await change(d,key,t,values)
+ },
  async setDue(d,key,t,due) {const b=await board(d.api_base,key,d.project);await change(d,key,t,{[column(b,'date').id]:{date:due}})},
  async reopen(d,key,t) {const b=await board(d.api_base,key,d.project),c=column(b,'status','status'),s=JSON.parse(c.settings_str),open=Object.keys(s.labels).find(i=>!(s.done_colors??[1]).includes(Number(i)));if(open===undefined)throw new TrackerFailure('invalid',400,'monday.com board has no open status.');await change(d,key,t,{[c.id]:{index:Number(open)}})},
 }

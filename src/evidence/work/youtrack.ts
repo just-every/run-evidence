@@ -1,4 +1,4 @@
-import { TrackerFailure, type Adapter } from './client'
+import { nativeId, nativeIds, TrackerFailure, type Adapter } from './client'
 import { json, id, metadata, requireId, epoch, isoDay, namedIds } from './rest'
 // https://www.jetbrains.com/help/youtrack/devportal/resource-api-issues.html
 const name='YouTrack', field=(name:string,type:string,value:unknown)=>({name,$type:type,value})
@@ -15,8 +15,14 @@ export const youtrack: Adapter = {
   const i=await json(d.api_base+'/issues?fields=id,idReadable',key,name,'POST',{project:{id:d.project},summary:draft.title,description:draft.description,tags:nativeTags,customFields:[field('Priority','SingleEnumIssueCustomField',{name:draft.priority}),field('Due Date','DateIssueCustomField',epoch(draft.due)),...(draft.assignee?[field('Assignee','SingleUserIssueCustomField',{id:draft.assignee})]:[])]})
   return {id:requireId(i.id,name),key:i.idReadable,url:d.api_base.replace(/\/api$/,'')+'/issue/'+id(i.idReadable)}
  },
- async read(d,key,t) {const url=`${d.api_base}/issues/${id(t.remote_id)}`,i=await json(url+'?fields=id,resolved,customFields(name,value(name,fullName,presentation,isResolved))',key,name),comments=[];for(let skip=0;;skip+=100){const rows=await json(`${url}/comments?fields=id,text,created,author(fullName)&$top=100&$skip=${skip}`,key,name);comments.push(...rows.map((c:any)=>({id:c.id,author:c.author.fullName,body:c.text,at:new Date(c.created).toISOString()})));if(rows.length<100)break}const f=(n:string)=>i.customFields.find((f:any)=>f.name===n)?.value;return {status:f('State')?.name??(i.resolved?'Resolved':'Unresolved'),closed:i.resolved!=null,assignee:f('Assignee')?.fullName??null,due:isoDay(f('Due Date')),comments}},
+ async read(d,key,t) {const url=`${d.api_base}/issues/${id(t.remote_id)}`,i=await json(url+'?fields=id,resolved,customFields(name,value(id,name,fullName,presentation,isResolved))',key,name),comments=[];for(let skip=0;;skip+=100){const rows=await json(`${url}/comments?fields=id,text,created,author(fullName)&$top=100&$skip=${skip}`,key,name);comments.push(...rows.map((c:any)=>({id:c.id,author:c.author.fullName,body:c.text,at:new Date(c.created).toISOString()})));if(rows.length<100)break}const f=(n:string)=>i.customFields.find((f:any)=>f.name===n)?.value;return {status_id:nativeId(f('State')?.id),assignee_ids:f('Assignee')===null?[]:nativeIds([f('Assignee')?.id]),status:f('State')?.name??(i.resolved?'Resolved':'Unresolved'),closed:i.resolved!=null,assignee:f('Assignee')?.fullName??null,due:isoDay(f('Due Date')),comments}},
  async comment(d,key,t,body) {return requireId((await json(`${d.api_base}/issues/${id(t.remote_id)}/comments?fields=id`,key,name,'POST',{text:body})).id,name)},
+ async setFields(d,key,t,fields) {
+  const customFields=[]
+  if(fields.assignee!==undefined)customFields.push(field('Assignee','SingleUserIssueCustomField',fields.assignee===null?null:{id:fields.assignee}))
+  if(fields.status!==undefined)customFields.push(field('State','StateIssueCustomField',{id:fields.status}))
+  await json(`${d.api_base}/issues/${id(t.remote_id)}`,key,name,'POST',{customFields})
+ },
  async setDue(d,key,t,due) {await json(`${d.api_base}/issues/${id(t.remote_id)}`,key,name,'POST',{customFields:[field('Due Date','DateIssueCustomField',epoch(due))]})},
  async reopen(d,key,t) {await json(`${d.api_base}/issues/${id(t.remote_id)}`,key,name,'POST',{customFields:[field('State','StateIssueCustomField',{name:'Open'})]})},
 }

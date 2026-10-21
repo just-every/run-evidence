@@ -68,3 +68,27 @@ export function assertNativeFieldsCreate({provider,calls,base,priority,labels=['
   assert.equal(b.customFields.find(f=>f.name==='Priority').value.name,priority)
  }
 }
+
+// Observe native requests after a public owner field edit. Expected identities
+// come from explicit mappings, never the tracker fake's display names.
+export function assertNativeFieldsWrite({provider,calls,assignee,status}) {
+ const writes=calls.filter(c=>c.provider===provider&&c.fieldsWrite)
+ assert.ok(writes.length,provider+' owner edit emitted no native write')
+ const bodies=writes.map(c=>c.body),some=fn=>assert.ok(bodies.some(fn),provider+' omitted mapped native field')
+ if(provider==='vector')some(b=>b.assigneeOperatorId===assignee&&b.statusId===status&&Number.isInteger(b.expectedVersion))
+ if(provider==='jira')some(b=>b.fields?.assignee?.accountId===assignee&&typeof b.transition?.id==='string')
+ if(provider==='linear')some(b=>b.variables.input.assigneeId===assignee&&b.variables.input.stateId===status)
+ if(provider==='github')some(b=>JSON.stringify(b.assignees)===JSON.stringify([assignee])&&b.state===status)
+ if(provider==='gitlab')some(b=>JSON.stringify(b.assignee_ids)===JSON.stringify([Number(assignee)])&&b.state_event===(status==='closed'?'close':'reopen'))
+ if(provider==='azure-boards')some(b=>b.some(op=>op.path==='/fields/System.AssignedTo'&&op.value?.id===assignee)&&b.some(op=>op.path==='/fields/System.State'&&op.value===status))
+ if(provider==='shortcut')some(b=>JSON.stringify(b.owner_ids)===JSON.stringify([assignee])&&b.workflow_state_id===Number(status))
+ if(provider==='clickup')some(b=>b.assignees.add.includes(Number(assignee))&&b.status===status)
+ if(provider==='monday')some(b=>{const v=JSON.parse(b.variables.values);return v.person1.personsAndTeams[0].id===Number(assignee)&&v.status1.index===Number(status)})
+ if(provider==='basecamp'){
+  some(b=>JSON.stringify(b.assignee_ids)===JSON.stringify([Number(assignee)]))
+  assert.ok(writes.some(c=>c.path.endsWith('/completion.json')&&c.method===(status==='completed'?'POST':'DELETE')),'Basecamp completion uses its native endpoint')
+ }
+ if(provider==='freshservice')some(b=>b.responder_id===Number(assignee)&&b.status===Number(status))
+ if(provider==='youtrack')some(b=>b.customFields.some(f=>f.name==='Assignee'&&f.value.id===assignee)&&b.customFields.some(f=>f.name==='State'&&f.value.id===status))
+ if(provider==='asana')some(b=>b.data.assignee===assignee&&b.data.completed===(status==='completed'))
+}

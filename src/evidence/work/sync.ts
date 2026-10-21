@@ -76,6 +76,8 @@ async function failure(env: Bindings, t: TicketRow, destination: DestinationRow,
 }
 export async function syncTicket(env: Bindings, ticket: TicketRow, trigger: string, now: Date, row?: Row) {
  const destination = await requireDestination(env, ticket.destination_id), adapter = adapters[destination.provider], at = now.toISOString()
+ // A human field write owns this ticket until its bounded lease expires.
+ if (ticket.sync_state === 'writing fields' && ticket.last_attempt_at && now.getTime() - Date.parse(ticket.last_attempt_at) < 15 * 60000) return ticket.sync_state
  if (!ticket.remote_id || !ticket.remote_key) return ticket.sync_state
  if (destination.status !== 'active') return failure(env, ticket, destination, new TrackerFailure('unauthorized', 0, `The destination is ${destination.status}; reconnect it to resume sync.`), trigger, at)
  const o = row ?? await obligationRow(env, ticket.obligation_id, now)

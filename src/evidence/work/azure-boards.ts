@@ -1,4 +1,4 @@
-import { TrackerFailure, type Adapter } from './client'
+import { nativeId, nativeIds, TrackerFailure, type Adapter } from './client'
 import { json, id, metadata, requireId } from './rest'
 // https://learn.microsoft.com/rest/api/azure/devops/wit/work-items
 const name='Azure Boards',headers=(key:string)=>({authorization:'Basic '+btoa(':'+key),accept:'application/json','content-type':'application/json-patch+json'})
@@ -14,9 +14,15 @@ export const azureBoards: Adapter = {
  webhook: 'authenticated provider webhook, with polling every 10 minutes',
  fieldNotes: 'Work-item type defaults to Task; reopen uses New. Priority and tags are native fields. The mapped due-date field must be a writable DateTime field on this work-item type (default Microsoft.VSTS.Scheduling.DueDate). Create and later changes write UTC midnight; reads use the UTC calendar day. Unsupported fields are refused visibly.',
  async verify(base,key,_account,project) {const p=await api(`${base}/_apis/projects/${id(project)}`,key);return {account:new URL(base).pathname.slice(1),projectName:p.name}},
- async create(d,key,draft) {const i=await api(`${d.api_base}/${id(d.project)}/_apis/wit/workitems/$${id(d.mapping.issue_type||'Task')}`,key,'POST',[patch('System.Title',draft.title),patch('System.Description',draft.description.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('\n','<br>')),patch('System.Tags',draft.labels.join('; ')),patch('Microsoft.VSTS.Common.Priority',Number(draft.priority)),patch(d.mapping.due_field,draft.due ? draft.due+'T00:00:00Z' : null),...(draft.assignee?[patch('System.AssignedTo',draft.assignee)]:[])]);return {id:requireId(i.id,name),key:String(i.id),url:i._links.html.href}},
- async read(d,key,t) {const base=`${d.api_base}/${id(d.project)}/_apis/wit/workitems/${id(t.remote_id)}`,i=await api(base,key),c=await json(base+'/comments?api-version=7.1-preview.4',key,name,'GET',undefined,headers(key));if(c.continuationToken)throw new TrackerFailure('unavailable',502,'Azure Boards comments exceed the current page; coverage is incomplete.');const f=i.fields;return {status:f['System.State'],closed:['Closed','Done','Removed'].includes(f['System.State']),assignee:f['System.AssignedTo']?.displayName??null,due:utcDay(f[d.mapping.due_field]),comments:c.comments.map((v:any)=>({id:String(v.id),author:v.createdBy.displayName,body:v.text,at:v.createdDate}))}},
+ async create(d,key,draft) {const i=await api(`${d.api_base}/${id(d.project)}/_apis/wit/workitems/$${id(d.mapping.issue_type||'Task')}`,key,'POST',[patch('System.Title',draft.title),patch('System.Description',draft.description.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('\n','<br>')),patch('System.Tags',draft.labels.join('; ')),patch('Microsoft.VSTS.Common.Priority',Number(draft.priority)),patch(d.mapping.due_field,draft.due ? draft.due+'T00:00:00Z' : null),...(draft.assignee?[patch('System.AssignedTo',{id:draft.assignee})]:[])]);return {id:requireId(i.id,name),key:String(i.id),url:i._links.html.href}},
+ async read(d,key,t) {const base=`${d.api_base}/${id(d.project)}/_apis/wit/workitems/${id(t.remote_id)}`,i=await api(base,key),c=await json(base+'/comments?api-version=7.1-preview.4',key,name,'GET',undefined,headers(key));if(c.continuationToken)throw new TrackerFailure('unavailable',502,'Azure Boards comments exceed the current page; coverage is incomplete.');const f=i.fields;return {status_id:nativeId(f['System.State']),assignee_ids:f['System.AssignedTo']==null?[]:nativeIds([f['System.AssignedTo'].id]),status:f['System.State'],closed:['Closed','Done','Removed'].includes(f['System.State']),assignee:f['System.AssignedTo']?.displayName??null,due:utcDay(f[d.mapping.due_field]),comments:c.comments.map((v:any)=>({id:String(v.id),author:v.createdBy.displayName,body:v.text,at:v.createdDate}))}},
  async comment(d,key,t,body) {return requireId((await json(`${d.api_base}/${id(d.project)}/_apis/wit/workitems/${id(t.remote_id)}/comments?api-version=7.1-preview.4`,key,name,'POST',{text:body},{...headers(key),'content-type':'application/json'})).id,name)},
+ async setFields(d,key,t,fields) {
+  const changes=[]
+  if(fields.assignee!==undefined)changes.push(patch('System.AssignedTo',fields.assignee===null?'':{id:fields.assignee}))
+  if(fields.status!==undefined)changes.push(patch('System.State',fields.status))
+  await api(`${d.api_base}/${id(d.project)}/_apis/wit/workitems/${id(t.remote_id)}`,key,'PATCH',changes)
+ },
  async setDue(d,key,t,due) {await api(`${d.api_base}/${id(d.project)}/_apis/wit/workitems/${id(t.remote_id)}`,key,'PATCH',[patch(d.mapping.due_field,due ? due+'T00:00:00Z' : null)])},
  async reopen(d,key,t) {await api(`${d.api_base}/${id(d.project)}/_apis/wit/workitems/${id(t.remote_id)}`,key,'PATCH',[patch('System.State','New')])},
 }

@@ -105,11 +105,30 @@ registration can be retried after one hour. See the official
 WORK-001 remains partial. `tests/trackers.mjs` names the clause for all thirteen
 providers, including native field requests, deadlines/conflicts, failure recovery,
 source re-tests and credential-free restore. New authenticated webhook journeys
-cover Azure Boards, monday, Freshservice and YouTrack. Remaining gaps include
-Vector inbound comment text with author/time/stable-ID/link/truncation/privacy
-proof (the current API returns activity metadata), and mapped Evidence-origin
-tracker assignee/status writes with read-before-write conflicts and people-only
-authority. Separate Evidence owner/state edits do not satisfy those writes.
+cover Azure Boards, monday, Freshservice and YouTrack. Mapped Evidence-origin tracker assignee/status writes now use the live human owner
+session, explicit native identities, a fresh read before writing and a confirming
+read-back. The field editor refuses a changed selected field with both values and
+UTC time in Sync history; a fresh read and explicit new decision are required.
+Unknown identities refuse writes. A read-before-write check cannot lock concurrent
+provider edits after the read. Unconfirmed writes remain uncertain.
+Separate Evidence owner/state edits do not satisfy those writes.
+Remaining: the Vector API-003 comment-read receiver contract and inbound comment
+text with author/time/stable-ID/link/truncation/privacy proof; the current API
+returns activity metadata only.
 Basecamp registration, callback replay/boundaries, hourly deactivation, polling
 backstop and secret-free restore are covered by WORK-001 journeys. Each tracker has the live Gap
 **not yet run against a live account**; no provider verification is claimed.
+
+## Human tracker field edits
+
+On an obligation, choose **Edit tracker fields**. This reads the tracker, then
+offers only the destination's explicit assignee and status mappings. Choose
+a change and enter its reason. Provider status values are native IDs except
+GitHub `open`/`closed`, GitLab `opened`/`closed`, Asana and Basecamp
+`incomplete`/`completed`, Azure Boards state names, ClickUp status strings,
+monday status indices and Freshservice numeric status values. Jira resolves
+exactly one currently available transition into the mapped destination status.
+Assignees use native user IDs, GitHub logins or Azure identity IDs.
+Missing identities or mappings are refused; names never infer identity.
+Closing from Evidence still queues a source re-test and cannot verify a failure.
+AUTH-001 inherits scoped human access before delegated roles ship.

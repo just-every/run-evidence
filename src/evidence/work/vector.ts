@@ -1,4 +1,4 @@
-import { call, dateOnly, TrackerFailure, type Adapter } from './client'
+import { assertFieldBaseline, nativeId, nativeIds, call, dateOnly, TrackerFailure, type Adapter } from './client'
 import { namedIds } from './rest'
 // Vector's scoped native API (docs/API.md in just-every/run-vector): a bearer
 // token with issues:read, issues:write, comments:write and metadata:read.
@@ -28,9 +28,10 @@ export const vector: Adapter = {
   return { id: created.identifier, key: created.identifier, url: `${d.api_base}/app/issues/${created.identifier}` }
  },
  async read(d, token, t) {
-  const i = await issue(d.api_base, token, t.remote_key) as { status?: { name?: string; category?: string }; assignee?: { name?: string } | null; dueDate?: string | null; activity?: { id: string; kind: string; at: string; actor: string | null; nextValue?: { id?: string } | null }[] }
+  const i = await issue(d.api_base, token, t.remote_key) as { status?: { id?: string; name?: string; category?: string }; assignee?: { id?: string; name?: string } | null; dueDate?: string | null; activity?: { id: string; kind: string; at: string; actor: string | null; nextValue?: { id?: string } | null }[] }
   const category = String(i.status?.category ?? '')
   return {
+   status_id: nativeId(i.status?.id), assignee_ids: i.assignee === null ? [] : nativeIds([i.assignee?.id]),
    status: `${i.status?.name ?? category} (${category})`, closed: category === 'completed' || category === 'canceled', assignee: i.assignee?.name ?? null, due: dateOnly(i.dueDate),
    comments: (i.activity ?? []).filter(a => a.kind === 'comment.created').map(a => ({ id: String(a.nextValue?.id ?? a.id), author: a.actor ?? 'Vector', body: '', at: a.at })),
   }
@@ -43,7 +44,14 @@ export const vector: Adapter = {
   const current = await issue(d.api_base, token, t.remote_key) as { version: number }
   await call(issuePath(d.api_base, t.remote_key), { method: 'PATCH', headers: headers(token), body: JSON.stringify({ expectedVersion: current.version, statusId: open.id }), label })
  },
- // Vector refuses stale writes: read the current version, then change only the due date.
+ // Vector refuses stale writes using the current native version.
+ async setFields(d, token, t, fields, lastRead) {
+  const current = await issue(d.api_base, token, t.remote_key) as { version?: number; status?: { id?: string }; assignee?: { id?: string } | null }
+  assertFieldBaseline(lastRead, { status_id: nativeId(current.status?.id), assignee_ids: current.assignee === null ? [] : nativeIds([current.assignee?.id]) }, fields, label)
+  if (!Number.isInteger(current.version)) throw new TrackerFailure('unavailable', 502, 'Vector did not return a write version.')
+  await call(issuePath(d.api_base, t.remote_key), { method: 'PATCH', headers: headers(token), body: JSON.stringify({ expectedVersion: current.version, ...(fields.assignee !== undefined ? { assigneeOperatorId: fields.assignee } : {}), ...(fields.status !== undefined ? { statusId: fields.status } : {}) }), label })
+ },
+ // Change only the due date while retaining the native version guard.
  async setDue(d, token, t, due) {
   const current = await issue(d.api_base, token, t.remote_key) as { version: number }
   await call(issuePath(d.api_base, t.remote_key), { method: 'PATCH', headers: headers(token), body: JSON.stringify({ expectedVersion: current.version, dueDate: due }), label })

@@ -1,3 +1,4 @@
+import { trackerFieldsBrowser } from './tracker-fields-browser.mjs'
 // WORK-001: owner mapping, native deadline writes, visible conflict and recovery.
 import assert from 'node:assert/strict'
 export const azureDeadlineBrowser=args=>deadlineBrowser({...args,provider:'azure-boards'})
@@ -40,5 +41,6 @@ export async function deadlineBrowser({page,app,edge,cookie,destination,width,ca
  assert.equal(remote.due,'2026-12-05');assert.equal((await detail()).tickets[0].sync_state,'linked')
  assert.equal(await page.getByRole('button',{name:'Resolve conflict',exact:true}).count(),0)
  await capture(provider+'-date-resolved')
+ await trackerFieldsBrowser({page,app,edge,cookie,destination,ticket,ob,provider,width,capture})
  console.log(`PASS WORK-001: ${provider} deadline change, conflict and owner resolution at ${width}`)
 }

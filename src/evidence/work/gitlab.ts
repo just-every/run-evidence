@@ -1,4 +1,4 @@
-import { dateOnly, type Adapter } from './client'
+import { nativeId, nativeIds, numericField, stateValue, dateOnly, type Adapter } from './client'
 import { json, id, metadata, requireId } from './rest'
 // https://docs.gitlab.com/api/issues/ and /notes/
 const name = 'GitLab Issues'
@@ -16,9 +16,15 @@ export const gitlab: Adapter = {
  async read(d, key, t) {
   const url = `${root(d)}/issues/${id(t.remote_id)}`, i = await json(url, key, name)
   const comments = []; for (let page=1;;page++) { const notes = await json(`${url}/notes?per_page=100&page=${page}`, key, name); comments.push(...notes.filter((n:any)=>!n.system).map((n:any)=>({id:String(n.id),author:n.author.name,body:n.body,at:n.created_at}))); if(notes.length<100)break }
-  return { status: i.state, closed: i.state === 'closed', assignee: i.assignees?.map((a:any)=>a.name).join(', ') || null, due: dateOnly(i.due_date), comments }
+  return { status_id: nativeId(i.state), assignee_ids: nativeIds(i.assignees?.map((a:any)=>a.id)), status: i.state, closed: i.state === 'closed', assignee: i.assignees?.map((a:any)=>a.name).join(', ') || null, due: dateOnly(i.due_date), comments }
  },
  async comment(d,key,t,body) { return requireId((await json(`${root(d)}/issues/${id(t.remote_id)}/notes`,key,name,'POST',{body})).id,name) },
+ async setFields(d,key,t,fields) {
+  const values:Record<string,unknown>={}
+  if(fields.assignee!==undefined)values.assignee_ids=fields.assignee===null?[]:[numericField(fields.assignee,name)]
+  if(fields.status!==undefined)values.state_event=stateValue(fields.status,['opened','closed'],name)==='closed'?'close':'reopen'
+  await json(`${root(d)}/issues/${id(t.remote_id)}`,key,name,'PUT',values)
+ },
  async setDue(d,key,t,due) { await json(`${root(d)}/issues/${id(t.remote_id)}`,key,name,'PUT',{due_date:due}) },
  async reopen(d,key,t) { await json(`${root(d)}/issues/${id(t.remote_id)}`,key,name,'PUT',{state_event:'reopen'}) },
 }
