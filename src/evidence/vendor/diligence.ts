@@ -10,7 +10,7 @@ import { shipped, type Question, type Template } from './caiq'
 import { documentKinds, kindLabels, profileOf, requireVendor, type DocumentRow } from './storage'
 // VENDOR-001 diligence: requests sent through expiring supplier links, owner-built
 // templates, findings, approvals with expiring conditions and reassessment.
-export const requestKinds = [...documentKinds.filter(k => k !== 'contract'), 'contract', 'questionnaire'] as const
+export const requestKinds = [...documentKinds.filter(k => k !== 'contract' && k !== 'bridge'), 'contract', 'questionnaire'] as const
 const hex = () => Array.from(crypto.getRandomValues(new Uint8Array(32))).map(n => n.toString(16).padStart(2, '0')).join('')
 export const parseQuestions = (raw: string): Question[] => {
  const rows = raw.split('\n').map(l => l.trim()).filter(Boolean)

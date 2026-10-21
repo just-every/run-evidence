@@ -16,3 +16,13 @@ CREATE TRIGGER privacy_tombstone_retained BEFORE DELETE ON privacy_erased_exhibi
 
 CREATE TABLE privacy_guard(singleton INTEGER PRIMARY KEY CHECK(singleton=1),allowed INTEGER NOT NULL CHECK(allowed=1));
 CREATE TRIGGER privacy_hold_pending BEFORE INSERT ON privacy_holds WHEN EXISTS(SELECT 1 FROM privacy_requests WHERE state='pending' AND (NEW.kind='business' OR (kind=NEW.kind AND subject_id=NEW.subject_id))) BEGIN SELECT RAISE(ABORT,'erasure_already_confirmed'); END;
+
+CREATE TRIGGER generation_privacy_holds_insert AFTER INSERT ON privacy_holds BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
+CREATE TRIGGER generation_privacy_holds_update AFTER UPDATE ON privacy_holds BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
+CREATE TRIGGER generation_privacy_holds_delete AFTER DELETE ON privacy_holds BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
+CREATE TRIGGER generation_privacy_requests_insert AFTER INSERT ON privacy_requests BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
+CREATE TRIGGER generation_privacy_requests_update AFTER UPDATE ON privacy_requests BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
+CREATE TRIGGER generation_privacy_requests_delete AFTER DELETE ON privacy_requests BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
+CREATE TRIGGER generation_privacy_erased_exhibits_insert AFTER INSERT ON privacy_erased_exhibits BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
+CREATE TRIGGER generation_privacy_erased_exhibits_update AFTER UPDATE ON privacy_erased_exhibits BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
+CREATE TRIGGER generation_privacy_erased_exhibits_delete AFTER DELETE ON privacy_erased_exhibits BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;

@@ -1,3 +1,4 @@
+import { validateFeatureRecords } from './feature-records'
 import { validatePeriodInvestigations } from '../agent/period-archive'
 import { fail,columns,type Row } from './format'
 import { groups,cadences,validDate } from '../model'
@@ -34,6 +35,7 @@ export async function validateRelationships(env:Store,id:string) {
  await invalid(`SELECT 1 FROM ${t('resources')} WHERE source_kind='source-reported' GROUP BY type,unique_id HAVING count(*)>1 LIMIT 1`,'Duplicate public API resource identity.')
  await validatePlans(env,id)
  await validatePeriodInvestigations(env,id)
+ await validateFeatureRecords(env,id)
  const empty={controls:[],agent_tokens:[],agent_proposals:[],agent_decisions:[],review_folders:[],review_folder_controls:[]} as Record<string,Row[]>
  for await(const tokens of pages(env,'agent_tokens',t('agent_tokens')))await validateAgentArchive({...empty,agent_tokens:tokens})
  for await(const proposals of pages(env,'agent_proposals',t('agent_proposals')))for(const p of proposals){

@@ -2,7 +2,7 @@ import { privacyTables } from '../erase/archive'
 import { fail,pathOK,Reader } from './format'
 import { assertSchema,auditColumnsBefore,businessRows,portableTables,registry,quote,staged,type Store } from './registry'
 import { backfillRunLibraryRevisions,libraryTables } from './program'
-import { vendorTables } from '../vendor/archive'
+import { vendorTables,vendorReviewTables } from '../vendor/archive'
 import { documentTables } from '../program/documents/archive'
 import { frame,newHash,readFrame,objectDigest } from './framing'
 import { BlobStage } from './blob-stage'
@@ -16,7 +16,7 @@ import { fileQuery,assertBucket } from './files'
 export interface RestoreOptions {journal?:unknown;acceptUnverifiedHistory?:boolean}
 export async function decodePortable(env:Store,session:Session,reader:Reader,first:{data:any;bytes:Uint8Array;prefix:Uint8Array},options:RestoreOptions={}) {
  const head=first.data
- if(head?.format!=='evidence-custody'||head.version!==10||!head.source||typeof head.source.lineage!=='string'||! /^[a-zA-Z0-9_-]{16,128}$/.test(head.source.lineage)||!Number.isSafeInteger(head.source.sequence)||head.source.sequence<0||!Number.isSafeInteger(head.source.generation)||!Number.isFinite(Date.parse(head.created_at))||![[],libraryTables,[...libraryTables,'inventory_decisions','inventory_group_events']].flatMap(absent => [absent,[...absent,'operation_steps']].flatMap(prior=>[prior,[...prior,'period_investigations','period_investigation_decisions']]).flatMap(prior=>[prior,[...prior,...vendorTables]]).flatMap(prior=>[prior,[...prior,...documentTables]])).flatMap(prior=>[prior,[...prior,...privacyTables]]).some(absent => [registry.product_audit,auditColumnsBefore].some(audit => JSON.stringify(head.tables)===JSON.stringify(Object.fromEntries(Object.entries(registry).filter(([t]) => !absent.includes(t)).map(([t,c]) => [t,t==='product_audit'?audit:c]))))))fail('Unsupported or incomplete portable archive registry.')
+ if(head?.format!=='evidence-custody'||head.version!==10||!head.source||typeof head.source.lineage!=='string'||! /^[a-zA-Z0-9_-]{16,128}$/.test(head.source.lineage)||!Number.isSafeInteger(head.source.sequence)||head.source.sequence<0||!Number.isSafeInteger(head.source.generation)||!Number.isFinite(Date.parse(head.created_at))||![[],libraryTables,[...libraryTables,'inventory_decisions','inventory_group_events']].flatMap(absent => [absent,[...absent,'operation_steps']].flatMap(prior=>[prior,[...prior,'period_investigations','period_investigation_decisions']]).flatMap(prior=>[prior,[...prior,...vendorTables]]).flatMap(prior=>[prior,[...prior,...documentTables]])).flatMap(prior=>[prior,[...prior,...privacyTables]]).flatMap(prior=>[prior,[...prior,...vendorReviewTables]]).some(absent => [registry.product_audit,auditColumnsBefore].some(audit => JSON.stringify(head.tables)===JSON.stringify(Object.fromEntries(Object.entries(registry).filter(([t]) => !absent.includes(t)).map(([t,c]) => [t,t==='product_audit'?audit:c]))))))fail('Unsupported or incomplete portable archive registry.')
  const sourceTables=Object.keys(head.tables)
  await checkHistory(env,head.source,options.journal,options.acceptUnverifiedHistory)
  await env.DB.prepare("UPDATE portable_sessions SET state='validating',header=?,error=NULL WHERE id=?").bind(JSON.stringify(head),session.id).run()

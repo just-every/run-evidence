@@ -1,3 +1,4 @@
+import { socReport,pdfFixture } from './helpers/pdf-fixture.mjs'
 // VENDOR-001: the vendor register, a vendor's diligence page and the supplier link screens.
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
@@ -14,6 +15,17 @@ try {
  const person = await api('/api/people', { name: 'Dana Okafor', email: 'dana@northstar.test', kind: 'employee' })
  const vendor = await api('/api/vendors', { name: 'Acme Notes', service: 'Clinical note-taking SaaS', criticality: 'high', data_types: ['PHI'], region: 'us-east-1', annual_cost_usd: '48000', renewal_date: '2027-02-01', contact_email: 'security@acme-notes.example', owner_person_id: person.id })
  const links = { 1440: await api(`/api/vendors/${vendor.id}/requests`, { kinds: ['soc2', 'baa', 'questionnaire'], template_id: 'caiq-v4', expires_at: '2026-11-09' }), 390: await api(`/api/vendors/${vendor.id}/requests`, { kinds: ['questionnaire'], template_id: 'caiq-v4', expires_at: '2026-11-09' }) }
+ const reportProgram=await api('/api/programs',{framework:'soc2',report_type:'Type II',name:'Vendor obligation readiness',legal_entity:'Northstar Inc',audit_from:'2026-01-01',audit_to:'2026-12-31'})
+ const controlResponse=await app.fetch('/app/controls',{method:'POST',headers:{origin:app.origin,'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({name:'Supplier access reviews',group:'Access',proof:'Quarterly supplier roster',cadence:'quarterly'})})
+ assert.equal(controlResponse.status,303)
+ const controlId=(await (await app.fetch('/api/desk')).json()).requirements.find(r=>controlResponse.headers.get('location').endsWith(r.id)).control_id
+ const reports={}
+ for(const width of [1440,390]){
+  const v=await api('/api/vendors',{name:'Report supplier '+width,criticality:'low'})
+  const f=new FormData();f.set('kind','soc2');f.set('file',new File([socReport()],'supplier-soc2.pdf',{type:'application/pdf'}))
+  const r=await app.fetch(`/api/vendors/${v.id}/documents`,{method:'POST',headers:{origin:app.origin},body:f});assert.equal(r.status,201)
+  reports[width]={vendor:v.id,doc:(await r.json()).id}
+ }
  app.setCookie('')
  server = createServer(async (req, res) => {
   try {
@@ -60,6 +72,42 @@ try {
   await page.getByLabel('Named approver', { exact: true }).selectOption({ label: 'Dana Okafor · dana@northstar.test' })
   await page.getByRole('button', { name: 'Record decision' }).click()
   await page.getByText('conditionally approved').first().waitFor(); await capture('vendor-approved')
+  // VENDOR-003: original pages, immutable corrections, exact decisions and
+  // unmapped CUECs in the program's readiness at both widths.
+  const report=reports[width]
+  await page.goto(origin+`/app/vendors/${report.vendor}/documents/${report.doc}/reviews`)
+  await capture('vendor-review-list')
+  await page.getByRole('button',{name:'Prepare cited review'}).click()
+  await page.getByRole('heading',{name:'Vendor document review',exact:true}).waitFor()
+  await page.getByText('bridge letter missing',{exact:false}).first().waitFor()
+  await capture('vendor-review-proposal')
+  const reviewUrl=page.url()
+  await page.getByRole('link',{name:'Source page 2',exact:true}).first().click()
+  await page.getByRole('heading',{name:'Original document page',exact:true}).waitFor()
+  await page.getByText('Text extracted locally',{exact:false}).waitFor()
+  await capture('vendor-source-page')
+  await page.goto(reviewUrl)
+  await page.getByLabel('Field',{exact:true}).selectOption({label:'auditor: Harbour Assurance LLP'})
+  await page.getByLabel('Corrected value').fill('Harbour Assurance')
+  await page.getByLabel('Source page',{exact:true}).fill('1')
+  await page.getByLabel('Exact source passage').fill('Service auditor: Harbour Assurance LLP')
+  await page.getByLabel('Correction reason').fill('Use trading name; preserve first proposal')
+  await page.getByRole('button',{name:'Retain corrected revision'}).click()
+  await page.getByText('Revision 2',{exact:false}).first().waitFor()
+  await capture('vendor-review-correction')
+  await page.getByLabel('Named reviewer',{exact:true}).selectOption(person.id)
+  await page.getByLabel('Review all supplier account access every quarter.',{exact:true}).selectOption(controlId)
+  await page.getByLabel('Encrypt customer exports before transmission.',{exact:true}).selectOption('unaddressed')
+  await page.getByLabel('Decision reason').fill('Reviewed both pages and exact obligations')
+  await page.getByRole('button',{name:'Record exact decision'}).click()
+  await page.getByRole('heading',{name:'approved',exact:true}).waitFor()
+  await capture('vendor-review-approved')
+  await page.getByRole('link',{name:'CUEC readiness obligations',exact:true}).click()
+  await page.getByText('Open · accepted as unaddressed').first().waitFor()
+  await capture('vendor-cuec-obligations')
+  await page.goto(origin+'/app/programs/'+reportProgram.id)
+  await page.getByRole('link',{name:/open vendor CUEC obligations/}).waitFor()
+  await capture('vendor-cuec-readiness')
   // ERASE-001: privacy requests, hold review and the confirmed receipt use the
   // existing application shell at both required widths.
   await page.goto(origin + '/app/privacy')

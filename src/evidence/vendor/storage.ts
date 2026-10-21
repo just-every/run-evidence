@@ -8,8 +8,8 @@ import { requirePerson } from '../program/people'
 export const criticalities = ['low', 'medium', 'high', 'critical'] as const
 export const dataTypes = ['PHI', 'cardholder data', 'personal data', 'credentials', 'confidential business data'] as const
 export const tiers = ['low', 'medium', 'high'] as const
-export const documentKinds = ['soc2', 'soc1', 'iso27001', 'pentest', 'baa', 'dpa', 'contract', 'other'] as const
-export const kindLabels: Record<string, string> = { soc2: 'SOC 2 report', soc1: 'SOC 1 report', iso27001: 'ISO 27001 certificate', pentest: 'Penetration-test summary', baa: 'Business associate agreement (BAA)', dpa: 'Data processing agreement (DPA)', contract: 'Contract', other: 'Other document', questionnaire: 'Security questionnaire' }
+export const documentKinds = ['soc2', 'soc1', 'iso27001', 'pentest', 'baa', 'dpa', 'contract', 'bridge', 'other'] as const
+export const kindLabels: Record<string, string> = { soc2: 'SOC 2 report', soc1: 'SOC 1 report', iso27001: 'ISO 27001 certificate', pentest: 'Penetration-test summary', baa: 'Business associate agreement (BAA)', dpa: 'Data processing agreement (DPA)', contract: 'Contract', bridge: 'Bridge letter', other: 'Other document', questionnaire: 'Security questionnaire' }
 export interface Profile { vendor_id: string; website: string; service: string; contact_name: string; contact_email: string; data_types: string[]; region: string; annual_cost_usd: number | null; risk_tier: typeof tiers[number]; tier_basis: string; renewal_date: string | null; revision: number; updated_by: string; updated_at: string }
 // A suggested tier from criticality and the data the supplier touches; the
 // owner may set a different tier and the basis is recorded either way.
@@ -96,10 +96,11 @@ export async function storeDocument(env: Bindings, actor: Actor & { kind?: 'owne
  const stored = await env.EXHIBITS.get(key)
  if (!stored) throw new Refusal('Stored bytes could not be read; nothing was recorded.', 503)
  const actual = await stored.arrayBuffer(), digest = await sha256(actual)
- const prior = await env.DB.prepare('SELECT id FROM vendor_documents d WHERE vendor_id=? AND kind=? AND NOT EXISTS(SELECT 1 FROM vendor_documents n WHERE n.supersedes=d.id) ORDER BY added_at DESC,rowid DESC LIMIT 1').bind(d.vendor, d.kind).first<{ id: string }>()
+ const prior = await env.DB.prepare(`SELECT id FROM vendor_documents d WHERE vendor_id=? AND kind=? AND (?<>'bridge' OR EXISTS(SELECT 1 FROM vendor_bridge_letters b WHERE b.document_id=d.id)) AND NOT EXISTS(SELECT 1 FROM vendor_documents n WHERE n.supersedes=d.id) ORDER BY added_at DESC,rowid DESC LIMIT 1`).bind(d.vendor, d.kind==='bridge'?'other':d.kind,d.kind).first<{ id: string }>()
  const filename = d.file.name.replace(/[\x00-\x1f\x7f]/g, '').slice(0, 240) || 'document'
  await env.DB.batch([
-  env.DB.prepare('INSERT INTO vendor_documents(id,vendor_id,request_id,kind,filename,media_type,size,sha256,object_key,origin,provided_by,link_id,effective_on,expires_on,supersedes,added_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(id, d.vendor, d.request, d.kind, filename, (d.file.type || 'application/octet-stream').slice(0, 100), actual.byteLength, digest, key, d.origin, d.providedBy, d.link, d.effective, d.expires, prior?.id ?? null, now.toISOString()),
+  env.DB.prepare('INSERT INTO vendor_documents(id,vendor_id,request_id,kind,filename,media_type,size,sha256,object_key,origin,provided_by,link_id,effective_on,expires_on,supersedes,added_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(id, d.vendor, d.request, d.kind==='bridge'?'other':d.kind, filename, (d.file.type || 'application/octet-stream').slice(0, 100), actual.byteLength, digest, key, d.origin, d.providedBy, d.link, d.effective, d.expires, prior?.id ?? null, now.toISOString()),
+  ...(d.kind==='bridge'?[env.DB.prepare('INSERT INTO vendor_bridge_letters(document_id) VALUES(?)').bind(id)]:[]),
   auditStatement(env, actor, d.origin === 'supplier' ? 'vendor.supplier-document' : 'vendor.document-added', 'vendor:' + d.vendor, now, 'succeeded', `${d.kind} ${filename} sha256 ${digest.slice(0, 16)}`, { revision: id }),
  ])
  return { id, sha256: digest, supersedes: prior?.id ?? null }
@@ -111,7 +112,7 @@ export async function addOwnerDocument(env: Bindings, actor: Actor, id: string, 
  const date = (k: string) => { const v = form.get(k); return typeof v === 'string' && v ? v : null }
  return storeDocument(env, actor, { vendor: id, request: null, kind: kind as typeof documentKinds[number], file: file as File, origin: 'owner', providedBy: actor.name, link: null, effective: date('effective_on'), expires: date('expires_on') }, now)
 }
-export const documents = async (env: Bindings, vendor: string) => (await env.DB.prepare('SELECT * FROM vendor_documents WHERE vendor_id=? ORDER BY added_at,rowid').bind(vendor).all<DocumentRow>()).results
+export const documents = async (env: Bindings, vendor: string):Promise<DocumentRow[]> => (await env.DB.prepare('SELECT d.*,EXISTS(SELECT 1 FROM vendor_bridge_letters b WHERE b.document_id=d.id) AS is_bridge FROM vendor_documents d WHERE vendor_id=? ORDER BY added_at,rowid').bind(vendor).all<DocumentRow & {is_bridge:number}>()).results.map(({is_bridge,...d})=>({...d,kind:is_bridge?'bridge':d.kind}))
 export async function reviewDocument(env: Bindings, actor: Actor, vendor: string, doc: string, input: Input, now: Date) {
  const decision = oneOf(input, 'decision', ['verified', 'rejected'] as const), notes = text(input, 'notes', 1000)
  const changed = await env.DB.prepare("UPDATE vendor_documents SET review_state=?,reviewed_by=?,reviewed_at=?,review_notes=? WHERE id=? AND vendor_id=? AND review_state='received'").bind(decision, actor.name, now.toISOString(), notes, doc, vendor).run()

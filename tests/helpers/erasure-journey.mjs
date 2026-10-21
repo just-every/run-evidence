@@ -10,6 +10,7 @@ export async function erasureJourney(app) {
  const uploaded=await app.fetch('/app/requirements/'+requirement+'/uploads',{method:'POST',headers:{origin:app.origin},body:form});assert.equal(uploaded.status,303)
  const receipt=await (await app.fetch(uploaded.headers.get('location').replace('/app/','/api/'))).json()
  const preview=()=>post('/api/privacy/requests',{kind:'exhibit',subject_id:receipt.exhibit_id,reason:'Owner verified request; remove original'},201)
+ console.log('ERASE-001: preview and exact hold review')
  const before=Buffer.from(await (await app.fetch('/api/archive/export')).arrayBuffer())
  let row=await preview();assert.ok(!row.snapshot_json.includes('synthetic-evidence-private-name'));assert.ok(!row.snapshot_json.includes('synthetic-evidence-erasure-source'))
  const hold=await post('/api/privacy/holds',{kind:'exhibit',subject_id:receipt.exhibit_id,reason:'Preserve for dispute',review_on:'2027-01-01'},201)
@@ -27,10 +28,12 @@ export async function erasureJourney(app) {
  const after=await (await app.fetch('/api/receipts/'+receipt.id)).json();assert.equal(after.filename,'Erased exhibit');assert.equal(after.source,'Erased exhibit');assert.equal(after.sha256,receipt.sha256)
  await assert.rejects(app.db.prepare('UPDATE receipts SET source=? WHERE id=?').bind('ordinary rewrite',receipt.id).run(),/immutable_receipt/)
  assert.equal((await post('/api/privacy/requests/'+row.id+'/confirm',{snapshot_hash:row.snapshot_hash,confirm:'ERASE'})).state,'complete')
+ console.log('ERASE-001: storage absence and immutable tombstone verified')
  const journal=await (await app.fetch('/api/archive/journal')).json();assert.ok(journal.sequence>0)
  const destination=await runtime()
  try{
   await destination.signin()
+  console.log('ERASE-001: refusing old archive with later journal')
   const r=await destination.fetch('/api/archive/restore',{method:'POST',headers:{origin:destination.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore','x-evidence-journal':JSON.stringify(journal)},body:before})
   assert.equal(r.status,400);assert.match(await r.text(),/later source erasure journal fences/)
  }finally{await destination.close()}
@@ -38,11 +41,13 @@ export async function erasureJourney(app) {
   const unsupported=await post('/api/privacy/requests',{kind,subject_id:'synthetic-evidence-unsupported',reason:'Classify first'},201)
   await post('/api/privacy/requests/'+unsupported.id+'/confirm',{snapshot_hash:unsupported.snapshot_hash,confirm:'ERASE'},409)
  }
+ console.log('ERASE-001: re-exporting after erasure')
  const exported=Buffer.from(await (await app.fetch('/api/archive/export')).arrayBuffer())
  assert.ok(!exported.includes(Buffer.from('synthetic-evidence-erasure-content')));assert.ok(!exported.includes(Buffer.from('synthetic-evidence-private-name')));assert.ok(!exported.includes(Buffer.from('synthetic-evidence-erasure-source')))
  const restored=await runtime()
  try {
   await restored.signin()
+  console.log('ERASE-001: restoring current erased archive')
   const r=await restored.fetch('/api/archive/restore',{method:'POST',headers:{origin:restored.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:exported});assert.equal(r.status,200,await r.clone().text())
   assert.equal((await (await restored.fetch('/api/privacy/requests/'+row.id)).json()).state,'complete')
   assert.equal((await restored.fetch(uploaded.headers.get('location')+'/download')).status,410)

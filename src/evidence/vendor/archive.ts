@@ -17,3 +17,6 @@ export const vendorColumns = {
  vendor_assertions:['id','vendor_id','claim','source_url','recorded_by','recorded_at','verified_document_id','verified_by','verified_at'],
 } as const
 export const vendorTables = Object.keys(vendorColumns)
+
+export const vendorReviewColumns = {vendor_bridge_letters:['document_id'],vendor_review_settings:['vendor_id','bridge_months'],vendor_document_reviews:['id','document_id','vendor_id','revision','snapshot_json','snapshot_hash','reason','proposed_by','proposed_at'],vendor_review_decisions:['review_id','snapshot_hash','decision','reviewer_person_id','actor_id','actor_name','reason','decided_at'],vendor_cuecs:['id','vendor_id','document_id','review_id','field_id','body','control_id','accepted_unaddressed','decided_at']} as const
+export const vendorReviewTables=Object.keys(vendorReviewColumns)

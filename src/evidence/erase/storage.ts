@@ -10,8 +10,9 @@ export async function privacy(env:Bindings) {
 }
 export async function requestOf(env:Bindings,id:string) { const row=await env.DB.prepare('SELECT * FROM privacy_requests WHERE id=?').bind(id).first<Erasure>();if(!row)throw new Refusal('Erasure request not found.',404);return row }
 async function snapshot(env:Bindings,kind:string,subject:string) {
- const holds=(await env.DB.prepare("SELECT * FROM privacy_holds WHERE released_at IS NULL AND ((kind=? AND subject_id=?) OR kind='business') ORDER BY id").bind(kind,subject).all()).results
- if(kind!=='exhibit')return {kind,subject,holds,supported:false,remaining:'Entity relationships and provider-copy deletion are not yet classified. No deletion is available for this scope.'}
+ const hold_history=(await env.DB.prepare("SELECT * FROM privacy_holds WHERE (kind=? AND subject_id=?) OR kind='business' ORDER BY id").bind(kind,subject).all()).results
+ const holds=hold_history.filter((h:any)=>!h.released_at)
+ if(kind!=='exhibit')return {kind,subject,holds,hold_history,supported:false,remaining:'Entity relationships and provider-copy deletion are not yet classified. No deletion is available for this scope.'}
  const row=await env.DB.prepare('SELECT e.id,e.object_key,e.size,r.id AS receipt_id,r.origin,r.requirement_id,r.sha256 FROM exhibits e JOIN receipts r ON r.exhibit_id=e.id WHERE e.id=?').bind(subject).first<any>()
  if(!row)throw new Refusal('Exhibit not found.',404)
  const imported=!!await env.DB.prepare("SELECT 1 FROM import_additions WHERE kind='receipt' AND id=?").bind(row.receipt_id).first()
@@ -19,7 +20,7 @@ async function snapshot(env:Bindings,kind:string,subject:string) {
  // claim it erased until that original can be retired by the import workflow.
  const linked=(await env.DB.prepare('SELECT f.id,f.closed_at FROM review_folders f JOIN review_folder_controls fc ON fc.folder_id=f.id JOIN requirements q ON q.control_id=fc.control_id WHERE q.id=? ORDER BY f.id').bind(row.requirement_id).all()).results
  const erased=!!await env.DB.prepare('SELECT 1 FROM privacy_erased_exhibits WHERE exhibit_id=?').bind(subject).first()
- return {kind,subject,holds,supported:!imported&&!erased,imported,erased,exhibit:row,folders:linked,actions:{R2:1,D1_fields:2,live_shares:linked.filter((f:any)=>!f.closed_at).length},retained:'Opaque receipt IDs, digest, size, dates and attribution remain. External downloads and offline archives cannot be recalled. Request deletion from their custodians. No model index or provider-side copy is created by this upload door.'}
+ return {kind,subject,holds,hold_history,supported:!imported&&!erased,imported,erased,exhibit:row,folders:linked,actions:{R2:1,D1_fields:2,live_shares:linked.filter((f:any)=>!f.closed_at).length},retained:'Opaque receipt IDs, digest, size, dates and attribution remain. External downloads and offline archives cannot be recalled. Request deletion from their custodians. No model index or provider-side copy is created by this upload door.'}
 }
 export async function preview(env:Bindings,input:Input,actor:Actor,now:Date) {
  const kind=oneOf(input,'kind',kinds),subject=kind==='business'?'business':text(input,'subject_id',128),reason=text(input,'reason',500)
@@ -49,7 +50,7 @@ export async function execute(env:Bindings,id:string,input:Input,actor:Actor,now
  if(row.state==='preview') {
   if(await sha(new TextEncoder().encode(JSON.stringify(current)))!==row.snapshot_hash)throw new Refusal('The subject or holds changed. Create and review a new preview.',409)
   const statements=[
-   env.DB.prepare("INSERT INTO privacy_guard(singleton,allowed) SELECT 1,CASE WHEN EXISTS(SELECT 1 FROM privacy_requests WHERE id=? AND state='preview') AND NOT EXISTS(SELECT 1 FROM privacy_holds WHERE released_at IS NULL AND ((kind=? AND subject_id=?) OR kind='business')) THEN 1 ELSE 0 END").bind(id,row.kind,row.subject_id),
+   env.DB.prepare("INSERT INTO privacy_guard(singleton,allowed) SELECT 1,CASE WHEN EXISTS(SELECT 1 FROM privacy_requests WHERE id=? AND state='preview') AND (SELECT count(*) FROM privacy_holds WHERE (kind=? AND subject_id=?) OR kind='business')=? AND NOT EXISTS(SELECT 1 FROM privacy_holds WHERE released_at IS NULL AND ((kind=? AND subject_id=?) OR kind='business')) THEN 1 ELSE 0 END").bind(id,row.kind,row.subject_id,original.hold_history.length,row.kind,row.subject_id),
    // CAS plus the tombstone primary key serialize concurrent confirms. The
    // journal fences old exports before any irreversible R2 operation occurs.
    env.DB.prepare("UPDATE privacy_requests SET state='pending',confirmed_at=? WHERE id=? AND state='preview'").bind(now.toISOString(),id),

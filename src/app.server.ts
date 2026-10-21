@@ -1,3 +1,4 @@
+import { vendorReviewHandler } from './evidence/vendor/review-http'
 import { privacyHandler } from './evidence/erase/http'
 import { configurationFailures, configurationRefusal } from './evidence/ops/configuration'
 import { operationsHandler } from './evidence/ops/http'
@@ -50,7 +51,7 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
  const review = reviewHandler(clock)
  const supplier = supplierHandler(clock)
  const archive = archiveHandler(clock)
- const program = [privacyHandler(clock), periodAgentHandler(clock), operationsHandler(clock), frameworkHandler(clock), collectorOwnerHandler(clock), programHandler(clock), documentHandler(clock), auditHandler(clock), testHandler(clock), remedyHandler(clock), connectHandler(clock), riskHandler(clock), vendorHandler(clock), policyHandler(clock), workHandler(clock), followupHandler(clock), identityHandler(clock), attestHandler(clock), recurringReviews(clock), populationHandler(clock), inventoryHandler(clock), accessHandler(clock), trainingHandler(clock), handoverHandler(clock), vulnHandler(clock)]
+ const program = [privacyHandler(clock), vendorReviewHandler(clock), periodAgentHandler(clock), operationsHandler(clock), frameworkHandler(clock), collectorOwnerHandler(clock), programHandler(clock), documentHandler(clock), auditHandler(clock), testHandler(clock), remedyHandler(clock), connectHandler(clock), riskHandler(clock), vendorHandler(clock), policyHandler(clock), workHandler(clock), followupHandler(clock), identityHandler(clock), attestHandler(clock), recurringReviews(clock), populationHandler(clock), inventoryHandler(clock), accessHandler(clock), trainingHandler(clock), handoverHandler(clock), vulnHandler(clock)]
  const api = apiHandler(clock)
  const hooks = hookHandler(clock)
  const member = memberHandler(clock)

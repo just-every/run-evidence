@@ -1,3 +1,4 @@
+import { vendorObligations } from '../vendor/review-storage'
 import { pentestTotals } from '../vuln/storage'
 import { checklist } from './checklist'
 import type { Bindings } from '../../auth.server'
@@ -57,7 +58,9 @@ export async function readiness(env: Bindings, row: ProgramRow, now: Date) {
  // Failing tests are counted as tests, as on the Tests screen; tests_failing counts requirements.
  const failingTests = (await env.DB.prepare("SELECT DISTINCT o.test_id FROM observations o JOIN test_runs r ON r.id=o.run_id JOIN tests t ON t.id=o.test_id WHERE t.enabled=1 AND o.result='fail' AND r.started_at=(SELECT MAX(started_at) FROM test_runs x WHERE x.test_id=o.test_id)").all<{ test_id: string }>()).results.filter(r => programTests.has(r.test_id)).length
  const countReady = included.filter(r => r.ready).length
+ const cuecs=await vendorObligations(env)
  const totals = {
+  vendor_cuecs_open:cuecs.filter(c=>!c.control_id).length,
   ready: countReady, not_ready: included.length - countReady, readiness_percent: included.length ? Math.floor(100 * countReady / included.length) : null,
   requirements: requirements.length, excluded: requirements.length - included.length, included: included.length,
   unmapped: included.filter(r => r.proof === 'unmapped').length,

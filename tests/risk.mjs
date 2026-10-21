@@ -1,3 +1,4 @@
+import { vendorReviewJourney } from './helpers/vendor-review-journey.mjs'
 import {decodeArchive} from './helpers/portable-format.mjs'
 import {vendorJourney} from './helpers/vendor-journey.mjs'
 // Risk register, shipped library, spreadsheet import and versioned scoring
@@ -211,3 +212,5 @@ try {
  await scenario('VENDOR-001: onboarding, supplier link requests and per-question answers, findings, expiring conditional approval, overdue reminders and link isolation', async () => { await vendorJourney(app, owner, get, person, runtime) })
  console.log(`${passed} risk register public-door scenarios passed with real workerd, D1 and R2.`)
 } finally { await app.close() }
+
+if(!process.exitCode)await vendorReviewJourney()
