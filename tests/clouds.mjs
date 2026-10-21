@@ -195,6 +195,81 @@ try {
   const connection = (await get(path)).connection
   await collectionScheduleBrowser(app, [connection], { suffix: '-azure-gaps', expected: ['Evidence gaps by run', 'Azure schema drift', 'Azure pagination incomplete'] })
  })
+ await scenario('COLLECTION-001: storage and SQL schema gaps preserve the known population; bounded SQL coverage, recovery and history stay honest', async () => {
+  const subscription = az.subs[0][0], path = '/api/connections/' + conn.azure.id
+  const root = '/subscriptions/' + subscription, sqlRoot = root + '/resourceGroups/rg/providers/Microsoft.Sql/servers/'
+  const storageRoute = root + '/providers/Microsoft.Storage/storageAccounts?api-version=2023-05-01'
+  const serversRoute = root + '/providers/Microsoft.Sql/servers?api-version=2023-08-01-preview'
+  const databasesRoute = sqlRoot + 'prod-sql/databases?api-version=2023-08-01-preview'
+  const retentionRoute = sqlRoot + 'prod-sql/databases/orders/backupShortTermRetentionPolicies/default?api-version=2023-08-01-preview'
+  const storage = { name: 'prodblobs', properties: { allowBlobPublicAccess: false, supportsHttpsTrafficOnly: true, minimumTlsVersion: 'TLS1_2' } }
+  const server = { id: sqlRoot + 'prod-sql', name: 'prod-sql', properties: { publicNetworkAccess: 'Disabled' } }
+  const database = { id: sqlRoot + 'prod-sql/databases/orders', name: 'orders' }
+  const failed = []
+  let minute = 0
+  const collect = async () => {
+   await app.clock(new Date(Date.parse('2026-10-13T12:00:00Z') + minute++ * 60000).toISOString())
+   await owner(path + '/collect', {}, 201)
+   return (await get(path)).runs[0]
+  }
+  const unknown = async (route, body, group, tests, reason = /schema drift/) => {
+   az.responses.set(route, body)
+   const run = await collect(); failed.push(run)
+   assert.equal(run.outcome, 'partial')
+   const gap = JSON.parse(run.coverage_json).gaps.find(g => g.account === subscription && g.class === group)
+   assert.ok(gap, group + ' names the affected class and subscription'); assert.match(gap.reason, reason)
+   for (const [test, name] of tests) assert.deepEqual(await results(test), { [name + ' (' + subscription + ')']: 'unknown' }, test + ' keeps its known population')
+   assert.equal(Object.values(await results('azure.activity-log')).filter(r => r === 'pass').length, 1, 'an unrelated readable class still has its source result')
+   az.responses.delete(route)
+  }
+  assert.equal((await collect()).outcome, 'complete')
+  const storageTests = [['azure.storage-public', 'prodblobs'], ['azure.storage-https', 'prodblobs']]
+  for (const item of [
+   { ...storage, name: undefined }, { name: storage.name },
+   ...['allowBlobPublicAccess', 'supportsHttpsTrafficOnly', 'minimumTlsVersion'].map(field => ({ ...storage, properties: { ...storage.properties, [field]: undefined } })),
+   { ...storage, properties: { ...storage.properties, allowBlobPublicAccess: 'false' } },
+   { ...storage, properties: { ...storage.properties, supportsHttpsTrafficOnly: 'true' } },
+   { ...storage, properties: { ...storage.properties, minimumTlsVersion: 'changed' } },
+  ]) await unknown(storageRoute, { value: [item] }, 'Storage accounts', storageTests)
+  az.responses.set(storageRoute, { value: [storage] })
+  assert.equal((await collect()).outcome, 'complete')
+  for (const [test] of storageTests) assert.deepEqual(Object.values(await results(test)), ['pass'])
+  const sqlTests = [['azure.sql-public', 'prod-sql'], ['azure.sql-backup-retention', 'prod-sql/orders']]
+  for (const item of [
+   { ...server, id: undefined }, { ...server, name: undefined },
+   { ...server, id: server.id.replace(subscription, az.subs[1][0]) },
+   { ...server, id: server.id + '?different=resource' }, { ...server, name: 'different-server' },
+   { ...server, properties: undefined }, { ...server, properties: { publicNetworkAccess: undefined } },
+   { ...server, properties: { publicNetworkAccess: false } }, { ...server, properties: { publicNetworkAccess: 'changed' } },
+  ]) await unknown(serversRoute, { value: [item] }, 'Azure SQL', sqlTests)
+  for (const item of [
+   { ...database, id: undefined }, { ...database, name: undefined },
+   { ...database, id: database.id.replace('/prod-sql/', '/another-server/') },
+  ]) await unknown(databasesRoute, { value: [item] }, 'Azure SQL', sqlTests)
+  for (const body of [null, {}, { properties: null }, ...[undefined, null, '7', -1, 7.5].map(retentionDays => ({ properties: { retentionDays } }))]) {
+   await unknown(retentionRoute, body, 'Azure SQL', sqlTests)
+  }
+  az.responses.set(serversRoute, { value: Array.from({ length: 51 }, (_, i) => ({ ...server, id: sqlRoot + 'sql-' + i, name: 'sql-' + i })) })
+  const before = az.calls.length, limited = await collect(); failed.push(limited)
+  assert.equal(limited.outcome, 'partial'); assert.match(limited.coverage_json, /Azure SQL coverage incomplete: more than 50/)
+  assert.ok(!az.calls.slice(before).some(p => p.startsWith(sqlRoot)), 'over-limit inventory is refused before reading a truncated subset')
+  for (const [test, name] of sqlTests) assert.deepEqual(await results(test), { [name + ' (' + subscription + ')']: 'unknown' })
+  az.responses.delete(serversRoute)
+  // At the inclusive bound, read the last server too; its failure cannot be lost.
+  const original = az.sql.Production
+  az.sql.Production = [...Array.from({ length: 49 }, (_, i) => ({ name: 'sql-' + i, publicAccess: 'Disabled', dbs: [] })), ...original]
+  assert.equal((await collect()).outcome, 'complete')
+  const atLimit = await results('azure.sql-public')
+  assert.equal(Object.keys(atLimit).length, 50); assert.equal(atLimit['prod-sql (' + subscription + ')'], 'fail')
+  az.sql.Production = original
+  az.responses.set(serversRoute, { value: [server] }); az.responses.set(retentionRoute, { properties: { retentionDays: 7 } })
+  const recovered = await collect(); assert.equal(recovered.outcome, 'complete')
+  for (const [test] of sqlTests) assert.deepEqual(Object.values(await results(test)), ['pass'])
+  const history = (await get(path)).runs
+  for (const run of failed) assert.deepEqual(history.find(r => r.id === run.id), run, 'later source reads retain the original gap')
+  await collectionScheduleBrowser(app, [(await get(path)).connection], { suffix: '-azure-storage-sql', expected: ['Storage accounts', 'Azure SQL', 'Azure schema drift', 'Azure SQL coverage incomplete'] })
+  az.responses.clear()
+ })
  await scenario('COLLECTION-001: hosted collector schedules through owner doors, Cron, browser and restore', () => collectionScheduleJourney(app))
  console.log(`${passed} Google Cloud and Azure public-door scenarios passed; the clouds are faked only at the network edge.`)
 } finally { await app.close() }
