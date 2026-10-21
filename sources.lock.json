@@ -2924,7 +2924,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "f08c53ba42b0e3405847fe334547b331aa16ee3a6d6655f7de21eb690d20c666",
+      "sha256": "6f10638718920613b3548ff0c7c120f1dbf47101c407386507e4ff89e6ffa0ac",
       "executable": false
     },
     "DEMO.md": {
@@ -2988,7 +2988,7 @@
       "executable": false
     },
     "docs/TRACKERS.md": {
-      "sha256": "7b85ed3ef053a9ca2cf50a5fcd8277fef7b0815b786f093b6c5e179b6fecd100",
+      "sha256": "2e316e7c6eadb1b0dc5c8956f4dd068ee995e64939a4ae3dbeb54c680080a53a",
       "executable": false
     },
     "edition.json": {
@@ -5312,7 +5312,7 @@
       "executable": false
     },
     "src/evidence/work/sync.ts": {
-      "sha256": "6dbd6aa22550105d215769f6ce1273166cdc9636dc1e3cc0bb2288953ce171da",
+      "sha256": "5fa287ee29d3a0f273b4ef643f640e1b607c26bd81aca5c7b54f33492aaf5d7f",
       "executable": false
     },
     "src/evidence/work/vector.ts": {

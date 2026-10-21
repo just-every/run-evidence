@@ -16,8 +16,9 @@ and unchanged repeated reads do not produce duplicate state changes.
 
 Each linked ticket is polled every ten minutes by the five-minute scheduler.
 Polling remains active when a webhook is absent. The built-in poll processes at
-most fifty due ticket rows per scheduler invocation; hosted capacity above this
-batch size has not been measured. Source-read failure never fabricates a pass.
+most fifty distinct destination/remote-ticket pairs per scheduler invocation. Every
+linked item of a whole-test ticket is included together, so one closure re-tests
+the full linked population. Hosted capacity above this batch size has not been measured. Source-read failure never fabricates a pass.
 
 | Tracker | Project field and API address | Field details and official API |
 | --- | --- | --- |

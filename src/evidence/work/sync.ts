@@ -117,7 +117,16 @@ export async function syncTicket(env: Bindings, ticket: TicketRow, trigger: stri
 // Polling: every linked ticket is read at least every ten minutes, so tracker
 // changes reach Evidence within one 5-minute scheduler tick of that.
 export async function syncDue(env: Bindings, now: Date, limit = 50) {
- const due = (await env.DB.prepare("SELECT * FROM tickets WHERE remote_id IS NOT NULL AND (last_attempt_at IS NULL OR last_attempt_at<=?) ORDER BY last_attempt_at LIMIT ?").bind(new Date(now.getTime() - SYNC_INTERVAL + 60000).toISOString(), limit).all<TicketRow>()).results
+ // A whole-test ticket may link many obligations. Select bounded remote-ticket
+ // units, then include every linked row so closure queues one complete re-test;
+ // a row limit could split the members and evaluate only part of the test.
+ const due = (await env.DB.prepare(`SELECT t.* FROM tickets t JOIN (
+  SELECT destination_id,remote_id,MIN(COALESCE(last_attempt_at,'')) AS attempt
+  FROM tickets WHERE remote_id IS NOT NULL GROUP BY destination_id,remote_id
+  HAVING MIN(COALESCE(last_attempt_at,''))<=?
+  ORDER BY attempt,destination_id,remote_id LIMIT ?
+ ) q ON q.destination_id=t.destination_id AND q.remote_id=t.remote_id
+ ORDER BY q.attempt,t.destination_id,t.remote_id,t.id`).bind(new Date(now.getTime() - SYNC_INTERVAL + 60000).toISOString(), limit).all<TicketRow>()).results
  if (!due.length) return 0
  const rows = new Map((await obligations(env, now)).map(o => [o.id, o as Row]))
  for (const t of due) await syncTicket(env, t, 'poll', now, rows.get(t.obligation_id))
