@@ -26,7 +26,7 @@ export async function assuranceBrowser(){const app=await runtime(),output=resolv
    await page.getByRole('link',{name:'Tailor policies, risks and obligations'}).click();await page.getByRole('heading',{name:'Tailor obligations',exact:true}).waitFor();await capture('tailoring-workspace')
    const prepare=async index=>{
     await page.goto(origin+'/app/tailoring')
-    for(const [label,value]of Object.entries({'Receiving program':fixture.program.id,'Customer addendum':fixture.framework.id,'Customer requirement':fixture.requirements[index].id,'Selected framework or regulatory requirement':fixture.material.id,'Proposed control':fixture.control,'Approved policy revision':fixture.policy.revision}))await page.getByLabel(label,{exact:true}).selectOption(value)
+    for(const [label,value]of Object.entries({'Receiving program':fixture.program.id,'Customer addendum':fixture.framework.id,'Customer requirement':fixture.requirements[index].id,'Selected framework or regulatory requirement':fixture.material.id,'Control hint (optional)':index===0?'':fixture.control,'Approved policy revision':fixture.policy.revision}))await page.getByLabel(label,{exact:true}).selectOption(value)
     await page.getByRole('checkbox',{name:'Production customer service browser'+width,exact:true}).check()
     await page.getByLabel('Applicability and interpretation assumptions').fill(fixture.input.assumptions)
     await page.getByLabel('Proposed likelihood').fill('2');await page.getByLabel('Proposed impact').fill('4')
@@ -38,9 +38,11 @@ export async function assuranceBrowser(){const app=await runtime(),output=resolv
    await page.getByLabel('Decision',{exact:true}).selectOption('rejected');await page.getByLabel('Decision reason').fill('Reject the ambiguous interpretation; keep the original policy and scope')
    await page.getByRole('button',{name:'Record individual decision'}).click();await page.getByRole('heading',{name:'rejected',exact:true}).waitFor();await capture('tailoring-rejected')
    await prepare(0)
+   const approvedProposal=new URL(page.url()).pathname.split('/').at(-1),recommendation=await fixture.get('/api/tailoring/'+approvedProposal),approvedControl=recommendation.snapshot.mapping.control_id
+   assert.equal(recommendation.snapshot.control_selection.mode,'source-based recommendation')
    await page.getByLabel('Named security/legal owner',{exact:true}).selectOption(fixture.owner.id);await page.getByLabel('Decision',{exact:true}).selectOption('approved');await page.getByLabel('Decision reason').fill('Approved exact passage, proposed risk and policy draft')
    await page.getByRole('button',{name:'Record individual decision'}).click();await page.getByRole('heading',{name:'approved',exact:true}).waitFor();await capture('tailoring-approved')
-   await page.getByRole('link',{name:'Proposals and structured obligations',exact:true}).click();await page.locator('section').filter({has:page.getByRole('heading',{name:'US-1',exact:true})}).filter({has:page.locator('a[href="/app/controls/'+fixture.control+'"]')}).waitFor();await capture('tailoring-structured-obligation')
+   await page.getByRole('link',{name:'Proposals and structured obligations',exact:true}).click();await page.locator('section').filter({has:page.getByRole('heading',{name:'US-1',exact:true})}).filter({has:page.locator('a[href="/app/controls/'+approvedControl+'"]')}).filter({has:page.locator('a[href="/app/tailoring/'+approvedProposal+'"]')}).waitFor();await capture('tailoring-structured-obligation')
    const selectedPassage=await fixture.post('/api/questionnaires/sources',{kind:'policy',source_id:fixture.policy.revision,quote:'Access reviews occur annually.'})
    await page.goto(origin+'/app/questionnaires');await page.getByRole('heading',{name:'Questionnaires',exact:true}).waitFor();await capture('questionnaires-workspace')
    const form=page.locator('form[action="/app/questionnaires"]'),rows=questionRows.map((r,i)=>i===1?[r[0],r[1],'Describe access reviews',r[3],r[4]]:r),bytes=Buffer.from(rows.map(r=>r.map(s=>'"'+s.replaceAll('"','""')+'"').join(',')).join('\r\n'))

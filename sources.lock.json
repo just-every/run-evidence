@@ -2999,7 +2999,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "4d7efdb0f8508c97cf28b19baccc2e7422251e78cd9f10e4423a9201d9a08501",
+      "sha256": "c1c93670a93730346e4adfd5468dbca0eb43b93f29b139646847b3d329953f9f",
       "executable": false
     },
     "DEMO.md": {
@@ -3943,11 +3943,11 @@
       "executable": false
     },
     "src/evidence/agent/tailoring-http.ts": {
-      "sha256": "acf79755cd28475de95bbe15e6e504dcfc39327df8b7601a15a534fb411b1b2c",
+      "sha256": "77dc203f43d074cd8aaf6e286f734409daf74ce92a76da3138141b315164b486",
       "executable": false
     },
     "src/evidence/agent/tailoring-storage.ts": {
-      "sha256": "481d12eb965c0eef68b8e487852948ea8af933879b24ca9a2c206f15477e5d9d",
+      "sha256": "69c866d5fb8901a90fd39fdf4fb86534789acaf4dd67b507db39875012e4f20b",
       "executable": false
     },
     "src/evidence/agent/types.ts": {
@@ -6635,7 +6635,7 @@
       "executable": false
     },
     "tests/helpers/assurance-browser.mjs": {
-      "sha256": "683c1fa516848666dab59d48bda7c35c0ef6b6f4b5595f5de93da49997cc765a",
+      "sha256": "171c86fdf99beeb2110578cb1a3db7b9a25e18232e083c81c0c4ea83859d508a",
       "executable": false
     },
     "tests/helpers/azure-deadline-browser.mjs": {
@@ -6791,7 +6791,7 @@
       "executable": false
     },
     "tests/helpers/tailoring-journey.mjs": {
-      "sha256": "bdc7dcd2ff0e5f820739e15ea90435585fceb0b2a1c4a63b8b404f2f6af92ec2",
+      "sha256": "586cbc5a2b51d5bd5730deda41fddac9da98158dd141305e6aae3e06ad57e7c1",
       "executable": false
     },
     "tests/helpers/tracker-fields-browser.mjs": {

@@ -7,7 +7,7 @@ export async function tailoringFixture(app,suffix='journey'){
  const framework=await post('/api/frameworks',{name:'US customer security addendum '+suffix}),materialFramework=await post('/api/frameworks',{name:'Selected framework material '+suffix}),material=await post(`/api/frameworks/${materialFramework.id}/requirements`,{ref:'REG-AC',title:'Access-control requirements',description:'Accounts must have a named owner and approved access reviews.',section:'Access'})
  const q=[]
  for(const [i,description]of ['Effective 2026-01-01; review customer account access quarterly by 2026-12-31.','Encrypt production data exports and respond promptly to contract exceptions.','Provide reasonable customer security assurance.'].entries())q.push(await post(`/api/frameworks/${framework.id}/requirements`,{ref:'US-'+(i+1),title:'Customer security commitment '+(i+1),description,section:'Security'}))
- const c=await app.fetch('/app/controls',{method:'POST',headers:{origin:app.origin,'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({name:'Customer obligation control '+suffix,group:'Access',proof:'Customer safeguards',cadence:'quarterly'})});assert.equal(c.status,303)
+ const c=await app.fetch('/app/controls',{method:'POST',headers:{origin:app.origin,'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({name:'Customer access reviews and production export safeguards '+suffix,group:'Access',proof:'Customer safeguards',cadence:'quarterly'})});assert.equal(c.status,303)
  const control=(await get('/api/desk')).requirements.find(r=>c.headers.get('location').endsWith(r.id)).control_id
  const policy=await post('/api/policies',{title:'Customer access policy '+suffix,body:'Access reviews occur annually.'}),revision=await get(`/api/policies/${policy.policy}/revisions/${policy.revision}`)
  await post(`/api/policies/${policy.policy}/revisions/${policy.revision}/decision`,{decision:'approved',body_sha256:revision.body_sha256},200)
@@ -23,8 +23,9 @@ export async function tailoringJourney(){const app=await runtime();try{
  assert.equal((await app.fetch('/api/tailoring')).status,401)
  await app.signin();const f=await tailoringFixture(app)
  const proposals=[]
- for(const q of f.requirements)proposals.push(await f.post('/api/tailoring',{...f.input,requirement_id:q.id}))
+ for(const [i,q]of f.requirements.entries()){const input={...f.input,requirement_id:q.id};if(i===0)delete input.control_id;proposals.push(await f.post('/api/tailoring',input))}
  const snapshot=(await f.get('/api/tailoring/'+proposals[0].id)).snapshot
+ assert.equal(snapshot.control_selection.mode,'source-based recommendation');assert.equal(snapshot.mapping.control_id,f.control)
  assert.equal(snapshot.citations[0].kind,'contract-promise');assert.equal(snapshot.citations[1].kind,'framework-requirement');assert.equal(snapshot.context.resources[0].id,f.resource);assert.equal(snapshot.deadline,'2026-12-31');assert.equal(snapshot.policy_diff.before,'Access reviews occur annually.');assert.ok(snapshot.conflicts.length);assert.ok(snapshot.policy_diff.after.includes('quarterly'))
  for(const c of snapshot.citations)assert.equal((await app.fetch(c.href)).status,200,'original clause citation resolves')
  const counts=async()=>({mappings:(await app.db.prepare('SELECT count(*) AS n FROM custom_framework_mappings WHERE requirement_id IN (SELECT id FROM custom_framework_requirements WHERE framework_id=?)').bind(f.framework.id).first()).n,risks:(await app.db.prepare('SELECT count(*) AS n FROM risks').first()).n,obligations:(await app.db.prepare('SELECT count(*) AS n FROM tailored_obligations').first()).n,policyDrafts:(await app.db.prepare("SELECT count(*) AS n FROM policy_revisions WHERE status='draft'").first()).n})
