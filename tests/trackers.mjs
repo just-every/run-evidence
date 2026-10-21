@@ -79,7 +79,17 @@ try {
    let view=await detail(),r=view.tickets.find(t=>t.id===ticket.id)
    assert.equal(r.remote_assignee,'Lena Ortiz',provider);assert.ok(r.remote_status)
    assert.ok(Date.parse(r.last_synced_at)-started<=15*60000)
-   if(provider==='azure-boards'){assert.equal(r.remote_due,'2026-12-01');assert.equal(r.sync_state,'linked');delete remote.dueInstant}
+   if(provider==='azure-boards') {
+    assert.equal(r.remote_due,'2026-12-01');assert.equal(r.sync_state,'linked')
+    remote.dueInstant='invalid-date'
+    await owner('/api/tickets/'+ticket.id+'/sync',{},200)
+    const failed=(await detail()).tickets.find(t=>t.id===ticket.id)
+    assert.equal(failed.sync_state,'sync failed');assert.match(failed.sync_error,/invalid mapped date/)
+    assert.equal(remote.due,'2026-12-01');assert.equal(failed.remote_due,'2026-12-01')
+    delete remote.dueInstant
+    await owner('/api/tickets/'+ticket.id+'/sync',{},200)
+    assert.equal((await detail()).tickets.find(t=>t.id===ticket.id).sync_state,'linked')
+   }
    assert.equal(view.events.filter(e=>e.kind==='tracker comment'&&e.body==='Source fix in progress.').length,1)
    if(provider==='freshservice')assert.ok(view.events.some(e=>e.kind==='tracker comment'&&e.body==='Requester question.'&&e.actor_name.includes('Freshservice user 99')))
    assert.equal(view.events.filter(e=>e.kind==='tracker comment'&&/Fixing the source/.test(e.body)).length,0)
