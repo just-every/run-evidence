@@ -25,6 +25,8 @@ export function trackerFixture() {
  const state={rejectCreate:null,clock:'2026-10-11T12:00:00Z',handshake:null,rejectRegistration:false,rejectComments:false}
  const create=(p,fields)=>{const i={id:String(++seq),provider:p,title:'',description:'',due:null,assignee:null,status:'Open',closed:false,comments:[],labels:[],...fields};issues.set(p+':'+i.id,i);return i}
  const note=(i,body)=>{const c={id:'c'+ ++seq,body,author:'Evidence owner',at:state.clock};i.comments.push(c);return c}
+ const basecampHooks=new Map()
+ state.basecampHooks=basecampHooks
  const board={id:'42',name:'Security',columns}
  const find=(p,n)=>issues.get(p+':'+n)
  const date=n=>n==null?null:new Date(Number(n)).toISOString().slice(0,10)
@@ -91,6 +93,15 @@ export function trackerFixture() {
    return data({items:[{id:i.id,column_values:[{id:'date1',value:JSON.stringify({date:i.due}),text:i.due},{id:'person1',value:'{}',text:i.assignee??''},{id:'status1',value:JSON.stringify({index:i.closed?1:0}),text:i.closed?'Done':i.status}]}]})
   }
   if(p==='basecamp') {
+   if(path==='/100/buckets/200/webhooks.json'&&method==='POST') {
+    assert.deepEqual(body.types,['Todo','Comment']);assert.equal(new URL(body.payload_url).protocol,'https:')
+    assert.match(new URL(body.payload_url).searchParams.get('secret'),/^[a-f0-9]{64}$/)
+    if(state.rejectBasecampRegistration)return reply(422,{message:'Rejected address '+body.payload_url})
+    const h={id:++seq,active:true,payload_url:body.payload_url,types:body.types};basecampHooks.set(String(h.id),h);return reply(201,h)
+   }
+   const hook=/^\/100\/webhooks\/(\d+)\.json$/.exec(path)
+   if(hook){const h=basecampHooks.get(hook[1]);return h?reply(200,h):reply(404,{})}
+
    if(path==='/100/projects/200.json')return reply(200,{id:200,name:'Security'})
    if(path==='/100/buckets/200/todolists/300.json')return reply(200,{id:300,name:'Remediation'})
    if(path==='/100/buckets/200/todolists/300/todos.json'&&method==='POST'){if(body.description.includes('Priority: invalid-priority'))return reply(422,{message:'Invalid priority'});const i=create(p,{title:body.content,description:strip(body.description),priority:strip(body.description).match(/Priority: (.+)/)[1],labels:strip(body.description).match(/Labels: (.+)/)[1].split(', '),due:body.due_on,assignee:body.assignee_ids.length?'Dana Lee':null});return reply(201,{id:Number(i.id),app_url:`https://3.basecamp.com/100/buckets/200/todos/${i.id}`})}

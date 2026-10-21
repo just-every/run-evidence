@@ -9,6 +9,7 @@ const root=(d:{api_base:string;project:string})=>{const [a,b]=parts(d.project);r
 const api=(url:string,key:string,method='GET',body?:unknown)=>json(url,key,name,method,body,headers(key))
 export const basecamp: Adapter = {
  ...metadata(name,'https://3.basecampapi.com','account-id/project-id/todolist-id','A Basecamp OAuth access token','Read and write to-dos and comments in the chosen project'),
+ webhook: 'Evidence-registered secret-address callback (unsigned provider events), with ten-minute polling as backstop',
  fieldNotes: 'Assignee and due date use native fields. The to-do API has no priority or label fields, so these mapped values are explicit description text. Due-date updates preserve content, description, assignees, subscribers and start date.',
  async verify(base,key,_account,project) {const [a,b,c]=parts(project),p=await api(`${base}/${a}/projects/${b}.json`,key),list=await api(`${base}/${a}/buckets/${b}/todolists/${c}.json`,key);return {account:a,projectName:p.name+' / '+list.name}},
  async create(d,key,draft) {const i=await api(`${root(d)}/todolists/${parts(d.project)[2]}/todos.json`,key,'POST',{content:draft.title,description:html(`${draft.description}\n\nPriority: ${draft.priority}\nLabels: ${draft.labels.join(', ')}`),due_on:draft.due,assignee_ids:draft.assignee?[Number(draft.assignee)]:[],notify:false});return {id:requireId(i.id,name),key:String(i.id),url:i.app_url}},

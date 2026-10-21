@@ -80,9 +80,25 @@ than the INC display ID. [Workflow webhooks](https://support.freshservice.com/su
 YouTrack Webhook Triggers use the callback and pasted `X-YouTrack-Token` for the
 connected project. [Triggers](https://www.jetbrains.com/help/youtrack/cloud/webhook-triggers.html).
 
-Basecamp still uses polling: authenticated native callback provisioning is not
-established. Its subscription API does not document signing-secret provisioning;
-no unsigned callback path is admitted.
+Basecamp events are unsigned. Choose **Register Basecamp callback** on the
+connected destination: Evidence registers an HTTPS payload URL with a unique
+256-bit per-destination secret, sealed at rest. The full address is never shown
+in the owner page, API responses, audit or archive. Possession permits only a
+fresh authorized read of an already linked task, after exact account/project
+checks and event-ID deduplication. To-do and comment events are supported; a
+callback payload is never tracker truth. A local HTTP installation needs a
+publicly reachable HTTPS address before registration can succeed.
+
+The scheduler checks Basecamp registration hourly. Deactivation, changed URL or
+types, lost authorization, or an unavailable check destroys local callback
+authority and shows the problem on the destination page. Register again to issue
+a fresh secret. Ten-minute polling stays active as a backstop. Revocation destroys
+the secret; archive restore excludes it and leaves the destination inactive.
+Failed registration is labelled unconfirmed; check the provider before retrying,
+since a lost response may leave an unusable registration there. An interrupted
+registration can be retried after one hour. See the official
+[Basecamp webhook API](https://github.com/basecamp/bc3-api/blob/master/sections/webhooks.md).
+
 
 ## Acceptance boundaries
 
@@ -90,6 +106,10 @@ WORK-001 remains partial. `tests/trackers.mjs` names the clause for all thirteen
 providers, including native field requests, deadlines/conflicts, failure recovery,
 source re-tests and credential-free restore. New authenticated webhook journeys
 cover Azure Boards, monday, Freshservice and YouTrack. Remaining gaps include
-Basecamp authenticated callback provisioning and Vector inbound comment bodies
-(the current API returns activity metadata). Each tracker has the live Gap
+Vector inbound comment text with author/time/stable-ID/link/truncation/privacy
+proof (the current API returns activity metadata), and mapped Evidence-origin
+tracker assignee/status writes with read-before-write conflicts and people-only
+authority. Separate Evidence owner/state edits do not satisfy those writes.
+Basecamp registration, callback replay/boundaries, hourly deactivation, polling
+backstop and secret-free restore are covered by WORK-001 journeys. Each tracker has the live Gap
 **not yet run against a live account**; no provider verification is claimed.

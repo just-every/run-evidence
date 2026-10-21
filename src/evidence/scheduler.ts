@@ -8,6 +8,7 @@ import { escalate, runRetests } from './remedy/storage'
 import { renewalReminders } from './renewals'
 import { collectDue } from './connect/collect'
 import { escalateRiskAcceptances } from './risk/storage'
+import { checkBasecampWebhooks } from './work/basecamp-webhook'
 import { syncDue } from './work/sync'
 import { snapshotReadiness } from './program/board'
 import { weeklyDigest } from './followup/digest'
@@ -29,7 +30,7 @@ export async function scheduledWork(env: Bindings, now: Date) {
  const step = async (name: string, work: (scopedEnv: Bindings) => Promise<number>) => { outcome[name] = Date.now() >= deadline ? 'not run: execution deadline reached' : await runStep(env, name, now, work, deadline) }
  await step('delivery reconciliation', scoped => reconcileDeliveries(scoped, now))
  await step('collections', scoped => collectDue(scoped, now))
- await step('tickets', scoped => syncDue(scoped, now))
+ await step('tickets', async scoped => (await checkBasecampWebhooks(scoped, now)) + (await syncDue(scoped, now)))
  if (!await capabilityAllowed(env,'schedules')) return outcome
  await step('policies', async scoped => (await syncPolicies(scoped, now)) + (await syncAttestations(scoped, now)))
  await step('tests', scoped => runDueTests(scoped, now))

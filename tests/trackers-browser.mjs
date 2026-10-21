@@ -9,7 +9,7 @@ import { chromium } from 'playwright'
 import { runtime } from './helpers/runtime.mjs'
 import { azureDeadlineBrowser, deadlineBrowser } from './helpers/azure-deadline-browser.mjs'
 import { trackerFixture, configs } from './helpers/tracker-fixture.mjs'
-const edge=trackerFixture(),app=await runtime({outbound:edge.outbound})
+const edge=trackerFixture(),app=await runtime({outbound:edge.outbound,settings:{AUTH_ORIGIN:'https://127.0.0.1:8787'}})
 const output=resolve(process.env.EVIDENCE_BROWSER_OUTPUT??'.cache/browser/trackers')
 let browser,server
 try {
@@ -39,6 +39,8 @@ try {
  await mkdir(output,{recursive:true})
  for(const width of [1440,390]) {
   if(width===390) {
+   const bc=configs.basecamp,br=await app.fetch('/api/trackers',{method:'POST',headers:{cookie,origin:app.origin,'content-type':'application/json'},body:JSON.stringify({provider:'basecamp',project:bc.project,token:edge.keys.basecamp,label:'Basecamp phone registration'})})
+   assert.equal(br.status,201);dest.basecamp=await br.json()
    const c=configs.asana,r=await app.fetch('/api/trackers',{method:'POST',headers:{cookie,origin:app.origin,'content-type':'application/json'},body:JSON.stringify({provider:'asana',project:c.project,token:edge.keys.asana,label:'Asana phone registration'})})
    assert.equal(r.status,201);dest.asana=await r.json()
   }
@@ -63,6 +65,26 @@ try {
    assert.ok(await page.getByRole('heading',{name:'Field rules and mapping'}).count())
    assert.match(await page.locator('main').innerText(),/polled every 10 minutes|polling every 10 minutes|ten-minute polling|Every 10 minutes/)
 
+   if(provider==='basecamp') {
+    await capture('basecamp-before-registration')
+    await page.getByRole('button',{name:'Register Basecamp callback'}).click()
+    await page.waitForURL(origin+'/app/trackers/'+dest[provider].id)
+    assert.equal(await page.getByRole('button',{name:'Register Basecamp callback'}).count(),0)
+    assert.match(await page.locator('main').innerText(),/Registered secret address withheld/)
+    const secret=new URL([...edge.state.basecampHooks.values()].at(-1).payload_url).searchParams.get('secret')
+    assert.ok(!(await page.content()).includes(secret))
+    await capture('basecamp-registered')
+    const h=[...edge.state.basecampHooks.values()].at(-1);h.active=false
+    edge.state.clock=new Date(Date.parse(edge.state.clock)+60*60000).toISOString()
+    await app.clock(edge.state.clock);assert.equal((await app.tick()).outcome,'ok')
+    await page.reload()
+    assert.match(await page.locator('main').innerText(),/Deactivated, changed or unavailable/)
+    await capture('basecamp-deactivated')
+    await page.getByRole('button',{name:'Register Basecamp callback'}).click()
+    await page.waitForURL(origin+'/app/trackers/'+dest[provider].id)
+    assert.match(await page.locator('main').innerText(),/Registered secret address withheld/)
+
+   }
    if(provider==='asana') {
     await capture('asana-before-registration')
     await page.getByRole('button',{name:'Register Asana webhook'}).click()

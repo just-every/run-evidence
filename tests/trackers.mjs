@@ -4,6 +4,7 @@ import { readFile, readdir } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { createHmac } from 'node:crypto'
 import { runtime } from './helpers/runtime.mjs'
+import { basecampWebhookJourney } from './helpers/basecamp-webhook-journey.mjs'
 import { originalWebhookJourney } from './helpers/original-webhook-journey.mjs'
 import { providerWebhookJourney } from './helpers/provider-webhook-journey.mjs'
 import { shortcutWebhookJourney } from './helpers/shortcut-webhook-journey.mjs'
@@ -12,7 +13,7 @@ import { assertNativeFieldsCreate } from './helpers/native-fields-journey.mjs'
 import { trackerFixture, configs } from './helpers/tracker-fixture.mjs'
 const require=createRequire(import.meta.url),dependency=createRequire(require.resolve('wrangler/package.json'))
 const {unstable_splitSqlQuery}=dependency('wrangler')
-const edge=trackerFixture(),native=nativeFieldsFixture(edge.outbound),app=await runtime({outbound:native.outbound,migrationThrough:'0046'})
+const edge=trackerFixture(),native=nativeFieldsFixture(edge.outbound),app=await runtime({outbound:native.outbound,migrationThrough:'0046',settings:{AUTH_ORIGIN:'https://127.0.0.1:8787'}})
 const owner=async(path,body,status=201)=>{const r=await app.fetch(path,{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify(body)});const s=await r.text();assert.equal(r.status,status,path+' '+s);return s?JSON.parse(s):null}
 const get=async path=>{const r=await app.fetch(path);assert.equal(r.status,200,path);return r.json()}
 const at=async time=>{edge.state.clock=new Date(time).toISOString();await app.clock(edge.state.clock)}
@@ -23,7 +24,7 @@ const sign=(secret,body)=>createHmac('sha256',secret).update(body).digest('hex')
 let passed=0
 const scenario=async(name,fn)=>{await fn();passed++;console.log('PASS WORK-001: '+name)}
 try {
- await app.signin()
+ const ownerCookie=await app.signin()
  const push=await owner('/api/api-tokens',{name:'Source',scopes:['resource-push','test-write','read'],expires_at:'2027-04-01'})
  await scenario('provider-admission migration preserves existing destinations, sealed credentials, linked tickets and foreign keys',async()=>{
   const d=await owner('/api/trackers',{provider:'asana',project:'1200',token:edge.keys.asana})
@@ -201,6 +202,7 @@ try {
    assert.equal(groupView.runs.find(r=>r.trigger==='retest').population,2)
    const states=await Promise.all(groupItems.map(o=>get('/api/remediation/'+o.id)))
    for(const view of states){assert.equal(view.obligation.state,view.obligation.resource_name===provider+' fixed'?'verified':'open');assert.equal(view.observations[0].run_trigger,'retest')}
+   if(provider==='basecamp')await basecampWebhookJourney({app,edge,dest,ticket,remote,detail,owner,get,at,tick,cookie:ownerCookie})
    await originalWebhookJourney({app,edge,provider,dest,remote,detail})
    await providerWebhookJourney({app,edge,provider,dest,ticket,remote,detail,owner})
    if(provider==='shortcut')await shortcutWebhookJourney({app,edge,dest,ticket,linked,remote,detail})
@@ -241,7 +243,7 @@ try {
  await scenario('all thirteen providers and their callback credentials restore inactive without credentials or replayed source operations',async()=>{
   const response=await app.fetch('/api/archive/export');assert.equal(response.status,200)
   const bytes=Buffer.from(await response.arrayBuffer())
-  for(const secret of [...Object.values(edge.keys),'tracker-signing-secret','asana-provider-secret','ab'.repeat(32)])assert.ok(!bytes.includes(secret))
+  for(const secret of [...[...edge.state.basecampHooks.values()].map(h=>new URL(h.payload_url).searchParams.get('secret')),...Object.values(edge.keys),'tracker-signing-secret','asana-provider-secret','ab'.repeat(32)])assert.ok(!bytes.includes(secret))
   const target=await runtime({outbound:edge.outbound})
   try {
    await target.signin()
@@ -253,6 +255,10 @@ try {
    const azure=(await target.db.prepare("SELECT mapping_json FROM tracker_destinations WHERE provider='azure-boards'").first()).mapping_json
    assert.equal(JSON.parse(azure).due_field,'Custom.RemediationDue')
    for(const p of Object.keys(configs))assert.ok(destinations.some(d=>d.provider===p))
+   for(const h of edge.state.basecampHooks.values()) {
+    const u=new URL(h.payload_url)
+    assert.equal((await target.fetch(u.pathname+u.search,{method:'POST',headers:{cookie:'','content-type':'application/json'},body:'{}'})).status,404,'PORTABLE-001 WORK-001: restored callback has no authority')
+   }
    const calls=edge.calls.length;await target.tick();assert.equal(edge.calls.length,calls)
   } finally {await target.close()}
  })

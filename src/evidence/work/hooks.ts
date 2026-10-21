@@ -1,3 +1,4 @@
+import { verifyBasecampHook } from './basecamp-webhook'
 import { asanaHandshake } from './asana-webhook'
 import { runtimeBindings, type Bindings } from '../../auth.server'
 import { boundedBody, Refusal } from '../upload'
@@ -13,6 +14,7 @@ const plain = (status: number, body: Record<string, unknown>) => Response.json(b
 type Payload = Record<string, any>
 // Returns the delivery identity and the ticket the event concerns, or null when unverified.
 async function verify(d: DestinationRow, secret: string, request: Request, bytes: Uint8Array<ArrayBuffer>, now: Date, callback: string): Promise<Verified | null> {
+ if (d.provider==='basecamp') return verifyBasecampHook(d,secret,request,bytes,now)
  if (nativeHookProviders.includes(d.provider)) return verifyNativeHook(d,secret,request,bytes,now,callback)
  const h = (name: string) => request.headers.get(name) ?? ''
  const parse = () => { try { return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)) as Payload } catch { return null } }
