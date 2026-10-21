@@ -7,6 +7,7 @@ process.env.RER_SERVER_JOURNEY = '1'
 import assert from 'node:assert/strict'
 import { generateKeyPairSync, randomBytes, verify as verifySignature } from 'node:crypto'
 import { runtime } from './helpers/runtime.mjs'
+import { collectionScheduleJourney } from './helpers/collection-schedule-journey.mjs'
 const TENANT = '0e5f1c2a-1111-4222-8333-944455556666', CLIENT = '7a1b2c3d-1111-4222-8333-944455556666'
 const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048, privateKeyEncoding: { type: 'pkcs8', format: 'pem' }, publicKeyEncoding: { type: 'spki', format: 'pem' } })
 const secrets = { okta: randomBytes(20).toString('hex'), entra: randomBytes(24).toString('base64'), jumpcloud: randomBytes(20).toString('hex'), google: JSON.stringify({ client_email: 'evidence@service-account.test', private_key: privateKey }) }
@@ -145,5 +146,6 @@ try {
   assert.deepEqual([...new Set((await target.db.prepare('SELECT status,secret_ciphertext FROM connections').all()).results.map(r => JSON.stringify(r)))], [JSON.stringify({ status: 'inactive after restore', secret_ciphertext: null })])
   await target.close()
  })
+ await scenario('COLLECTION-001: hosted collector schedules through owner doors, Cron, browser and restore', () => collectionScheduleJourney(app))
  console.log(`${passed} identity public-door scenarios passed; the four directories are faked only at the network edge.`)
 } finally { await app.close() }

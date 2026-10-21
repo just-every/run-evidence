@@ -18,7 +18,6 @@ import type { Connection } from './storage'
 // authorized read issues source-observed facts; unread items become gaps.
 const repositorySchema: ResourceSchema = { fields: { private: 'boolean', archived: 'boolean', default_branch: 'string', branch_protection: 'boolean', required_reviews: 'number', required_status_checks: 'number', enforce_admins: 'boolean', open_critical_dependabot_alerts: 'number', open_secret_scanning_alerts: 'number', readable: 'boolean' }, required: [] }
 const organizationSchema: ResourceSchema = { fields: { login: 'string', two_factor_requirement_enabled: 'boolean', readable: 'boolean' }, required: [] }
-const HOUR = 3600000
 export async function runCollection(env: Bindings, connection: Connection, trigger: 'schedule' | 'manual', now: Date): Promise<{ run: string | null; outcome: string }> {
  if (!await capabilityAllowed(env,'collections',connection.id)) return {run:null,outcome:'inactive after restore'}
  if (connection.provider === 'private-git') throw new Refusal('Run the installed read-only collector on its private computer.', 409)
@@ -78,11 +77,11 @@ export async function runCollection(env: Bindings, connection: Connection, trigg
  await runForType(env, 'github.organization', now)
  return result
 }
-// GitHub has an owner-set interval; other hosted providers retain hourly reads.
+// Every hosted collector uses its owner-set elapsed interval.
 // Backoff is a lower bound even when a shorter schedule becomes due.
 export async function collectDue(env: Bindings, now: Date) {
  const { results } = await env.DB.prepare("SELECT * FROM connections WHERE status='active' AND provider!='private-git' AND (next_attempt_at IS NULL OR next_attempt_at<=?)").bind(now.toISOString()).all<Connection>()
- const due = results.filter(connection => !connection.last_attempt_at || Date.parse(connection.last_attempt_at) + (connection.provider === 'github' ? collectionMinutes(connection) * 60000 : HOUR - 5 * 60000) <= now.getTime())
+ const due = results.filter(connection => !connection.last_attempt_at || Date.parse(connection.last_attempt_at) + collectionMinutes(connection) * 60000 <= now.getTime())
  for (const connection of due) await runCollection(env, connection, 'schedule', now)
  return due.length
 }

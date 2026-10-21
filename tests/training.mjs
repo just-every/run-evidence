@@ -7,6 +7,7 @@ import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 import { randomBytes } from 'node:crypto'
 import { runtime } from './helpers/runtime.mjs'
+import { collectionScheduleJourney } from './helpers/collection-schedule-journey.mjs'
 const require = createRequire(import.meta.url)
 const { build } = createRequire(require.resolve('wrangler/package.json'))('esbuild')
 const bundled = await build({ entryPoints: ['src/evidence/training/courses.ts'], bundle: true, write: false, format: 'esm', platform: 'neutral' })
@@ -108,5 +109,6 @@ try {
   const exported = await get('/api/training/export')
   assert.deepEqual([...new Set(exported.completions.map(c => c.source))].sort(), ['evidence', 'internal', 'knowbe4'])
  })
+ await scenario('COLLECTION-001: hosted collector schedules through owner doors, Cron, browser and restore', () => collectionScheduleJourney(app))
  console.log(`${passed} training public-door scenarios passed with Base invitations and member sign-in.`)
 } finally { await app.close() }

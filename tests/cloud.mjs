@@ -7,6 +7,7 @@ process.env.RER_SERVER_JOURNEY = '1'
 import assert from 'node:assert/strict'
 import { createHash, createHmac, randomBytes } from 'node:crypto'
 import { runtime } from './helpers/runtime.mjs'
+import { collectionScheduleJourney } from './helpers/collection-schedule-journey.mjs'
 const MGMT = '111111111111', MEMBER = '222222222222', LOCKED = '333333333333'
 // Fake credentials are made fresh for each run; none is written in this file.
 const keyId = () => 'AKIA' + randomBytes(8).toString('hex').toUpperCase(), secretKey = () => randomBytes(30).toString('base64')
@@ -184,5 +185,6 @@ try {
   assert.deepEqual(resumed.stale, [{ from: '2026-10-11T15:00:00.000Z', to: '2026-10-11T16:30:00.000Z' }])
   assert.ok(resumed.runs.every(r => r.started_at <= '2026-10-11T14:00:00.000Z' || r.started_at === '2026-10-11T16:30:00.000Z'))
  })
+ await scenario('COLLECTION-001: hosted collector schedules through owner doors, Cron, browser and restore', () => collectionScheduleJourney(app, at))
  console.log(`${passed} AWS public-door scenarios passed; AWS is faked only at the network edge, with every signature checked.`)
 } finally { await app.close() }

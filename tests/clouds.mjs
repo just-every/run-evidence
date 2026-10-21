@@ -7,6 +7,7 @@ process.env.RER_SERVER_JOURNEY = '1'
 import assert from 'node:assert/strict'
 import { generateKeyPairSync, randomBytes, verify as verifySignature } from 'node:crypto'
 import { runtime } from './helpers/runtime.mjs'
+import { collectionScheduleJourney } from './helpers/collection-schedule-journey.mjs'
 const pair = () => generateKeyPairSync('rsa', { modulusLength: 2048, privateKeyEncoding: { type: 'pkcs8', format: 'pem' }, publicKeyEncoding: { type: 'spki', format: 'pem' } })
 const { privateKey, publicKey } = pair()
 const SA = 'evidence-reader@ops-host.example.test', TENANT = '0e5f1c2a-2222-4333-8444-955566667777', CLIENT = '1b2c3d4e-2222-4333-8444-955566667777', AZ_SECRET = randomBytes(24).toString('base64')
@@ -129,5 +130,6 @@ try {
   assert.deepEqual(gCov.accounts.map(a => [a.id, a.read]), [['northstar-prod', true], ['northstar-sandbox', false]])
   assert.equal((await results('gcp.public-iam'))['Northstar sandbox (northstar-sandbox)'], 'unknown')
  })
+ await scenario('COLLECTION-001: hosted collector schedules through owner doors, Cron, browser and restore', () => collectionScheduleJourney(app))
  console.log(`${passed} Google Cloud and Azure public-door scenarios passed; the clouds are faked only at the network edge.`)
 } finally { await app.close() }

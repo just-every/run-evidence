@@ -41,6 +41,9 @@ try {
   await post('/api/collectors', { label: 'Production service' }, 400)
   assert.equal((await app.fetch('/api/collectors', { method: 'POST', headers: { origin: app.origin, cookie: '', 'content-type': 'application/json' }, body: '{}' })).status, 401)
   issued = await post('/api/collectors', { label: 'Production service', reviewed: 'yes' })
+  // COLLECTION-001: a push collector keeps its independently owned local schedule.
+  await post(`/api/connections/${issued.id}/schedule`, { minutes: 15 }, 409)
+  assert.equal(JSON.parse((await get('/api/connections/' + issued.id)).connection.config_json).collection_minutes, undefined)
   reader = await post('/api/api-tokens', { name: 'Read collector inventory', scopes: ['read', 'resource-push'], expires_at: new Date(Date.now() + 86400000).toISOString() })
   await new Promise((done, fail) => { const p = spawn('git', ['init', '--initial-branch=main', repo], { stdio: 'ignore' }); p.once('error', fail); p.once('close', n => n === 0 ? done() : fail(Error('git init failed'))) })
   git('config', 'user.name', 'Northstar owner'); git('config', 'user.email', 'owner@northstar.test')

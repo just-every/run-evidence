@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { runtime } from './runtime.mjs'
+import { collectionScheduleBrowser } from './collection-schedule-browser.mjs'
 import { githubFixture } from './github-fixture.mjs'
 // COLLECTION-001 through owner HTTP, Cloudflare Cron and streamed custody restore.
 export async function collectionJourney() {
@@ -80,6 +81,9 @@ export async function collectionJourney() {
   // Restart reopens real D1/R2 without changing the schedule or run facts.
   await at('2026-10-11T13:30:00Z'); assert.equal(JSON.parse((await get(path)).connection.config_json).collection_minutes, 15)
   assert.deepEqual((await get(path)).runs.find(r => r.id === failed.id), failed)
+  await send(path + '/schedule', { minutes: 60 })
+  await collectionScheduleBrowser(app, [(await get(path)).connection])
+  await send(path + '/schedule', { minutes: 15 })
   await send(path + '/revoke', {})
   await send(path + '/collect', {}, 201)
   const refused = (await get(path)).runs[0]
