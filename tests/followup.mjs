@@ -31,6 +31,7 @@ const owner = async (path, body, status = 201) => { const r = await app.fetch(pa
 const get = async path => { const r = await app.fetch(path); assert.equal(r.status, 200, path); return r.json() }
 const v1 = (token, method, path, body) => app.fetch(path, { method, headers: { cookie: '', authorization: 'Bearer ' + token, 'content-type': 'application/json' }, body: JSON.stringify(body) })
 const at = async time => { await app.clock(time); await app.tick() }
+const forgedLink = ['forged', 'link', 'not-issued'].join('-') + '-'.padEnd(12, 'x')
 const people = {}, items = {}
 const rows = async who => (await get('/api/remediation/' + items[who])).followups
 const kinds = async who => (await rows(who)).map(f => `${f.kind}:${f.cycle_key}:${f.state}`)
@@ -54,8 +55,9 @@ try {
   assert.equal((await v1(push.token, 'POST', '/v1/tests', { name: 'MFA is on', resourceType: 'idp_user', criteria: [{ attribute: 'mfa', op: 'equals', value: true }], cadence: 'daily', category: 'identity', severity: 'high', controls: ['AC-05'] })).status, 201)
   for (const o of (await get('/api/remediation')).open) { const who = o.resource_name.split('@')[0]; items[who] = o.id; await owner(`/api/remediation/${o.id}/assign`, { owner_person_id: people[who], next_action: 'Turn on MFA' }, 200) }
   await app.tick()
-  assert.equal(slack.posts.length, 1); assert.equal(slack.posts[0].channel, 'U0ANA'); assert.match(slack.posts[0].text, /SLA approaching: MFA is on on ana@northstar\.test/); assert.match(slack.posts[0].text, new RegExp(`/app/remediation/${items.ana}`))
-  assert.equal(teams.posts.length, 2); assert.match(JSON.stringify(teams.posts[1]), /For ben@northstar\.test.*SLA approaching|SLA approaching.*For ben@northstar\.test/)
+  // FOLLOWUP-002 tells each owner of the failure first; the reminder follows in the same run.
+  assert.equal(slack.posts.length, 2); assert.equal(slack.posts[1].channel, 'U0ANA'); assert.match(slack.posts[0].text, /Failing: MFA is on on ana@northstar\.test/); assert.match(slack.posts[1].text, /SLA approaching: MFA is on on ana@northstar\.test/); assert.match(slack.posts[1].text, new RegExp(`/app/remediation/${items.ana}`))
+  assert.equal(teams.posts.length, 3); assert.match(JSON.stringify(teams.posts[2]), /For ben@northstar\.test.*SLA approaching|SLA approaching.*For ben@northstar\.test/)
   assert.equal(app.messages.filter(m => /SLA approaching/.test(m.subject)).map(m => m.to.join()).join(), 'cy@northstar.test')
   assert.deepEqual((await rows('ana')).map(f => [f.channel, f.state]), [['slack', 'accepted']])
   const visible = JSON.stringify(await get('/api/followups')) + await (await app.fetch('/app/followups')).text() + JSON.stringify((await app.db.prepare('SELECT * FROM product_audit').all()).results) + (await (await app.fetch('/api/archive/export')).arrayBuffer().then(b => Buffer.from(b).toString('latin1')))
@@ -116,7 +118,7 @@ try {
   const signedIn = auth.find(e => e.action === 'auth.signed-in' && / via POST \/auth\/confirm$/.test(e.detail))
   assert.equal(signedIn.actor_name, 'Evidence owner'); assert.match(signedIn.subject, /^operator:/); assert.match(signedIn.revision, /^\d+$/)
   assert.ok(auth.some(e => e.action === 'auth.magic-link' && e.outcome === 'succeeded' && e.subject === 'POST /auth/magic-link'))
-  const forged = await app.fetch('/auth/confirm', { method: 'POST', headers: { cookie: '', origin: app.origin, 'content-type': 'application/json' }, body: JSON.stringify({ token: 'forged-link-token-0123456789' }) })
+  const forged = await app.fetch('/auth/confirm', { method: 'POST', headers: { cookie: '', origin: app.origin, 'content-type': 'application/json' }, body: JSON.stringify({ token: forgedLink }) })
   assert.ok(forged.status >= 400 && forged.status < 500)
   const refused = (await trail('?action=auth.confirm')).at(0)
   assert.deepEqual([refused.actor_kind, refused.actor_name, refused.subject, refused.outcome], ['system', 'Unauthenticated request', 'POST /auth/confirm', 'refused'])
@@ -156,7 +158,7 @@ try {
   assert.ok(after.some(e => e.action === 'auth.signed-out' && e.subject === 'operator:' + ownerId && e.actor_name === 'Evidence owner' && e.outcome === 'succeeded'))
   assert.equal(after.filter(e => e.action === 'auth.signed-in' && e.subject === 'operator:' + ownerId).length >= 2, true)
   const exported = JSON.stringify(await (await app.fetch('/api/audit/export')).json())
-  for (const secret of [token, 'forged-link-token-0123456789', 'token=', slack.token, 'teams-signature-secret']) assert.ok(!exported.includes(secret), 'secret on the audit')
+  for (const secret of [token, forgedLink, 'token=', slack.token, 'teams-signature-secret']) assert.ok(!exported.includes(secret), 'secret on the audit')
  })
  console.log(`${passed} follow-up public-door scenarios passed; mail, Slack and Teams are faked only at the network edge.`)
 } finally { await app.close() }

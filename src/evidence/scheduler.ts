@@ -11,6 +11,7 @@ import { escalateRiskAcceptances } from './risk/storage'
 import { checkBasecampWebhooks } from './work/basecamp-webhook'
 import { syncDue } from './work/sync'
 import { snapshotReadiness } from './program/board'
+import { openingNotices } from './followup/opened'
 import { weeklyDigest } from './followup/digest'
 import { syncPolicies } from './policy/builder'
 import { attestationReminders, syncAttestations } from './attest/storage'
@@ -38,6 +39,7 @@ export async function scheduledWork(env: Bindings, now: Date) {
  await step('training', scoped => trainingWork(scoped, now))
  await step('retests', scoped => runRetests(scoped, now, (test, resource) => runTest(scoped, test, 'retest', now, resource)))
  await step('ticket automation', scoped => ticketAutomation(scoped, now))
+ await step('failure notices', scoped => openingNotices(scoped, now))
  await step('escalations', scoped => escalate(scoped, now))
  await step('renewals', scoped => renewalReminders(scoped, now))
  await step('risk acceptances', scoped => escalateRiskAcceptances(scoped, now))

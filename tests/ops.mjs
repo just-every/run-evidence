@@ -59,7 +59,7 @@ try {
   connection=await owner('/api/connections',{account:'northstar',token:'github_pat_good',label:'OPS source'})
   await app.tick()
   const before=await allSteps()
-  const expected=['delivery reconciliation','collections','tickets','policies','tests','access reviews','training','retests','ticket automation','escalations','renewals','risk acceptances','weekly digest','attestation reminders','review reminders','handovers','readiness snapshots']
+  const expected=['delivery reconciliation','collections','tickets','policies','tests','access reviews','training','retests','ticket automation','failure notices','escalations','renewals','risk acceptances','weekly digest','attestation reminders','review reminders','handovers','readiness snapshots']
   assert.deepEqual(before.map(r=>r.step),expected)
   for(const row of before) {assert.equal(row.outcome,'succeeded',row.step);assert.ok(Number.isInteger(row.processed_count));assert.ok(row.finished_at)}
   assert.equal(before.find(r=>r.step==='collections').processed_count,1)

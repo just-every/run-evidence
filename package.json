@@ -47,6 +47,7 @@
     "test:work": "node tests/work.mjs",
     "test:report": "node tests/report.mjs",
     "test:followup": "node tests/followup.mjs",
+    "test:failure-notices": "node tests/failure-notices.mjs",
     "test:cloud": "node tests/cloud.mjs",
     "test:identity": "node tests/identity.mjs",
     "test:policy": "node tests/policy.mjs",
