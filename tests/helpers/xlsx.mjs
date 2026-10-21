@@ -12,6 +12,9 @@ export function xlsx(rows) {
   'xl/_rels/workbook.xml.rels': '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>',
   'xl/worksheets/sheet1.xml': sheet,
  }
+ return zipFixture(files)
+}
+export function zipFixture(files) {
  const local = [], central = []; let offset = 0
  for (const [name, text] of Object.entries(files)) {
   const data = Buffer.from(text), path = Buffer.from(name), crc = crc32(data)

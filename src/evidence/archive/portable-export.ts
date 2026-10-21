@@ -6,6 +6,7 @@ import { sourceLineage } from './journal'
 export interface PortableInventory {format:'evidence-custody';version:10;created_at:string;source:{lineage:string;sequence:number;generation:number};counts:Record<string,number>;bytes:number;files:number;available:number;missing:{path:string;object_key:string;size:number;sha256:string;available:boolean;reason?:string}[];missing_count:number;missing_truncated:boolean}
 export async function portableInventory(env:Store,now=new Date()):Promise<PortableInventory> {
  await assertSchema(env);await assertBucket(env)
+ if(await env.DB.prepare("SELECT 1 FROM privacy_requests WHERE state='pending' LIMIT 1").first())fail('An erasure is pending. Finish or retry its storage deletion before exporting an archive.')
  const source=await sourceLineage(env),counts:Record<string,number>={}
  for(let i=0;i<portableTables.length;i+=30){const names=portableTables.slice(i,i+30),r=await env.DB.batch<{total:number}>(names.map(t=>env.DB.prepare(`SELECT count(*) AS total FROM ${quote(t)}`)));names.forEach((t,k)=>{counts[t]=r[k].results[0].total})}
  const result:PortableInventory={format:'evidence-custody',version:10,created_at:now.toISOString(),source,counts,bytes:0,files:0,available:0,missing:[],missing_count:0,missing_truncated:false}

@@ -1,3 +1,5 @@
+import { tailoringJourney } from './helpers/tailoring-journey.mjs'
+import { answerJourney } from './helpers/answer-journey.mjs'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { periodAgentJourney } from './helpers/period-agent-journey.mjs'
@@ -137,3 +139,7 @@ try {
  // Assertions can contain secrets; emit stack locations only.
  console.error(String(error.stack||'').split('\n').filter(line=>/^\s+at /.test(line)).join('\n'));process.exitCode=1
 } finally {await app.close()}
+
+if(!process.exitCode)await answerJourney()
+
+if(!process.exitCode)await tailoringJourney()

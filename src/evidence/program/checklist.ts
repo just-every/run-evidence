@@ -1,5 +1,5 @@
 import type { RequirementState } from './readiness'
-export interface ChecklistArea { area: string; ready: number; total: number; available: boolean; refs: string[] }
+export interface ChecklistArea { area: string; ready: number; total: number; available: boolean; refs: string[]; records?:{id:string;href:string;label:string;state:string}[] }
 // Counts are requirement denominators, not claims that an unbuilt workflow ran.
 export function checklist(requirements: RequirementState[]): ChecklistArea[] {
  const included = requirements.filter(r => r.state === 'included')

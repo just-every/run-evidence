@@ -28,7 +28,7 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: `src/evidence/review/http.ts`; `src/evidence/review/storage.ts`; `tests/review.mjs`; `tests/review-browser.mjs`.
 
-- **ANSWER-001 — Cited security-questionnaire completion · missing.** Against a populated program (approved policies, passing and failing tests, a SOC 2 report), upload a full-length SIG Lite (XLSX) and CSA CAIQ v4 (XLSX), plus a CSV and a DOCX customer questionnaire, in Questionnaires, and generate cited drafts. A held-out reviewer key, prepared independently, lists for each question whether the populated sources can answer it and which source supports it. Then check:
+- **ANSWER-001 — Cited security-questionnaire completion · partial.** Against a populated program (approved policies, passing and failing tests, a SOC 2 report), upload a full-length SIG Lite (XLSX) and CSA CAIQ v4 (XLSX), plus a CSV and a DOCX customer questionnaire, in Questionnaires, and generate cited drafts. A held-out reviewer key, prepared independently, lists for each question whether the populated sources can answer it and which source supports it. Then check:
   - the draft reports cited, flagged and conflicting counts that reconcile to the question total;
   - at least 90% of the questions the key marks answerable are drafted with citations;
   - 100% of citations resolve to the source revision and period they name, and support the claim per the key;
@@ -37,7 +37,7 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Inspect citations, edit and approve an exact version. Modify a source after approval and attempt reuse/submission: require a new decision. Export and reopen the original formats without losing question placement, IDs or flagged gaps.
 
-  Current evidence: —.
+  Current slice: `tests/agent.mjs` / `tests/helpers/answer-journey.mjs` proves CSV/XLSX/DOCX originals and question placement, exact approved-policy citations, explicitly flagged unsupported and non-text questions, reconciling counts, named reviewer and exact recipient approval, preserved exports, changed-draft/source refusals, readiness record drilldown and populated restore. `tests/period-agent-browser.mjs` / `tests/helpers/assurance-browser.mjs` proves the upload, draft, approval, invalidated export and readiness screens at 1440/390. Remaining: audit-report/prior-approved-answer sources, non-text format mapping, full-length licensed SIG Lite and official CAIQ workbooks with an independently held-out reviewer key and the stated 90%/100%/zero-error benchmark. The basic extractive journey is not that benchmark.
 
   Before shipping, this clause adds questionnaire completion records to the READINESS-001 checklist, with reconciled counts and record drilldown. Assert the new checklist count and its record drilldown when the capability ships.
 
@@ -401,7 +401,7 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
-- **AGENT-006 — Tailor policies, risks and structured obligations · missing.** Before shipping, inherit CONTROL-001 mapping proposals: approve two and reject one individually, with only the two approved exact revisions becoming framework mappings. Ask the agent to interpret a US customer security addendum and selected framework material alongside the actual asset inventory. Inspect clause citations, proposed controls, policy/risk diffs and one ambiguous obligation. Reject a proposed interpretation and approve another: only the approved exact revision enters the program and downstream work.
+- **AGENT-006 — Tailor policies, risks and structured obligations · done.** Before shipping, inherit CONTROL-001 mapping proposals: approve two and reject one individually, with only the two approved exact revisions becoming framework mappings. Ask the agent to interpret a US customer security addendum and selected framework material alongside the actual asset inventory. Inspect clause citations, proposed controls, policy/risk diffs and one ambiguous obligation. Reject a proposed interpretation and approve another: only the approved exact revision enters the program and downstream work. `tests/agent.mjs` / `tests/helpers/tailoring-journey.mjs` asserts two individual exact mapping approvals and one rejection, resolving contract/framework source passages, actual inventory, policy and risk diffs, a parsed deadline and an ambiguous obligation, explicit interpretation acknowledgement, no downstream effects before approval or on rejection, source-drift/foreign-origin/bearer/stale-fingerprint refusals, atomic approved mapping/risk/obligation/policy-draft records and populated restore. `tests/period-agent-browser.mjs` / `tests/helpers/assurance-browser.mjs` proves the workspace, ambiguous proposal, original clause, rejected and approved outcomes and structured obligations at 1440/390. The signed-in owner acts for security/legal and names the reviewer from People; AUTH-001 inherits scoped decisions. Preparation runs locally and no policy is automatically published.
 
   Current evidence: —.
 

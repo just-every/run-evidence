@@ -650,6 +650,8 @@ The owner reviews or rejects the exact investigation fingerprint with a reason. 
 
 **Acceptance evidence:** Ask the agent to interpret a US customer security addendum and selected framework material alongside the actual asset inventory. Inspect clause citations, proposed controls, policy/risk diffs and one ambiguous obligation. Reject a proposed interpretation and approve another: only the approved exact revision enters the program and downstream work.
 
+Current AGENT-006 semantics: local deterministic preparation uses the exact owner-selected customer requirement, imported framework/regulatory requirement, approved policy revision, recorded inventory rows and current risk method. It retains passages and source doors, assumptions, ambiguity, an explicit ISO deadline only when present in the passage, and the exact proposed control mapping, policy diff and scored risk assumptions. It distinguishes a contract promise from a framework requirement and asserts no legal interpretation is authoritative. Each owner decision names a security/legal person from People and the exact proposal hash; that person's name is attribution, never a new authentication grant. The current installation owner acts for those roles until AUTH-001 adds scoped authority. Approval applies the mapping, risk assessment, structured obligation and a new policy draft atomically; publication remains the existing separate POLICY-001 approval/publication door. Source or inventory drift requires fresh preparation. Rejection creates none of those records. No source passage authorizes outbound action or work assignment. AUTH-001 inherits scoped tailoring approval before those roles ship.
+
 **AGENT-007 — Check uploaded and captured evidence before the auditor sees it.** When an exhibit is uploaded to a requirement (PROOF-001), an agent checks it against the requirement text, its control, the period and earlier accepted exhibits. It reports one of likely meets, missing element, outdated or wrong system, with citations to the exhibit's page or region and to the requirement wording. Through the Evidence browser extension (ANSWER-002), a signed-in owner or control owner can capture a screenshot of a named web-app settings page. The capture records the URL, page title, time and capturing person, and is stored as a manually-asserted exhibit labeled browser-captured, never source-observed; the same check then runs on it. The agent only proposes: it never changes an exhibit, receipt or origin, never marks a requirement satisfied, and never shares a finding with an auditor. The owner accepts or dismisses each finding; open findings appear in readiness before an engagement is shared (AUDIT-003).
 
 **Acceptance evidence:** Upload three exhibits to a quarterly access-review requirement: one dated before the period, one missing the reviewer sign-off and one complete. The agent reports outdated and missing element for the first two and likely meets for the third, and each citation resolves to the cited page and requirement wording. Dismiss one finding and accept another: the receipt bytes, origin and requirement state are unchanged, and nothing is marked satisfied. Capture a SaaS admin MFA settings page with the extension: the exhibit is manually-asserted and labeled browser-captured with URL and time, and it is checked. Against a held-out set of 20 exhibits with an independent reviewer key, the agent's verdicts match at least 90% of the key, and zero exhibits the key marks deficient are reported as likely meets.
@@ -777,8 +779,8 @@ Every capability claim on the homepage (`src/site/landing/`, rebuilt on the owne
 | 45 | Fieldwork | Background checks from Checkr ("6 of 6 cleared") | LIFECYCLE-001 | missing | contract, not yet in code |
 | 46 | Fieldwork | Uploaded board minutes and penetration-test report as PDF | PROOF-001, VULN-002 | done | `src/evidence/upload.ts`, `src/evidence/vuln/` |
 | 47 | Trust center | "Publish your report in a trust center" (Larkspur Trust Center) | TRUST-001 | partial | partly: `src/evidence/review/` (scoped expiring downloads) |
-| 48 | Trust center | "Evidence answers security questionnaires from verified proof, and every answer cites its source"; "Every answer cites its proof." | ANSWER-001 | missing | contract, not yet in code |
-| 49 | Trust center | "209 answered from evidence · 3 sent to Dana Lee" | ANSWER-001, ANSWER-003 | missing | contract, not yet in code |
+| 48 | Trust center | "Evidence answers security questionnaires from verified proof, and every answer cites its source"; "Every answer cites its proof." | ANSWER-001 | partial | Exact cited excerpts and explicit flags implemented; full benchmark remains pending. |
+| 49 | Trust center | "209 answered from evidence · 3 sent to Dana Lee" | ANSWER-001, ANSWER-003 | partial | Basic cited drafts implemented; collaboration remains unbuilt. |
 | 50 | ISO 27001 | "SOC 2, ISO 27001 and HIPAA share controls, so one passing test counts everywhere it applies" | PROGRAM-002, LIBRARY-001 | done | `src/evidence/library/controls.ts`, `src/evidence/library/iso27001.ts` |
 | 51 | ISO 27001 | "Add framework · ISO 27001:2022 · 71 of 93 controls already tested", A.5.15 ← CC6.1, A.8.24 ← CC6.7, a new control with an owner | PROGRAM-001, PROGRAM-002, READINESS-001 | done | `src/evidence/program/`, `src/evidence/library/iso27001.ts` |
 | 52 | Moving in | "Coming from Vanta, Drata or Secureframe? Import controls, policies, evidence and vendors" | MIGRATE-001, IMPORT-001 | partial | partly: `src/evidence/import/` (Drata archive) |
@@ -802,9 +804,9 @@ ACCESS-001 updated 20 October 2026 with clause-named campaign, revocation-eviden
 
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
-| Published | 6 | 1 | 1 | 8 |
-| Target and push further | 34 | 12 | 25 | 71 |
-| All | 40 | 13 | 26 | 79 |
+| Published | 6 | 2 | 0 | 8 |
+| Target and push further | 35 | 12 | 24 | 71 |
+| All | 41 | 14 | 24 | 79 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -861,7 +863,7 @@ ACCESS-001 updated 20 October 2026 with clause-named campaign, revocation-eviden
 | `TRUST-002` | CRM-driven access, click-through NDA and live control status | target | missing |  | No implementing path |
 | `TRUST-003` | Trust-center updates, subscribers and subprocessor-change notices | target | missing |  | No implementing path |
 | `TRUST-004` | Cited visitor Q&A on the trust center | target | missing |  | No implementing path |
-| `ANSWER-001` | Cited security-questionnaire completion | published | missing |  | No implementing path |
+| `ANSWER-001` | Cited security-questionnaire completion | published | partial | `src/evidence/answer/`; `tests/agent.mjs`; `tests/helpers/answer-journey.mjs`; `tests/period-agent-browser.mjs`; `tests/helpers/assurance-browser.mjs` | CSV, first-sheet XLSX and table DOCX templates, exact policy/observation excerpts or explicit flags, named exact answer-set/recipient approval, source invalidation, template export, readiness drilldown and archive parity. Remaining: audit-report and prior-approved-answer sources, complete non-text answer formats, full-length licensed SIG Lite and official CAIQ benchmark with an independently held-out reviewer key and the required 90% answerable-question coverage. No answer-quality benchmark or model inference is claimed. |
 | `ANSWER-002` | Portal and web-form questionnaire capture and fill-back | target | missing |  | No implementing path |
 | `ANSWER-003` | Questionnaire collaboration, PDF capture and answer-library import | target | missing |  | No implementing path |
 | `IMPORT-001` | Reviewed Drata archive admission and undo | published | done | `src/evidence/import/http.ts`; `src/evidence/import/plan.ts`; `tests/import.mjs`; `docs/DRATA-IMPORT.md` |  |
@@ -883,7 +885,7 @@ ACCESS-001 updated 20 October 2026 with clause-named campaign, revocation-eviden
 | `AGENT-003` | Investigate, fix narrowly and re-test the real system | push-further | missing |  | No implementing path |
 | `AGENT-004` | Maintain collectors without manufacturing evidence | push-further | missing |  | No implementing path |
 | `AGENT-005` | Keep customer promises current | push-further | missing |  | No implementing path |
-| `AGENT-006` | Tailor policies, risks and structured obligations | push-further | missing |  | No implementing path |
+| `AGENT-006` | Tailor policies, risks and structured obligations | push-further | done | `src/evidence/agent/tailoring-storage.ts`; `src/evidence/agent/tailoring-http.ts`; `tests/agent.mjs`; `tests/helpers/tailoring-journey.mjs`; `tests/period-agent-browser.mjs`; `tests/helpers/assurance-browser.mjs` | Every acceptance point is asserted through owner doors: two individual mapping approvals and one rejection; contract and framework passages, actual inventory, policy/risk diffs, ambiguity, exact revision decisions, downstream records and archive parity. Current owner acts for security/legal; naming a person from People does not grant authentication. AUTH-001 inherits role-scoped tailoring decisions before those roles ship. |
 | `AGENT-007` | Check uploaded and captured evidence before the auditor sees it | push-further | missing |  | No implementing path |
 | `AI-001` | AI inventory and governance | push-further | missing |  | No implementing path |
 | `BOUNDARY-001` | US-first scope and independent specialist services | target | done | `src/evidence/program/boundary.ts`; `src/evidence/program/http.ts`; `src/evidence/costs.ts`; `src/evidence/library/`; `tests/program.mjs`; `tests/work.mjs`; `tests/cloud.mjs`; `tests/population.mjs`; `tests/followup.mjs` | None for current doors. Future program, agreement, specialist-handoff and customer-facing clauses (PROGRAM-003, PROGRAM-004, VENDOR-001, VENDOR-002, ANSWER-001, TRUST-001, AUDIT-001) inherit the obligation. |

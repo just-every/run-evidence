@@ -1,0 +1,2 @@
+export const tailoringColumns={tailoring_proposals:['id','framework_id','requirement_id','snapshot_json','snapshot_hash','created_by','created_at'],tailoring_decisions:['proposal_id','snapshot_hash','decision','approver_person_id','actor_id','actor_name','reason','policy_revision_id','risk_id','decided_at'],tailored_obligations:['id','proposal_id','program_id','control_id','kind','body','source_ref','deadline','assumptions','created_at']} as const
+export const tailoringTables=Object.keys(tailoringColumns)

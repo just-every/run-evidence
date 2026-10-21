@@ -1,3 +1,4 @@
+import { assuranceBrowser } from './helpers/assurance-browser.mjs'
 // AGENT-002: the period report, cited findings, original source and rejected end state.
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
@@ -66,3 +67,5 @@ try {
   console.log(`PASS AGENT-002: period investigation, original citations and rejected end state at ${width}`)
  }
 } finally {await browser?.close();if(server)await new Promise(done=>server.close(done));await app.close()}
+
+await assuranceBrowser()
