@@ -49,7 +49,7 @@ export async function investigatePeriod(env: Bindings, controlId: string, from: 
   bounded<Row>(env, 'SELECT r.* FROM receipts r JOIN requirements q ON q.id=r.requirement_id WHERE q.control_id=? AND r.covered_to>=? AND r.covered_from<=?', [controlId, from, to], 'period receipts'),
   bounded<Row>(env, 'SELECT d.snapshot_json,o.id,o.expected_json,o.actual_json,o.reason FROM run_control_definitions d JOIN test_runs r ON r.id=d.run_id LEFT JOIN observations o ON o.run_id=r.id WHERE d.control_id=? AND r.started_at>=? AND r.started_at<=?', [controlId, start, end], 'period evaluation'),
  ])
- const scope = (await periodReport(env, controlId, from, to)).segments
+ const scope = (await periodReport(env, controlId, from, to)).segments.filter(s => s.from <= stop).map(s => ({...s,to:s.to > stop ? stop : s.to}))
  const findings: Finding[] = []
  const cite = (kind: string, id: string, at: string): Citation => ({ kind, id, at, href: `/api/controls/${encodeURIComponent(controlId)}/investigation-source?kind=${kind}&id=${encodeURIComponent(id)}` })
  const proof = (o: Evaluated): Citation[] => [cite('observation', o.id, o.observed_at), ...(o.control_snapshot_json ? [cite('run-definition', o.run_id, o.observed_at)] : []), ...(o.test_revision_id ? [cite('test-revision', o.test_revision_id, o.observed_at)] : [])]
