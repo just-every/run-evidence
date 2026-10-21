@@ -786,8 +786,8 @@ ACCESS-001 updated 20 October 2026 with clause-named campaign, revocation-eviden
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 6 | 1 | 1 | 8 |
-| Target and push further | 31 | 11 | 29 | 71 |
-| All | 37 | 12 | 30 | 79 |
+| Target and push further | 32 | 11 | 28 | 71 |
+| All | 38 | 12 | 29 | 79 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |

@@ -421,4 +421,4 @@ The current public-door suites are `tests/evidence.mjs` (native owner access, re
 
 For each new user flow, build rounds must exercise the named public door, persistence/restart, refusal/error path, actor permissions and final state in the journey. Inspect each changed screen at 1440 and 390 with realistic data; provider acknowledgments are separate from source truth and human decisions. Certification, independent assessor judgment, legal applicability, outside-provider reliability and copies already downloaded remain the declared boundaries in BOUNDARY-001, rather than fabricated acceptance results.
 
-**Clause totals:** 79 — 37 done / 12 partial / 30 missing.
+**Clause totals:** 79 — 38 done / 12 partial / 29 missing.
