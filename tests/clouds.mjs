@@ -7,6 +7,7 @@ process.env.RER_SERVER_JOURNEY = '1'
 import assert from 'node:assert/strict'
 import { generateKeyPairSync, randomBytes, verify as verifySignature } from 'node:crypto'
 import { runtime } from './helpers/runtime.mjs'
+import { collectionScheduleBrowser } from './helpers/collection-schedule-browser.mjs'
 import { collectionScheduleJourney } from './helpers/collection-schedule-journey.mjs'
 const pair = () => generateKeyPairSync('rsa', { modulusLength: 2048, privateKeyEncoding: { type: 'pkcs8', format: 'pem' }, publicKeyEncoding: { type: 'spki', format: 'pem' } })
 const { privateKey, publicKey } = pair()
@@ -22,6 +23,7 @@ const g = {
  firewalls: { 'northstar-prod': [{ name: 'allow-ssh', ranges: ['0.0.0.0/0'], ports: ['22'] }, { name: 'allow-https', ranges: ['0.0.0.0/0'], ports: ['443'] }] },
 }
 const az = {
+ responses: new Map(), calls: [],
  subs: [['11111111-aaaa-4bbb-8ccc-000000000001', 'Production'], ['11111111-aaaa-4bbb-8ccc-000000000002', 'Development']], denied: new Set(),
  diag: { Production: 1, Development: 0 }, defender: { Production: 'Standard', Development: 'Free' },
  storage: { Production: [{ name: 'prodblobs', public: true, https: true, tls: 'TLS1_0' }], Development: [] },
@@ -62,6 +64,8 @@ async function fakeClouds(request) {
  }
  if (url.hostname === 'management.azure.com') {
   if (auth !== 'Bearer arm-access') return json({ error: { code: 'InvalidAuthenticationToken' } }, 401)
+  const requested = url.pathname + url.search; az.calls.push(requested)
+  if (az.responses.has(requested)) return json(az.responses.get(requested))
   if (url.pathname === '/subscriptions') return json({ value: az.subs.map(([subscriptionId, displayName]) => ({ subscriptionId, displayName, state: 'Enabled' })) })
   const [, id] = /^\/subscriptions\/([^/]+)/.exec(url.pathname), name = az.subs.find(s => s[0] === id)[1], path = url.pathname.slice(`/subscriptions/${id}`.length)
   if (az.denied.has(`${name}:${path}`)) return json({ error: { code: 'AuthorizationFailed' } }, 403)
@@ -129,6 +133,67 @@ try {
   const gCov = JSON.parse((await get('/api/connections/' + conn.gcp.id)).runs[0].coverage_json)
   assert.deepEqual(gCov.accounts.map(a => [a.id, a.read]), [['northstar-prod', true], ['northstar-sandbox', false]])
   assert.equal((await results('gcp.public-iam'))['Northstar sandbox (northstar-sandbox)'], 'unknown')
+ })
+ await scenario('COLLECTION-001 / Azure schema drift and incomplete pages retain known resources as unknown; recovery never rewrites a gap, removes a denominator or fabricates exhibits', async () => {
+  az.denied.clear()
+  const base = '/subscriptions/' + az.subs[1][0] + '/providers/Microsoft.Network/networkSecurityGroups', route = base + '?api-version=2023-09-01'
+  const path = '/api/connections/' + conn.azure.id
+  let minute = 0
+  const collect = async () => { await app.clock(new Date(Date.parse('2026-10-12T12:00:00Z') + minute++ * 60000).toISOString()); await owner(path + '/collect', {}, 201); return (await get(path)).runs[0] }
+  const knownName = 'dev-nsg (' + az.subs[1][0] + ')'
+  const baseline = await collect(); assert.equal(baseline.outcome, 'complete')
+  const failures = []
+  const rules = [{ properties: { direction: 'Inbound', access: 'Allow', sourceAddressPrefix: 'Internet', destinationPortRange: '22' } }]
+  const group = securityRules => ({ name: 'dev-nsg', properties: { securityRules } })
+  // ARM list envelopes are value arrays; none of these successful HTTP
+  // responses proves an empty source or a safe network security group.
+  for (const body of [null, {}, { value: {} }, { value: [null] }, { value: [{ name: 'dev-nsg' }] }, { value: [group('changed')] }, { value: [group([{ properties: { ...rules[0].properties, sourceAddressPrefix: 123 } }])] }, { value: [group([{ properties: { ...rules[0].properties, destinationPortRange: undefined } }])] }, { value: [group([{ properties: { ...rules[0].properties, direction: 'changed' } }])] }]) {
+   az.responses.set(route, body)
+   const run = await collect(); failures.push(run)
+   assert.equal(run.outcome, 'partial')
+   const gap = JSON.parse(run.coverage_json).gaps.find(g => g.account === az.subs[1][0] && g.class === 'Network security groups')
+   assert.match(gap.reason, /schema drift/)
+   assert.deepEqual(await results('azure.nsg-admin-ports'), { [knownName]: 'unknown' }, 'known identity survives malformed source')
+  }
+  for (const nextLink of ['https://outside.example.test/steal', 'not a URL', 42, 'https://management.azure.com' + route]) {
+   az.responses.set(route, { value: [], nextLink })
+   const before = az.calls.length, run = await collect(); failures.push(run)
+   assert.equal(run.outcome, 'partial'); assert.match(run.coverage_json, /pagination incomplete|schema drift/)
+   assert.ok(az.calls.length - before < 25, 'no repeated-page loop')
+   assert.deepEqual(await results('azure.nsg-admin-ports'), { [knownName]: 'unknown' })
+  }
+  // Twenty distinct pages with an outstanding continuation are incomplete.
+  az.responses.set(route, { value: [], nextLink: 'https://management.azure.com' + base + '?page=1' })
+  for (let page = 1; page <= 20; page++) az.responses.set(base + '?page=' + page, { value: [], nextLink: 'https://management.azure.com' + base + '?page=' + (page + 1) })
+  const limited = await collect(); failures.push(limited)
+  assert.equal(limited.outcome, 'partial'); assert.match(limited.coverage_json, /page limit/)
+  assert.ok(!az.calls.includes(base + '?page=20'), 'bounded collection stops at twenty pages')
+  assert.deepEqual(await results('azure.nsg-admin-ports'), { [knownName]: 'unknown' })
+  // A genuine second page is read and its failing resource is retained.
+  az.responses.clear()
+  az.responses.set(route, { value: [], nextLink: 'https://management.azure.com' + base + '?page=last' })
+  az.responses.set(base + '?page=last', { value: [group(rules)] })
+  const recovered = await collect(); assert.equal(recovered.outcome, 'complete')
+  assert.deepEqual(await results('azure.nsg-admin-ports'), { [knownName]: 'fail' })
+  // Explicit empty rules are safe; missing rules above were unknown.
+  az.responses.set(base + '?page=last', { value: [group([])] })
+  assert.equal((await collect()).outcome, 'complete')
+  assert.deepEqual(await results('azure.nsg-admin-ports'), { [knownName]: 'pass' })
+  // Subscription discovery cannot silently admit a partial scope list either.
+  const subsRoute = '/subscriptions?api-version=2022-12-01'
+  az.responses.set(subsRoute, { value: [{ subscriptionId: null }] })
+  const malformedScope = await collect(); failures.push(malformedScope)
+  assert.equal(malformedScope.outcome, 'failed'); assert.match(malformedScope.error_code, /schema drift: subscription identity/)
+  az.responses.set(subsRoute, { value: az.subs.map(([subscriptionId]) => ({ subscriptionId })), nextLink: 'https://outside.example.test/subscriptions' })
+  const lost = await collect(); failures.push(lost)
+  assert.equal(lost.outcome, 'failed'); assert.match(lost.error_code, /pagination incomplete/)
+  az.responses.clear()
+  await collect()
+  const history = (await get(path)).runs
+  for (const run of failures) assert.deepEqual(history.find(r => r.id === run.id), run, 'recovery retains the exact original gap')
+  assert.equal((await app.db.prepare('SELECT COUNT(*) AS n FROM receipts').first()).n, 0, 'no fabricated receipt')
+  const connection = (await get(path)).connection
+  await collectionScheduleBrowser(app, [connection], { suffix: '-azure-gaps', expected: ['Evidence gaps by run', 'Azure schema drift', 'Azure pagination incomplete'] })
  })
  await scenario('COLLECTION-001: hosted collector schedules through owner doors, Cron, browser and restore', () => collectionScheduleJourney(app))
  console.log(`${passed} Google Cloud and Azure public-door scenarios passed; the clouds are faked only at the network edge.`)

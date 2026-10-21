@@ -5,7 +5,7 @@ import { resolve, extname, join } from 'node:path'
 import { chromium } from 'playwright'
 // COLLECTION-001: existing schedule form, shipped styling and real owner HTTP
 // handlers. The loopback bridge retains this harness's authenticated owner.
-export async function collectionScheduleBrowser(app, connections) {
+export async function collectionScheduleBrowser(app, connections, { suffix = '', expected = [] } = {}) {
  const output = resolve(process.env.EVIDENCE_BROWSER_OUTPUT ?? '.cache/browser/collection-schedules')
  let server, browser, origin
  try {
@@ -34,13 +34,14 @@ export async function collectionScheduleBrowser(app, connections) {
     await page.waitForURL('**/app/connections/' + c.id + '#schedule-title'); await page.reload()
     assert.equal(await interval.inputValue(), '30')
     assert.match(await page.locator('main').innerText(), /every 30 minutes after the last attempt/)
+    for (const text of expected) assert.ok((await page.locator('main').innerText()).includes(text), text + ' at ' + width)
     await page.evaluate(() => document.fonts.ready)
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), c.provider + ' overflow at ' + width)
-    await page.screenshot({ path: join(output, `${width}-${c.provider}-saved.png`), fullPage: true })
+    await page.screenshot({ path: join(output, `${width}-${c.provider}${suffix}-saved.png`), fullPage: true })
     await interval.fill('60'); await page.getByRole('button', { name: 'Save collection schedule', exact: true }).click()
     await page.waitForURL('**/app/connections/' + c.id + '#schedule-title'); await page.reload()
     assert.equal(await interval.inputValue(), '60')
-    await page.screenshot({ path: join(output, `${width}-${c.provider}-restored.png`), fullPage: true })
+    await page.screenshot({ path: join(output, `${width}-${c.provider}${suffix}-restored.png`), fullPage: true })
     console.log(`PASS COLLECTION-001: ${c.provider} schedule saved and reloaded at ${width}`)
    }
    await context.close()

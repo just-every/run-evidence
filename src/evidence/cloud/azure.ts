@@ -7,9 +7,27 @@ import { cloudCall, CloudFailure, type Item, type ScopedCloud } from './scoped'
 // can change one.
 const label = 'Azure'
 const arm = 'https://management.azure.com'
+// COLLECTION-001: ARM list envelopes and continuation links must be complete.
+// A missing/malformed page is not an empty inventory. Throwing preserves the
+// class's known resources as unknown through the shared scoped collector.
+const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
+function drift(field: string): never { throw new CloudFailure('unavailable', `Azure schema drift: ${field}`) }
 async function list<T>(url: string, token: string, limit = 20) {
- const items: T[] = []; let next: string | null = url, pages = 0
- while (next && pages++ < limit) { const body = await cloudCall(next, token, label); if (!body) break; items.push(...((body.value as T[] | undefined) ?? [])); next = typeof body.nextLink === 'string' && body.nextLink.startsWith(arm + '/') ? body.nextLink : null }
+ const items: T[] = [], seen = new Set<string>(); let next: string | null = url
+ while (next) {
+  if (seen.has(next) || seen.size >= limit) throw new CloudFailure('unavailable', 'Azure pagination incomplete: repeated continuation or page limit reached')
+  seen.add(next)
+  const body = await cloudCall(next, token, label)
+  if (!record(body) || !Array.isArray(body.value) || !body.value.every(record)) drift('list value must be an array of records')
+  items.push(...body.value as T[])
+  const link = body.nextLink
+  if (link === undefined || link === null || link === '') { next = null; continue }
+  if (typeof link !== 'string') drift('nextLink must be a string')
+  let continuation: URL
+  try { continuation = new URL(link) } catch { throw new CloudFailure('unavailable', 'Azure pagination incomplete: invalid continuation') }
+  if (continuation.origin !== arm || continuation.username || continuation.password || continuation.hash) throw new CloudFailure('unavailable', 'Azure pagination incomplete: unsupported continuation')
+  next = continuation.href
+ }
  return items
 }
 const sub = (id: string) => `${arm}/subscriptions/${encodeURIComponent(id)}`
@@ -18,7 +36,7 @@ const openToInternet = (rule: { direction?: string; access?: string; sourceAddre
  return rule.direction === 'Inbound' && rule.access === 'Allow' && sources.some(s => ['*', '0.0.0.0/0', 'Internet', 'Any'].includes(s)) && ports.some(p => { if (p === '*') return true; const [from, to] = p.split('-').map(Number); return [22, 3389].some(port => from <= port && port <= (to ?? from)) })
 }
 export const azure: ScopedCloud = {
- name: 'Microsoft Azure', scopeLabel: 'subscriptions', revision: 'azure-1', scopeType: 'azure.subscription',
+ name: 'Microsoft Azure', scopeLabel: 'subscriptions', revision: 'azure-2', scopeType: 'azure.subscription',
  credential: 'An app registration client secret; grant the app Reader and Security Reader on the subscriptions or a management group', permissions: ['Reader', 'Security Reader'],
  fields: [{ key: 'tenant_id', label: 'Directory (tenant) ID', required: true, pattern: /^[0-9a-f-]{36}$/ }, { key: 'client_id', label: 'Application (client) ID', required: true, pattern: /^[0-9a-f-]{36}$/ }],
  types: {
@@ -30,7 +48,7 @@ export const azure: ScopedCloud = {
  },
  account: config => config.tenant_id,
  async authorize(config, secret) { try { return await microsoftToken(config.tenant_id, config.client_id, secret, arm) } catch (error) { if (error instanceof OAuthFailure) throw new CloudFailure(error.kind, error.message); throw error } },
- async discover(token) { const subs = await list<{ subscriptionId: string; displayName?: string; state?: string }>(`${arm}/subscriptions?api-version=2022-12-01`, token); return { scopes: subs.filter(s => s.state !== 'Disabled').map(s => ({ id: s.subscriptionId, name: `${s.displayName ?? s.subscriptionId} (${s.subscriptionId})` })), complete: true } },
+ async discover(token) { const subs = await list<{ subscriptionId: string; displayName?: string; state?: string }>(`${arm}/subscriptions?api-version=2022-12-01`, token); if (!subs.every(s => typeof s.subscriptionId === 'string' && s.subscriptionId.length > 0 && (s.state === undefined || typeof s.state === 'string'))) drift('subscription identity or state'); return { scopes: subs.filter(s => s.state !== 'Disabled').map(s => ({ id: s.subscriptionId, name: `${s.displayName ?? s.subscriptionId} (${s.subscriptionId})` })), complete: true } },
  classes: [
   { name: 'Activity log export', types: ['azure.subscription'], async read(token, s) { const settings = await list<unknown>(`${sub(s.id)}/providers/Microsoft.Insights/diagnosticSettings?api-version=2021-05-01-preview`, token); return { 'azure.subscription': [{ uniqueId: s.id, displayName: s.name, attributes: { activity_log_exported: settings.length > 0 } }] } } },
   { name: 'Defender for Cloud', types: ['azure.subscription'], async read(token, s) { const plans = await list<{ name: string; properties?: { pricingTier?: string } }>(`${sub(s.id)}/providers/Microsoft.Security/pricings?api-version=2024-01-01`, token); return { 'azure.subscription': [{ uniqueId: s.id, displayName: s.name, attributes: { defender_enabled: plans.some(p => ['VirtualMachines', 'StorageAccounts', 'SqlServers'].includes(p.name) && p.properties?.pricingTier === 'Standard') } }] } } },
@@ -48,7 +66,23 @@ export const azure: ScopedCloud = {
   } },
   { name: 'Network security groups', types: ['azure.nsg'], async read(token, s) {
    const groups = await list<{ name: string; properties?: { securityRules?: { properties?: Record<string, unknown> }[] } }>(`${sub(s.id)}/providers/Microsoft.Network/networkSecurityGroups?api-version=2023-09-01`, token)
-   return { 'azure.nsg': groups.map(g => ({ uniqueId: `${s.id}/${g.name}`, displayName: `${g.name} (${s.id})`, attributes: { open_admin_ports: (g.properties?.securityRules ?? []).some(r => openToInternet((r.properties ?? {}) as never)) } })) }
+   return { 'azure.nsg': groups.map(g => {
+    if (typeof g.name !== 'string' || !g.name || !record(g.properties) || !Array.isArray(g.properties.securityRules)) drift('network security group identity or securityRules')
+    const rules = g.properties.securityRules
+    for (const rule of rules) {
+     if (!record(rule) || !record(rule.properties)) drift('network security rule properties')
+     const r = rule.properties
+     const strings = (value: unknown): value is string[] => Array.isArray(value) && value.every(v => typeof v === 'string' && v.length > 0)
+     if ((r.direction !== 'Inbound' && r.direction !== 'Outbound') || (r.access !== 'Allow' && r.access !== 'Deny')
+      || (r.sourceAddressPrefix !== undefined && (typeof r.sourceAddressPrefix !== 'string' || !r.sourceAddressPrefix))
+      || (r.sourceAddressPrefixes !== undefined && !strings(r.sourceAddressPrefixes))
+      || (r.destinationPortRange !== undefined && (typeof r.destinationPortRange !== 'string' || !r.destinationPortRange))
+      || (r.destinationPortRanges !== undefined && !strings(r.destinationPortRanges))) drift('network security rule direction, access, source or ports')
+     if (!r.sourceAddressPrefix && !(strings(r.sourceAddressPrefixes) && r.sourceAddressPrefixes.length) && !(Array.isArray(r.sourceApplicationSecurityGroups) && r.sourceApplicationSecurityGroups.length && r.sourceApplicationSecurityGroups.every(v => record(v) && typeof v.id === 'string' && v.id.length))) drift('network security rule source')
+     if (!r.destinationPortRange && !(strings(r.destinationPortRanges) && r.destinationPortRanges.length)) drift('network security rule ports')
+    }
+    return { uniqueId: `${s.id}/${g.name}`, displayName: `${g.name} (${s.id})`, attributes: { open_admin_ports: rules.some(r => openToInternet(r.properties as never)) } }
+   }) }
   } },
  ],
 }
