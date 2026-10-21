@@ -2983,7 +2983,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "d451853bc302cc0fd926030162b06fe0046fbcf34c6ecfe4b08586cee8adad7b",
+      "sha256": "778f5b4d73b4e1f1efd6e2032526f66f26af214cede99803997fe321d9a16d7d",
       "executable": false
     },
     "AGENTS.md": {
@@ -2999,7 +2999,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "f64944908fb99824057b0b437f45c2aba34af8242fa9d03196b42b2610c71456",
+      "sha256": "e2db84f1c2b4385b4b22f151316a88c544eb571b565d07d3077b1638cc8f57e8",
       "executable": false
     },
     "DEMO.md": {
@@ -6791,7 +6791,7 @@
       "executable": false
     },
     "tests/helpers/tailoring-journey.mjs": {
-      "sha256": "a35f610fdff7b5f4bd021c0701d73e102b20c9517cc49f735ebc416bf470e454",
+      "sha256": "6ba98e14bda1d9e9b9900d6ec7bfef506ed99483fd1795a43d1cfacae1782f7a",
       "executable": false
     },
     "tests/helpers/tracker-fields-browser.mjs": {
