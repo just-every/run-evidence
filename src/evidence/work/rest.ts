@@ -11,4 +11,14 @@ export function requireId(value: unknown, label: string): string {
  if (value === undefined || value === null || String(value) === '') throw new TrackerFailure('unavailable', 502, `${label} returned no record identity; check the provider before retrying.`)
  return String(value)
 }
+// Resolve configured names before creation so a missing/ambiguous mapping cannot
+// leave a remote ticket whose labels were silently omitted.
+export function namedIds(rows: {id:string;name:string}[], names: string[], provider: string): string[] {
+ if(!Array.isArray(rows)||rows.some(row=>!row||typeof row.id!=='string'||!row.id||typeof row.name!=='string'))throw new TrackerFailure('unavailable',502,`${provider} native label metadata is unavailable.`)
+ return [...new Set(names)].map(name => {
+  const matches=rows.filter(row=>row.name===name)
+  if(matches.length!==1)throw new TrackerFailure('invalid',400,`${provider} label ${name} must match exactly one available native label.`)
+  return requireId(matches[0].id,provider)
+ })
+}
 export const metadata = (name: string, defaultBase: string, projectLabel: string, credential: string, permissions: string): Pick<Adapter, 'name'|'defaultBase'|'baseLabel'|'projectLabel'|'credential'|'permissions'|'supportsDue'|'commentText'|'webhook'|'defaultPriorities'> => ({ name, defaultBase, baseLabel: `${name} API`, projectLabel, credential, permissions, supportsDue: true, commentText: true, webhook: 'polling every 10 minutes; provider webhook registration is not yet supported', defaultPriorities: priorities })

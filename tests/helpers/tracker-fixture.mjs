@@ -1,10 +1,15 @@
 // WORK-001: paid/network edges only. Response/request vocabulary follows each
 // provider's official reference linked in the adapter; this is not live-provider proof.
 import assert from 'node:assert/strict'
+import { originalTrackerReply } from './original-tracker-fixture.mjs'
 export const configs = {
+ vector: { base:'https://vector.example.com',project:'01K0000000000000000000TEAM',priority:'high',noCommentText:true },
+ jira: { base:'https://northstar.atlassian.net',project:'SEC',priority:'High',account:'dana@northstar.test' },
+ linear: { base:'https://api.linear.app',project:'team-lin',priority:'2' },
+ github: { base:'https://api.github.com',project:'northstar/web',priority:'priority: high',textDue:true },
  gitlab: { base:'https://gitlab.com/api/v4',project:'42',priority:'priority::high' },
  'azure-boards': { base:'https://dev.azure.com/northstar',project:'Security',priority:'2' },
- shortcut: { base:'https://api.app.shortcut.com/api/v3',project:'42',priority:'2' },
+ shortcut: { base:'https://api.app.shortcut.com/api/v3',project:'42',priority:'High' },
  clickup: { base:'https://api.clickup.com/api/v2',project:'42',priority:'2' },
  monday: { base:'https://api.monday.com/v2',project:'42',priority:'High' },
  basecamp: { base:'https://3.basecampapi.com',project:'100/200/300',priority:'2' },
@@ -13,7 +18,7 @@ export const configs = {
  asana: { base:'https://app.asana.com/api/1.0',project:'1200',priority:'High' },
 }
 const reply=(status,body)=>new Response(body===undefined?null:JSON.stringify(body),{status,headers:{'content-type':'application/json'}})
-const columns=[{id:'description1',title:'Description',type:'long_text',settings_str:'{}'},{id:'date1',title:'Due date',type:'date',settings_str:'{}'},{id:'person1',title:'Owner',type:'people',settings_str:'{}'},{id:'status1',title:'Status',type:'status',settings_str:JSON.stringify({labels:{0:'Working',1:'Done'},done_colors:[1]})},{id:'priority1',title:'Priority',type:'status',settings_str:'{}'}]
+const columns=[{id:'tags1',title:'Tags',type:'tags',settings_str:'{}'},{id:'description1',title:'Description',type:'long_text',settings_str:'{}'},{id:'date1',title:'Due date',type:'date',settings_str:'{}'},{id:'person1',title:'Owner',type:'people',settings_str:'{}'},{id:'status1',title:'Status',type:'status',settings_str:JSON.stringify({labels:{0:'Working',1:'Done'},done_colors:[1]})},{id:'priority1',title:'Priority',type:'status',settings_str:'{}'}]
 export function trackerFixture() {
  let seq=0
  const issues=new Map(),keys=Object.fromEntries(Object.keys(configs).map(p=>[p,'test-only-'+p])),calls=[]
@@ -29,10 +34,11 @@ export function trackerFixture() {
   if(!p)return null
   const c=configs[p],path=u.pathname.slice(new URL(c.base).pathname.replace(/\/$/,'').length),method=request.method,raw=await request.text(),body=raw?JSON.parse(raw):null
   calls.push({provider:p,method,path})
-  const expected=p==='freshservice'?'Basic '+Buffer.from(keys[p]+':X').toString('base64'):p==='azure-boards'?'Basic '+Buffer.from(':'+keys[p]).toString('base64'):['monday','clickup'].includes(p)?keys[p]:p==='shortcut'?keys[p]:'Bearer '+keys[p]
+  const expected=p==='freshservice'?'Basic '+Buffer.from(keys[p]+':X').toString('base64'):p==='azure-boards'?'Basic '+Buffer.from(':'+keys[p]).toString('base64'):p==='jira'?'Basic '+Buffer.from(c.account+':'+keys[p]).toString('base64'):['monday','clickup','linear'].includes(p)?keys[p]:p==='shortcut'?keys[p]:'Bearer '+keys[p]
   if(request.headers.get(p==='shortcut'?'shortcut-token':'authorization')!==expected)return p==='monday'?reply(200,{errors:[{message:'Not authenticated',extensions:{code:'NOT_AUTHENTICATED'}}]}):reply(401,{message:'Credential revoked'})
-  const creating=method==='POST' && (path==='/projects/42/issues'||path==='/Security/_apis/wit/workitems/$Task'||path==='/stories'||path==='/list/42/task'||p==='monday'&&body.query.includes('create_item(')||path==='/100/buckets/200/todolists/300/todos.json'||path==='/tickets'||path==='/issues'||path==='/tasks')
+  const creating=method==='POST' && (path==='/projects/42/issues'||path==='/Security/_apis/wit/workitems/$Task'||path==='/stories'||path==='/list/42/task'||p==='monday'&&body.query.includes('create_item(')||path==='/100/buckets/200/todolists/300/todos.json'||path==='/tickets'||path==='/issues'||path==='/tasks'||p==='linear'&&body?.query.includes('issueCreate')||path==='/api/v1/issues'||path==='/rest/api/3/issue'||path==='/repos/northstar/web/issues')
   if(state.rejectCreate===p&&creating)return p==='monday'?reply(200,{errors:[{message:'Column mapping is not valid'}]}):reply(422,{message:'Field mapping is not valid'})
+  const original=originalTrackerReply({p,path,method,body,c,state,create,find,note});if(original)return original
   if(p==='gitlab') {
    if(path==='/projects/42')return reply(200,{id:42,name:'Security',namespace:{full_path:'northstar'},path_with_namespace:'northstar/security'})
    if(path==='/projects/42/issues'&&method==='POST') {if(body.labels.includes('invalid-priority'))return reply(422,{message:'Invalid priority label'});assert.ok(body.title);const i=create(p,{title:body.title,description:body.description,labels:body.labels.split(','),priority:body.labels.split(',').at(-1),due:body.due_date,assignee:body.assignee_ids?.length?'Dana Lee':null});return reply(201,{iid:Number(i.id),web_url:`https://gitlab.com/northstar/security/-/issues/${i.id}`})}
@@ -51,11 +57,12 @@ export function trackerFixture() {
    return reply(200,{fields:{'Custom.RemediationDue':i.dueInstant??(i.due?i.due+'T00:00:00Z':null),'System.State':i.closed?'Done':i.status,'System.AssignedTo':i.assignee?{displayName:i.assignee}:null}})
   }
   if(p==='shortcut') {
+   if(path==='/custom-fields')return reply(200,[{id:'priority-field',name:'Priority',canonical_name:'priority',enabled:true,field_type:'enum',values:['Critical','High','Medium','Low'].map(value=>({id:'priority-'+value,value,enabled:true}))}])
    if(path==='/member')return reply(200,{id:'u1',profile:{name:'Dana Lee'}})
    if(path==='/members')return reply(200,[{id:'u1',profile:{name:'Dana Lee'}},{id:'u2',profile:{name:'Lena Ortiz'}}])
    if(path==='/projects/42')return reply(200,{id:42,name:'Security'})
    if(path==='/workflows')return reply(200,[{id:42,states:[{id:1,name:'Open',type:'unstarted'},{id:2,name:'In Progress',type:'started'},{id:3,name:'Done',type:'done'}]}])
-   if(path==='/stories'&&method==='POST'){assert.equal(body.project_id,42);if(body.description.includes('Priority: invalid-priority'))return reply(400,{message:'Invalid priority'});const i=create(p,{title:body.name,description:body.description,labels:body.labels.map(l=>l.name),priority:body.description.match(/Priority: (.+)$/)[1],due:body.deadline?.slice(0,10),assignee:body.owner_ids.length?'Dana Lee':null});return reply(201,{id:Number(i.id),app_url:`https://app.shortcut.com/northstar/story/${i.id}`})}
+   if(path==='/stories'&&method==='POST'){assert.equal(body.project_id,42);if(body.description.includes('Priority: invalid-priority'))return reply(400,{message:'Invalid priority'});const i=create(p,{title:body.name,description:body.description,labels:body.labels.map(l=>l.name),priority:body.custom_fields?.[0]?.value_id?.replace('priority-',''),due:body.deadline?.slice(0,10),assignee:body.owner_ids.length?'Dana Lee':null});return reply(201,{id:Number(i.id),app_url:`https://app.shortcut.com/northstar/story/${i.id}`})}
    const m=/^\/stories\/(\d+)(\/comments)?$/.exec(path),i=m&&find(p,m[1]);if(!i||i.deleted)return reply(404,{message:'Story not found'})
    if(m[2])return reply(201,{id:note(i,body.text).id})
    if(method==='PUT'){if(Object.hasOwn(body,'deadline'))i.due=body.deadline?.slice(0,10)??null;if(body.workflow_state_id)i.closed=false;return reply(200,{})}
@@ -75,7 +82,8 @@ export function trackerFixture() {
    const q=body.query,v=body.variables??{},data=x=>reply(200,{data:x})
    if(q.includes('boards('))return data({boards:[board]})
    if(q==='{me{name}}')return data({me:{name:'Dana Lee'}})
-   if(q.includes('create_item(')){const f=JSON.parse(v.values);if(f.priority1.label==='invalid-priority')return reply(200,{errors:[{message:'Invalid priority label'}]});const i=create(p,{title:v.name,description:f.description1.text,priority:f.priority1.label,due:f.date1.date,assignee:f.person1?'Dana Lee':null});return data({create_item:{id:i.id,url:`https://northstar.monday.com/boards/42/pulses/${i.id}`}})}
+   if(q.includes('create_or_get_tag('))return data({create_or_get_tag:{id:v.name==='evidence'?'101':'102'}})
+   if(q.includes('create_item(')){const f=JSON.parse(v.values);if(f.priority1.label==='invalid-priority')return reply(200,{errors:[{message:'Invalid priority label'}]});const i=create(p,{title:v.name,description:f.description1.text,priority:f.priority1.label,labels:f.tags1.tag_ids,due:f.date1.date,assignee:f.person1?'Dana Lee':null});return data({create_item:{id:i.id,url:`https://northstar.monday.com/boards/42/pulses/${i.id}`}})}
    const n=v.item??v.ids?.[0],i=find(p,String(n));if(!i||i.deleted)return data({items:[]})
    if(q.includes('create_update(')){if(state.rejectComments)return reply(200,{errors:[{message:'Update is not permitted'}]});const c=note(i,strip(v.body));if(!i.description)i.description=c.body;return data({create_update:{id:c.id}})}
    if(q.includes('change_multiple_column_values(')){const f=JSON.parse(v.values);if(f.date1)i.due=f.date1.date;if(f.status1)i.closed=f.status1.index===1;return data({change_multiple_column_values:{id:i.id}})}
@@ -105,8 +113,9 @@ export function trackerFixture() {
   }
   if(p==='youtrack') {
    if(path==='/admin/projects/0-42')return reply(200,{id:'0-42',name:'Security',shortName:'SEC'})
+   if(path==='/tags')return reply(200,[{id:'tag-evidence',name:'evidence'},{id:'tag-compliance',name:'compliance'}])
    if(path==='/users/me')return reply(200,{name:'Dana Lee',login:'dana'})
-   if(path==='/issues'&&method==='POST'){const f=n=>body.customFields.find(f=>f.name===n)?.value;if(f('Priority').name==='invalid-priority')return reply(400,{message:'Invalid priority'});assert.equal(body.project.id,'0-42');const i=create(p,{title:body.summary,description:body.description,priority:f('Priority').name,due:date(f('Due Date')),assignee:f('Assignee')?'Dana Lee':null});return reply(200,{id:i.id,idReadable:'SEC-'+i.id})}
+   if(path==='/issues'&&method==='POST'){const f=n=>body.customFields.find(f=>f.name===n)?.value;if(f('Priority').name==='invalid-priority')return reply(400,{message:'Invalid priority'});assert.equal(body.project.id,'0-42');const i=create(p,{title:body.summary,description:body.description,priority:f('Priority').name,labels:body.tags.map(t=>t.id),due:date(f('Due Date')),assignee:f('Assignee')?'Dana Lee':null});return reply(200,{id:i.id,idReadable:'SEC-'+i.id})}
    const m=/^\/issues\/(\d+)(\/comments)?$/.exec(path),i=m&&find(p,m[1]);if(!i||i.deleted)return reply(404,{message:'Issue not found'})
    if(m[2]){if(method==='POST')return reply(200,{id:note(i,body.text).id});return reply(200,i.comments.map(n=>({id:n.id,text:n.body,created:Date.parse(n.at),author:{fullName:n.author}})))}
    if(method==='POST'){for(const f of body.customFields){if(f.name==='Due Date')i.due=date(f.value);if(f.name==='State')i.closed=false}return reply(200,{})}
@@ -114,9 +123,10 @@ export function trackerFixture() {
   }
   if(p==='asana') {
    if(path==='/users/me')return reply(200,{data:{name:'Dana Lee',email:'dana@northstar.test'}})
-   if(path==='/projects/1200')return reply(200,{data:{gid:'1200',name:'Security'}})
+   if(path==='/projects/1200')return reply(200,{data:{gid:'1200',name:'Security',workspace:{gid:'workspace-1'},custom_field_settings:[{custom_field:{gid:'priority-field',name:'Priority',resource_subtype:'enum',enum_options:['Critical','High','Medium','Low'].map(name=>({gid:'priority-'+name,name,enabled:true}))}}]}})
+   if(path==='/workspaces/workspace-1/tags')return reply(200,{data:[{gid:'tag-evidence',name:'evidence'},{gid:'tag-compliance',name:'compliance'}],next_page:null})
    if(path==='/webhooks'&&method==='POST'){assert.equal(body.data.resource,'1200');const h=await state.handshake(body.data.target,'asana-provider-secret');assert.equal(h.status,200);assert.equal(h.headers.get('x-hook-secret'),'asana-provider-secret');if(state.rejectRegistration)return reply(503,{errors:[{message:'Temporarily unavailable'}]});return reply(201,{data:{gid:'webhook-42'}})}
-   if(path==='/tasks'&&method==='POST'){const i=create(p,{title:body.data.name,description:body.data.notes,due:body.data.due_on,assignee:body.data.assignee?'Dana Lee':null});return reply(201,{data:{gid:i.id,permalink_url:`https://app.asana.com/0/1200/${i.id}`}})}
+   if(path==='/tasks'&&method==='POST'){const i=create(p,{title:body.data.name,description:body.data.notes,priority:body.data.custom_fields?.['priority-field']?.replace('priority-',''),labels:body.data.tags,due:body.data.due_on,assignee:body.data.assignee?'Dana Lee':null});return reply(201,{data:{gid:i.id,permalink_url:`https://app.asana.com/0/1200/${i.id}`}})}
    const m=/^\/tasks\/(\d+)(\/stories)?$/.exec(path),i=m&&find(p,m[1]);if(!i||i.deleted)return reply(404,{errors:[{message:'Task not found'}]})
    if(m[2]){if(method==='POST')return reply(201,{data:{gid:note(i,body.data.text).id}});return reply(200,{data:i.comments.map(n=>({gid:n.id,resource_subtype:'comment_added',text:n.body,created_at:n.at,created_by:{name:n.author}}))})}
    if(method==='PUT'){if(Object.hasOwn(body.data,'due_on'))i.due=body.data.due_on;if(Object.hasOwn(body.data,'completed'))i.closed=body.data.completed;return reply(200,{data:{}})}

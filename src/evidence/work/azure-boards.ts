@@ -11,6 +11,7 @@ function utcDay(value:unknown) {
 }
 export const azureBoards: Adapter = {
  ...metadata(name,'','Azure DevOps project','A project-scoped PAT and https://dev.azure.com/organization address','Work Items: read and write in the selected project'),
+ webhook: 'authenticated provider webhook, with polling every 10 minutes',
  fieldNotes: 'Work-item type defaults to Task; reopen uses New. Priority and tags are native fields. The mapped due-date field must be a writable DateTime field on this work-item type (default Microsoft.VSTS.Scheduling.DueDate). Create and later changes write UTC midnight; reads use the UTC calendar day. Unsupported fields are refused visibly.',
  async verify(base,key,_account,project) {const p=await api(`${base}/_apis/projects/${id(project)}`,key);return {account:new URL(base).pathname.slice(1),projectName:p.name}},
  async create(d,key,draft) {const i=await api(`${d.api_base}/${id(d.project)}/_apis/wit/workitems/$${id(d.mapping.issue_type||'Task')}`,key,'POST',[patch('System.Title',draft.title),patch('System.Description',draft.description.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('\n','<br>')),patch('System.Tags',draft.labels.join('; ')),patch('Microsoft.VSTS.Common.Priority',Number(draft.priority)),patch(d.mapping.due_field,draft.due ? draft.due+'T00:00:00Z' : null),...(draft.assignee?[patch('System.AssignedTo',draft.assignee)]:[])]);return {id:requireId(i.id,name),key:String(i.id),url:i._links.html.href}},

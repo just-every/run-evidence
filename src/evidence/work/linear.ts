@@ -1,4 +1,5 @@
 import { call, dateOnly, TrackerFailure, type Adapter } from './client'
+import { namedIds } from './rest'
 // Linear's GraphQL API with a personal API key (sent as the Authorization
 // header, without a scheme). GraphQL errors are classified here: authentication, not found and invalid input stay distinct.
 const label = 'Linear'
@@ -25,6 +26,7 @@ export const linear: Adapter = {
  projectLabel: 'Team ID', baseLabel: 'Linear API', defaultBase: 'https://api.linear.app',
  supportsDue: true, commentText: true, webhook: 'Linear webhook (Linear-Signature), Issues and Comments',
  defaultPriorities: { critical: '1', high: '2', medium: '3', low: '4' },
+ fieldNotes: 'Priority, labels, assignee and due date are native fields. Labels must exist for this team or the workspace; ambiguous names are refused.',
  async verify(base, key, _account, project) {
   const data = await gql<{ viewer: { name: string; organization: { name: string } }; team: { id: string; name: string } | null }>(base, key, 'query($team: String!) { viewer { name organization { name } } team(id: $team) { id name } }', { team: project })
   if (!data.team) throw new TrackerFailure('invalid', 400, 'That team is not visible to this Linear key.')
@@ -32,6 +34,20 @@ export const linear: Adapter = {
  },
  async create(d, key, draft) {
   const input: Record<string, unknown> = { teamId: d.project, title: draft.title, description: draft.description, priority: Number(draft.priority) || 0 }
+  const labels:{id:string;name:string;team:{id:string}|null}[]=[]
+  if(draft.labels.length) {
+   let after:string|null=null
+   for(;;) {
+    const page: {issueLabels:{nodes:typeof labels;pageInfo:{hasNextPage:boolean;endCursor:string|null}}}=await gql(d.api_base,key,'query($after:String){issueLabels(first:100,after:$after){nodes{id name team{id}} pageInfo{hasNextPage endCursor}}}',{after})
+    if(!Array.isArray(page?.issueLabels?.nodes)||typeof page.issueLabels.pageInfo?.hasNextPage!=='boolean'||page.issueLabels.nodes.some(row=>!row||typeof row.id!=='string'||typeof row.name!=='string'||row.team!=null&&typeof row.team.id!=='string'))throw new TrackerFailure('unavailable',502,'Linear native label metadata is unavailable.')
+    labels.push(...page.issueLabels.nodes.filter(row=>!row.team||row.team.id===d.project))
+    if(!page.issueLabels.pageInfo.hasNextPage)break
+    const next=page.issueLabels.pageInfo.endCursor
+    if(!next||next===after)throw new TrackerFailure('unavailable',502,'Linear label pagination made no progress.')
+    after=next
+   }
+  }
+  input.labelIds=namedIds(labels,draft.labels,label)
   if (draft.due) input.dueDate = draft.due
   if (draft.assignee) input.assigneeId = draft.assignee
   const data = await gql<{ issueCreate: { success: boolean; issue: { id: string; identifier: string; url: string } | null } }>(d.api_base, key, 'mutation($input: IssueCreateInput!) { issueCreate(input: $input) { success issue { id identifier url } } }', { input })

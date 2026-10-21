@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "a3ecc9dce27bd462662b2640c4e6573e397cba1a6bdc4292980e56af30205111",
+  "manifest": "04716f3fdc724ef9d5e69f978c92702a1fdd0b4e282f260198a5dea21cc1898b",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2742,17 +2742,21 @@
           "src/evidence/work/github-issues.ts",
           "src/evidence/work/gitlab.ts",
           "src/evidence/work/granularity.ts",
+          "src/evidence/work/hook-security.ts",
           "src/evidence/work/hooks.ts",
           "src/evidence/work/http.ts",
           "src/evidence/work/jira.ts",
           "src/evidence/work/linear.ts",
+          "src/evidence/work/monday-webhook.ts",
           "src/evidence/work/monday.ts",
+          "src/evidence/work/native-webhooks.ts",
           "src/evidence/work/rest.ts",
           "src/evidence/work/shortcut.ts",
           "src/evidence/work/storage.ts",
           "src/evidence/work/sync.ts",
           "src/evidence/work/vector.ts",
           "src/evidence/work/view.ts",
+          "src/evidence/work/webhook-instructions.ts",
           "src/evidence/work/youtrack.ts",
           "src/family/evidence-foundation/README.md",
           "src/identity.ts",
@@ -2828,13 +2832,18 @@
           "tests/helpers/github-fixture.mjs",
           "tests/helpers/inventory-fixture.mjs",
           "tests/helpers/move-in-browser.mjs",
+          "tests/helpers/native-fields-fixture.mjs",
+          "tests/helpers/native-fields-journey.mjs",
           "tests/helpers/open-browser.mjs",
           "tests/helpers/ops-crash-child.mjs",
+          "tests/helpers/original-tracker-fixture.mjs",
+          "tests/helpers/original-webhook-journey.mjs",
           "tests/helpers/population-browser.mjs",
           "tests/helpers/portable-browser.mjs",
           "tests/helpers/portable-fixture.mjs",
           "tests/helpers/portable-format.mjs",
           "tests/helpers/portable-journey.mjs",
+          "tests/helpers/provider-webhook-journey.mjs",
           "tests/helpers/readiness-browser.mjs",
           "tests/helpers/readiness-fixture.mjs",
           "tests/helpers/review-browser-archive.mjs",
@@ -2899,7 +2908,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "6817cece4ac92449e61fe9af2a39429ff59a3815f4ec0468571610da3aecaa2e",
+      "sha256": "6520c4a54d938a545dab36c8122a37cdd0756e070c2aab0368f8f79c3a906635",
       "executable": false
     },
     "AGENTS.md": {
@@ -2915,7 +2924,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "46ba8c4cce8c5c50f091f63158ff518c59037b697f81197d92d5dc3136fa2a78",
+      "sha256": "f08c53ba42b0e3405847fe334547b331aa16ee3a6d6655f7de21eb690d20c666",
       "executable": false
     },
     "DEMO.md": {
@@ -2979,11 +2988,11 @@
       "executable": false
     },
     "docs/TRACKERS.md": {
-      "sha256": "2fa29956102928a003ed63bd3a7df0dd443b1b94b9aa62baf636d045dea69fac",
+      "sha256": "7b85ed3ef053a9ca2cf50a5fcd8277fef7b0815b786f093b6c5e179b6fecd100",
       "executable": false
     },
     "edition.json": {
-      "sha256": "a3ecc9dce27bd462662b2640c4e6573e397cba1a6bdc4292980e56af30205111",
+      "sha256": "04716f3fdc724ef9d5e69f978c92702a1fdd0b4e282f260198a5dea21cc1898b",
       "executable": false
     },
     "LICENSE": {
@@ -5223,15 +5232,15 @@
       "executable": false
     },
     "src/evidence/work/asana.ts": {
-      "sha256": "380f2b3136529c84ba75b2261244c3a950d0f9db509d12713ce9415ce91625db",
+      "sha256": "368848f3955ce4e6bacc6aacc771114ae2d6f7acef2a18d5f275e8b61b2183da",
       "executable": false
     },
     "src/evidence/work/azure-boards.ts": {
-      "sha256": "ca83222b466545e12b52f9f263c2e159b2196e50be1bf655499e7967ff6efd9b",
+      "sha256": "336310ed188e11471a094a3d703d320874969bc3296c774004e93ef3deef95ee",
       "executable": false
     },
     "src/evidence/work/basecamp.ts": {
-      "sha256": "2095b6b16eab552718869142e93624d408c5c8f5d5544b8d723b76b692cb8910",
+      "sha256": "381c32f2bfee676a4bc2c3c84a51bd7df2c97ae5a396cc08153d07c10e183e7a",
       "executable": false
     },
     "src/evidence/work/clickup.ts": {
@@ -5243,11 +5252,11 @@
       "executable": false
     },
     "src/evidence/work/freshservice.ts": {
-      "sha256": "5ba50ea808b1f567a2236f0b0f327685c29c24f087324031465bd9e6f42e7c4b",
+      "sha256": "429319cd29d3768b2926e7a129345cb6f10a91c21da1c0ba56d66a769badffa8",
       "executable": false
     },
     "src/evidence/work/github-issues.ts": {
-      "sha256": "06811c4d0fec25aa17094358d0beacf5860f9f0cd92bd38a831a60a26848beb1",
+      "sha256": "2a58c9fb85c80ed46f78432fc7b149486a71e3bb401ff99881deb095a8e74e44",
       "executable": false
     },
     "src/evidence/work/gitlab.ts": {
@@ -5258,8 +5267,12 @@
       "sha256": "f89068696e5f556c6de65d0460890d41c11043eb92b8c496a217a7a671b10e73",
       "executable": false
     },
+    "src/evidence/work/hook-security.ts": {
+      "sha256": "931dbe46af5e58bf322387a1861749f86def0675fb2f9f6f72124b9bf461f049",
+      "executable": false
+    },
     "src/evidence/work/hooks.ts": {
-      "sha256": "1f1dbcb8bc8434117b583c88f1864389aad4ce7d1df8a2cb7220e5212bd593fd",
+      "sha256": "87073ac0da03bc75572aa731dfd1b05145a0179b81cb955a9cdd812cb944d343",
       "executable": false
     },
     "src/evidence/work/http.ts": {
@@ -5271,23 +5284,31 @@
       "executable": false
     },
     "src/evidence/work/linear.ts": {
-      "sha256": "f528608b50b9f005ed0dc8756ee345a53583f8f6fce364d2d58fe4083f630f91",
+      "sha256": "df88b1ce3e5fca7f327ee837fe62351aa857e032bfb7afe37124d1f0d0677b48",
+      "executable": false
+    },
+    "src/evidence/work/monday-webhook.ts": {
+      "sha256": "ed659f2428cfcec6058505202c4c1148e7adb0a23917956c695fd6767daa2f53",
       "executable": false
     },
     "src/evidence/work/monday.ts": {
-      "sha256": "39756cdc164d2acd167721c7d15ba77f476d1368cecbbc427f757317bfbebef3",
+      "sha256": "11c244da2dfd72692efcdd648dd597c4aea9f20d216a60f9e9a4a81a5392a1e7",
+      "executable": false
+    },
+    "src/evidence/work/native-webhooks.ts": {
+      "sha256": "cf24f9a7e444e47d6086dff40a7f1c9994445eb6a19f99f2418ee123fc7eecea",
       "executable": false
     },
     "src/evidence/work/rest.ts": {
-      "sha256": "faea79e741be9b70d3649217a367825eb537f5af50769920cc059d051ba68011",
+      "sha256": "8c64e53efa2bc7fb2b19f892782750e9f5158376bd7a926ee538d40d8828bc8d",
       "executable": false
     },
     "src/evidence/work/shortcut.ts": {
-      "sha256": "c57d6b14d532af97f6bfde4d2af10ea485a0d3b828cc6eb72c371681d51b0c06",
+      "sha256": "c77783f2de2e64d41b036a38b9842b08d8c575dce9256a386989226f7b0177f5",
       "executable": false
     },
     "src/evidence/work/storage.ts": {
-      "sha256": "0cf5a0c5df5fa8c5dc0c29920e629bff2099c420800ca47acf58449ea324f21b",
+      "sha256": "d13a944d5bed0440d5debc8462445fcb05cad734ddef90f7e14cef4bfc57ed13",
       "executable": false
     },
     "src/evidence/work/sync.ts": {
@@ -5295,15 +5316,19 @@
       "executable": false
     },
     "src/evidence/work/vector.ts": {
-      "sha256": "14852d2407efba4d98b62211ba6a09ea378c833382da2f3d11e076b5db9106f7",
+      "sha256": "ec19310045af927f42901e6f92b3e373e19df644572dba920191a92985b66297",
       "executable": false
     },
     "src/evidence/work/view.ts": {
-      "sha256": "96300344da6f1912be6a8b1e196fb81a1e629901177049626a20ba3fb9b011c4",
+      "sha256": "3300af9cfb80db8b32b4a33d8f21fe2193501e88309860b9bcd910ffaec47eb1",
+      "executable": false
+    },
+    "src/evidence/work/webhook-instructions.ts": {
+      "sha256": "87418546ea03ba7317f37ec9b8fe1271a76ca7236659218bb50bbd2b0bab919d",
       "executable": false
     },
     "src/evidence/work/youtrack.ts": {
-      "sha256": "a2ea9726b82935d537847c77d418825c5bb8a55cffd4751a46cc015faac6a844",
+      "sha256": "f5342c0889065e6dfafb23f8b8c1385203bddf9a0bcaa7a6ba7532428265e6d1",
       "executable": false
     },
     "src/family/evidence-foundation/README.md": {
@@ -6303,7 +6328,7 @@
       "executable": false
     },
     "tests/helpers/azure-deadline-browser.mjs": {
-      "sha256": "ceccbc6392b0fc42fd7c169b10db6e16da05f87f6e54dbcb88705143f8b1a29d",
+      "sha256": "c574d8abc73a60d87b32d6d2adfb047e29f2dbc01c423fea700aff92e20e1c0a",
       "executable": false
     },
     "tests/helpers/collection-journey.mjs": {
@@ -6346,12 +6371,28 @@
       "sha256": "58a9ac0c6337380975aaef4692ca8f0f3f01a5911c9297288c94d00fe97a4854",
       "executable": false
     },
+    "tests/helpers/native-fields-fixture.mjs": {
+      "sha256": "1ed52aa47ca99e225616a4037d345a3b560342feae2cef06e0526f1ee12af4ce",
+      "executable": false
+    },
+    "tests/helpers/native-fields-journey.mjs": {
+      "sha256": "c676bdbd8ac63e659309f4f26780e0f3578b92f1af20c7d09fcf0e740e338280",
+      "executable": false
+    },
     "tests/helpers/open-browser.mjs": {
       "sha256": "f91ce3096fb07e005c01343c403057d3ab6d1fff4ea49bb4650c8f33d8966ece",
       "executable": false
     },
     "tests/helpers/ops-crash-child.mjs": {
       "sha256": "89c9db09925da597cde1bde6efb4ce11ede8fd9b0e10418460378dbc85c45cc7",
+      "executable": false
+    },
+    "tests/helpers/original-tracker-fixture.mjs": {
+      "sha256": "5661f36354b4c3890ac7004f7b061dad4cfc8ef5830f82bcda097e54a3e5ffd3",
+      "executable": false
+    },
+    "tests/helpers/original-webhook-journey.mjs": {
+      "sha256": "0cf6390a6df3da2bf1f4652b1d304e887a7f5851eb66481d40b6b50705dbb181",
       "executable": false
     },
     "tests/helpers/population-browser.mjs": {
@@ -6372,6 +6413,10 @@
     },
     "tests/helpers/portable-journey.mjs": {
       "sha256": "c47bd73e7ed8628a43fa8a6e896301be87ce012dbe29f754e0a2587ee63be28f",
+      "executable": false
+    },
+    "tests/helpers/provider-webhook-journey.mjs": {
+      "sha256": "c1fc5d029ce3ac04868c8dcf599cebc67209b9f7387b98cdd9adaa2e59663f50",
       "executable": false
     },
     "tests/helpers/readiness-browser.mjs": {
@@ -6407,7 +6452,7 @@
       "executable": false
     },
     "tests/helpers/tracker-fixture.mjs": {
-      "sha256": "21285b38dad9f20ff46332d94df4c4fb0270e8dc57779786e0687414b91b1429",
+      "sha256": "a65e4531fdb654472d4ef39f71668735b95da758fbfcc7a5643d19e0363e0775",
       "executable": false
     },
     "tests/helpers/worker.ts": {
@@ -6491,11 +6536,11 @@
       "executable": false
     },
     "tests/trackers-browser.mjs": {
-      "sha256": "cb9bd4edb35d169018a3d8541ecd0edad73efec3cbc457ce8fe077b2fca09f33",
+      "sha256": "e520a0625847275136990ef32afb0c79deda81bfefda9bff87d42f30e9da3324",
       "executable": false
     },
     "tests/trackers.mjs": {
-      "sha256": "faee9d57eb67d967125b3e8f443cb75db3eebbdc84242e5d629de87c253bf913",
+      "sha256": "c88a804089a0fb2136be2cab4dad02c851ba5bc62386a4a7d9de12c32eab3497",
       "executable": false
     },
     "tests/training.mjs": {
@@ -6507,7 +6552,7 @@
       "executable": false
     },
     "tests/work.mjs": {
-      "sha256": "a3cba8c77fc522a04fb38f93ca9c862f5329c66445fc2b20663c703da5c4879b",
+      "sha256": "93e26c8d0e590c4aab21c928e32b66884d3e48fe04659c2085b7d21239d55404",
       "executable": false
     },
     "tsconfig.json": {

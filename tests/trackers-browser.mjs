@@ -7,7 +7,7 @@ import { readFile, mkdir } from 'node:fs/promises'
 import { resolve, extname, join } from 'node:path'
 import { chromium } from 'playwright'
 import { runtime } from './helpers/runtime.mjs'
-import { azureDeadlineBrowser } from './helpers/azure-deadline-browser.mjs'
+import { azureDeadlineBrowser, deadlineBrowser } from './helpers/azure-deadline-browser.mjs'
 import { trackerFixture, configs } from './helpers/tracker-fixture.mjs'
 const edge=trackerFixture(),app=await runtime({outbound:edge.outbound})
 const output=resolve(process.env.EVIDENCE_BROWSER_OUTPUT??'.cache/browser/trackers')
@@ -15,7 +15,7 @@ let browser,server
 try {
  const cookie=await app.signin(),dest={}
  for(const [provider,c] of Object.entries(configs)) {
-  const r=await app.fetch('/api/trackers',{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify({provider,api_base:c.base,account:c.account??'',project:c.project,token:edge.keys[provider],due_field:'Custom.RemediationDue',hook_secret:'test-signing-secret'})})
+  const r=await app.fetch('/api/trackers',{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify({provider,api_base:c.base,account:c.account??'',project:c.project,token:edge.keys[provider],due_field:'Custom.RemediationDue',hook_secret:provider==='vector'?'ab'.repeat(32):'test-signing-secret',hook_audience:provider==='vector'?'ws-1 dst-1':''})})
   assert.equal(r.status,201);dest[provider]=await r.json()
  }
  app.setCookie('')
@@ -61,8 +61,8 @@ try {
   for(const [provider,c] of Object.entries(configs)) {
    assert.equal((await page.goto(origin+'/app/trackers/'+dest[provider].id)).status(),200)
    assert.ok(await page.getByRole('heading',{name:'Field rules and mapping'}).count())
-   assert.match(await page.locator('main').innerText(),/polled every 10 minutes|polling every 10 minutes|ten-minute polling/)
-   if(c.textDue)assert.match(await page.locator('main').innerText(),/written into the ticket text/)
+   assert.match(await page.locator('main').innerText(),/polled every 10 minutes|polling every 10 minutes|ten-minute polling|Every 10 minutes/)
+
    if(provider==='asana') {
     await capture('asana-before-registration')
     await page.getByRole('button',{name:'Register Asana webhook'}).click()
@@ -70,10 +70,11 @@ try {
     assert.equal(await page.getByRole('button',{name:'Register Asana webhook'}).count(),0)
    }
    await capture(provider+'-details')
+   if(provider==='github')await deadlineBrowser({page,app,edge,cookie,destination:dest[provider],width,capture,provider})
    if(provider==='azure-boards')await azureDeadlineBrowser({page,app,edge,cookie,destination:dest[provider],width,capture})
   }
   assert.deepEqual(errors,[])
-  console.log(`PASS WORK-001: tracker setup, all nine destination details, cost disclosures, field rules, keyboard access and overflow at ${width}`)
+  console.log(`PASS WORK-001: tracker setup, all thirteen destination details, cost disclosures, field rules, keyboard access and overflow at ${width}`)
   await context.close()
  }
 } finally {

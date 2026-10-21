@@ -3,18 +3,17 @@ import { runtimeBindings, type Bindings } from '../../auth.server'
 import { boundedBody, Refusal } from '../upload'
 import { hookSecretOf, type DestinationRow, type TicketRow } from './storage'
 import { syncTicket } from './sync'
-// Inbound tracker webhooks. Each is verified over its exact bytes with the
-// tracker's own signature scheme, admitted once per delivery ID, and only
+import { hookEncoder as encoder, hookHmac as hmac, hookPayload, sameHookValue as same, type VerifiedHook as Verified } from './hook-security'
+import { mondayChallenge } from './monday-webhook'
+import { nativeHookProviders, verifyNativeHook } from './native-webhooks'
+// Inbound tracker webhooks. Each uses the provider's authenticated delivery
+// mechanism, is admitted once per delivery identity, and only
 // prompts a fresh read of the ticket: the payload itself changes nothing.
-const encoder = new TextEncoder()
-const hex = (bytes: ArrayBuffer) => Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2, '0')).join('')
-async function hmac(key: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>) { return hex(await crypto.subtle.sign('HMAC', await crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']), data)) }
-function same(a: string, b: string) { if (a.length !== b.length) return false; let diff = 0; for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i); return diff === 0 }
 const plain = (status: number, body: Record<string, unknown>) => Response.json(body, { status, headers: { 'cache-control': 'no-store' } })
-interface Verified { delivery: string; ref: string | null; refs?: string[] }
 type Payload = Record<string, any>
 // Returns the delivery identity and the ticket the event concerns, or null when unverified.
-async function verify(d: DestinationRow, secret: string, request: Request, bytes: Uint8Array<ArrayBuffer>, now: Date): Promise<Verified | null> {
+async function verify(d: DestinationRow, secret: string, request: Request, bytes: Uint8Array<ArrayBuffer>, now: Date, callback: string): Promise<Verified | null> {
+ if (nativeHookProviders.includes(d.provider)) return verifyNativeHook(d,secret,request,bytes,now,callback)
  const h = (name: string) => request.headers.get(name) ?? ''
  const parse = () => { try { return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)) as Payload } catch { return null } }
  if (d.provider === 'github' || d.provider === 'jira') {
@@ -84,7 +83,11 @@ export function hookHandler(clock: () => Date) {
   if (!d || !secret) return plain(404, { error: 'Not found.' })
   let bytes: Uint8Array<ArrayBuffer>
   try { bytes = await boundedBody(request, 1048576) } catch (error) { if (error instanceof Refusal) return plain(error.status, { error: error.message }); throw error }
-  const verified = await verify(d, secret, request, bytes, now)
+  if(d.provider==='monday') {
+   const challenge=mondayChallenge(hookPayload(bytes))
+   if(challenge!==null)return plain(200,{challenge})
+  }
+  const verified = await verify(d, secret, request, bytes, now, `${env.AUTH_ORIGIN}/hooks/trackers/${d.id}`)
   if (!verified) return plain(401, { error: 'Signature not verified.' })
   const admitted = await env.DB.prepare("INSERT INTO tracker_deliveries(destination_id,delivery_id,ticket_ref,outcome,received_at) VALUES(?,?,?,'admitted',?) ON CONFLICT DO NOTHING").bind(d.id, verified.delivery.slice(0, 200), verified.ref ?? '', now.toISOString()).run()
   if (!admitted.meta.changes) return plain(200, { duplicate: true })

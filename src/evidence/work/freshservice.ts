@@ -9,6 +9,7 @@ async function actor(base:string,key:string,user:string|number) {
 }
 export const freshservice: Adapter = {
  ...metadata(name,'','Group ID','A Freshservice API key, requester email and https://your-domain.freshservice.com/api/v2 address','Read and write tickets and notes in the selected group'),
+ webhook: 'authenticated provider webhook, with polling every 10 minutes',
  defaultPriorities:{critical:'4',high:'3',medium:'2',low:'1'},
  fieldNotes: 'Group, priority, tags, responder and due date use native fields. The account email is the requester. Status 4 or 5 is closed; reopen uses 2. Comments are private notes.',
  async verify(base,key,account,project) {const g=await api(`${base}/groups/${id(project)}`,key);if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(account))throw new TrackerFailure('invalid',400,'Freshservice requires the requester account email.');return {account,projectName:g.group.name}},

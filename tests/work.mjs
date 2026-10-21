@@ -17,7 +17,7 @@ async function fakeTrackers(request) {
  tracker.calls.push(`${request.method} ${url.origin}${url.pathname}`)
  if (url.origin === VECTOR) {
   if (auth !== 'Bearer ' + tracker.tokens.vector) return reply(401, { error: 'invalid_token' })
-  if (url.pathname === '/api/v1/metadata') return reply(200, { workspace: { name: 'Northstar' }, teams: [{ id: TEAM, name: 'Platform' }] })
+  if (url.pathname === '/api/v1/metadata') return reply(200, { workspace: { name: 'Northstar' }, teams: [{ id: TEAM, name: 'Platform' }], labels:[{id:'01K00000000000000000LABEL1',name:'evidence'},{id:'01K00000000000000000LABEL2',name:'compliance'}] })
   if (url.pathname === '/api/v1/issues' && request.method === 'POST') { const id = 'FLW-' + (sequence + 1), i = issue('vector', { id, title: body.title, description: body.description, priority: body.priority, due: body.dueDate, status: 'Backlog (backlog)' }); return reply(201, { id: 'ulid' + i.n, identifier: id, version: 1 }) }
   const m = /^\/api\/v1\/issues\/(FLW-\d+)(\/comments)?$/.exec(url.pathname), i = m && find('vector', m[1])
   if (!i || i.deleted) return reply(404, { error: 'issue_not_found' })
@@ -46,6 +46,7 @@ async function fakeTrackers(request) {
   if (auth !== tracker.tokens.linear) return reply(400, { errors: [{ message: 'Authentication required, not authenticated', extensions: { type: 'authentication error' } }] })
   const q = body.query, v = body.variables
   if (q.includes('viewer')) return reply(200, { data: { viewer: { name: 'IT', organization: { name: 'Northstar' } }, team: v.team === 'team-lin' ? { id: 'team-lin', name: 'Platform' } : null } })
+  if (q.includes('issueLabels(')) return reply(200,{data:{issueLabels:{nodes:[{id:'label-evidence',name:'evidence',team:null},{id:'label-compliance',name:'compliance',team:{id:'team-lin'}}],pageInfo:{hasNextPage:false,endCursor:null}}}})
   if (q.includes('issueCreate')) { const i = issue('linear', { id: 'lin-' + (sequence + 1), key: 'PLA-' + (sequence + 1), title: v.input.title, due: v.input.dueDate ?? null, status: 'Todo (unstarted)', priority: v.input.priority }); return reply(200, { data: { issueCreate: { success: true, issue: { id: i.id, identifier: i.key, url: 'https://linear.app/northstar/issue/' + i.key } } } }) }
   if (q.includes('commentCreate')) { const i = find('linear', v.input.issueId), id = 'lc-' + (++sequence); i.comments.push({ id, author: 'IT', body: v.input.body, at: tracker.clock }); return reply(200, { data: { commentCreate: { success: true, comment: { id } } } }) }
   if (q.includes('issueUpdate')) { find('linear', v.id).due = v.input.dueDate; return reply(200, { data: { issueUpdate: { success: true } } }) }
@@ -62,14 +63,15 @@ async function fakeTrackers(request) {
   if (!i || i.deleted) return reply(i?.deleted ? 410 : 404, { message: 'Not Found' })
   if (m[2] && request.method === 'POST') { const id = ++sequence; i.comments.push({ id: String(id), author: 'evidence-bot', body: body.body, at: tracker.clock }); return reply(201, { id }) }
   if (m[2]) return reply(200, i.comments.map(c => ({ id: Number(c.id), user: { login: c.author }, body: c.body, created_at: c.at })))
-  if (request.method === 'PATCH') { if (body.state) i.closed = body.state === 'closed'; return reply(200, {}) }
-  return reply(200, { number: Number(i.id), state: i.closed ? 'closed' : 'open', state_reason: i.closed ? 'completed' : null, assignee: i.assignee ? { login: i.assignee } : null })
+  if (request.method === 'PATCH') { if (body.state) i.closed = body.state === 'closed'; if(Object.hasOwn(body,'body'))i.body=body.body; return reply(200, {}) }
+  return reply(200, { number: Number(i.id), state: i.closed ? 'closed' : 'open', state_reason: i.closed ? 'completed' : null, body:i.body, assignee: i.assignee ? { login: i.assignee } : null })
  }
  if (url.origin === 'https://app.asana.com') {
   if (auth !== 'Bearer ' + tracker.tokens.asana) return reply(401, { errors: [{ message: 'Not Authorized' }] })
   const path = url.pathname.replace('/api/1.0', '')
   if (path === '/users/me') return reply(200, { data: { name: 'IT', email: 'it@northstar.test' } })
-  if (path === '/projects/1200') return reply(200, { data: { gid: '1200', name: 'Security work' } })
+  if (path === '/projects/1200') return reply(200, { data: { gid: '1200', name: 'Security work',workspace:{gid:'100'},custom_field_settings:[{custom_field:{gid:'300',name:'Priority',resource_subtype:'enum',enum_options:['Critical','High','Medium','Low'].map((name,n)=>({gid:String(310+n),name,enabled:true}))}}] } })
+  if (path === '/workspaces/100/tags') return reply(200,{data:[{gid:'201',name:'evidence'},{gid:'202',name:'compliance'}],next_page:null})
   if (path === '/tasks' && request.method === 'POST') { const i = issue('asana', { id: String(5000 + sequence + 1), title: body.data.name, due: body.data.due_on ?? null }); return reply(201, { data: { gid: i.id, permalink_url: 'https://app.asana.com/0/1200/' + i.id } }) }
   const m = /^\/tasks\/(\d+)(\/stories)?$/.exec(path), i = m && find('asana', m[1])
   if (!i || i.deleted) return reply(404, { errors: [{ message: 'Unknown object' }] })

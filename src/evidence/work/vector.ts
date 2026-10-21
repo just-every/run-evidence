@@ -1,4 +1,5 @@
 import { call, dateOnly, TrackerFailure, type Adapter } from './client'
+import { namedIds } from './rest'
 // Vector's scoped native API (docs/API.md in just-every/run-vector): a bearer
 // token with issues:read, issues:write, comments:write and metadata:read.
 // Vector exposes comment activity but not comment text through this API.
@@ -11,6 +12,7 @@ export const vector: Adapter = {
  projectLabel: 'Team ID (from Vector metadata)', baseLabel: 'Vector address', defaultBase: '',
  supportsDue: true, commentText: false, webhook: 'Vector outbound webhook (Base signed format, issue.created/updated/completed)',
  defaultPriorities: { critical: 'urgent', high: 'high', medium: 'medium', low: 'low' },
+ fieldNotes: 'Priority, labels, assignee and due date are native fields. Configured label names must exist in workspace metadata.',
  async verify(base, token, _account, project) {
   if (!base) throw new TrackerFailure('invalid', 400, 'Give the Vector address, for example https://vector.example.com.')
   const meta = (await call(`${base}/api/v1/metadata`, { headers: headers(token), label })).body as { workspace?: { name?: string }; teams?: { id: string; name: string }[] }
@@ -19,7 +21,9 @@ export const vector: Adapter = {
   return { account: String(meta.workspace?.name ?? 'Vector workspace'), projectName: team.name }
  },
  async create(d, token, draft) {
-  const body = { title: draft.title, teamId: d.project, description: draft.description, priority: draft.priority, dueDate: draft.due, ...(draft.assignee ? { assigneeOperatorId: draft.assignee } : {}) }
+  const meta=(await call(`${d.api_base}/api/v1/metadata`,{headers:headers(token),label})).body as {labels?:{id:string;name:string}[]}
+  if(!Array.isArray(meta?.labels))throw new TrackerFailure('unavailable',502,'Vector native label metadata is unavailable.')
+  const body = { title: draft.title, teamId: d.project, description: draft.description, priority: draft.priority, labelIds:namedIds(meta.labels,draft.labels,label), dueDate: draft.due, ...(draft.assignee ? { assigneeOperatorId: draft.assignee } : {}) }
   const created = (await call(`${d.api_base}/api/v1/issues`, { method: 'POST', headers: headers(token), body: JSON.stringify(body), label })).body as { id: string; identifier: string }
   return { id: created.identifier, key: created.identifier, url: `${d.api_base}/app/issues/${created.identifier}` }
  },

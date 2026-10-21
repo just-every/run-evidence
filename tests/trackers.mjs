@@ -4,11 +4,15 @@ import { readFile, readdir } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { createHmac } from 'node:crypto'
 import { runtime } from './helpers/runtime.mjs'
+import { originalWebhookJourney } from './helpers/original-webhook-journey.mjs'
+import { providerWebhookJourney } from './helpers/provider-webhook-journey.mjs'
 import { shortcutWebhookJourney } from './helpers/shortcut-webhook-journey.mjs'
+import { nativeFieldsFixture } from './helpers/native-fields-fixture.mjs'
+import { assertNativeFieldsCreate } from './helpers/native-fields-journey.mjs'
 import { trackerFixture, configs } from './helpers/tracker-fixture.mjs'
 const require=createRequire(import.meta.url),dependency=createRequire(require.resolve('wrangler/package.json'))
 const {unstable_splitSqlQuery}=dependency('wrangler')
-const edge=trackerFixture(),app=await runtime({outbound:edge.outbound,migrationThrough:'0046'})
+const edge=trackerFixture(),native=nativeFieldsFixture(edge.outbound),app=await runtime({outbound:native.outbound,migrationThrough:'0046'})
 const owner=async(path,body,status=201)=>{const r=await app.fetch(path,{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify(body)});const s=await r.text();assert.equal(r.status,status,path+' '+s);return s?JSON.parse(s):null}
 const get=async path=>{const r=await app.fetch(path);assert.equal(r.status,200,path);return r.json()}
 const at=async time=>{edge.state.clock=new Date(time).toISOString();await app.clock(edge.state.clock)}
@@ -45,7 +49,7 @@ try {
  for(const [provider,c] of Object.entries(configs)) {
   await scenario(`${provider}: authorized project, mapped create, duplicate refusal, source links, two-way comments, status/assignee polling, replay, conflicts, closure re-test and visible failures`,async()=>{
    const countBefore=[...edge.issues.values()].filter(i=>i.provider===provider).length
-   const connect={provider,api_base:c.base,project:c.project,account:c.account??'',token:edge.keys[provider],hook_secret:'tracker-signing-secret',due_field:'Custom.RemediationDue',assignees:'dana@northstar.test = '+(provider==='shortcut'?'u1':'1')}
+   const connect={provider,api_base:c.base,project:c.project,account:c.account??'',token:edge.keys[provider],hook_secret:provider==='vector'?'ab'.repeat(32):'tracker-signing-secret',hook_audience:provider==='vector'?'ws-1 dst-1':'',due_field:'Custom.RemediationDue',assignees:'dana@northstar.test = '+(provider==='shortcut'?'u1':'1')}
    await owner('/api/trackers',{...connect,token:'wrong'},400)
    if(provider==='azure-boards')await owner('/api/trackers',{...connect,due_field:'Custom/Invalid'},400)
    const dest=await owner('/api/trackers',connect)
@@ -59,14 +63,16 @@ try {
    await owner(`/api/remediation/${ob.id}/assign`,{owner_person_id:person.id,next_action:'Remediate',target_date:'2026-12-01'},200)
    if(provider==='monday')edge.state.rejectComments=true
    const ticket=await owner(`/api/remediation/${ob.id}/tickets`,{destination_id:dest.id})
+   assertNativeFieldsCreate({provider,calls:native.calls,base:c.base,priority:c.priority})
    if(provider==='monday')edge.state.rejectComments=false
    await owner(`/api/remediation/${ob.id}/tickets`,{destination_id:dest.id},409)
    const row=(await get('/api/remediation/'+ob.id)).tickets.find(t=>t.id===ticket.id),remote=edge.find(provider,row.remote_id)
    assert.ok(remote,provider);if(provider==='monday')assert.equal(remote.comments.length,0,'item creation must not depend on a second update call');assert.equal([...edge.issues.values()].filter(i=>i.provider===provider).length,countBefore+1)
    assert.match(remote.description,new RegExp('/app/remediation/'+ob.id));assert.match(remote.description,/AC-05/);assert.match(remote.description,/2026-12-01/)
    if(provider!=='asana')assert.equal(remote.priority,c.priority,provider)
-   if(!c.textDue)assert.equal(remote.due,'2026-12-01')
+   assert.equal(remote.due,'2026-12-01')
    assert.equal(remote.assignee,'Dana Lee')
+   if(provider==='github')remote.description+='\n\nTracker context that must survive date updates.'
    await owner(`/api/remediation/${ob.id}/comments`,{body:'Fixing the source.'})
    assert.ok(remote.comments.some(c=>/Evidence owner in Evidence: Fixing the source/.test(c.body)))
    remote.comments.push({id:'remote-note',author:'Dana Lee',body:'Source fix in progress.',at:edge.state.clock})
@@ -90,7 +96,15 @@ try {
     await owner('/api/tickets/'+ticket.id+'/sync',{},200)
     assert.equal((await detail()).tickets.find(t=>t.id===ticket.id).sync_state,'linked')
    }
-   assert.equal(view.events.filter(e=>e.kind==='tracker comment'&&e.body==='Source fix in progress.').length,1)
+   if(provider==='github') {
+    remote.due='2026-02-30'
+    await owner('/api/tickets/'+ticket.id+'/sync',{},200)
+    assert.equal((await detail()).tickets.find(t=>t.id===ticket.id).sync_state,'sync failed')
+    assert.equal((await detail()).tickets.find(t=>t.id===ticket.id).remote_due,'2026-12-01')
+    remote.due='2026-12-01';await owner('/api/tickets/'+ticket.id+'/sync',{},200)
+    assert.equal((await detail()).tickets.find(t=>t.id===ticket.id).sync_state,'linked')
+   }
+   assert.equal(view.events.filter(e=>e.kind==='tracker comment'&&(c.noCommentText?/Commented in Vector/.test(e.body):e.body==='Source fix in progress.')).length,1)
    if(provider==='freshservice')assert.ok(view.events.some(e=>e.kind==='tracker comment'&&e.body==='Requester question.'&&e.actor_name.includes('Freshservice user 99')))
    assert.equal(view.events.filter(e=>e.kind==='tracker comment'&&/Fixing the source/.test(e.body)).length,0)
    const events=async()=> (await detail()).events
@@ -103,7 +117,7 @@ try {
     const count=await events();assert.equal((await hook(dest.id,body,headers)).status,200);assert.deepEqual(await events(),count)
    } else {await owner('/api/tickets/'+ticket.id+'/sync',{},200);await owner('/api/tickets/'+ticket.id+'/sync',{},200)}
    assert.deepEqual(await events(),before,'identical read caused duplicate state change')
-   if(!c.textDue) {
+   {
     remote.due='2026-12-02'
     await owner(`/api/remediation/${ob.id}/assign`,{owner_person_id:person.id,next_action:'Remediate',target_date:'2026-12-03'},200)
     await owner('/api/tickets/'+ticket.id+'/sync',{},200)
@@ -111,6 +125,7 @@ try {
     assert.equal(r.sync_state,'conflict');assert.equal(r.remote_due,'2026-12-02');assert.equal(remote.due,'2026-12-02')
     const conflict=view.events.findLast(e=>e.kind==='ticket conflict');assert.match(conflict.body,/tracker 2026-12-02, Evidence 2026-12-03/);assert.ok(conflict.at)
     await owner('/api/tickets/'+ticket.id+'/resolve',{keep:'evidence'},200);assert.equal(remote.due,'2026-12-03')
+    if(provider==='github')assert.ok(remote.description.includes('Tracker context that must survive date updates.'))
    }
    if(provider==='azure-boards') {
     await owner(`/api/remediation/${ob.id}/assign`,{owner_person_id:person.id,next_action:'Remediate',target_date:'2026-12-04'},200)
@@ -147,6 +162,15 @@ try {
    await owner('/api/trackers/'+dest.id+'/rotate',{token:edge.keys[provider]},200)
    await owner('/api/tickets/'+ticket.id+'/sync',{},200)
    assert.equal((await detail()).tickets.find(t=>t.id===ticket.id).sync_state,'linked')
+   if(['vector','linear','asana','shortcut','youtrack'].includes(provider)) {
+    const invalid=provider==='shortcut'?{priority_high:'Unavailable enum option'}:{labels:'evidence, missing-native-label'}
+    await owner('/api/trackers/'+dest.id+'/mapping',{...connect,...invalid},200)
+    await owner(`/api/remediation/${other.id}/tickets`,{destination_id:dest.id},400)
+    const mappingFailure=(await get('/api/remediation/'+other.id)).tickets.find(t=>t.destination_id===dest.id)
+    assert.equal(mappingFailure.sync_state,'mapping failed');assert.ok(mappingFailure.sync_error.length>0)
+    assert.equal([...edge.issues.values()].filter(i=>i.provider===provider).length,countBefore+1,'unresolvable native fields must refuse before ticket creation')
+    await owner('/api/trackers/'+dest.id+'/mapping',connect,200)
+   }
    edge.state.rejectCreate=provider
    await owner(`/api/remediation/${other.id}/tickets`,{destination_id:dest.id},400)
    const failed=(await get('/api/remediation/'+other.id)).tickets.find(t=>t.destination_id===dest.id)
@@ -177,6 +201,8 @@ try {
    assert.equal(groupView.runs.find(r=>r.trigger==='retest').population,2)
    const states=await Promise.all(groupItems.map(o=>get('/api/remediation/'+o.id)))
    for(const view of states){assert.equal(view.obligation.state,view.obligation.resource_name===provider+' fixed'?'verified':'open');assert.equal(view.observations[0].run_trigger,'retest')}
+   await originalWebhookJourney({app,edge,provider,dest,remote,detail})
+   await providerWebhookJourney({app,edge,provider,dest,ticket,remote,detail,owner})
    if(provider==='shortcut')await shortcutWebhookJourney({app,edge,dest,ticket,linked,remote,detail})
    const publicData=JSON.stringify(await get('/api/trackers'))+JSON.stringify(await detail())
    assert.ok(!publicData.includes(edge.keys[provider]));assert.ok(!publicData.includes('tracker-signing-secret'))
@@ -212,10 +238,10 @@ try {
    }
   })
  }
- await scenario('all new providers and Asana signatures restore inactive without credentials or replayed source operations',async()=>{
+ await scenario('all thirteen providers and their callback credentials restore inactive without credentials or replayed source operations',async()=>{
   const response=await app.fetch('/api/archive/export');assert.equal(response.status,200)
   const bytes=Buffer.from(await response.arrayBuffer())
-  for(const secret of [...Object.values(edge.keys),'tracker-signing-secret','asana-provider-secret'])assert.ok(!bytes.includes(secret))
+  for(const secret of [...Object.values(edge.keys),'tracker-signing-secret','asana-provider-secret','ab'.repeat(32)])assert.ok(!bytes.includes(secret))
   const target=await runtime({outbound:edge.outbound})
   try {
    await target.signin()

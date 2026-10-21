@@ -64,7 +64,7 @@ const randomHex = () => Array.from(crypto.getRandomValues(new Uint8Array(32)), b
 // Linear and Vector generate their own, which the owner pastes here.
 async function hookSecret(provider: Provider, input: Input) {
  if (provider === 'github' || provider === 'jira') return { secret: randomHex(), shown: true, audience: '' }
- if (!['vector', 'linear', 'clickup', 'gitlab', 'shortcut'].includes(provider)) return { secret: null, shown: false, audience: '' }
+ if (!['vector', 'linear', 'clickup', 'gitlab', 'shortcut', 'azure-boards', 'monday', 'freshservice', 'youtrack'].includes(provider)) return { secret: null, shown: false, audience: '' }
  const pasted = text(input, 'hook_secret', 200, true)
  if (provider === 'vector' && pasted && !/^[0-9a-f]{64,}$/i.test(pasted)) throw new Refusal('Paste the Vector destination signing secret exactly as Vector shows it (hexadecimal).')
  const audience = provider === 'vector' ? text(input, 'hook_audience', 200, true) : ''
