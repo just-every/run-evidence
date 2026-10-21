@@ -1,4 +1,5 @@
 import {decodeArchive} from './helpers/portable-format.mjs'
+import {vendorJourney} from './helpers/vendor-journey.mjs'
 // Risk register, shipped library, spreadsheet import and versioned scoring
 // through the owner's doors and the Cron Trigger. Only the mail edge is faked.
 process.env.RER_SERVER_JOURNEY = '1'
@@ -207,5 +208,6 @@ try {
 
   } finally {await prior.close()}
  })
+ await scenario('VENDOR-001: onboarding, supplier link requests and per-question answers, findings, expiring conditional approval, overdue reminders and link isolation', async () => { await vendorJourney(app, owner, get, person, runtime) })
  console.log(`${passed} risk register public-door scenarios passed with real workerd, D1 and R2.`)
 } finally { await app.close() }

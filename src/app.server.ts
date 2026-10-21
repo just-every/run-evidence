@@ -6,6 +6,8 @@ import { collectorOwnerHandler } from './evidence/collector/http'
 import { authResponse, runtimeBindings, type Bindings } from './auth.server'
 import { evidenceHandler } from './evidence/http'
 import { reviewHandler } from './evidence/review/http'
+import { vendorHandler } from './evidence/vendor/http'
+import { supplierHandler } from './evidence/vendor/supplier'
 import { archiveHandler } from './evidence/archive/http'
 import { periodAgentHandler } from './evidence/agent/period-http'
 import { agentHandler } from './evidence/agent/http'
@@ -44,8 +46,9 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
  const imports = importHandler(clock)
  const evidence = evidenceHandler(clock)
  const review = reviewHandler(clock)
+ const supplier = supplierHandler(clock)
  const archive = archiveHandler(clock)
- const program = [periodAgentHandler(clock), operationsHandler(clock), frameworkHandler(clock), collectorOwnerHandler(clock), programHandler(clock), auditHandler(clock), testHandler(clock), remedyHandler(clock), connectHandler(clock), riskHandler(clock), policyHandler(clock), workHandler(clock), followupHandler(clock), identityHandler(clock), attestHandler(clock), recurringReviews(clock), populationHandler(clock), inventoryHandler(clock), accessHandler(clock), trainingHandler(clock), handoverHandler(clock), vulnHandler(clock)]
+ const program = [periodAgentHandler(clock), operationsHandler(clock), frameworkHandler(clock), collectorOwnerHandler(clock), programHandler(clock), auditHandler(clock), testHandler(clock), remedyHandler(clock), connectHandler(clock), riskHandler(clock), vendorHandler(clock), policyHandler(clock), workHandler(clock), followupHandler(clock), identityHandler(clock), attestHandler(clock), recurringReviews(clock), populationHandler(clock), inventoryHandler(clock), accessHandler(clock), trainingHandler(clock), handoverHandler(clock), vulnHandler(clock)]
  const api = apiHandler(clock)
  const hooks = hookHandler(clock)
  const member = memberHandler(clock)
@@ -75,6 +78,8 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
   if (imported) return imported
   const shared = await review(request,env)
   if (shared) return shared
+  const suppliers = await supplier(request,env)
+  if (suppliers) return suppliers
   const custody = await archive(request,env)
   if (custody) return custody
   for (const handler of program) { const handled = await handler(request,env); if (handled) return handled }

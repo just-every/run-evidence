@@ -1,0 +1,157 @@
+import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
+import { decodeArchive } from './portable-format.mjs'
+// VENDOR-001 through the owner doors, the supplier link door and the Cron
+// Trigger. Only the mail edge is faked; D1, R2 and sessions are real.
+const sha = bytes => createHash('sha256').update(bytes).digest('hex')
+export async function vendorJourney(app, owner, get, person, runtime) {
+ const supplier = (path, init = {}) => app.fetch(path, { ...init, headers: { cookie: '', ...init.headers } })
+ const sjson = async (path, body, status = 201) => { const r = await supplier(path, { method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json' }, body: JSON.stringify(body) }); assert.equal(r.status, status, path + ' ' + await r.clone().text()); return r.json() }
+ const upload = async (url, request, name, bytes, fields = {}, status = 201) => { const form = new FormData(); form.set('file', new File([bytes], name)); for (const [k, v] of Object.entries(fields)) form.set(k, v); const r = await supplier(`${new URL(url).pathname}/requests/${request}/documents`, { method: 'POST', headers: { accept: 'application/json' }, body: form }); assert.equal(r.status, status, name + ' ' + await r.clone().text()); return status < 300 ? r.json() : null }
+ const sget = path => supplier(path, { headers: { accept: 'application/json' } })
+ await app.clock('2026-11-02T15:00:00Z')
+ const approver = await owner('/api/people', { name: 'Dana Okafor', email: 'dana@northstar.test', kind: 'employee' })
+ // 1. Onboard a US SaaS supplier with its data access, tier, cost, renewal and subprocessors.
+ const acme = await owner('/api/vendors', { name: 'Acme Notes', service: 'Clinical note-taking SaaS', website: 'https://acme-notes.example', criticality: 'high', data_types: ['PHI', 'personal data'], region: 'us-east-1', annual_cost_usd: '$48,000', renewal_date: '2027-02-01', contact_name: 'Sam Rivera', contact_email: 'security@acme-notes.example', owner_person_id: person.id })
+ assert.equal(acme.risk_tier, 'high'); assert.match(acme.tier_basis, /PHI/)
+ await owner(`/api/vendors/${acme.id}/subprocessors`, { name: 'CloudHost Inc', purpose: 'Hosting', region: 'us-east-1' })
+ await owner(`/api/vendors/${acme.id}/subprocessors`, { name: 'cloudhost inc' }, 409)
+ await owner('/api/vendors', { name: 'Acme Notes', criticality: 'low' }, 409)
+ await owner('/api/vendors', { name: 'Bad cost', criticality: 'low', annual_cost_usd: '12.5' }, 400)
+ let page = await (await app.fetch(`/app/vendors/${acme.id}`)).text()
+ assert.match(page, /\$48,000 USD/); assert.match(page, /business associate agreement[^<]*before ePHI[^<]*<em>\(not verified by Evidence\)/i)
+ let detail = await get(`/api/vendors/${acme.id}`)
+ assert.equal(detail.profile.risk_tier, 'high'); assert.deepEqual(detail.needs.filter(n => n.state === 'missing').map(n => n.key).sort(), ['baa', 'dpa', 'questionnaire', 'soc2'])
+ // 2. Request a SOC 2 report, the BAA and the shipped CAIQ v4; the link is shown once and emailed only on request.
+ const templates = (await get('/api/vendor-templates')).templates, caiq = templates.find(t => t.id === 'caiq-v4')
+ assert.ok(caiq.questions.length >= 150 && new Set(caiq.questions.map(q => q.domain)).size === 17 && /^A&A-01\.1$/.test(caiq.questions[0].id))
+ await owner(`/api/vendors/${acme.id}/requests`, { kinds: ['soc2'], expires_at: '2027-03-01' }, 400)
+ await owner(`/api/vendors/${acme.id}/requests`, { kinds: ['soc2'], expires_at: '2026-11-01' }, 400)
+ const sent = await owner(`/api/vendors/${acme.id}/requests`, { kinds: ['soc2', 'baa', 'questionnaire', 'pentest'], template_id: 'caiq-v4', expires_at: '2026-11-09', due_date: '2026-11-06', send_email: 'yes' })
+ assert.equal(sent.emailed, true); assert.match(sent.url, /\/supplier\/[a-f0-9]{64}$/)
+ assert.ok(app.messages.some(m => /Security information request/.test(m.subject) && m.to.includes('security@acme-notes.example') && (m.text ?? m.html).includes(sent.url)))
+ const token = sent.url.split('/').at(-1)
+ for (const table of ['vendor_links', 'vendor_requests', 'product_audit', 'followups']) assert.equal(JSON.stringify((await app.db.prepare(`SELECT * FROM ${table}`).all()).results).includes(token), false, table + ' never stores the bearer token')
+ page = await (await app.fetch(`/app/vendors/${acme.id}`)).text(); assert.ok(!page.includes(token))
+ // 3. The supplier answers per question and sends documents through the expiring link.
+ let view = await (await sget(new URL(sent.url).pathname)).json()
+ assert.equal(view.vendor, 'Acme Notes'); assert.deepEqual(view.requests.map(r => r.kind).sort(), ['baa', 'pentest', 'questionnaire', 'soc2'])
+ const ids = Object.fromEntries(view.requests.map(r => [r.kind, r.id])), base = new URL(sent.url).pathname
+ const soc2v1 = Buffer.from('SOC 2 Type II report, period 2025-10-01 to 2026-09-30, unqualified opinion.')
+ const doc = await upload(sent.url, ids.soc2, 'acme-soc2-2026.pdf', soc2v1, { effective_on: '2026-09-30', expires_on: '2027-09-30' })
+ assert.equal(doc.sha256, sha(soc2v1))
+ await upload(sent.url, ids.baa, 'acme-baa-signed.pdf', Buffer.from('Signed BAA'), { effective_on: '2026-10-15' })
+ await upload(sent.url, ids.soc2, 'empty.pdf', Buffer.alloc(0), {}, 400)
+ await upload(sent.url, ids.questionnaire, 'x.pdf', Buffer.from('x'), {}, 404)
+ const questionnaire = await (await sget(`${base}/requests/${ids.questionnaire}`)).json()
+ assert.equal(questionnaire.questions.length, caiq.questions.length)
+ const partial = Object.fromEntries(questionnaire.questions.slice(0, 40).map((q, i) => [q.id, { answer: i % 7 === 0 ? 'no' : 'yes', comment: i % 7 === 0 ? 'Planned for Q1' : '' }]))
+ assert.equal((await sjson(`${base}/requests/${ids.questionnaire}/answers`, { answers: partial })).saved, 40)
+ assert.match((await sjson(`${base}/requests/${ids.questionnaire}/answers`, { answers: {}, submit: true, respondent_name: 'Sam Rivera', respondent_email: 'security@acme-notes.example' }, 400)).error, /still unanswered/)
+ await sjson(`${base}/requests/${ids.questionnaire}/answers`, { answers: { 'NOPE-01.1': { answer: 'yes' } } }, 400)
+ await sjson(`${base}/requests/${ids.questionnaire}/answers`, { answers: { [questionnaire.questions[0].id]: { answer: 'maybe' } } }, 400)
+ const revised = { ...Object.fromEntries(questionnaire.questions.map(q => [q.id, { answer: 'yes', comment: '' }])), [questionnaire.questions[0].id]: { answer: 'no', comment: 'Revised after review' } }
+ await sjson(`${base}/requests/${ids.questionnaire}/answers`, { answers: revised, submit: true, respondent_name: 'Sam Rivera', respondent_email: 'security@acme-notes.example' })
+ await sjson(`${base}/requests/${ids.questionnaire}/answers`, { answers: revised }, 409)
+ const rows = (await app.db.prepare('SELECT question_id,answer,comment FROM vendor_answers WHERE request_id=? ORDER BY rowid').bind(ids.questionnaire).all()).results
+ assert.ok(rows.filter(r => r.question_id === questionnaire.questions[0].id).length >= 2, 'a revised answer is appended beside the first, never overwritten')
+ assert.equal(new Set(rows.map(r => r.question_id)).size, caiq.questions.length)
+ // 4. The owner sees supplier statements as unverified, reviews the report and records findings.
+ detail = await get(`/api/vendors/${acme.id}`)
+ const soc2Row = detail.documents.find(d => d.kind === 'soc2'), baaRow = detail.documents.find(d => d.kind === 'baa')
+ assert.equal(soc2Row.origin, 'supplier'); assert.equal(soc2Row.review_state, 'received'); assert.equal(detail.needs.find(n => n.key === 'soc2').state, 'received')
+ const answerPage = await (await app.fetch(`/app/vendors/${acme.id}`)).text(); assert.match(answerPage, /supplier-asserted, not verified/); assert.match(answerPage, /not yet reviewed/)
+ await owner(`/api/vendors/${acme.id}/documents/${soc2Row.id}/review`, { decision: 'verified', notes: 'Unqualified opinion, period covers the last twelve months' }, 200)
+ await owner(`/api/vendors/${acme.id}/documents/${soc2Row.id}/review`, { decision: 'rejected', notes: 'again' }, 404)
+ const download = await app.fetch(`/app/vendors/${acme.id}/documents/${soc2Row.id}/download`); assert.equal(Buffer.from(await download.arrayBuffer()).toString(), soc2v1.toString())
+ const finding = await owner(`/api/vendors/${acme.id}/findings`, { title: 'MFA not enforced for all staff', severity: 'high', source_kind: 'answer', source_ref: `${ids.questionnaire}:${questionnaire.questions[0].id}`, detail: 'Supplier answered no with a Q1 plan' })
+ const second = await owner(`/api/vendors/${acme.id}/findings`, { title: 'Report carve-out for hosting subservice', severity: 'medium', source_kind: 'document', source_ref: soc2Row.id })
+ await owner(`/api/vendors/${acme.id}/findings`, { title: 'Phantom', severity: 'low', source_kind: 'document', source_ref: crypto.randomUUID() }, 400)
+ await owner(`/api/vendors/${acme.id}/findings/${second.id}/decision`, { decision: 'resolved', reason: 'Carve-out reviewed; hosting vendor SOC 2 on file' }, 200)
+ await owner(`/api/vendors/${acme.id}/findings/${finding.id}/decision`, { decision: 'accepted', reason: 'Compensating SSO enforcement' }, 400)
+ // 5. Approve with an expiring condition; exceptions need a named approver.
+ await owner(`/api/vendors/${acme.id}/approvals`, { decision: 'conditional', rationale: 'Acceptable with a plan', conditions: 'Enforce MFA for all staff', condition_expires_on: '2026-12-01' }, 400)
+ await owner(`/api/vendors/${acme.id}/approvals`, { decision: 'conditional', rationale: 'x', conditions: 'Enforce MFA', condition_expires_on: '2026-11-01', approver_person_id: approver.id }, 400)
+ const approval = await owner(`/api/vendors/${acme.id}/approvals`, { decision: 'conditional', rationale: 'Acceptable with an MFA plan', conditions: 'Enforce MFA for all staff', condition_expires_on: '2026-12-01', approver_person_id: approver.id })
+ assert.equal(approval.reassess_by, '2027-02-01', 'six months for a high tier, capped by the contract renewal')
+ assert.ok(approval.exceptions.some(e => /open finding \(high\)/.test(e)) && approval.exceptions.some(e => /missing diligence: Data processing agreement/.test(e)))
+ detail = await get(`/api/vendors/${acme.id}`)
+ assert.equal(detail.standing.approval, 'conditionally approved'); assert.equal(detail.standing.reassessment, 'current'); assert.equal(detail.approvals[0].approver_name, 'Dana Okafor')
+ // 6. A marketing claim stays distinct until a verified document supports it.
+ const claim = await owner(`/api/vendors/${acme.id}/assertions`, { claim: 'Trust page: ISO 27001 certified', source_url: 'https://acme-notes.example/trust' })
+ await owner(`/api/vendors/${acme.id}/assertions/${claim.id}/verify`, { document_id: baaRow.id }, 400)
+ assert.match(await (await app.fetch(`/app/vendors/${acme.id}`)).text(), /supplier claim, not verified/)
+ await owner(`/api/vendors/${acme.id}/assertions/${claim.id}/verify`, { document_id: soc2Row.id }, 200)
+ // 7. A newer report version supersedes without touching the original bytes.
+ const again = await owner(`/api/vendors/${acme.id}/requests`, { kinds: ['soc2'], expires_at: '2026-11-20' })
+ const soc2v2 = Buffer.from('SOC 2 Type II report, period 2025-10-01 to 2026-09-30, bridge letter added.')
+ const second2 = await upload(again.url, again.request_ids[0], 'acme-soc2-2026-reissued.pdf', soc2v2, { effective_on: '2026-09-30' })
+ detail = await get(`/api/vendors/${acme.id}`)
+ const reissued = detail.documents.find(d => d.id === second2.id)
+ assert.equal(reissued.supersedes, soc2Row.id); assert.equal(reissued.comparison.identical_bytes, false); assert.equal(reissued.comparison.size_change, soc2v2.length - soc2v1.length)
+ const original = await app.fetch(`/app/vendors/${acme.id}/documents/${soc2Row.id}/download`); assert.equal(sha(Buffer.from(await original.arrayBuffer())), sha(soc2v1))
+ await assert.rejects(app.db.prepare('UPDATE vendor_documents SET sha256=? WHERE id=?').bind('0'.repeat(64), soc2Row.id).run(), /immutable_vendor_document/)
+ await assert.rejects(app.db.prepare('DELETE FROM vendor_answers').run(), /retained_vendor_answer/)
+ // 8. A tampered original is refused rather than served.
+ const tamper = detail.documents.find(d => d.kind === 'baa'), bucket = await app.mf.getR2Bucket('EXHIBITS'); await bucket.put('vendor-documents/' + tamper.id, 'changed')
+ assert.equal((await app.fetch(`/app/vendors/${acme.id}/documents/${tamper.id}/download`)).status, 409)
+ await bucket.put('vendor-documents/' + tamper.id, 'Signed BAA')
+ // 9. Link isolation: another vendor's request is unreachable, before and after the link expires.
+ const globex = await owner('/api/vendors', { name: 'Globex Mail', criticality: 'medium', data_types: ['personal data'], contact_email: 'it@globex.example' })
+ const globexLink = await owner(`/api/vendors/${globex.id}/requests`, { kinds: ['dpa', 'questionnaire'], expires_at: '2026-11-20' })
+ const [dpaRequest, qRequest] = globexLink.request_ids, globexBefore = JSON.stringify((await get(`/api/vendors/${globex.id}`)).documents)
+ const crossGet = await sget(`${base}/requests/${qRequest}`); assert.equal(crossGet.status, 404); assert.equal(await crossGet.text(), 'Not found.\n')
+ await upload(sent.url, dpaRequest, 'dpa.pdf', Buffer.from('dpa'), {}, 404)
+ await supplier(`${base}/requests/${qRequest}/answers`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ answers: { 'A&A-01.1': { answer: 'yes' } } }) }).then(r => assert.equal(r.status, 404))
+ await app.clock('2026-11-10T09:00:00Z')
+ assert.equal((await supplier(base)).status, 404); assert.equal((await supplier(`${base}/requests/${ids.pentest}`)).status, 404)
+ assert.equal((await supplier(new URL(globexLink.url).pathname)).status, 200, 'the other vendor link is unaffected by this expiry')
+ assert.equal((await supplier(`${base}/requests/${qRequest}`, { headers: { accept: 'application/json' } })).status, 404)
+ const expiredUpload = new FormData(); expiredUpload.set('file', new File(['late'], 'late.pdf'))
+ assert.equal((await supplier(`${base}/requests/${ids.pentest}/documents`, { method: 'POST', body: expiredUpload })).status, 404)
+ expiredUpload.set('file', new File(['cross'], 'cross.pdf'))
+ assert.equal((await supplier(`${base}/requests/${dpaRequest}/documents`, { method: 'POST', body: expiredUpload })).status, 404)
+ assert.equal(JSON.stringify((await get(`/api/vendors/${globex.id}`)).documents), globexBefore)
+ detail = await get(`/api/vendors/${acme.id}`); assert.ok(detail.events.filter(e => e.outcome === 'refused').length >= 4)
+ assert.equal(detail.documents.filter(d => d.kind === 'pentest').length, 0)
+ // 10. Time passes: the contract renews, the condition lapses and reminders chase the owner once each.
+ await owner(`/api/vendors/${acme.id}`, { reason: 'Contract renewed for another term', renewal_date: '2028-02-01', criticality: 'high', data_types: ['PHI', 'personal data'], region: 'us-east-1', annual_cost_usd: '52000', contact_email: 'security@acme-notes.example' }, 200)
+ await app.clock('2027-02-02T15:00:00Z'); await app.tick()
+ const to = m => m.to.includes('lee@northstar.test')
+ assert.equal(app.messages.filter(m => /Reassessment overdue: Acme Notes/.test(m.subject) && to(m)).length, 1)
+ assert.equal(app.messages.filter(m => /Approval condition expired: Acme Notes/.test(m.subject) && to(m)).length, 1)
+ assert.equal(app.messages.filter(m => /Supplier request overdue: Acme Notes/.test(m.subject) && to(m)).length, 1)
+ await app.tick(); assert.equal(app.messages.filter(m => /Reassessment overdue|Approval condition expired|Supplier request overdue/.test(m.subject)).length >= 3, true)
+ const reminded = app.messages.filter(m => /Reassessment overdue: Acme|Approval condition expired: Acme|Supplier request overdue: Acme/.test(m.subject)).length
+ await app.tick(); assert.equal(app.messages.filter(m => /Reassessment overdue: Acme|Approval condition expired: Acme|Supplier request overdue: Acme/.test(m.subject)).length, reminded)
+ detail = await get(`/api/vendors/${acme.id}`)
+ assert.equal(detail.standing.reassessment, 'overdue'); assert.equal(detail.standing.approval, 'condition lapsed')
+ assert.deepEqual(detail.reminders.map(r => r.kind).sort(), ['vendor-condition-lapsed', 'vendor-reassessment-overdue', 'vendor-request-overdue'])
+ assert.match(await (await app.fetch(`/app/vendors/${acme.id}`)).text(), /vendor-reassessment-overdue/)
+ assert.ok(detail.documents.some(d => d.id === soc2Row.id && d.sha256 === sha(soc2v1)), 'the original documents are unchanged')
+ // Reassess: closing the condition and deciding again.
+ await owner(`/api/vendors/${acme.id}/approvals/${approval.id}/condition`, { note: 'MFA enforced; evidence attached' }, 200)
+ await owner(`/api/vendors/${acme.id}/approvals/${approval.id}/condition`, { note: 'again' }, 404)
+ const renewed = await owner(`/api/vendors/${acme.id}/approvals`, { decision: 'approved', rationale: 'Reassessed at renewal', approver_person_id: approver.id })
+ assert.ok(renewed.reassess_by > '2027-02-02'); assert.equal((await get(`/api/vendors/${acme.id}`)).standing.reassessment, 'current')
+ // LOG-001: every sensitive action carries its actor, outcome and revision.
+ const actions = (await app.db.prepare("SELECT action,actor_kind,revision FROM product_audit WHERE action LIKE 'vendor.%'").all()).results
+ for (const name of ['vendor.added', 'vendor.profile-updated', 'vendor.requests-issued', 'vendor.supplier-document', 'vendor.supplier-submitted', 'vendor.document-reviewed', 'vendor.finding-recorded', 'vendor.conditional', 'vendor.approved', 'vendor.condition-met', 'vendor.link-emailed']) assert.ok(actions.some(a => a.action === name), name)
+ assert.ok(actions.filter(a => a.action.startsWith('vendor.supplier-')).every(a => a.actor_kind === 'token' && a.revision))
+ // PORTABLE-001: diligence records and original documents travel; supplier links arrive closed and never authenticate.
+ const exported = Buffer.from(await (await app.fetch('/api/archive/export')).arrayBuffer()), decoded = decodeArchive(exported)
+ assert.ok(decoded.entries.some(e => e.path === 'vendor-documents/' + soc2Row.id && sha(e.bytes) === sha(soc2v1)))
+ assert.equal(exported.includes(token) || exported.includes(sha(token)), false, 'no bearer token or digest in the archive')
+ const before = await get(`/api/vendors/${acme.id}`), target = await runtime()
+ try {
+  await target.signin()
+  const restored = await target.fetch('/api/archive/restore', { method: 'POST', headers: { origin: target.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore', 'x-evidence-erasure-history': 'unverified acknowledged' }, body: exported })
+  assert.equal(restored.status, 200, await restored.text())
+  const copy = await (await target.fetch(`/api/vendors/${acme.id}`)).json()
+  for (const key of ['profile', 'documents', 'requests', 'findings', 'approvals', 'assertions', 'subprocessors', 'answers']) assert.deepEqual(copy[key], before[key], key)
+  assert.equal(copy.links.length, before.links.length); assert.ok(copy.links.every(l => l.closed_at))
+  assert.equal(sha(Buffer.from(await (await target.fetch(`/app/vendors/${acme.id}/documents/${soc2Row.id}/download`)).arrayBuffer())), sha(soc2v1))
+  assert.equal((await target.fetch(base, { headers: { cookie: '' } })).status, 404)
+ } finally { await target.close() }
+ return { vendor: acme.id }
+}
