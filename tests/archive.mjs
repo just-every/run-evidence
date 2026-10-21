@@ -1,3 +1,4 @@
+import { erasureJourney } from './helpers/erasure-journey.mjs'
 process.env.RER_SERVER_JOURNEY='1'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
@@ -138,3 +139,5 @@ try{
  await scenario('PORTABLE-001 complete bounded HTTP and offline CLI transfer, erasure history and execution fences',()=>portableJourney({runtime,cli,dir}))
  console.log(`${passed} archive public-door scenarios passed.`)
 }finally{await app?.close();await target?.close();if(dir)await rm(dir,{recursive:true,force:true})}
+
+if(!process.exitCode){const privacyApp=await runtime();try{await privacyApp.signin();await erasureJourney(privacyApp)}finally{await privacyApp.close()}}

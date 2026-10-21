@@ -4,6 +4,8 @@ import { day, type Receipt, type Requirement } from './model'
 import { renewal, scheduleAt, type Override, type ScheduleRow } from './cadence'
 const receiptSelect = `SELECT r.*, e.object_key,e.filename,e.size,e.media_type, (SELECT n.id FROM receipts n WHERE n.supersedes=r.id) AS superseded_by, (SELECT d.effective_date FROM receipt_effective_dates d WHERE d.receipt_id=r.id) AS effective_date, (SELECT a.token_name FROM api_evidence a WHERE a.receipt_id=r.id) AS pushed_by_token FROM receipts r JOIN exhibits e ON e.id=r.exhibit_id`
 export async function storedBytes(env: Bindings, row: Receipt): Promise<ArrayBuffer | null> {
+ // Older migration snapshots remain readable during the upgrade journey.
+ if(await env.DB.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='privacy_erased_exhibits'").first() && await env.DB.prepare('SELECT 1 FROM privacy_erased_exhibits WHERE exhibit_id=?').bind(row.exhibit_id).first())return null
  try {
   const object = await env.EXHIBITS.get(row.object_key)
   if (!object) return null
