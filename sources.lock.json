@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "27917eb02ad7f7b2ba37aedc92af02607ed73284bab4ac0e2d64af939b559caa",
+  "manifest": "654f802e07648b1fdc2e5bba29ed2ca68c4818adcdacf8da320b2e3d982883fb",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2595,6 +2595,7 @@
           "src/evidence/connect/github-schema.ts",
           "src/evidence/connect/github.ts",
           "src/evidence/connect/http.ts",
+          "src/evidence/connect/interval.ts",
           "src/evidence/connect/runs.ts",
           "src/evidence/connect/schedule.ts",
           "src/evidence/connect/storage.ts",
@@ -3010,7 +3011,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "27917eb02ad7f7b2ba37aedc92af02607ed73284bab4ac0e2d64af939b559caa",
+      "sha256": "654f802e07648b1fdc2e5bba29ed2ca68c4818adcdacf8da320b2e3d982883fb",
       "executable": false
     },
     "LICENSE": {
@@ -4070,7 +4071,7 @@
       "executable": false
     },
     "src/evidence/connect/collect.ts": {
-      "sha256": "3ffdd7a42cf2304d99ee277c4369a0ccd003ef85d1e3d5d1ab78553aae384474",
+      "sha256": "c2b45f10b72543aba2624c9485cc2ae4a216dc451a6ad432f2aaed989b35f053",
       "executable": false
     },
     "src/evidence/connect/custody.ts": {
@@ -4089,12 +4090,16 @@
       "sha256": "4604fd2d8055cf424db8fe89e67f0c2d046ff0747e134c88c9256d37a65e5e4e",
       "executable": false
     },
+    "src/evidence/connect/interval.ts": {
+      "sha256": "5421a418c7d2a50fe332068edece5ecbcad6cb524a6cc84e389d07f31544d061",
+      "executable": false
+    },
     "src/evidence/connect/runs.ts": {
-      "sha256": "6ba243ce6a9eb0d4ce0468ee52562ec4e108b12b068847315ea809ce352555af",
+      "sha256": "bc401019cbf78fdf212de2193a0b05304fe8cbb8f5a9c65b7c7aad84598a67cb",
       "executable": false
     },
     "src/evidence/connect/schedule.ts": {
-      "sha256": "713c24c3ddedaf89fe0d6fbaeb9f70276fee324e36ce1dce103aa0c3487f85fd",
+      "sha256": "f4dc2d000d81c32abdf4d22c1adb465881e2c3e1856d5af3b951ff379c83739f",
       "executable": false
     },
     "src/evidence/connect/storage.ts": {
@@ -4102,7 +4107,7 @@
       "executable": false
     },
     "src/evidence/connect/view.ts": {
-      "sha256": "db3bc2071a67cc6975d17eb25db893714ffdc6fbd53cc4dc7bdb9d000c85593d",
+      "sha256": "2225c419d7415041768fc124f7b55c3e8dcd694abd71919712b3a74c91862302",
       "executable": false
     },
     "src/evidence/control-definition/storage.ts": {

@@ -1,4 +1,4 @@
-import { collectionMinutes } from './schedule'
+import { collectionMinutes } from './interval'
 import { capabilityAllowed } from '../archive/capabilities'
 import { Refusal } from '../upload'
 import type { Bindings } from '../../auth.server'

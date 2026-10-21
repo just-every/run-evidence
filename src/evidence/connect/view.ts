@@ -1,4 +1,4 @@
-import { collectionMinutes } from './schedule'
+import { collectionMinutes } from './interval'
 import { privateCollectorPage } from '../collector/view'
 import { providerCosts } from '../costs'
 import { page, escape } from '../view'

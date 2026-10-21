@@ -1,13 +1,8 @@
 import type { Bindings } from '../../auth.server'
 import { auditStatement, type Actor, type Input } from '../door'
 import { Refusal } from '../upload'
-import { requireConnection, type Connection } from './storage'
-// COLLECTION-001: Hosted collector intervals use elapsed UTC time since the last attempt.
-// Cron dispatches every five minutes. Missed intervals do not create observations.
-export function collectionMinutes(connection: Connection) {
- const config = JSON.parse(connection.config_json || '{}') as { collection_minutes?: number }
- return config.collection_minutes ?? 60
-}
+import { requireConnection } from './storage'
+import { collectionMinutes } from './interval'
 export async function saveCollectionSchedule(env: Bindings, actor: Actor, id: string, input: Input, now: Date) {
  const connection = await requireConnection(env, id)
  if (connection.provider === 'private-git') throw new Refusal('Private Git collectors run on their own computer; configure their local scheduler.', 409)

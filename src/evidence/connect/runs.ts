@@ -1,4 +1,4 @@
-import { collectionMinutes } from './schedule'
+import { collectionMinutes } from './interval'
 import type { Bindings } from '../../auth.server'
 import { auditStatement } from '../door'
 import type { Connection } from './storage'

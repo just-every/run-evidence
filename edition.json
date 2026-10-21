@@ -2587,6 +2587,7 @@
           "src/evidence/connect/github-schema.ts",
           "src/evidence/connect/github.ts",
           "src/evidence/connect/http.ts",
+          "src/evidence/connect/interval.ts",
           "src/evidence/connect/runs.ts",
           "src/evidence/connect/schedule.ts",
           "src/evidence/connect/storage.ts",
