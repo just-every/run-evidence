@@ -6631,7 +6631,7 @@
       "executable": false
     },
     "tests/helpers/answer-journey.mjs": {
-      "sha256": "fb8b6a22caee0250e44910faef1a54257f3bd72ff64bab5dc34dc45dd37fa0c1",
+      "sha256": "c6fd3b38c95f778196c48a7da271b38b4218c53a0013cbaf1149a94d9c3091cf",
       "executable": false
     },
     "tests/helpers/assurance-browser.mjs": {

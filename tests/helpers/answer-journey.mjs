@@ -94,7 +94,18 @@ export async function answerJourney(){const app=await runtime();try{
  await post(`/api/questionnaires/${current.q.id}/drafts/${edit.id}/approve`,{snapshot_hash:edit.snapshot_hash,reviewer_person_id:reviewer.id,recipient:'buyer@customer.test',expires_on:'2027-01-01',reason:'Old source'},409)
  const archive=Buffer.from(await (await app.fetch('/api/archive/export')).arrayBuffer()),dest=await runtime()
  try{await dest.signin();const r=await dest.fetch('/api/archive/restore',{method:'POST',headers:{origin:dest.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:archive});assert.equal(r.status,200,await r.clone().text());const restored=await (await dest.fetch(created[1].path)).json();assert.deepEqual(restored.snapshot,(await get(created[1].path)).snapshot);assert.equal((await dest.fetch(created[1].path+'/export?recipient=buyer@customer.test')).status,409)}finally{await dest.close()}
- await app.clock('2027-01-02T15:00:00Z')
- await post('/api/questionnaires/sources',{kind:'approved-answer',source_id:reuse.id+':Q1',quote:body},409)
+ // Isolate approval expiry from the source/parent changes tested above.
+ const currentQuote='Access reviews occur monthly for all users.',stableSource=await post('/api/questionnaires/sources',{kind:'policy',source_id:changed.revision,quote:currentQuote})
+ const expiryFile=new FormData();for(const [k,v]of Object.entries({name:'Approval expiry isolation',program_id:program.id,id_column:'id',question_column:'question',section_column:'section',format_column:'format',answer_column:'answer'}))expiryFile.set(k,v)
+ expiryFile.set('file',new File(['id,section,question,format,answer\nEXP,Access,Describe monthly access reviews,text,\n'],'expiry.csv'))
+ const expiryUpload=await app.fetch('/api/questionnaires',{method:'POST',headers:{origin:app.origin},body:expiryFile});assert.equal(expiryUpload.status,201)
+ const expiryQ=await expiryUpload.json(),expiryDraft=await post(`/api/questionnaires/${expiryQ.id}/drafts`,{}),stableDraft=await post(`/api/questionnaires/${expiryQ.id}/drafts/${expiryDraft.id}/edit`,{snapshot_hash:expiryDraft.snapshot_hash,question_id:'EXP',source_id:stableSource.id}),stablePath=`/api/questionnaires/${expiryQ.id}/drafts/${stableDraft.id}`
+ await post(stablePath+'/approve',{snapshot_hash:stableDraft.snapshot_hash,reviewer_person_id:reviewer.id,recipient:'buyer@customer.test',expires_on:'2026-11-03',reason:'Expiry proof with a stable current source'},200)
+ await post('/api/questionnaires/sources',{kind:'approved-answer',source_id:stableDraft.id+':EXP',quote:currentQuote})
+ assert.equal((await app.fetch(stablePath+'/export?recipient=buyer@customer.test')).status,200)
+ await app.clock('2026-11-04T15:00:00Z')
+ await post('/api/questionnaires/sources',{kind:'policy',source_id:changed.revision,quote:currentQuote})
+ await post('/api/questionnaires/sources',{kind:'approved-answer',source_id:stableDraft.id+':EXP',quote:currentQuote},409)
+ assert.equal((await app.fetch(stablePath+'/export?recipient=buyer@customer.test')).status,409,'approval expiry alone refuses the original and its reuse')
  console.log('PASS ANSWER-001 slice: CSV/XLSX/DOCX template custody, exact cited excerpts and flags, named recipient approval, draft/source invalidation, checklist drilldown and archive parity')
 }finally{await app.close()}}
