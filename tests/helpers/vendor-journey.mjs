@@ -6,7 +6,7 @@ import { decodeArchive } from './portable-format.mjs'
 const sha = bytes => createHash('sha256').update(bytes).digest('hex')
 export async function vendorJourney(app, owner, get, person, runtime) {
  const supplier = (path, init = {}) => app.fetch(path, { ...init, headers: { cookie: '', ...init.headers } })
- const sjson = async (path, body, status = 201) => { const r = await supplier(path, { method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json' }, body: JSON.stringify(body) }); assert.equal(r.status, status, path + ' ' + await r.clone().text()); return r.json() }
+ const sjson = async (path, body, status = 201) => { const r = await supplier(path, { method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json', origin: 'null' }, body: JSON.stringify(body) }); assert.equal(r.status, status, path + ' ' + await r.clone().text()); return r.json() }
  const upload = async (url, request, name, bytes, fields = {}, status = 201) => { const form = new FormData(); form.set('file', new File([bytes], name)); for (const [k, v] of Object.entries(fields)) form.set(k, v); const r = await supplier(`${new URL(url).pathname}/requests/${request}/documents`, { method: 'POST', headers: { accept: 'application/json' }, body: form }); assert.equal(r.status, status, name + ' ' + await r.clone().text()); return status < 300 ? r.json() : null }
  const sget = path => supplier(path, { headers: { accept: 'application/json' } })
  await app.clock('2026-11-02T15:00:00Z')

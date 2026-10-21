@@ -23,8 +23,9 @@ async function handle(request: Request, env: Bindings, clock: () => Date) {
  const action = !m ? 'unknown' : !m[2] ? 'page' : !m[3] ? 'questionnaire' : m[3]
  const link = m ? await env.DB.prepare('SELECT id,vendor_id,contact_email,expires_at,created_by,created_at,closed_at,emailed_at FROM vendor_links WHERE token_hash=?').bind(await tokenDigest(m[1])).first<LinkRow>() : null
  const refuse = async () => { await log(env, link, action, 'refused', clock()); return absent() }
+ // The URL token is the credential, so no Origin check applies: pages send no referrer, which makes browsers send Origin: null on form posts.
  const write = action === 'documents' || action === 'answers'
- if (!m || !link || !active(link, clock()) || url.origin !== env.AUTH_ORIGIN || (request.headers.has('host') && request.headers.get('host')?.toLowerCase() !== url.host.toLowerCase()) || request.headers.get('sec-fetch-site') === 'cross-site' || (write ? request.method !== 'POST' : !['GET', 'HEAD'].includes(request.method)) || (write && request.headers.has('origin') && request.headers.get('origin') !== env.AUTH_ORIGIN)) return refuse()
+ if (!m || !link || !active(link, clock()) || url.origin !== env.AUTH_ORIGIN || (request.headers.has('host') && request.headers.get('host')?.toLowerCase() !== url.host.toLowerCase()) || request.headers.get('sec-fetch-site') === 'cross-site' || (write ? request.method !== 'POST' : !['GET', 'HEAD'].includes(request.method))) return refuse()
  const token = m[1], wantsJson = (request.headers.get('accept') ?? '').includes('application/json'), vendor = await env.DB.prepare('SELECT name FROM vendors WHERE id=?').bind(link.vendor_id).first<{ name: string }>()
  const requests = await openRequests(env, link), name = vendor?.name ?? 'the supplier'
  const actor = { id: link.id, name: `Supplier link for ${name}`, kind: 'token' as const }

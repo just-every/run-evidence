@@ -32,7 +32,7 @@ try {
  const supplierPath = new URL(issued.url).pathname
  for (const width of [1440, 390]) {
   const context = await browser.newContext({ viewport: { width, height: 1000 } })
-  const page = await context.newPage(), errors = []; page.on('pageerror', e => errors.push(e.message))
+  const page = await context.newPage(), errors = []; page.on('pageerror', e => errors.push(e.message));
   const capture = async name => { await page.evaluate(() => document.fonts.ready); assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${name} overflow at ${width}`); await page.screenshot({ path: join(output, `${width}-${name}.png`), fullPage: true }) }
   // The supplier needs no sign-in: the link shows only its own requests.
   await page.goto(origin + supplierPath)

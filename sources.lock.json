@@ -5304,7 +5304,7 @@
       "executable": false
     },
     "src/evidence/vendor/supplier.ts": {
-      "sha256": "6113bf19caceff671897d041b8e174eb8d02ef082b62900a93ae440350bcbc01",
+      "sha256": "18351980eb7b087b6d0998144115937a52c870dc3adb8d293dc1f769a5e526c8",
       "executable": false
     },
     "src/evidence/vendor/view.ts": {
@@ -6604,7 +6604,7 @@
       "executable": false
     },
     "tests/helpers/vendor-journey.mjs": {
-      "sha256": "16030a1c30ae06dab6a3540970f28ee8eedd7521329a8f5c06aa5af2fd06e03b",
+      "sha256": "3c2bbe64ad705ddf8bde1850b71ddab6969308838b936da09983f450fe28e06e",
       "executable": false
     },
     "tests/helpers/worker.ts": {
@@ -6704,7 +6704,7 @@
       "executable": false
     },
     "tests/vendor-browser.mjs": {
-      "sha256": "1caec568d55f05a1d965b29130692e84b3362ed9353e71b918951fa8e6f19110",
+      "sha256": "00870673468ca073d5f45135d69a628dca37fe57cdb6106919a0b6c31cdd5516",
       "executable": false
     },
     "tests/vulns.mjs": {
