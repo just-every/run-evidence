@@ -9,7 +9,7 @@ import { chromium } from 'playwright'
 import { runtime } from './helpers/runtime.mjs'
 import { azureDeadlineBrowser, deadlineBrowser } from './helpers/azure-deadline-browser.mjs'
 import { trackerFixture, configs } from './helpers/tracker-fixture.mjs'
-const edge=trackerFixture(),app=await runtime({outbound:edge.outbound,settings:{AUTH_ORIGIN:'https://127.0.0.1:8787'}})
+const edge=trackerFixture(),app=await runtime({outbound:edge.outbound,origin:'https://127.0.0.1:8787'})
 const output=resolve(process.env.EVIDENCE_BROWSER_OUTPUT??'.cache/browser/trackers')
 let browser,server
 try {

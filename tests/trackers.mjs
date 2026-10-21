@@ -13,7 +13,7 @@ import { assertNativeFieldsCreate } from './helpers/native-fields-journey.mjs'
 import { trackerFixture, configs } from './helpers/tracker-fixture.mjs'
 const require=createRequire(import.meta.url),dependency=createRequire(require.resolve('wrangler/package.json'))
 const {unstable_splitSqlQuery}=dependency('wrangler')
-const edge=trackerFixture(),native=nativeFieldsFixture(edge.outbound),app=await runtime({outbound:native.outbound,migrationThrough:'0046',settings:{AUTH_ORIGIN:'https://127.0.0.1:8787'}})
+const edge=trackerFixture(),native=nativeFieldsFixture(edge.outbound),app=await runtime({outbound:native.outbound,migrationThrough:'0046',origin:'https://127.0.0.1:8787'})
 const owner=async(path,body,status=201)=>{const r=await app.fetch(path,{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify(body)});const s=await r.text();assert.equal(r.status,status,path+' '+s);return s?JSON.parse(s):null}
 const get=async path=>{const r=await app.fetch(path);assert.equal(r.status,200,path);return r.json()}
 const at=async time=>{edge.state.clock=new Date(time).toISOString();await app.clock(edge.state.clock)}
