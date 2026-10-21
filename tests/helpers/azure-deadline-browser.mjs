@@ -11,6 +11,7 @@ export async function azureDeadlineBrowser({page,app,edge,cookie,destination,wid
  await submit('Save mapping')
  assert.equal(await page.getByLabel('Azure Boards due-date field reference').inputValue(),'Custom.RemediationDue')
  await capture('azure-mapping-saved')
+ const person=await post('/api/people',{name:'Dana Lee '+width,email:`dana${width}@northstar.test`,kind:'employee'})
  const push=await post('/api/api-tokens',{name:'Browser source '+width,scopes:['resource-push','test-write'],expires_at:'2027-04-01'})
  const type='azure_browser_'+width
  await v1(push.token,'PUT','/v1/resource-types/'+type,{schema:{fields:{secure:'boolean'}}})
@@ -19,6 +20,7 @@ export async function azureDeadlineBrowser({page,app,edge,cookie,destination,wid
  const queue=await (await app.fetch('/api/remediation',{headers:{cookie}})).json(),ob=queue.open.find(o=>o.test_id===test.id)
  const detail=async()=>{const r=await app.fetch('/api/remediation/'+ob.id,{headers:{cookie}});assert.equal(r.status,200);return r.json()}
  await page.goto(new URL('/app/remediation/'+ob.id,page.url()).href)
+ await page.getByRole('combobox',{name:'Owner',exact:true}).selectOption(person.id)
  await page.getByLabel('Target date',{exact:true}).fill('2026-12-01');await submit('Assign')
  await page.getByLabel('Destination',{exact:true}).selectOption(destination.id);await submit('Create linked ticket')
  const ticket=(await detail()).tickets[0],remote=edge.find('azure-boards',ticket.remote_id)
