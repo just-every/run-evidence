@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "04716f3fdc724ef9d5e69f978c92702a1fdd0b4e282f260198a5dea21cc1898b",
+  "manifest": "33c87ab6e07efecc5eb16c106a037def17d69b866ea875159c2ca7cd20239a86",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2420,6 +2420,7 @@
           "migrations/core/0047_trackers.sql",
           "migrations/core/0048_operations.sql",
           "migrations/core/0049_operation_backup.sql",
+          "migrations/core/0049_period_investigations.sql",
           "package.json",
           "pnpm-lock.yaml",
           "public/apple-touch-icon.png",
@@ -2529,6 +2530,11 @@
           "src/evidence/agent/archive.ts",
           "src/evidence/agent/http.ts",
           "src/evidence/agent/input.ts",
+          "src/evidence/agent/period-analysis.ts",
+          "src/evidence/agent/period-archive.ts",
+          "src/evidence/agent/period-http.ts",
+          "src/evidence/agent/period-storage.ts",
+          "src/evidence/agent/period-view.ts",
           "src/evidence/agent/storage.ts",
           "src/evidence/agent/types.ts",
           "src/evidence/agent/view.ts",
@@ -2838,6 +2844,7 @@
           "tests/helpers/ops-crash-child.mjs",
           "tests/helpers/original-tracker-fixture.mjs",
           "tests/helpers/original-webhook-journey.mjs",
+          "tests/helpers/period-agent-journey.mjs",
           "tests/helpers/population-browser.mjs",
           "tests/helpers/portable-browser.mjs",
           "tests/helpers/portable-fixture.mjs",
@@ -2862,6 +2869,7 @@
           "tests/open.mjs",
           "tests/ops-browser.mjs",
           "tests/ops.mjs",
+          "tests/period-agent-browser.mjs",
           "tests/policy.mjs",
           "tests/population.mjs",
           "tests/private-collector.mjs",
@@ -2992,7 +3000,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "04716f3fdc724ef9d5e69f978c92702a1fdd0b4e282f260198a5dea21cc1898b",
+      "sha256": "33c87ab6e07efecc5eb16c106a037def17d69b866ea875159c2ca7cd20239a86",
       "executable": false
     },
     "LICENSE": {
@@ -3193,6 +3201,10 @@
     },
     "migrations/core/0049_operation_backup.sql": {
       "sha256": "2600e07bf9ef76b5075fff836a52d7e35ba6de94b5eb5de912b31b53b7ff9849",
+      "executable": false
+    },
+    "migrations/core/0049_period_investigations.sql": {
+      "sha256": "585190ff1bbd04227945de86c9540e36689326d3369d164eed4be7a316628fcb",
       "executable": false
     },
     "ONBOARDING.md": {
@@ -3648,7 +3660,7 @@
       "executable": false
     },
     "scripts/verify.mjs": {
-      "sha256": "273db8fa6e4087c9b04e7562052c87038213133a082ce797dec29fa83f2ea6c2",
+      "sha256": "bf19ca56b2dfba6c2afaf8cebb2c29f068f947b8abae13bf47a394e8a886b625",
       "executable": false
     },
     "SEED-COMMAND-CONTRACT.md": {
@@ -3660,7 +3672,7 @@
       "executable": false
     },
     "src/app.server.ts": {
-      "sha256": "708f3d4eed492ec61bcffae09248e8410938aa1c36c58714c0239fea8accd3e7",
+      "sha256": "7526a647e571e9e385f14d5483dc9442d89d0bfc5f06980aba2679d08c75dcd4",
       "executable": false
     },
     "src/auth.server.ts": {
@@ -3807,6 +3819,26 @@
       "sha256": "b0cf5d3cdfe7f7ea0a1858ea1a0efc60f0f9e4e21fe7448b134a06113aac7ba8",
       "executable": false
     },
+    "src/evidence/agent/period-analysis.ts": {
+      "sha256": "14e89e9eba30c068903529a54dff74b238547249c589dbeaf1d20163b76fdd9e",
+      "executable": false
+    },
+    "src/evidence/agent/period-archive.ts": {
+      "sha256": "374099ddf56dfe593e65dbb29a9dd24131085479ba75482dd49f31e1e4ace5e7",
+      "executable": false
+    },
+    "src/evidence/agent/period-http.ts": {
+      "sha256": "7d6404e9ed66bc014d9d2e9ddcbcc221cf912ee0afdc50f45c7c285ee96ffb6f",
+      "executable": false
+    },
+    "src/evidence/agent/period-storage.ts": {
+      "sha256": "5ad4e31ba8b6bf96cc795026f35ee6645f7deb6bbbfa4512f50bb177a1073ca0",
+      "executable": false
+    },
+    "src/evidence/agent/period-view.ts": {
+      "sha256": "67f8a708d6ee35d184e05307fe4140f1fb3dde4643ea06e7d0f9cb1e12a63bed",
+      "executable": false
+    },
     "src/evidence/agent/storage.ts": {
       "sha256": "908b2db7ead899a28f093d2c35a4e55410b1b89eef3ba46e5eda4ae301cf2a48",
       "executable": false
@@ -3892,7 +3924,7 @@
       "executable": false
     },
     "src/evidence/archive/portable-restore.ts": {
-      "sha256": "d5044b1af10644390319cdae6adefccb1be1a59e27af3cf1f20cb180c223b8d8",
+      "sha256": "2c83ae7c1f66043f64391fa785da4e1630cb1140e8ef18900a019ce5b7cf0b4e",
       "executable": false
     },
     "src/evidence/archive/program.ts": {
@@ -3900,11 +3932,11 @@
       "executable": false
     },
     "src/evidence/archive/registry.ts": {
-      "sha256": "8519a15187fd08554f1797364bbb9ffcdab003ec63e19099fe47b76c2319db1c",
+      "sha256": "63c0b41aff25aa00c3b3a0e0165a6b4a24fc652d787dc5a6c56f8182b972e4c3",
       "executable": false
     },
     "src/evidence/archive/relationships.ts": {
-      "sha256": "0ba4d7294589abef88e89f71179de144afddd3594fa4bd708d22a837c19d7a83",
+      "sha256": "43625cf68f008e99a33d85220f70098af22ce4e4e525d37f6b24facd8b7d6640",
       "executable": false
     },
     "src/evidence/archive/restore.ts": {
@@ -3912,7 +3944,7 @@
       "executable": false
     },
     "src/evidence/archive/schema.json": {
-      "sha256": "943b0666a855cb2c15e9ed88bd3ea089073fbf31cdabd347ebf57a3974ee050a",
+      "sha256": "180824798a605b8fe9c2711d8e3218cf9d5a9bc854036ffe9a9cb5d6da1bd201",
       "executable": false
     },
     "src/evidence/archive/service.ts": {
@@ -5044,7 +5076,7 @@
       "executable": false
     },
     "src/evidence/program/view.ts": {
-      "sha256": "6a9c4519e8eecd22ddf70e6e7af99d3f22156757ab56ad356b8dc8b0345a8838",
+      "sha256": "2df1222962caef4889260f336086e6c80f14609d48477c239a1e0f8ec07aea73",
       "executable": false
     },
     "src/evidence/remedy/http.ts": {
@@ -6272,7 +6304,7 @@
       "executable": false
     },
     "tests/agent.mjs": {
-      "sha256": "b2ecaca5eddfd72e17f320c24e22922cf4356600819ee4ef653eeaca280b0136",
+      "sha256": "b8b0c5194e7d0bcd961ecd82fa44c511016eaf5357814c73a9a8bb02ee9fbfbd",
       "executable": false
     },
     "tests/api.mjs": {
@@ -6395,6 +6427,10 @@
       "sha256": "0cf6390a6df3da2bf1f4652b1d304e887a7f5851eb66481d40b6b50705dbb181",
       "executable": false
     },
+    "tests/helpers/period-agent-journey.mjs": {
+      "sha256": "f9b11295cead811dcb3c9ae5af0a12c2d571b74b9f8380fe5a88dcf911940a99",
+      "executable": false
+    },
     "tests/helpers/population-browser.mjs": {
       "sha256": "d90c45c84a8aec83a7541ae9f59f13305db748175d711796bd1c0fe2052c6784",
       "executable": false
@@ -6489,6 +6525,10 @@
     },
     "tests/ops.mjs": {
       "sha256": "dc73b4d4b941ec339822b98dcf55329177711bc79e788326aff65f58602da3ab",
+      "executable": false
+    },
+    "tests/period-agent-browser.mjs": {
+      "sha256": "cc2c377555fc088fc4a0b9eb7718b23a836c9c237e46a1b93e02ec4c48bff825",
       "executable": false
     },
     "tests/policy.mjs": {

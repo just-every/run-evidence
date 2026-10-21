@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
+import { periodAgentJourney } from './helpers/period-agent-journey.mjs'
 import { runtime } from './helpers/runtime.mjs'
 const app=await runtime()
 let active='',passed=0,ownerCookie='',credential,control,proposal,receipt
@@ -129,6 +130,7 @@ try {
    assert.equal((await agent('/api/agent/desk',undefined,portable.token)).status,200)
   } finally {await destination.close()}
  })
+ await scenario('AGENT-002 / cited period correlation, earlier violations, missing windows, contradictions, unobserved assets, exact rejection and PORTABLE-001 restore',async()=>{await periodAgentJourney(app)})
  console.log(`${passed} agent public-door scenarios passed with native owner sessions and real D1/R2.`)
 } catch(error) {
  console.error('FAIL agent scenario: '+active)
