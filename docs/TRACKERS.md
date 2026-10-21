@@ -22,7 +22,7 @@ batch size has not been measured. Source-read failure never fabricates a pass.
 | Tracker | Project field and API address | Field details and official API |
 | --- | --- | --- |
 | GitLab Issues | Project ID or path; default `https://gitlab.com/api/v4` | Native assignee, labels and due date; priority is a scoped label. [Issues](https://docs.gitlab.com/api/issues/), [notes](https://docs.gitlab.com/api/notes/). |
-| Azure Boards | Project name; `https://dev.azure.com/organization` | Work-item type defaults to Task. Native priority and tags; initial deadline is description text. Reopen uses New. [Work items](https://learn.microsoft.com/rest/api/azure/devops/wit/work-items), [comments](https://learn.microsoft.com/rest/api/azure/devops/wit/comments). |
+| Azure Boards | Project name; `https://dev.azure.com/organization` | Work-item type defaults to Task. Native priority and tags; map a writable DateTime due-date field (default `Microsoft.VSTS.Scheduling.DueDate`, or e.g. `Custom.RemediationDue` on your process). Create and subsequent target changes write UTC midnight, and reads compare the UTC calendar day. Invalid dates stay unknown; missing native dates show a conflict. Unsupported fields produce visible failures. Existing text-only tickets need owner conflict resolution to populate the native field. Reopen uses New. [Work items](https://learn.microsoft.com/rest/api/azure/devops/wit/work-items), [comments](https://learn.microsoft.com/rest/api/azure/devops/wit/comments). |
 | Shortcut | Numeric project ID; default `https://api.app.shortcut.com/api/v3` | Native deadline, labels and owners; priority is description text. Reopen uses the current workflow unstarted state. [REST API](https://developer.shortcut.com/api/rest/v3). |
 | ClickUp | List ID; default `https://api.clickup.com/api/v2` | Native priority, tags, assignees and date-only UTC deadline. Reopen uses an open list status. [API](https://developer.clickup.com/reference/createtask). |
 | monday.com | Board ID; default `https://api.monday.com/v2` | Needs a long-text column, date column, people column and status columns titled Status and Priority, with the mapped priority labels. Description, source links and labels are written in that long-text column in the same mutation as the item, so a failed secondary update cannot create a duplicate ticket. [Items](https://developer.monday.com/api-reference/reference/items), [updates](https://developer.monday.com/api-reference/reference/updates). |
@@ -51,14 +51,21 @@ are admitted once. See Asana's [webhooks guide](https://developers.asana.com/doc
 Registration requires Asana to reach the HTTPS callback on the installation;
 a purely local installation can continue polling.
 
+For Shortcut, paste the outgoing webhook secret when connecting and configure
+the displayed callback URL in Shortcut. The exact body must carry the
+`Payload-Signature` HMAC-SHA256 header. Event UUIDs are admitted once; every linked
+story in a batch is read once, including batches with no `primary_id`.
+Payload values never establish tracker state. See the official
+[Shortcut outgoing webhook v1 schema](https://developer.shortcut.com/api/webhook/v1).
+
 Provider-specific inbound webhook registration/verification for Azure Boards,
-Shortcut, monday.com, Basecamp, Freshservice and YouTrack remains unbuilt. Those
+monday.com, Basecamp, Freshservice and YouTrack remains unbuilt. Those
 adapters currently use polling even though their providers offer webhooks.
 
 ## Acceptance boundaries
 
-WORK-001 remains partial. Text-only field fallbacks are labeled, and later Azure
-target-date edits are not synchronized to the description yet. The full native
+WORK-001 remains partial. Text-only priority/label representations are labeled.
+Azure native deadline mapping and Shortcut signed batches are asserted. The full native
 field/conflict and inbound replay matrix is still required for all thirteen
 destinations. The network fakes in the public-door journeys use documented
 provider shapes. Each tracker still has the live Gap **not yet run against a
