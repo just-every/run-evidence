@@ -7,7 +7,7 @@ import { chromium } from 'playwright'
 import { runtime } from './helpers/runtime.mjs'
 const app = await runtime(), output = resolve(process.env.EVIDENCE_BROWSER_OUTPUT ?? '.cache/browser/vendor')
 let browser, server, origin
-const api = async (path, body) => { const r = await app.fetch(path, { method: 'POST', headers: { origin: app.origin, 'content-type': 'application/json' }, body: JSON.stringify(body) }); assert.ok(r.status < 300, path + await r.text()); return r.json() }
+const api = async (path, body) => { const r = await app.fetch(path, { method: 'POST', headers: { origin: app.origin, 'content-type': 'application/json' }, body: JSON.stringify(body) }); const text = await r.text(); assert.ok(r.status < 300, path + text); return JSON.parse(text) }
 try {
  const cookie = await app.signin()
  await app.clock('2026-11-02T15:00:00Z')

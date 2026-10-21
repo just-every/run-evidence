@@ -6704,7 +6704,7 @@
       "executable": false
     },
     "tests/vendor-browser.mjs": {
-      "sha256": "5811d89d70b3b089267802ab64c58bb629e7d60e1cf4b0d16d166d365d82c60f",
+      "sha256": "1caec568d55f05a1d965b29130692e84b3362ed9353e71b918951fa8e6f19110",
       "executable": false
     },
     "tests/vulns.mjs": {
