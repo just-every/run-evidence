@@ -2832,6 +2832,7 @@
           "tests/helpers/review-browser-runtime.mjs",
           "tests/helpers/risk-browser.mjs",
           "tests/helpers/runtime.mjs",
+          "tests/helpers/shortcut-webhook-journey.mjs",
           "tests/helpers/site-runtime.mjs",
           "tests/helpers/tracker-fixture.mjs",
           "tests/helpers/worker.ts",

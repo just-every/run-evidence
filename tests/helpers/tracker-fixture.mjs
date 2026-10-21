@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict'
 export const configs = {
  gitlab: { base:'https://gitlab.com/api/v4',project:'42',priority:'priority::high' },
- 'azure-boards': { base:'https://dev.azure.com/northstar',project:'Security',priority:'2',textDue:true },
+ 'azure-boards': { base:'https://dev.azure.com/northstar',project:'Security',priority:'2' },
  shortcut: { base:'https://api.app.shortcut.com/api/v3',project:'42',priority:'2' },
  clickup: { base:'https://api.clickup.com/api/v2',project:'42',priority:'2' },
  monday: { base:'https://api.monday.com/v2',project:'42',priority:'High' },
@@ -44,11 +44,11 @@ export function trackerFixture() {
   if(p==='azure-boards') {
    assert.ok(u.searchParams.get('api-version'))
    if(path==='/_apis/projects/Security')return reply(200,{id:'42',name:'Security'})
-   if(path==='/Security/_apis/wit/workitems/$Task'&&method==='POST'){const f=Object.fromEntries(body.map(v=>[v.path.slice(8),v.value]));if(f['Microsoft.VSTS.Common.Priority']===0)return reply(400,{message:'Invalid priority'});assert.ok(f['System.Title']);const i=create(p,{title:f['System.Title'],description:strip(f['System.Description']),priority:String(f['Microsoft.VSTS.Common.Priority']),labels:f['System.Tags'].split('; '),assignee:f['System.AssignedTo']?'Dana Lee':null});return reply(200,{id:Number(i.id),_links:{html:{href:`https://dev.azure.com/northstar/Security/_workitems/edit/${i.id}`}}})}
+   if(path==='/Security/_apis/wit/workitems/$Task'&&method==='POST'){const f=Object.fromEntries(body.map(v=>[v.path.slice(8),v.value]));if(f['Microsoft.VSTS.Common.Priority']===0)return reply(400,{message:'Invalid priority'});assert.ok(f['System.Title']);if(!Object.hasOwn(f,'Custom.RemediationDue'))return reply(400,{message:'Date field mapping is not valid'});assert.ok(f['Custom.RemediationDue']===null||f['Custom.RemediationDue'].endsWith('T00:00:00Z'));const i=create(p,{title:f['System.Title'],description:strip(f['System.Description']),due:f['Custom.RemediationDue']?.slice(0,10)??null,priority:String(f['Microsoft.VSTS.Common.Priority']),labels:f['System.Tags'].split('; '),assignee:f['System.AssignedTo']?'Dana Lee':null});return reply(200,{id:Number(i.id),_links:{html:{href:`https://dev.azure.com/northstar/Security/_workitems/edit/${i.id}`}}})}
    const m=/^\/Security\/_apis\/wit\/workitems\/(\d+)(\/comments)?$/.exec(path),i=m&&find(p,m[1]);if(!i||i.deleted)return reply(404,{message:'Work item not found'})
    if(m[2]){if(method==='POST'){const n=note(i,body.text);return reply(200,{id:n.id})}return reply(200,{comments:i.comments.map(n=>({id:n.id,text:n.body,createdBy:{displayName:n.author},createdDate:n.at}))})}
-   if(method==='PATCH'){i.closed=false;return reply(200,{})}
-   return reply(200,{fields:{'System.State':i.closed?'Done':i.status,'System.AssignedTo':i.assignee?{displayName:i.assignee}:null}})
+   if(method==='PATCH'){for(const op of body){if(op.path==='/fields/System.State')i.closed=false;else if(op.path==='/fields/Custom.RemediationDue'){assert.ok(op.value===null||op.value.endsWith('T00:00:00Z'));i.due=op.value?.slice(0,10)??null}else return reply(400,{message:'Date field mapping is not valid'})}return reply(200,{})}
+   return reply(200,{fields:{'Custom.RemediationDue':i.dueInstant??(i.due?i.due+'T00:00:00Z':null),'System.State':i.closed?'Done':i.status,'System.AssignedTo':i.assignee?{displayName:i.assignee}:null}})
   }
   if(p==='shortcut') {
    if(path==='/member')return reply(200,{id:'u1',profile:{name:'Dana Lee'}})

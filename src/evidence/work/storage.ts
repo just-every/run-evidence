@@ -39,7 +39,7 @@ export async function requireDestination(env: Bindings, id: string) { const row 
 export const safeDestination = (row: DestinationRow) => { const { secret_ciphertext: _a, secret_iv: _b, hook_ciphertext: _c, hook_iv: _d, ...rest } = row; return { ...rest, has_webhook_secret: !!row.hook_ciphertext } }
 export function mappingOf(row: Pick<DestinationRow, 'mapping_json' | 'provider'>): Mapping {
  const value = (() => { try { return JSON.parse(row.mapping_json) } catch { return {} } })() as Partial<Mapping>
- return { issue_type: value.issue_type ?? '', labels: value.labels ?? ['evidence', 'compliance'], priorities: { ...adapters[row.provider].defaultPriorities, ...(value.priorities ?? {}) }, assignees: value.assignees ?? {} }
+ return { issue_type: value.issue_type ?? '', due_field: value.due_field ?? 'Microsoft.VSTS.Scheduling.DueDate', labels: value.labels ?? ['evidence', 'compliance'], priorities: { ...adapters[row.provider].defaultPriorities, ...(value.priorities ?? {}) }, assignees: value.assignees ?? {} }
 }
 export const reference = (row: DestinationRow): DestinationRef => ({ provider: row.provider, api_base: row.api_base, account: row.account, project: row.project, mapping: mappingOf(row) })
 export const secretOf = async (env: Bindings, row: DestinationRow) => { await requireCapability(env,'writes',row.id); return row.secret_ciphertext && row.secret_iv ? unseal(env, row.secret_ciphertext, row.secret_iv, row.id) : Promise.reject(new TrackerFailure('unauthorized', 0, 'No credential is held for this destination; reconnect it.')) }
@@ -55,14 +55,16 @@ function parseMapping(provider: Provider, input: Input): Mapping {
   if (!match) throw new Refusal('Write each assignee as person@example.com = tracker user id.')
   assignees[match[1].toLowerCase()] = match[2]
  }
- return { issue_type: text(input, 'issue_type', 60, true), labels, priorities, assignees }
+ const dueField = text(input, 'due_field', 100, true) || 'Microsoft.VSTS.Scheduling.DueDate'
+ if (provider === 'azure-boards' && !/^[A-Za-z][A-Za-z0-9_.]{0,99}$/.test(dueField)) throw new Refusal('Give an Azure date field reference name, such as Custom.RemediationDue.')
+ return { issue_type: text(input, 'issue_type', 60, true), due_field: dueField, labels, priorities, assignees }
 }
 const randomHex = () => Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, '0')).join('')
 // Webhook secrets: Evidence generates one for GitHub and Jira (shown once);
 // Linear and Vector generate their own, which the owner pastes here.
 async function hookSecret(provider: Provider, input: Input) {
  if (provider === 'github' || provider === 'jira') return { secret: randomHex(), shown: true, audience: '' }
- if (!['vector', 'linear', 'clickup', 'gitlab'].includes(provider)) return { secret: null, shown: false, audience: '' }
+ if (!['vector', 'linear', 'clickup', 'gitlab', 'shortcut'].includes(provider)) return { secret: null, shown: false, audience: '' }
  const pasted = text(input, 'hook_secret', 200, true)
  if (provider === 'vector' && pasted && !/^[0-9a-f]{64,}$/i.test(pasted)) throw new Refusal('Paste the Vector destination signing secret exactly as Vector shows it (hexadecimal).')
  const audience = provider === 'vector' ? text(input, 'hook_audience', 200, true) : ''

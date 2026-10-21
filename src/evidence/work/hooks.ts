@@ -31,6 +31,14 @@ async function verify(d: DestinationRow, secret: string, request: Request, bytes
   if (!p || !delivery || String(p.project?.id) !== d.project && p.project?.path_with_namespace !== d.project) return null
   return { delivery, ref: p.object_kind === 'issue' ? String(p.object_attributes?.iid ?? '') : p.object_kind === 'note' ? String(p.issue?.iid ?? '') : null }
  }
+ // https://developer.shortcut.com/api/webhook/v1 — a batch need not have primary_id.
+ if (d.provider === 'shortcut') {
+  if (!same(h('payload-signature'), await hmac(encoder.encode(secret), bytes))) return null
+  const p=parse()
+  if (!p || typeof p.id !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(p.id) || !Array.isArray(p.actions)) return null
+  const refs=[...new Set<string>(p.actions.filter((a:Payload)=>a.entity_type==='story' && Number.isSafeInteger(a.id) && a.id>0).map((a:Payload)=>String(a.id)))]
+  return {delivery:p.id,ref:refs[0]??null,refs}
+ }
  if (d.provider === 'clickup') {
   if (!same(h('x-signature'), await hmac(encoder.encode(secret), bytes))) return null
   const p=parse()

@@ -6,7 +6,7 @@ import type { Severity } from '../tests/storage'
 export type Provider = 'vector' | 'jira' | 'linear' | 'github' | 'asana' | 'gitlab' | 'azure-boards' | 'shortcut' | 'clickup' | 'monday' | 'basecamp' | 'freshservice' | 'youtrack'
 export type FailureKind = 'unauthorized' | 'not found' | 'invalid' | 'throttled' | 'unavailable'
 export class TrackerFailure extends Error { constructor(public kind: FailureKind, public status: number, message: string, public body: unknown = null) { super(message) } }
-export interface Mapping { issue_type: string; labels: string[]; priorities: Record<Severity, string>; assignees: Record<string, string> }
+export interface Mapping { issue_type: string; due_field: string; labels: string[]; priorities: Record<Severity, string>; assignees: Record<string, string> }
 export interface DestinationRef { provider: Provider; api_base: string; account: string; project: string; mapping: Mapping }
 export interface Draft { title: string; description: string; priority: string; due: string | null; labels: string[]; assignee: string | null }
 export interface RemoteComment { id: string; author: string; body: string; at: string }

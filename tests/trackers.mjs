@@ -4,6 +4,7 @@ import { readFile, readdir } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { createHmac } from 'node:crypto'
 import { runtime } from './helpers/runtime.mjs'
+import { shortcutWebhookJourney } from './helpers/shortcut-webhook-journey.mjs'
 import { trackerFixture, configs } from './helpers/tracker-fixture.mjs'
 const require=createRequire(import.meta.url),dependency=createRequire(require.resolve('wrangler/package.json'))
 const {unstable_splitSqlQuery}=dependency('wrangler')
@@ -44,8 +45,9 @@ try {
  for(const [provider,c] of Object.entries(configs)) {
   await scenario(`${provider}: authorized project, mapped create, duplicate refusal, source links, two-way comments, status/assignee polling, replay, conflicts, closure re-test and visible failures`,async()=>{
    const countBefore=[...edge.issues.values()].filter(i=>i.provider===provider).length
-   const connect={provider,api_base:c.base,project:c.project,account:c.account??'',token:edge.keys[provider],hook_secret:'tracker-signing-secret',assignees:'dana@northstar.test = '+(provider==='shortcut'?'u1':'1')}
+   const connect={provider,api_base:c.base,project:c.project,account:c.account??'',token:edge.keys[provider],hook_secret:'tracker-signing-secret',due_field:'Custom.RemediationDue',assignees:'dana@northstar.test = '+(provider==='shortcut'?'u1':'1')}
    await owner('/api/trackers',{...connect,token:'wrong'},400)
+   if(provider==='azure-boards')await owner('/api/trackers',{...connect,due_field:'Custom/Invalid'},400)
    const dest=await owner('/api/trackers',connect)
    const type='work_'+provider.replaceAll('-','_')
    await v1(push.token,'PUT','/v1/resource-types/'+type,{schema:{fields:{secure:'boolean'}}})
@@ -70,12 +72,14 @@ try {
    remote.comments.push({id:'remote-note',author:'Dana Lee',body:'Source fix in progress.',at:edge.state.clock})
    if(provider==='freshservice')remote.comments.push({id:'requester-note',author:'Requester',body:'Requester question.',at:edge.state.clock})
    remote.assignee='Lena Ortiz';remote.status=provider==='monday'?'Working':'In Progress'
+   if(provider==='azure-boards')remote.dueInstant='2026-12-02T01:00:00+02:00' // UTC calendar day is still December 1.
    const started=Date.parse(edge.state.clock)
    await at(started+10*60000);await tick()
    const detail=()=>get('/api/remediation/'+ob.id)
    let view=await detail(),r=view.tickets.find(t=>t.id===ticket.id)
    assert.equal(r.remote_assignee,'Lena Ortiz',provider);assert.ok(r.remote_status)
    assert.ok(Date.parse(r.last_synced_at)-started<=15*60000)
+   if(provider==='azure-boards'){assert.equal(r.remote_due,'2026-12-01');assert.equal(r.sync_state,'linked');delete remote.dueInstant}
    assert.equal(view.events.filter(e=>e.kind==='tracker comment'&&e.body==='Source fix in progress.').length,1)
    if(provider==='freshservice')assert.ok(view.events.some(e=>e.kind==='tracker comment'&&e.body==='Requester question.'&&e.actor_name.includes('Freshservice user 99')))
    assert.equal(view.events.filter(e=>e.kind==='tracker comment'&&/Fixing the source/.test(e.body)).length,0)
@@ -97,6 +101,25 @@ try {
     assert.equal(r.sync_state,'conflict');assert.equal(r.remote_due,'2026-12-02');assert.equal(remote.due,'2026-12-02')
     const conflict=view.events.findLast(e=>e.kind==='ticket conflict');assert.match(conflict.body,/tracker 2026-12-02, Evidence 2026-12-03/);assert.ok(conflict.at)
     await owner('/api/tickets/'+ticket.id+'/resolve',{keep:'evidence'},200);assert.equal(remote.due,'2026-12-03')
+   }
+   if(provider==='azure-boards') {
+    await owner(`/api/remediation/${ob.id}/assign`,{owner_person_id:person.id,next_action:'Remediate',target_date:'2026-12-04'},200)
+    await owner('/api/tickets/'+ticket.id+'/sync',{},200)
+    assert.equal(remote.due,'2026-12-04','later Azure target must update the native field')
+    assert.equal((await detail()).tickets.find(t=>t.id===ticket.id).remote_due,'2026-12-04')
+    await owner('/api/trackers/'+dest.id+'/mapping',{...connect,due_field:'Custom.Unsupported'},200)
+    await owner(`/api/remediation/${ob.id}/assign`,{owner_person_id:person.id,next_action:'Remediate',target_date:'2026-12-05'},200)
+    // Missing remote field creates a conflict, never a guessed date or overwrite.
+    await owner('/api/tickets/'+ticket.id+'/sync',{},200)
+    assert.equal((await detail()).tickets.find(t=>t.id===ticket.id).sync_state,'conflict')
+    await owner('/api/tickets/'+ticket.id+'/resolve',{keep:'evidence'},502)
+    assert.equal(remote.due,'2026-12-04')
+    await owner(`/api/remediation/${other.id}/tickets`,{destination_id:dest.id},400)
+    assert.equal((await get('/api/remediation/'+other.id)).tickets.find(t=>t.destination_id===dest.id).sync_state,'mapping failed')
+    await owner('/api/trackers/'+dest.id+'/mapping',connect,200)
+    await owner('/api/tickets/'+ticket.id+'/sync',{},200)
+    assert.equal((await detail()).tickets.find(t=>t.id===ticket.id).sync_state,'linked')
+    assert.equal(remote.due,'2026-12-05')
    }
    const prior=await detail(),untouched=await get('/api/remediation/'+other.id),closed=Date.parse(edge.state.clock)
    remote.closed=true
@@ -144,6 +167,7 @@ try {
    assert.equal(groupView.runs.find(r=>r.trigger==='retest').population,2)
    const states=await Promise.all(groupItems.map(o=>get('/api/remediation/'+o.id)))
    for(const view of states){assert.equal(view.obligation.state,view.obligation.resource_name===provider+' fixed'?'verified':'open');assert.equal(view.observations[0].run_trigger,'retest')}
+   if(provider==='shortcut')await shortcutWebhookJourney({app,edge,dest,ticket,linked,remote,detail})
    const publicData=JSON.stringify(await get('/api/trackers'))+JSON.stringify(await detail())
    assert.ok(!publicData.includes(edge.keys[provider]));assert.ok(!publicData.includes('tracker-signing-secret'))
    if(provider==='asana') {
@@ -190,6 +214,8 @@ try {
    for(const table of ['tickets','ticket_events','ticket_comments','tracker_deliveries','ticket_groups'])assert.deepEqual((await target.db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all()).results,(await app.db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all()).results,table)
    const destinations=(await target.db.prepare('SELECT provider,status,secret_ciphertext,hook_ciphertext FROM tracker_destinations').all()).results
    for(const d of destinations){assert.equal(d.status,'inactive after restore');assert.equal(d.secret_ciphertext,null);assert.equal(d.hook_ciphertext,null)}
+   const azure=(await target.db.prepare("SELECT mapping_json FROM tracker_destinations WHERE provider='azure-boards'").first()).mapping_json
+   assert.equal(JSON.parse(azure).due_field,'Custom.RemediationDue')
    for(const p of Object.keys(configs))assert.ok(destinations.some(d=>d.provider===p))
    const calls=edge.calls.length;await target.tick();assert.equal(edge.calls.length,calls)
   } finally {await target.close()}

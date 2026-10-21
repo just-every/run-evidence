@@ -5,6 +5,7 @@ const name='Shortcut', headers=(key:string)=>({'shortcut-token':key,accept:'appl
 const api=(url:string,key:string,method='GET',body?:unknown)=>json(url,key,name,method,body,headers(key))
 export const shortcut: Adapter = {
  ...metadata(name,'https://api.app.shortcut.com/api/v3','Project ID','A Shortcut API token','Read and write stories and comments in the selected project'),
+ webhook: 'Shortcut signed outgoing webhook (Payload-Signature), with polling every 10 minutes',
  fieldNotes: 'Labels, owners and deadline are native fields. Priority is description text; reopen uses the current workflow unstarted state.',
  async verify(base,key,_account,project) {const p=await api(`${base}/projects/${id(project)}`,key),u=await api(base+'/member',key);return {account:u.profile.name,projectName:p.name}},
  async create(d,key,draft) {const i=await api(d.api_base+'/stories',key,'POST',{name:draft.title,description:`${draft.description}\n\nPriority: ${draft.priority}`,story_type:'chore',project_id:Number(d.project),deadline:draft.due?draft.due+'T00:00:00Z':null,labels:draft.labels.map(name=>({name})),owner_ids:draft.assignee?[draft.assignee]:[]});return {id:requireId(i.id,name),key:String(i.id),url:i.app_url}},

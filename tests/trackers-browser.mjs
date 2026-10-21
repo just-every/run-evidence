@@ -14,7 +14,7 @@ let browser,server
 try {
  const cookie=await app.signin(),dest={}
  for(const [provider,c] of Object.entries(configs)) {
-  const r=await app.fetch('/api/trackers',{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify({provider,api_base:c.base,account:c.account??'',project:c.project,token:edge.keys[provider],hook_secret:'test-signing-secret'})})
+  const r=await app.fetch('/api/trackers',{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify({provider,api_base:c.base,account:c.account??'',project:c.project,token:edge.keys[provider],due_field:'Custom.RemediationDue',hook_secret:'test-signing-secret'})})
   assert.equal(r.status,201);dest[provider]=await r.json()
  }
  app.setCookie('')
