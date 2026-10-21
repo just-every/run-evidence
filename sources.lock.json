@@ -6528,7 +6528,7 @@
       "executable": false
     },
     "tests/period-agent-browser.mjs": {
-      "sha256": "9dddc30a651f33520c2199a8b1d5e381f59251290e2327449ad91bb874cd5d4e",
+      "sha256": "5e300499c9b995246219f4f9cc81d3282ff016f7f173bbc0231a62f4b590ab25",
       "executable": false
     },
     "tests/policy.mjs": {
