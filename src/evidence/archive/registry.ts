@@ -23,6 +23,7 @@ export const businessRows=(t:string,table=quote(t))=>t==='product_audit'?`(SELEC
 export const portableTables = Object.keys(registry)
 export const localTables = Object.keys(schema).filter(t=>!Object.hasOwn(registry,t))
 export const portableLocal:Record<string,string[]> = {
+ tailoring_guard:['singleton','allowed'],
  privacy_guard:['singleton','allowed'],
  operation_recovery:['singleton','restored_at'],
  portable_journal_stage:['session_id','lineage','sequence','recorded_at','receipt'],

@@ -42,6 +42,18 @@ export async function decideTailoring(env:Bindings,id:string,input:Input,actor:A
   const current=await tailoringContext(env,s.input)
   if(await fingerprint(current)!==s.context_hash)throw new Refusal('A cited requirement, material, policy, control, asset or scoring method changed. Prepare and review again.',409)
   if(s.ambiguous&&input.acknowledge_ambiguity!=='yes')throw new Refusal('Explicitly confirm the recorded interpretation assumptions for the ambiguous obligation.',409)
+  const guardParts:string[]=[],guardValues:(string|number|null)[]=[]
+  const same=(table:string,values:Record<string,any>)=>{guardParts.push(`EXISTS(SELECT 1 FROM ${table} WHERE ${Object.keys(values).map(k=>'"'+k+'" IS ?').join(' AND ')})`);guardValues.push(...Object.values(values))}
+  same('custom_framework_requirements',{id:current.requirement.id,title:current.requirement.title,description:current.requirement.description,section:current.requirement.section,removed_at:null})
+  same('custom_framework_requirements',{id:current.material.id,title:current.material.title,description:current.material.description,section:current.material.section,removed_at:null})
+  same('policy_revisions',{id:current.policy.id,body_sha256:current.policy.body_sha256,status:current.policy.status})
+  same('programs',current.program)
+  same('controls',{id:current.control.id,name:current.control.name,group_name:current.control.group_name})
+  guardParts.push(`COALESCE((SELECT max(revision) FROM control_revisions WHERE control_id=?),0)=?`);guardValues.push(current.control.id,current.control.definition_revision??0)
+  guardParts.push(`COALESCE((SELECT max(revision) FROM risk_methods),1)=?`);guardValues.push(current.method.revision)
+  guardParts.push(`NOT EXISTS(SELECT 1 FROM json_each(?) r LEFT JOIN resources x ON x.id=json_extract(r.value,'$.id') WHERE x.id IS NULL OR x.attributes_hash<>json_extract(r.value,'$.attributes_hash') OR x.updated_at<>json_extract(r.value,'$.updated_at') OR x.display_name<>json_extract(r.value,'$.display_name') OR x.removed_at IS NOT NULL)`);guardValues.push(JSON.stringify(current.resources))
+  guardParts.push(`NOT EXISTS(SELECT 1 FROM policy_revisions WHERE policy_id=? AND version>? AND status IN ('approved','published'))`);guardValues.push(current.policy.policy_id,current.policy.version)
+  statements.push(env.DB.prepare(`INSERT INTO tailoring_guard SELECT 1,CASE WHEN ${guardParts.join(' AND ')} THEN 1 ELSE 0 END`).bind(...guardValues))
   const framework=await requireFramework(env,row.framework_id),rows=await requirements(env,framework.id),q=rows.find(r=>r.id===row.requirement_id)!
   if(q.mappings.includes(s.mapping.control_id))throw new Refusal('The proposed mapping is already current.',409)
   q.mappings=[...q.mappings,s.mapping.control_id].sort();const diff=emptyDiff();diff.changed.push(q.ref)
@@ -57,6 +69,7 @@ export async function decideTailoring(env:Bindings,id:string,input:Input,actor:A
  statements.push(env.DB.prepare('INSERT INTO tailoring_decisions VALUES(?,?,?,?,?,?,?,?,?,?)').bind(id,row.snapshot_hash,decision,approver.id,actor.id,actor.name,reason,policyRevision,riskId,now.toISOString()),auditStatement(env,actor,'tailoring.'+decision,'tailoring:'+id,now,'succeeded','named owner '+approver.name,{reason,revision:row.snapshot_hash}))
  // Decision's primary key, framework revision and policy version fence the
  // same transaction; no partially applied proposal survives a refusal.
- await commit(env,statements)
+ if(decision==='approved')statements.push(env.DB.prepare('DELETE FROM tailoring_guard'))
+ try{await commit(env,statements)}catch(error){if(String(error).includes('tailoring_snapshot_current'))throw new Refusal('A cited source changed during approval. Prepare and review again.',409);throw error}
  return {decision,policy_revision_id:policyRevision,risk_id:riskId}
 }

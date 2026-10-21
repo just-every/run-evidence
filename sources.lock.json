@@ -2983,7 +2983,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "eaa70f1c42ca5d2cfe39f9d8566463dab2664641e3f3bd422dc3e37fcbcd8c00",
+      "sha256": "16ea98e72f9262d8b57f412c3e478bf82aff7a94a4720983085cfc1cd24a5f58",
       "executable": false
     },
     "AGENTS.md": {
@@ -3299,7 +3299,7 @@
       "executable": false
     },
     "migrations/core/0056_tailoring.sql": {
-      "sha256": "d1c038b93dc33ce4110adfec54bae8ee93ad75d7e625a8d897a9e3a705b5100d",
+      "sha256": "e686f65e32a7cbbb6c2212659d7a71b89b00684b531e2370afa82750ebf8b21a",
       "executable": false
     },
     "ONBOARDING.md": {
@@ -3947,7 +3947,7 @@
       "executable": false
     },
     "src/evidence/agent/tailoring-storage.ts": {
-      "sha256": "59aa3018daabdbf3de27291bd8e47ae3e30c6a006a504e0a083a1898caef3e20",
+      "sha256": "26b1039f2ac12689562cda7b3227ea067c0a09d5b9b227c16bdeb8ba51ec616f",
       "executable": false
     },
     "src/evidence/agent/types.ts": {
@@ -4063,7 +4063,7 @@
       "executable": false
     },
     "src/evidence/archive/registry.ts": {
-      "sha256": "9a93afb6f298caffef89402e5e2d94ef282904add0db2da0ee7d8bb6bd4d9e55",
+      "sha256": "c6bf7511bcce732ae6cf17ed83bb1d982483b700a8182d0153babeebae7c3c89",
       "executable": false
     },
     "src/evidence/archive/relationships.ts": {
@@ -4075,7 +4075,7 @@
       "executable": false
     },
     "src/evidence/archive/schema.json": {
-      "sha256": "1fffb381a2467705814524cba93b4e2f8755f8655a3b8c7e0174bb3f8c054c36",
+      "sha256": "1253480601f0cbba56e4228b74fe7fb5908ac8ace3c9de7a93e9c50f5788e0d7",
       "executable": false
     },
     "src/evidence/archive/service.ts": {
@@ -4259,7 +4259,7 @@
       "executable": false
     },
     "src/evidence/erase/storage.ts": {
-      "sha256": "f38ebe49e98cf1a26f76f0f27d20276e820ccdfc35a41004905461b56e0d7eb1",
+      "sha256": "7584fc66ab07a02219149b7a2059a7b851c0c4a562f7cd972b92bcd64a30baea",
       "executable": false
     },
     "src/evidence/followup/channels.ts": {
@@ -6671,7 +6671,7 @@
       "executable": false
     },
     "tests/helpers/erasure-journey.mjs": {
-      "sha256": "f8c6a757ac733b15638a2a0327bb73adeae2bd0a5bc6c5ea6321a42a34b05edf",
+      "sha256": "eaed69c38c713ab0bd06259741979b4e6b14246d994be2c8839fb47179f3ba6e",
       "executable": false
     },
     "tests/helpers/framework-browser.mjs": {

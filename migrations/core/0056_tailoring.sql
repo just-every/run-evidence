@@ -15,3 +15,5 @@ CREATE TRIGGER generation_tailoring_decisions_delete AFTER DELETE ON tailoring_d
 CREATE TRIGGER generation_tailored_obligations_insert AFTER INSERT ON tailored_obligations BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
 CREATE TRIGGER generation_tailored_obligations_update AFTER UPDATE ON tailored_obligations BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
 CREATE TRIGGER generation_tailored_obligations_delete AFTER DELETE ON tailored_obligations BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
+
+CREATE TABLE tailoring_guard(singleton INTEGER PRIMARY KEY CHECK(singleton=1),allowed INTEGER NOT NULL CONSTRAINT tailoring_snapshot_current CHECK(allowed=1));
