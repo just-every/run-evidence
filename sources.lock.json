@@ -2983,7 +2983,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "4cb616d4d12effc004f6131fc750ee9e61bb60e573dc107a2a86222f44a0827b",
+      "sha256": "9b11dbd7190b76e64ff7d3fa63c2b419ca69d36f3160b8e22608d967867e12d5",
       "executable": false
     },
     "AGENTS.md": {
@@ -2999,7 +2999,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "03f8c94e1a0de3e2e064c77ba42e6245a893b2b4595bbb5e30fce1760225d80e",
+      "sha256": "194e0520b97ffc1356d99c8dfb78873a9eab87c8292a75a08768c067900d034a",
       "executable": false
     },
     "DEMO.md": {
@@ -3963,19 +3963,19 @@
       "executable": false
     },
     "src/evidence/answer/format.ts": {
-      "sha256": "73a23a187ad30a4c443e1e443f242f48a02560b419026dbedd97d422db89a53e",
+      "sha256": "4a590f64584045f07b2f7ea3a75802911cc6d3bb7e93f0eddb525e0152e83ebe",
       "executable": false
     },
     "src/evidence/answer/http.ts": {
-      "sha256": "45ac3a029a2a40caa2d07bba640df0a88fe90ad8380ba0203cb5dd7cc6ee753d",
+      "sha256": "66f16ecce82b20116b9d3ab2216820daf586c578145159b8f784b586bd7bdc2d",
       "executable": false
     },
     "src/evidence/answer/sources.ts": {
-      "sha256": "99079ad8cb2c7065bca5cce23bdf699ece498d07207e3da75a48d8d4a213c9e4",
+      "sha256": "3f761958b4172c23015e174b538f661906a6dffb5953d861a68c077591273ec2",
       "executable": false
     },
     "src/evidence/answer/storage.ts": {
-      "sha256": "c7abeda842f0272b9d5c6d5e5bfe9b8b6029da8f178bd7b5bc3b2a9d8aad13d2",
+      "sha256": "6d235aeab544f85067163f4ef33302e17b66abc7333ee7124ccbc0bd3631b453",
       "executable": false
     },
     "src/evidence/api/collections.ts": {
@@ -4011,7 +4011,7 @@
       "executable": false
     },
     "src/evidence/archive/feature-records.ts": {
-      "sha256": "c73c342b89b1a5710df75dcaf87c996a15bb3a5982f5224b36081154da09017c",
+      "sha256": "cb2fea476b5f4941989cabc428f3648fe1ad8f64618be6b19bcce00612dc6581",
       "executable": false
     },
     "src/evidence/archive/files.ts": {
@@ -6631,11 +6631,11 @@
       "executable": false
     },
     "tests/helpers/answer-journey.mjs": {
-      "sha256": "022d7a0e2f071ebc32deed057bb39541b83f59087f0a26b78960be5f6cb1a253",
+      "sha256": "6108b80d0c62303308b6f4731f0b9d6c4ccc48ac376a9e31a4df03d049ea09b2",
       "executable": false
     },
     "tests/helpers/assurance-browser.mjs": {
-      "sha256": "171c86fdf99beeb2110578cb1a3db7b9a25e18232e083c81c0c4ea83859d508a",
+      "sha256": "a12711fc3b36c270776822569d184e5595cfa7bdac17d4db8accbbe27afc52cc",
       "executable": false
     },
     "tests/helpers/azure-deadline-browser.mjs": {
@@ -6919,7 +6919,7 @@
       "executable": false
     },
     "tests/vendor-browser.mjs": {
-      "sha256": "7521fbb6f342575ac5ad4f91afbfefd33a468f97c26e6eaf121d75d250a7d127",
+      "sha256": "33cc1eb68fc28a92cbfb0dadec44e9bc128ec06aef986c2e63d0f6e1dd12d942",
       "executable": false
     },
     "tests/vulns.mjs": {

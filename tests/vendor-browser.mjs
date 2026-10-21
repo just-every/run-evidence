@@ -79,6 +79,7 @@ try {
   await page.getByRole('heading',{name:'Vendor document review',exact:true}).waitFor()
   await capture('vendor-questionnaire-review')
   const questionnaireReview=page.url()
+  await page.getByText('All extracted pages',{exact:true}).click()
   await page.getByRole('link',{name:'Page 1',exact:true}).click()
   await page.getByRole('heading',{name:'Original document page',exact:true}).waitFor()
   await page.getByText('Supplier answer: yes',{exact:false}).waitFor()
