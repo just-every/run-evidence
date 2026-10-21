@@ -3967,7 +3967,7 @@
       "executable": false
     },
     "src/evidence/answer/http.ts": {
-      "sha256": "0554995ed9e0749997534d78401397f18fdec21be9f22cc5c3596ea42b78b171",
+      "sha256": "45ac3a029a2a40caa2d07bba640df0a88fe90ad8380ba0203cb5dd7cc6ee753d",
       "executable": false
     },
     "src/evidence/answer/sources.ts": {
@@ -6635,7 +6635,7 @@
       "executable": false
     },
     "tests/helpers/assurance-browser.mjs": {
-      "sha256": "de27a7f48318d09920736dd198cb27a416f0b68eb935fc331d1cfb4c779c5820",
+      "sha256": "683c1fa516848666dab59d48bda7c35c0ef6b6f4b5595f5de93da49997cc765a",
       "executable": false
     },
     "tests/helpers/azure-deadline-browser.mjs": {
