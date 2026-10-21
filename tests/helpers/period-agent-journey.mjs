@@ -1,4 +1,29 @@
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
+
+// Re-sign the transport and snapshot so refusal must validate the cited door,
+// rather than merely detecting an old digest. This is adversarial archive input.
+function alteredCitationArchive(bytes) {
+ const source=Buffer.from(bytes),magic=Buffer.from('EVIDENCE-ARCHIVE\n'),frames=[magic],hash=createHash('sha256'),changed=new Map()
+ let at=magic.length
+ while(at<source.length) {
+  const size=source.readUInt32BE(at);at+=4
+  const frame=JSON.parse(source.subarray(at,at+size));at+=size
+  if(frame.type==='rows'&&frame.table==='period_investigations')for(const row of frame.rows) {
+   const snapshot=JSON.parse(row.snapshot_json),citation=snapshot.findings.flatMap(f=>f.citations)[0]
+   assert.ok(citation);citation.href='javascript:globalThis.archiveCitationExecuted=true'
+   row.snapshot_json=JSON.stringify(snapshot);row.snapshot_hash=createHash('sha256').update(row.snapshot_json).digest('hex');changed.set(row.id,row.snapshot_hash)
+  }
+  if(frame.type==='rows'&&frame.table==='period_investigation_decisions')for(const row of frame.rows)row.snapshot_hash=changed.get(row.investigation_id)??row.snapshot_hash
+  if(frame.type==='end')frame.sha256=hash.digest('hex')
+  const body=Buffer.from(JSON.stringify(frame)),prefix=Buffer.alloc(4);prefix.writeUInt32BE(body.length)
+  frames.push(prefix,body)
+  if(frame.type!=='end')hash.update(prefix).update(body)
+ }
+ assert.ok(changed.size)
+ return Buffer.concat(frames)
+}
+
 export async function periodAgentFixture(app) {
  const get=async p=>{const r=await app.fetch(p);assert.equal(r.status,200,await r.clone().text());return r.json()}
  const post=async(p,b,status=200)=>{const r=await app.fetch(p,{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify(b)});assert.equal(r.status,status,await r.clone().text());return r.json()}
@@ -99,7 +124,11 @@ export async function periodAgentJourney(app) {
  try {
   await destination.signin()
   const exported=await app.fetch('/api/archive/export');assert.equal(exported.status,200)
-  const restored=await destination.fetch('/api/archive/restore',{method:'POST',headers:{origin:destination.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:await exported.arrayBuffer()})
+  const bytes=await exported.arrayBuffer()
+  const hostile=await destination.fetch('/api/archive/restore',{method:'POST',headers:{origin:destination.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:alteredCitationArchive(bytes)})
+  assert.equal(hostile.status,400,'AGENT-002 restored citations must use their exact owner source door')
+  assert.equal((await destination.fetch(base)).status,404,'Refused citation archive admits no investigation')
+  const restored=await destination.fetch('/api/archive/restore',{method:'POST',headers:{origin:destination.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:bytes})
   assert.equal(restored.status,200,await restored.clone().text())
   const retained=await destination.fetch(base);assert.equal(retained.status,200)
   assert.deepEqual(await retained.json(),rejected)
