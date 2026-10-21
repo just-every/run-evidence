@@ -3824,7 +3824,7 @@
       "executable": false
     },
     "src/evidence/agent/period-archive.ts": {
-      "sha256": "374099ddf56dfe593e65dbb29a9dd24131085479ba75482dd49f31e1e4ace5e7",
+      "sha256": "94a7fce6878039a120c99329c109cf389737ecbb2d1dc035f3f8a34dbeef813c",
       "executable": false
     },
     "src/evidence/agent/period-http.ts": {
@@ -3836,7 +3836,7 @@
       "executable": false
     },
     "src/evidence/agent/period-view.ts": {
-      "sha256": "905908fe64d21585d2a89de6790dc68c158ba2db0e0109540b021c84b3aba79e",
+      "sha256": "c273b9fc1ec04a28e23dc5a74af7c34d04040940ca08c891f240b97ebe9a8ce5",
       "executable": false
     },
     "src/evidence/agent/storage.ts": {
