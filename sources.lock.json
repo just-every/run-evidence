@@ -5308,7 +5308,7 @@
       "executable": false
     },
     "src/evidence/vendor/view.ts": {
-      "sha256": "bb41dd7711cd535f886a2827d590cfaaf3182d2f08d40749b68b99e94310157e",
+      "sha256": "86c84a6248d0df2341ba2188fb7c71997cad2eaff815b3619eb98ba7cf85e4ae",
       "executable": false
     },
     "src/evidence/view.ts": {
@@ -6704,7 +6704,7 @@
       "executable": false
     },
     "tests/vendor-browser.mjs": {
-      "sha256": "00870673468ca073d5f45135d69a628dca37fe57cdb6106919a0b6c31cdd5516",
+      "sha256": "b148ec3f665344f7623285790c580c8ab82d98b188f389419c8f19f3300a9091",
       "executable": false
     },
     "tests/vulns.mjs": {
