@@ -30,6 +30,8 @@ try {
   await app.signin()
   await owner('/api/connections', { account: 'northstar', token: 'synthetic-evidence-99' }, 400)
   for (const api_base of ['https://169.254.169.254', 'https://ghe.internal', 'http://ghe.example.test/api/v3']) await owner('/api/connections', { account: 'northstar', token: 'synthetic-evidence-1', api_base }, 400)
+  github.org.login='outside-source';await owner('/api/connections',{account:'northstar',token:'synthetic-evidence-1'},400);github.org.login='northstar'
+  github.overrides.set('/orgs/northstar/repos?per_page=100&type=all',{body:[{full_name:'outside-source/web'}]});await owner('/api/connections',{account:'northstar',token:'synthetic-evidence-1'},400);github.overrides.delete('/orgs/northstar/repos?per_page=100&type=all')
   assert.equal((await app.db.prepare('SELECT COUNT(*) AS n FROM connections').first()).n, 0)
   connection = await owner('/api/connections', { account: 'northstar', token: 'synthetic-evidence-1', label: 'GitHub production' })
   assert.deepEqual(connection.repositories.sort(), ['northstar/site', 'northstar/tools', 'northstar/web'])

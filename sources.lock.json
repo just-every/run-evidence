@@ -3070,7 +3070,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "16d1cbe122efeb3735d529049073a9dfbcbf554742d5a260a6629a678fef1048",
+      "sha256": "1be32639caf93a07227a4eaf7c4a2569e19d6cb31c7ea9a550060af62af78d15",
       "executable": false
     },
     "DEMO.md": {
@@ -4350,7 +4350,7 @@
       "executable": false
     },
     "src/evidence/connect/github.ts": {
-      "sha256": "49046305c14cc89333e1af6b80b418799b7c4c82a2e678690554ff42358d874c",
+      "sha256": "8733cb040afb6237e5d7926ca35b475e0286ef9174838d541b8667f36c23abca",
       "executable": false
     },
     "src/evidence/connect/gitlab-catalogue.ts": {
@@ -4402,7 +4402,7 @@
       "executable": false
     },
     "src/evidence/connect/storage.ts": {
-      "sha256": "6b9055536cb72af215eed932a4ee02d68af43deb3c8a6db961b16496bfb028d9",
+      "sha256": "3670a768a27d630af6ece346b06ca6284d32e5f1f36393e866c333de60114130",
       "executable": false
     },
     "src/evidence/connect/view.ts": {
@@ -6942,7 +6942,7 @@
       "executable": false
     },
     "tests/github.mjs": {
-      "sha256": "cac7cab0a1e209bcd52761b925bd952d84f1af3a46b13838129bad358b36336c",
+      "sha256": "1d3b692c63767efdeee038d08e8bb5c3eb6603af2964e4908641901f0744b510",
       "executable": false
     },
     "tests/handover.mjs": {
@@ -6982,7 +6982,7 @@
       "executable": false
     },
     "tests/helpers/collection-journey.mjs": {
-      "sha256": "f99e9a9bcab1e17c359dcfee2d8521aa6807b15266b88b8bb7f362dcc7e39f87",
+      "sha256": "4b8088f22553f40107a76b2819882ec5b4910ff311aac12b6c80e86e2e2870d1",
       "executable": false
     },
     "tests/helpers/collection-schedule-browser.mjs": {
