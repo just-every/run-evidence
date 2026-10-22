@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "c8c9722e2ee076af37a7d01df76653a0ba8dc7771f5daef3365e073f7dd53921",
+  "manifest": "01b51e2f321aabd462b514056cd1b0adc73275bdbcea886b451b0c8a3069e1a5",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2638,6 +2638,7 @@
           "src/evidence/connect/run-context.ts",
           "src/evidence/connect/runs.ts",
           "src/evidence/connect/schedule.ts",
+          "src/evidence/connect/source-authority.ts",
           "src/evidence/connect/source-time.ts",
           "src/evidence/connect/storage.ts",
           "src/evidence/connect/view.ts",
@@ -3145,7 +3146,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "c8c9722e2ee076af37a7d01df76653a0ba8dc7771f5daef3365e073f7dd53921",
+      "sha256": "01b51e2f321aabd462b514056cd1b0adc73275bdbcea886b451b0c8a3069e1a5",
       "executable": false
     },
     "LICENSE": {
@@ -4313,7 +4314,7 @@
       "executable": false
     },
     "src/evidence/connect/collect.ts": {
-      "sha256": "0de72b09c6c8aefb0b3659cc126b2c8f22016ac96f51985f8810484bdcb15550",
+      "sha256": "75ee8f6488cb858248e842e8779c67d4fe6ce49c59fc3feba97bb10ab1695f6c",
       "executable": false
     },
     "src/evidence/connect/custody.ts": {
@@ -4330,6 +4331,10 @@
     },
     "src/evidence/connect/github-dependencies.ts": {
       "sha256": "14d7c5426886c2ab2e38cb12dfec067617f331530c645b603314f10e90fad54e",
+      "executable": false
+    },
+    "src/evidence/connect/github-findings.ts": {
+      "sha256": "8203de89e7793175efe76c980300e32ff4519c861978d0876f928475609dc6cf",
       "executable": false
     },
     "src/evidence/connect/github-history.ts": {
@@ -5801,7 +5806,11 @@
       "executable": false
     },
     "src/evidence/vuln/http.ts": {
-      "sha256": "633415bc20ae86d226b754c2a79fe094bb213843d5f09e358877009ad8b04615",
+      "sha256": "1e67eed6539f91b8a8661f10275de6e684760f4e85b6c81414da662ed75f6c21",
+      "executable": false
+    },
+    "src/evidence/vuln/source.ts": {
+      "sha256": "c1bf159da49e2d174bd703ac0802d5fa00098fac795d894970ce908fafa01094",
       "executable": false
     },
     "src/evidence/vuln/storage.ts": {
@@ -5809,7 +5818,7 @@
       "executable": false
     },
     "src/evidence/vuln/view.ts": {
-      "sha256": "d3b346e5073276811e536d41a60e79089e142690867cf01910e1481ca7773c94",
+      "sha256": "1d6bcd9d53dded496036115afaad6ba5562c3d611f5f7cb983ef58e798acc86c",
       "executable": false
     },
     "src/evidence/work/asana-webhook.ts": {
@@ -6933,7 +6942,7 @@
       "executable": false
     },
     "tests/github.mjs": {
-      "sha256": "0e9489dbea01bdbb0602ed269bbb2f16edd1fa7f68c8072e0fa23fce89b66d27",
+      "sha256": "cac7cab0a1e209bcd52761b925bd952d84f1af3a46b13838129bad358b36336c",
       "executable": false
     },
     "tests/handover.mjs": {
@@ -7020,8 +7029,12 @@
       "sha256": "3232891d185d313cbd6629552fb71a135f2956d3fb3023d67bcdd70c68cb4183",
       "executable": false
     },
+    "tests/helpers/github-findings-journey.mjs": {
+      "sha256": "2f9a0b3bcd44d9d888da891284867a201c3ae8df02dbf11731575ee2106ad9af",
+      "executable": false
+    },
     "tests/helpers/github-fixture.mjs": {
-      "sha256": "a982929f29883b8c458a750ca6c3de9aa15912381eeeaf9dff9e9974e4133d7f",
+      "sha256": "c03946e3bf25bb56132dda4b2017be5d053ea9613d63fe30566d2d349c3bf51c",
       "executable": false
     },
     "tests/helpers/github-history-journey.mjs": {

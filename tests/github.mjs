@@ -1,3 +1,4 @@
+import {githubFindingsJourney} from './helpers/github-findings-journey.mjs'
 import {azuredevopsScopeJourney,azuredevopsHistoryJourney,azuredevopsPagingJourney} from './helpers/azuredevops-journey.mjs'
 import {bitbucketScopeJourney,bitbucketHistoryJourney,bitbucketPagingJourney} from './helpers/bitbucket-journey.mjs'
 import {gitlabScopeJourney,gitlabHistoryJourney,gitlabPagingJourney,gitlabMembersJourney} from './helpers/gitlab-journey.mjs'
@@ -99,6 +100,7 @@ try {
   const latest = (await get('/api/tests/' + (await testByCatalogue('github.branch-protection')).id)).latest
   assert.ok(latest.every(o => /stale/.test(o.reason)))
  })
+ await scenario('CODE-001: normalized GitHub dependency and secret findings retain source state, unknown coverage and custody without literal secrets or invented verified closure',githubFindingsJourney)
  await scenario('CODE-001: GitHub SPDX package metadata enters inventory without secret fields or invented manifest revisions, retaining denied scope, removals and custody history', githubDependenciesJourney)
  await scenario('CODE-001: GitHub membership, MFA and owner-reviewed People matches preserve departed accounts, denied scope and source removal without merging people', githubMembersJourney)
  await scenario('CODE-001: GitHub merged change reviews, exact-revision checks and deployments retain source times, gaps, cursor recovery and immutable period history', githubHistoryJourney)

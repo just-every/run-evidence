@@ -1,3 +1,5 @@
+import {githubFindings,type CodeFinding} from './github-findings'
+import {retainSourceFindings} from '../vuln/source'
 import {runAzureDevops} from './azuredevops-collect'
 import {runBitbucket} from './bitbucket-collect'
 import {runGitlab} from './gitlab-collect'
@@ -46,7 +48,7 @@ async function collectConnection(env: Bindings, connection: Connection, trigger:
  try { token = await unseal(env, connection.secret_ciphertext, connection.secret_iv, connection.id) }
  catch { return finish('failed', {}, 'credential unreadable under this installation key', reconnectUpdate(env, connection, 'Stored credential cannot be decrypted; reconnect.', now)) }
  const selected = (await env.DB.prepare('SELECT full_name FROM connection_repositories WHERE connection_id=? AND selected=1 ORDER BY full_name').bind(connection.id).all<{ full_name: string }>()).results.map(r => r.full_name)
- const coverage: { organization: string; repositories_selected: number; repositories_read: string[]; unreadable: { repository: string; reason: string }[]; gaps: { asset: string; reason: string }[]; interval_minutes: number; code_history:Record<string,unknown>; github_members?:unknown } = { organization: 'unread', repositories_selected: selected.length, repositories_read: [], unreadable: [], gaps: [], interval_minutes: collectionMinutes(connection), code_history:{} }
+ const coverage: { organization: string; repositories_selected: number; repositories_read: string[]; unreadable: { repository: string; reason: string }[]; gaps: { asset: string; reason: string }[]; interval_minutes: number; code_history:Record<string,unknown>; code_findings:Record<string,unknown>; github_members?:unknown } = { organization: 'unread', repositories_selected: selected.length, repositories_read: [], unreadable: [], gaps: [], interval_minutes: collectionMinutes(connection), code_history:{},code_findings:{} }
  const authority = await digest(JSON.stringify([connection.secret_ciphertext,connection.secret_iv,connection.rotated_at,connection.config_json,selected,connectorRevision,started.context]))
  type Resume = { authority: string; started_at: string; streams: Record<string,AlertCursor> }
  const previous = await env.DB.prepare('SELECT coverage_json FROM collection_runs WHERE connection_id=? AND id!=? ORDER BY started_at DESC,rowid DESC LIMIT 1').bind(connection.id,started.run).first<{coverage_json:string}>()
@@ -68,6 +70,7 @@ async function collectConnection(env: Bindings, connection: Connection, trigger:
  const source = { kind: 'source-observed' as const, ref: 'github:' + connection.id, label: `GitHub ${connection.account} via ${connection.label}` }
  const dependencies:{uniqueId:string;displayName:string;attributes:Record<string,unknown>}[]=[]
  const dependencySource={kind:'source-observed' as const,ref:'github-dependencies:'+connection.id,label:`GitHub ${connection.account} dependency export via ${connection.label}`}
+ const findingRows:CodeFinding[]=[]
  let dependencyComplete=true
  const repos: { uniqueId: string; displayName: string; attributes: Record<string, unknown> }[] = []
  let organization: { uniqueId: string; displayName: string; attributes: Record<string, unknown> } | null = null
@@ -88,6 +91,7 @@ async function collectConnection(env: Bindings, connection: Connection, trigger:
     else history.gaps.push('total change history exceeds 80,000 bytes; repository history not retained')
     if(history.dependencies){for(const pkg of history.dependencies.packages)dependencies.push({uniqueId:await digest(name+':'+pkg.id),displayName:pkg.name,attributes:{repository:name,name:pkg.name,version:pkg.version,generated_at:history.dependencies.generated_at,source_revision:null,readable:true}})}else dependencyComplete=false
     coverage.gaps.push(...history.gaps.map(reason=>({asset:name,reason})))
+    const findings=await githubFindings(client,connection.api_base,name);if(findingRows.length+findings.rows.length>1000)findings.gaps.push('connection source findings exceed 1,000 rows; this repository finding population is unavailable');else findingRows.push(...findings.rows);coverage.code_findings[name]={classes_read:findings.complete,findings:findings.rows.length};coverage.gaps.push(...findings.gaps.map(reason=>({asset:name,reason})))
    }
    else { dependencyComplete=false;coverage.gaps.push({ asset: name, reason: read.reason }); coverage.unreadable.push({ repository: name, reason: read.reason }); repos.push({ uniqueId: name, displayName: name, attributes: { readable: false } }) }
   }
@@ -98,6 +102,8 @@ async function collectConnection(env: Bindings, connection: Connection, trigger:
   if (error instanceof Unauthorized) return finish('failed', coverage, 'credential rejected by GitHub', reconnectUpdate(env, connection, 'GitHub rejected the credential (revoked or expired); reconnect with a new one.', now))
   return finish('failed', coverage, 'transport failure', env.DB.prepare('UPDATE connections SET last_attempt_at=?,last_error=? WHERE id=?').bind(at, 'GitHub could not be reached.', connection.id))
  }
+ const findingCoverage=await retainSourceFindings(env,connection,findingRows,now)
+ if(findingCoverage.unavailable)coverage.gaps.push({asset:connection.account,reason:findingCoverage.unavailable+' previously known source findings are not returned; retained as unknown, never verified closed'})
  const dependencySchema:ResourceSchema={fields:{repository:'string',name:'string',version:'string',generated_at:'string',source_revision:'string',readable:'boolean'},required:[]}
  if(dependencyComplete)await upsertRegister(env,'github.dependency',dependencySchema,dependencies,dependencySource,now)
  else {

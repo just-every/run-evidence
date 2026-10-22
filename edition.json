@@ -2630,6 +2630,7 @@
           "src/evidence/connect/run-context.ts",
           "src/evidence/connect/runs.ts",
           "src/evidence/connect/schedule.ts",
+          "src/evidence/connect/source-authority.ts",
           "src/evidence/connect/source-time.ts",
           "src/evidence/connect/storage.ts",
           "src/evidence/connect/view.ts",

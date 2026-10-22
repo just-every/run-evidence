@@ -24,6 +24,7 @@ const reply = (status, body, headers = {}) => new Response(JSON.stringify(body),
   const names = Object.keys(github.repos), page = Number(url.searchParams.get('page') ?? 1), slice = names.slice((page - 1) * 2, page * 2)
   return reply(200, slice.map(full_name => ({ full_name })), page * 2 < names.length ? { link: `<${apiBase}/orgs/northstar/repos?per_page=100&type=all&page=${page + 1}>; rel="next"` } : {})
  }
+ if (/^\/repos\/northstar\/[a-z]+\/(dependabot|secret-scanning)\/alerts$/.test(path)&&!url.searchParams.has('state')) return reply(200,[])
  const match = /^\/repos\/(northstar\/[a-z]+)(\/.*)?$/.exec(path), repo = match && github.repos[match[1]]
  if (!repo || github.hidden.has(match[1])) return reply(404, { message: 'Not Found' })
  if (!match[2]) return reply(200, { full_name: match[1], private: repo.private, archived: false, default_branch: 'main' })
