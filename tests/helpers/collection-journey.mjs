@@ -136,6 +136,7 @@ export async function collectionJourney() {
   assert.ok(github.requests.slice(beforeRotation).includes(alerts))
   assert.equal(JSON.parse((await get(path)).runs[0].coverage_json).resume.started_at,'2026-10-11T13:50:00.000Z')
   github.overrides.clear()
+  await at('2026-10-11T13:55:00Z')
   await send(path + '/revoke', {})
   await send(path + '/collect', {}, 201)
   const refused = (await get(path)).runs[0]

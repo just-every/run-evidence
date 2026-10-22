@@ -76,4 +76,4 @@ export async function selectRepositories(env: Bindings, actor: Actor, id: string
  ])
 }
 export const repositories = async (env: Bindings, id: string) => (await env.DB.prepare('SELECT full_name,selected FROM connection_repositories WHERE connection_id=? ORDER BY full_name').bind(id).all<{ full_name: string; selected: number }>()).results
-export const runs = async (env: Bindings, id: string) => (await env.DB.prepare('SELECT * FROM collection_runs WHERE connection_id=? ORDER BY started_at DESC LIMIT 100').bind(id).all<{ id: string; trigger: string; connector_revision: string; started_at: string; finished_at: string | null; outcome: string | null; coverage_json: string; error_code: string }>()).results
+export const runs = async (env: Bindings, id: string) => (await env.DB.prepare('SELECT * FROM collection_runs WHERE connection_id=? ORDER BY started_at DESC,rowid DESC LIMIT 100').bind(id).all<{ id: string; trigger: string; connector_revision: string; started_at: string; finished_at: string | null; outcome: string | null; coverage_json: string; error_code: string }>()).results
