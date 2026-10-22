@@ -25,6 +25,7 @@ export async function readDocumentPages(bytes:ArrayBuffer,filename:string,mediaT
   if(pages.length>250||!pages.some(p=>p.trim()))throw new Refusal('Text reports require nonempty text and at most 250 form-feed pages.',422)
   return {pages,source_format:'utf8-text' as const}
  }
+ if(new TextDecoder().decode(bytes.slice(0,5))!=='%PDF-')throw new Refusal('Automatic review supports text-readable PDFs and UTF-8 .txt reports. This format is unsupported; no review was prepared.',422)
  return {pages:await readPages(bytes),source_format:'pdf' as const}
 }
 export function extractFields(id:string,digest:string,pages:string[],kind:string):Extraction {

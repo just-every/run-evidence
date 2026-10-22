@@ -3054,7 +3054,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "41d25539d4e0d5032e20657b9edf6b2a1996b7e9c1488e7ccfe6b39b1caf38a9",
+      "sha256": "479df225a9ef17afe2ec8ac37d4a27a785a146617930f95e1c45a0c7d92883ca",
       "executable": false
     },
     "AGENTS.md": {
@@ -3070,7 +3070,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "703465274488c89181dfb9a2639a03a9de6bdc27958d4c49a9c9b7df5a5b33e1",
+      "sha256": "16d1cbe122efeb3735d529049073a9dfbcbf554742d5a260a6629a678fef1048",
       "executable": false
     },
     "DEMO.md": {
@@ -5770,7 +5770,7 @@
       "executable": false
     },
     "src/evidence/vendor/review-model.ts": {
-      "sha256": "57d06dbe29bd8cf59143785024b722d172ad3741d502a6071611d690ce6eb79d",
+      "sha256": "53f2dfcb3f0df896d96cb7fc7f0c99e78d64ad9130c42a4b9e6bf0bd0ba07ce3",
       "executable": false
     },
     "src/evidence/vendor/review-storage.ts": {
