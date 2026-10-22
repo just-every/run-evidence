@@ -6767,7 +6767,7 @@
       "executable": false
     },
     "tests/extended-programs-browser.mjs": {
-      "sha256": "e21ce7101df4b8403cecbd6ca41badb8e035ad108ef67b4a1b47f89dec004fb2",
+      "sha256": "548088776c0a45a6d22ae349d3358c49fe7aa768fb1d83c2af0b5db2544a3761",
       "executable": false
     },
     "tests/failure-notices.mjs": {
