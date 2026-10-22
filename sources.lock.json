@@ -3027,7 +3027,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "3340ca0fd8129ca1ca2f4308fb9225fd9b758b1d282c2663edbc7353eccf71be",
+      "sha256": "e1d984feceeb64d94f0033391cd0b19d36e51850ef3106d7f26bbffd141fd527",
       "executable": false
     },
     "AGENTS.md": {
@@ -6835,7 +6835,7 @@
       "executable": false
     },
     "tests/github.mjs": {
-      "sha256": "5aeb310e5339deab6abd8377c6e24a3156e436ed8b61c923d8552f851cce5e9c",
+      "sha256": "3164a9b1f7ce18b5c40e2a4b2c971aa50065097ec26fd994f49cc8d27c484f00",
       "executable": false
     },
     "tests/handover.mjs": {
@@ -6859,7 +6859,7 @@
       "executable": false
     },
     "tests/helpers/collection-journey.mjs": {
-      "sha256": "e3f7ca4908cd7e5ef63b3f196fcb2308f42c2f8d5dd002742af4037ddb8821e7",
+      "sha256": "74f7c34b6dd9d09018a04d5b7fa5634dc7e7f33d70c3efa39f9f9d959c67ba37",
       "executable": false
     },
     "tests/helpers/collection-schedule-browser.mjs": {
@@ -6903,7 +6903,7 @@
       "executable": false
     },
     "tests/helpers/github-fixture.mjs": {
-      "sha256": "530d92da4d20faabe15361e4c80088633bf6b6698bf8f1a5e0f6c6c010d38a2b",
+      "sha256": "b94c20c054c53b6e2d1ba99be9ef5141da7e14e1529c06a1fd86cc5ec8c0d9b3",
       "executable": false
     },
     "tests/helpers/inventory-fixture.mjs": {
@@ -6911,7 +6911,7 @@
       "executable": false
     },
     "tests/helpers/migrate-journey.mjs": {
-      "sha256": "ef94d840b28d4a596cd674b5733220b780f779478b4a2022279d4e1c98ec17cd",
+      "sha256": "ceaf7bda794c877deaf139a38a954b36a2ee1f2f38908515425c54a815eb0b9e",
       "executable": false
     },
     "tests/helpers/move-in-browser.mjs": {
@@ -7067,11 +7067,11 @@
       "executable": false
     },
     "tests/ops-browser.mjs": {
-      "sha256": "bea1626d769ffe0d7a6fab66bfec1c166059c2d3224188957a86965f1ff8a0fb",
+      "sha256": "bf7c940bd615ca1849c72e1b2769c6c44aa46fde137247fa719349933c31e9a9",
       "executable": false
     },
     "tests/ops.mjs": {
-      "sha256": "2e6382d446efa547931aa4567d3a6e168861a5615fee5428c679a1beedc35cb6",
+      "sha256": "53dc74f11c2a960823d9695fd06110e240bf3d3094705661c880aa8b49a2c2a9",
       "executable": false
     },
     "tests/period-agent-browser.mjs": {

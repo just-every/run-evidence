@@ -56,7 +56,7 @@ try {
   assert.deepEqual((await get('/api/operations')).steps,[])
  })
  await scenario('every existing scheduled step durably records its result across a Worker restart',async()=>{
-  connection=await owner('/api/connections',{account:'northstar',token:'github_pat_good',label:'OPS source'})
+  connection=await owner('/api/connections',{account:'northstar',token:'synthetic-evidence-1',label:'OPS source'})
   await app.tick()
   const before=await allSteps()
   const expected=['delivery reconciliation','collections','tickets','policies','tests','access reviews','training','retests','ticket automation','failure notices','escalations','renewals','risk acceptances','weekly digest','attestation reminders','review reminders','handovers','readiness snapshots']
@@ -67,7 +67,7 @@ try {
   assert.deepEqual(await allSteps(),before)
   const report=await get('/api/operations');assert.equal(report.lease_minutes,15);assert.equal(report.more,false)
   assert.equal(report.steps.length,expected.length);assert.match(report.custody,/archive/i)
-  assert.ok(!JSON.stringify(report).includes('github_pat_good'))
+  assert.ok(!JSON.stringify(report).includes('synthetic-evidence-1'))
   await assert.rejects(app.db.prepare("UPDATE operation_steps SET outcome='failed' WHERE id=?").bind(before[0].id).run(),/terminal_operation_outcome/)
   await assert.rejects(app.db.prepare('DELETE FROM operation_steps WHERE id=?').bind(before[0].id).run(),/retained_operation_outcome/)
  })

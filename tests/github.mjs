@@ -22,13 +22,13 @@ try {
  await scenario('CONNECT-001: a GitHub credential is kept only after a real read check, encrypted, and never shown again', async () => {
   await app.signin()
   await owner('/api/connections', { account: 'northstar', token: 'github_pat_wrong' }, 400)
-  for (const api_base of ['https://169.254.169.254', 'https://ghe.internal', 'http://ghe.example.test/api/v3']) await owner('/api/connections', { account: 'northstar', token: 'github_pat_good', api_base }, 400)
+  for (const api_base of ['https://169.254.169.254', 'https://ghe.internal', 'http://ghe.example.test/api/v3']) await owner('/api/connections', { account: 'northstar', token: 'synthetic-evidence-1', api_base }, 400)
   assert.equal((await app.db.prepare('SELECT COUNT(*) AS n FROM connections').first()).n, 0)
-  connection = await owner('/api/connections', { account: 'northstar', token: 'github_pat_good', label: 'GitHub production' })
+  connection = await owner('/api/connections', { account: 'northstar', token: 'synthetic-evidence-1', label: 'GitHub production' })
   assert.deepEqual(connection.repositories.sort(), ['northstar/site', 'northstar/tools', 'northstar/web'])
   const stored = await app.db.prepare('SELECT * FROM connections').first()
-  assert.ok(stored.secret_ciphertext && !stored.secret_ciphertext.includes('github_pat_good'))
-  for (const text of [JSON.stringify(await get('/api/connections')), JSON.stringify(await get('/api/connections/' + connection.id)), JSON.stringify((await app.db.prepare('SELECT * FROM product_audit').all()).results), await (await app.fetch('/app/connections/' + connection.id)).text()]) assert.ok(!text.includes('github_pat_good') && !text.includes(stored.secret_ciphertext))
+  assert.ok(stored.secret_ciphertext && !stored.secret_ciphertext.includes('synthetic-evidence-1'))
+  for (const text of [JSON.stringify(await get('/api/connections')), JSON.stringify(await get('/api/connections/' + connection.id)), JSON.stringify((await app.db.prepare('SELECT * FROM product_audit').all()).results), await (await app.fetch('/app/connections/' + connection.id)).text()]) assert.ok(!text.includes('synthetic-evidence-1') && !text.includes(stored.secret_ciphertext))
   const tests = (await get('/api/tests')).tests.filter(t => t.origin === 'catalogue')
   assert.deepEqual(tests.map(t => t.catalogue_id).sort(), ['github.branch-protection', 'github.dependabot-critical', 'github.org-two-factor', 'github.repository-private', 'github.required-checks', 'github.required-review', 'github.secret-scanning-open'])
   assert.ok((await get('/api/tests')).catalogue.find(e => e.id === 'github.departed-members').manualRequirement)
@@ -73,12 +73,12 @@ try {
   assert.equal((await get('/api/connections/' + connection.id)).runs.length, runs.length)
   await at('2026-10-11T16:05:00Z'); await app.tick()
   runs = (await get('/api/connections/' + connection.id)).runs; assert.equal(runs[0].outcome, 'complete')
-  github.tokens = new Set(['synthetic-github_pat_rotated'])
+  github.tokens = new Set(['synthetic-evidence-2'])
   await at('2026-10-11T17:05:00Z'); await app.tick()
   const broken = await get('/api/connections/' + connection.id)
   assert.equal(broken.connection.status, 'needs reconnect'); assert.equal(broken.runs[0].outcome, 'failed')
-  await owner(`/api/connections/${connection.id}/rotate`, { token: 'github_pat_good' }, 400)
-  await owner(`/api/connections/${connection.id}/rotate`, { token: 'synthetic-github_pat_rotated' }, 200)
+  await owner(`/api/connections/${connection.id}/rotate`, { token: 'synthetic-evidence-1' }, 400)
+  await owner(`/api/connections/${connection.id}/rotate`, { token: 'synthetic-evidence-2' }, 200)
   assert.equal((await owner(`/api/connections/${connection.id}/collect`, {})).outcome, 'complete')
   await owner(`/api/connections/${connection.id}/revoke`, {}, 200)
   const revoked = await app.db.prepare('SELECT status,secret_ciphertext FROM connections').first()
@@ -122,7 +122,7 @@ try {
  await scenario('INVENTORY-001: source IDs remain connection-qualified after reconnect and one connection cannot shrink another population', async () => {
   const test = await testByCatalogue('github.branch-protection')
   const original = (await get('/api/tests/' + test.id)).latest
-  const replacement = await owner('/api/connections', { account: 'northstar', token: 'synthetic-github_pat_rotated', label: 'Replacement GitHub connection' })
+  const replacement = await owner('/api/connections', { account: 'northstar', token: 'synthetic-evidence-2', label: 'Replacement GitHub connection' })
   await owner(`/api/connections/${replacement.id}/repositories`, { repositories: ['northstar/web'] }, 200)
   assert.equal((await owner(`/api/connections/${replacement.id}/collect`, {})).outcome, 'complete')
   const after = (await get('/api/tests/' + test.id)).latest
@@ -160,7 +160,7 @@ try {
    const read = async path => { const r = await lib.fetch(path); assert.equal(r.status, 200, path); return r.json() }
    const programs = {}
    for (const framework of ['soc2', 'iso27001', 'hipaa']) programs[framework] = (await send('/api/programs', { framework, name: framework + ' program', legal_entity: 'Northstar', report_type: 'Type II', audit_from: '2026-10-01', audit_to: '2027-09-30' })).id
-   const linked = await send('/api/connections', { account: 'northstar', token: 'synthetic-github_pat_rotated', label: 'GitHub org' })
+   const linked = await send('/api/connections', { account: 'northstar', token: 'synthetic-evidence-2', label: 'GitHub org' })
    await send(`/api/connections/${linked.id}/repositories`, { repositories: ['northstar/web'] }, 200)
    const receipts = async () => (await lib.db.prepare('SELECT COUNT(*) AS n FROM receipts').first()).n, stored = await receipts()
    const mfa = async () => { const test = (await read('/api/tests')).tests.find(t => t.catalogue_id === 'github.org-two-factor'); return read('/api/tests/' + test.id) }
