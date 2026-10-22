@@ -1,3 +1,4 @@
+import { queueEvent } from '../connect/events'
 import { runtimeBindings, type Bindings } from '../../auth.server'
 import { Refusal, upload } from '../upload'
 import { auditStatement } from '../door'
@@ -23,6 +24,7 @@ type Handler = (request: Request, env: Bindings, match: RegExpExecArray, token: 
 interface V1Route { method: string; pattern: RegExp; route: string; scope: Scope; run: Handler }
 const sourceOf = (token: { id: string; name: string; created_name: string }) => ({ kind: 'source-reported' as const, ref: 'api:' + token.id, label: `Source-reported via API token "${token.name}" (owner ${token.created_name})` })
 const routes: V1Route[] = [
+ { method:'POST',pattern:/^\/v1\/connections\/([a-f0-9-]{36})\/events$/,route:'/v1/connections/{id}/events',scope:'resource-push',run:async (request,env,m,token,now)=>reply(await queueEvent(env,m[1],token,await body(request),now),202) },
  { method: 'PUT', pattern: /^\/v1\/resource-types\/([a-z][a-z0-9_]{1,62})$/, route: '/v1/resource-types/{type}', scope: 'resource-push', run: async (request, env, m, token, now) => {
   const schema = parseSchema((await body(request)).schema)
   await declareType(env, m[1], schema, 'api:' + token.id, now)
