@@ -8,7 +8,7 @@ import type { Connection } from './storage'
 // or audit periods must never reinterpret an earlier collection attempt.
 export async function collectionContext(env: Bindings, connection: Connection) {
  const identity = ['okta', 'google', 'entra', 'jumpcloud'].includes(connection.provider)
- const types = identity ? 'identity.%' : connection.provider + '.%'
+ const types = identity ? 'identity.%' : connection.provider === 'knowbe4' ? 'training.%' : connection.provider + '.%'
  const tests = (await env.DB.prepare('SELECT id,resource_type,revision,criteria_json FROM tests WHERE enabled=1 AND resource_type LIKE ? ORDER BY id LIMIT 1001').bind(types).all<{ id: string; resource_type: string; revision: number; criteria_json: string }>()).results
  if (tests.length > 1000) throw new Refusal('Collection context exceeds 1,000 enabled tests; reduce the source test scope.', 409)
  const ids = tests.map(t => t.id)

@@ -7,12 +7,13 @@ process.env.RER_SERVER_JOURNEY = '1'
 import assert from 'node:assert/strict'
 import { createHash, createHmac, randomBytes } from 'node:crypto'
 import { runtime } from './helpers/runtime.mjs'
+import { collectionScheduleBrowser } from './helpers/collection-schedule-browser.mjs'
 import { collectionScheduleJourney } from './helpers/collection-schedule-journey.mjs'
 const MGMT = '111111111111', MEMBER = '222222222222', LOCKED = '333333333333'
 // Fake credentials are made fresh for each run; none is written in this file.
 const keyId = () => 'AKIA' + randomBytes(8).toString('hex').toUpperCase(), secretKey = () => randomBytes(30).toString('base64')
 const MAIN_KEY = keyId(), OTHER_KEY = keyId()
-const aws = { now: '2026-10-11T12:00:00Z', keys: { [MAIN_KEY]: { secret: secretKey(), account: MGMT } }, temp: {}, denied: new Set(), calls: [], unsigned: 0,
+const aws = { now: '2026-10-11T12:00:00Z', keys: { [MAIN_KEY]: { secret: secretKey(), account: MGMT } }, temp: {}, denied: new Set(), calls: [], unsigned: 0, overrides: new Map(),
  roles: { [`arn:aws:iam::${MGMT}:role/EvidenceAudit`]: { account: MGMT, external: 'ext-123', trusts: MGMT }, [`arn:aws:iam::${MEMBER}:role/EvidenceReadOnly`]: { account: MEMBER, external: 'ext-123', trusts: MGMT } },
  accounts: {
   [MGMT]: { rootMfa: true, minLength: 14, users: [['alice', true, true, 10], ['deploy-bot', true, false, 30], ['ci', false, false, 200]], accountBlock: false,
@@ -51,6 +52,8 @@ async function fakeAws(request) {
  const body = request.method === 'GET' ? '' : await request.text(), who = verify(request, url, body)
  if (!who) { aws.unsigned++; return error('SignatureDoesNotMatch') }
  const params = Object.fromEntries(new URLSearchParams(body)), account = aws.accounts[who.account], action = params.Action ?? request.headers.get('x-amz-target')?.split('.').pop() ?? ''
+ const override = aws.overrides.get(`${who.account} ${who.service} ${who.region} ${action || url.pathname + url.search}`)
+ if (override) return override()
  aws.calls.push(`${who.account} ${who.service} ${who.region} ${action || url.pathname + url.search}`)
  if (aws.denied.has(`${who.account}:${who.service}`)) return who.service === 'cloudtrail' || who.service === 'organizations' ? jsonReply(400, { __type: 'AccessDeniedException' }) : error('AccessDenied')
  if (who.service === 'sts') {
@@ -184,6 +187,49 @@ try {
   assert.equal(resumed.runs.length, before + 1); assert.equal(resumed.runs[0].started_at, '2026-10-11T16:30:00.000Z')
   assert.deepEqual(resumed.stale, [{ from: '2026-10-11T15:00:00.000Z', to: '2026-10-11T16:30:00.000Z' }])
   assert.ok(resumed.runs.every(r => r.started_at <= '2026-10-11T14:00:00.000Z' || r.started_at === '2026-10-11T16:30:00.000Z'))
+ })
+ await scenario('COLLECTION-001: AWS malformed Query, JSON and REST facts and incomplete pages retain known class populations as unknown, with fresh recovery and original gaps', async () => {
+  const path = '/api/connections/' + connection.id
+  let time = Date.parse((await get(path)).runs[0].started_at)
+  const collect = async () => { time += 60000; await at(new Date(time).toISOString()); await owner(path + '/collect', {}); return (await get(path)).runs[0] }
+  const cases = [
+   ['iam','us-east-1','GetAccountSummary', () => xml(200,'<GetAccountSummaryResponse><GetAccountSummaryResult><SummaryMap/></GetAccountSummaryResult></GetAccountSummaryResponse>'), 'aws.root-mfa'],
+   ['iam','us-east-1','GetCredentialReport', () => xml(200,'<GetCredentialReportResponse><GetCredentialReportResult><Content>' + Buffer.from('user,password_enabled,mfa_active\nalice,true,true').toString('base64') + '</Content></GetCredentialReportResult></GetCredentialReportResponse>'), 'aws.console-user-mfa'],
+   ['ec2','us-east-1','GetEbsEncryptionByDefault', () => xml(200,'<GetEbsEncryptionByDefaultResponse><ebsEncryptionByDefault>yes</ebsEncryptionByDefault></GetEbsEncryptionByDefaultResponse>'), 'aws.ebs-default-encryption'],
+   ['ec2','us-east-1','DescribeSecurityGroups', () => xml(200,'<DescribeSecurityGroupsResponse><securityGroupInfo>missing records</securityGroupInfo></DescribeSecurityGroupsResponse>'), 'aws.security-group-admin-ports'],
+   ['ec2','us-east-1','DescribeSecurityGroups', () => xml(200,'<DescribeSecurityGroupsResponse><securityGroupInfo><item><groupId>sg-0web</groupId><groupName>web</groupName><ipPermissions><item><ipProtocol>tcp</ipProtocol><fromPort>unknown</fromPort><toPort>22</toPort></item></ipPermissions></item></securityGroupInfo></DescribeSecurityGroupsResponse>'), 'aws.security-group-admin-ports'],
+   ['rds','us-east-1','DescribeDBInstances', () => xml(200,'<DescribeDBInstancesResponse><DescribeDBInstancesResult><DBInstances><DBInstance><DBInstanceIdentifier>orders-db</DBInstanceIdentifier><StorageEncrypted>true</StorageEncrypted><PubliclyAccessible>false</PubliclyAccessible></DBInstance></DBInstances></DescribeDBInstancesResult></DescribeDBInstancesResponse>'), 'aws.rds-backups'],
+   ['cloudtrail','us-east-1','DescribeTrails', () => jsonReply(200,{trailList:'missing records'}), 'aws.cloudtrail-logging'],
+   ['cloudtrail','us-east-1','GetTrailStatus', () => jsonReply(200,{IsLogging:'true'}), 'aws.cloudtrail-logging'],
+   ['guardduty','us-east-1','/detector', () => jsonReply(200,{detectorIds:'det-1'}), 'aws.guardduty'],
+   ['guardduty','us-east-1','/detector/det-1', () => jsonReply(200,{}), 'aws.guardduty'],
+   ['s3','us-east-1','/northstar-logs?publicAccessBlock', () => xml(200,'<PublicAccessBlockConfiguration><BlockPublicAcls>true</BlockPublicAcls></PublicAccessBlockConfiguration>'), 'aws.s3-public-access'],
+   ['s3','us-east-1','/northstar-logs?encryption', () => xml(200,'<ServerSideEncryptionConfiguration><Rule/></ServerSideEncryptionConfiguration>'), 'aws.s3-encryption'],
+   ['s3','us-east-1','/northstar-site?policyStatus', () => xml(200,'<PolicyStatus/>'), 'aws.s3-public-access'],
+  ]
+  const failures = []
+  for (const [service,region,action,reply,catalogue] of cases) {
+   const before = await results(catalogue), names = Object.keys(before).filter(n => n.includes(MGMT) || service === 's3' && n.includes('northstar-'))
+   assert.ok(names.length,catalogue)
+   const key = `${MGMT} ${service} ${region} ${action}`
+   aws.overrides.set(key,reply)
+   const run = await collect(); failures.push(run)
+   assert.equal(run.outcome,'partial'); assert.match(run.coverage_json,/AWS schema drift/)
+   const after = await results(catalogue)
+   const affected = service === 's3' ? names : names.filter(n => service === 'iam' || service === 'rds' || service === 'ec2' && action === 'DescribeSecurityGroups' || n.includes(region))
+   assert.ok(affected.some(n => after[n] === 'unknown'),'malformed facts cannot leave a false pass')
+   for (const name of names) assert.ok(Object.hasOwn(after,name),'known denominator retained: '+name)
+   aws.overrides.delete(key); await collect()
+   assert.deepEqual(await results(catalogue),before)
+  }
+  const key = `${MGMT} ec2 us-east-1 DescribeSecurityGroups`
+  aws.overrides.set(key,()=>xml(200,'<DescribeSecurityGroupsResponse><securityGroupInfo/><nextToken>repeated</nextToken></DescribeSecurityGroupsResponse>'))
+  const incomplete = await collect(); failures.push(incomplete)
+  assert.equal(incomplete.outcome,'partial'); assert.match(incomplete.coverage_json,/pagination incomplete/)
+  aws.overrides.clear(); await collect()
+  const history = (await get(path)).runs
+  for (const run of failures) assert.deepEqual(history.find(r=>r.id===run.id),run)
+  await collectionScheduleBrowser(app,[(await get(path)).connection],{suffix:'-aws-schema',expected:['AWS schema drift','pagination incomplete']})
  })
  await scenario('COLLECTION-001: hosted collector schedules through owner doors, Cron, browser and restore', () => collectionScheduleJourney(app, at))
  console.log(`${passed} AWS public-door scenarios passed; AWS is faked only at the network edge, with every signature checked.`)

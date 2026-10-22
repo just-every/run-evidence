@@ -10,7 +10,7 @@ import { awsConfig } from './connect'
 // are discovered and stay in the denominator: an account Evidence cannot read
 // is recorded unreadable, and its tests are unknown, never passing. Each
 // evidence class is read separately, so one denied class is a visible gap.
-export const awsRevision = 'aws-1'
+export const awsRevision = 'aws-2'
 const types: Record<string, ResourceSchema> = {
  'aws.account': { fields: { readable: 'boolean', root_mfa_enabled: 'boolean', password_min_length: 'number', s3_account_public_access_blocked: 'boolean', member: 'boolean' }, required: [] },
  'aws.iam_user': { fields: { console_access: 'boolean', mfa_enabled: 'boolean', console_mfa_ok: 'boolean', active_key_age_days: 'number' }, required: [] },
@@ -45,6 +45,7 @@ export async function runAwsCollection(env: Bindings, connection: Connection, tr
   const identity = await callerIdentity(primary)
   if (identity.account !== connection.account) return finish('failed', {}, 'account binding changed', reconnectUpdate(env, connection, `These credentials now reach account ${identity.account}, not ${connection.account}; reconnect deliberately.`, now))
   const members = await organizationAccounts(primary)
+  if (members && members.filter(a => a.status === 'ACTIVE').length > 50) throw new AwsFailure('unavailable','coverage','AWS account coverage incomplete: more than 50 active accounts')
   const accounts = [{ id: connection.account, name: members?.find(a => a.id === connection.account)?.name ?? 'this account', status: 'ACTIVE' }, ...(members ?? []).filter(a => a.id !== connection.account && a.status === 'ACTIVE')].slice(0, 50)
   // INVENTORY-001: lost organization-list permission must not remove known
   // member accounts or their assets from any test population.

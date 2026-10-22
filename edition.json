@@ -2586,6 +2586,7 @@
           "src/evidence/audit/storage.ts",
           "src/evidence/audit/view.ts",
           "src/evidence/cadence.ts",
+          "src/evidence/cloud/aws-schema.ts",
           "src/evidence/cloud/aws.ts",
           "src/evidence/cloud/azure.ts",
           "src/evidence/cloud/catalogue.ts",
