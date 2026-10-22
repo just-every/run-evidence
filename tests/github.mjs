@@ -5,6 +5,7 @@
 process.env.RER_SERVER_JOURNEY = '1'
 import assert from 'node:assert/strict'
 import { runtime } from './helpers/runtime.mjs'
+import { githubDependenciesJourney } from './helpers/github-dependencies-journey.mjs'
 import { githubMembersJourney } from './helpers/github-members-journey.mjs'
 import { githubHistoryJourney } from './helpers/github-history-journey.mjs'
 import { collectionJourney } from './helpers/collection-journey.mjs'
@@ -93,6 +94,7 @@ try {
   const latest = (await get('/api/tests/' + (await testByCatalogue('github.branch-protection')).id)).latest
   assert.ok(latest.every(o => /stale/.test(o.reason)))
  })
+ await scenario('CODE-001: GitHub SPDX package metadata enters inventory without secret fields or invented manifest revisions, retaining denied scope, removals and custody history', githubDependenciesJourney)
  await scenario('CODE-001: GitHub membership, MFA and owner-reviewed People matches preserve departed accounts, denied scope and source removal without merging people', githubMembersJourney)
  await scenario('CODE-001: GitHub merged change reviews, exact-revision checks and deployments retain source times, gaps, cursor recovery and immutable period history', githubHistoryJourney)
  await scenario('COLLECTION-001: configurable elapsed schedules retain schema and pagination gaps, recover only on fresh reads, and survive restart and restore', collectionJourney)

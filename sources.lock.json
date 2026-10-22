@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "eeddbf0d45b476889c086fcbdd9c9177e69d2db81d0324e67d6ff0a48faef772",
+  "manifest": "2f0123f3c1c264e63986ad5fe303a2d5a469fc0e10144baeca60b9a355d2fb35",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2615,6 +2615,7 @@
           "src/evidence/connect/event-context.ts",
           "src/evidence/connect/events.ts",
           "src/evidence/connect/github-history.ts",
+          "src/evidence/connect/github-members.ts",
           "src/evidence/connect/github-schema.ts",
           "src/evidence/connect/github.ts",
           "src/evidence/connect/http.ts",
@@ -2939,6 +2940,7 @@
           "tests/helpers/framework-journey.mjs",
           "tests/helpers/github-fixture.mjs",
           "tests/helpers/github-history-journey.mjs",
+          "tests/helpers/github-members-journey.mjs",
           "tests/helpers/inventory-fixture.mjs",
           "tests/helpers/migrate-journey.mjs",
           "tests/helpers/move-in-browser.mjs",
@@ -3122,7 +3124,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "eeddbf0d45b476889c086fcbdd9c9177e69d2db81d0324e67d6ff0a48faef772",
+      "sha256": "2f0123f3c1c264e63986ad5fe303a2d5a469fc0e10144baeca60b9a355d2fb35",
       "executable": false
     },
     "LICENSE": {
@@ -4254,7 +4256,7 @@
       "executable": false
     },
     "src/evidence/connect/collect.ts": {
-      "sha256": "53708c26153fdeae4176f0d753112bb5b5c832ef92fbb244edb904f6e38a031b",
+      "sha256": "b37055a0868ad02e0956d13a38e86b6bd99f761cc9aad65de158c96cb752934c",
       "executable": false
     },
     "src/evidence/connect/custody.ts": {
@@ -4269,8 +4271,12 @@
       "sha256": "26ef3bdd810d5768993fb412d051c233e0a6d620fae3fb421c4725a9ecc24726",
       "executable": false
     },
+    "src/evidence/connect/github-dependencies.ts": {
+      "sha256": "d2f7192aaf72e83b6e0d5ad5a0490190e696557ea37f8f0afd11c7c616c7ca11",
+      "executable": false
+    },
     "src/evidence/connect/github-history.ts": {
-      "sha256": "33f60ef595d5824a07e4ffbe4571f6cb4894681e2a6ed8ccbca2e6426155ee02",
+      "sha256": "6ea8d2fec55d1fbd9656c2ee4a342737164485e0ff775bfcfe6f0e2481b02aca",
       "executable": false
     },
     "src/evidence/connect/github-members.ts": {
@@ -4282,7 +4288,7 @@
       "executable": false
     },
     "src/evidence/connect/github.ts": {
-      "sha256": "4e984c346be71bbdda9168d0f2c44bf00b9c89448604e52ff25df08e88c386b8",
+      "sha256": "4887d8a91915af16a35bf0d7a9c79ed2c9fac02d0b9ea2ba596bdcb3406c7430",
       "executable": false
     },
     "src/evidence/connect/http.ts": {
@@ -4298,7 +4304,7 @@
       "executable": false
     },
     "src/evidence/connect/report.ts": {
-      "sha256": "b5fe888ad6550777b1a28fed7de8d9b86977f3db323b8685de03fad8227b9c66",
+      "sha256": "6f9a24303587fffe5a54dc419d437075996a77dfd769d12aa44af2e0fc1a6f58",
       "executable": false
     },
     "src/evidence/connect/run-context.ts": {
@@ -6850,7 +6856,7 @@
       "executable": false
     },
     "tests/github.mjs": {
-      "sha256": "ec8aff8fce5a905884adb8940bd6a5a1d667708b074373ac994a65d74dc138f8",
+      "sha256": "91b29411f292de4d1c2c5aa79120c2472f3246fbd873d15e301296e948af4ea2",
       "executable": false
     },
     "tests/handover.mjs": {
@@ -6917,8 +6923,12 @@
       "sha256": "2247a083ff15ce557560b5e55fd5ba12e7d553a406cdb49dc0126cf402e6d235",
       "executable": false
     },
+    "tests/helpers/github-dependencies-journey.mjs": {
+      "sha256": "3232891d185d313cbd6629552fb71a135f2956d3fb3023d67bcdd70c68cb4183",
+      "executable": false
+    },
     "tests/helpers/github-fixture.mjs": {
-      "sha256": "020985c2854f004157621f175086d5d8af1688b101b8df552253c2efe084aaf6",
+      "sha256": "127ecd96a6369de7965c6f0430d90d16f222fcae556e72d7fc634647009c632e",
       "executable": false
     },
     "tests/helpers/github-history-journey.mjs": {
