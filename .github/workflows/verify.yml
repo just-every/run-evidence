@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [core, program, code, people, integrations, trackers, browser]
+        shard: [core, custody, history, program, code, people, integrations, cloud, clouds, identity, trackers, browser]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
