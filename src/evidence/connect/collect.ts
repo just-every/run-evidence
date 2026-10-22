@@ -1,4 +1,4 @@
-import {githubFindings,type CodeFinding} from './github-findings'
+import {githubFindings,reconcileGithubFindingCounts,type CodeFinding} from './github-findings'
 import {retainSourceFindings} from '../vuln/source'
 import {runAzureDevops} from './azuredevops-collect'
 import {runBitbucket} from './bitbucket-collect'
@@ -91,7 +91,7 @@ async function collectConnection(env: Bindings, connection: Connection, trigger:
     else history.gaps.push('total change history exceeds 80,000 bytes; repository history not retained')
     if(history.dependencies){for(const pkg of history.dependencies.packages)dependencies.push({uniqueId:await digest(name+':'+pkg.id),displayName:pkg.name,attributes:{repository:name,name:pkg.name,version:pkg.version,generated_at:history.dependencies.generated_at,source_revision:null,readable:true}})}else dependencyComplete=false
     coverage.gaps.push(...history.gaps.map(reason=>({asset:name,reason})))
-    const findings=await githubFindings(client,connection.api_base,name);if(findingRows.length+findings.rows.length>1000)findings.gaps.push('connection source findings exceed 1,000 rows; this repository finding population is unavailable');else findingRows.push(...findings.rows);coverage.code_findings[name]={classes_read:findings.complete,findings:findings.rows.length};coverage.gaps.push(...findings.gaps.map(reason=>({asset:name,reason})))
+    const findings=await githubFindings(client,connection.api_base,name);if(findingRows.length+findings.rows.length>1000)findings.gaps.push('connection source findings exceed 1,000 rows; this repository finding population is unavailable');else findingRows.push(...findings.rows);const consistency=reconcileGithubFindingCounts(read.attributes,findings);Object.assign(repos[repos.length-1].attributes,consistency.patch);coverage.code_findings[name]={classes_read:findings.complete,findings:findings.rows.length,source_counts:consistency.counts};coverage.gaps.push(...[...findings.gaps,...consistency.gaps].map(reason=>({asset:name,reason})))
    }
    else { dependencyComplete=false;coverage.gaps.push({ asset: name, reason: read.reason }); coverage.unreadable.push({ repository: name, reason: read.reason }); repos.push({ uniqueId: name, displayName: name, attributes: { readable: false } }) }
   }

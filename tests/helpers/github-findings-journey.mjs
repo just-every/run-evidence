@@ -17,6 +17,9 @@ export async function githubFindingsJourney(){
   const original=(await get(path)).runs[0]
   let rows=(await get('/api/vulnerabilities/source-findings')).findings
   assert.equal(rows.length,2);assert.ok(rows.every(r=>r.source_ref==='github-findings:'+c.id&&r.readable&&r.current_state==='open'))
+  const test=(await get('/api/tests')).tests.find(t=>t.catalogue_id==='github.secret-scanning-open'),result=await get('/api/tests/'+test.id)
+  assert.equal(result.latest[0].result,'unknown','conflicting source answers cannot establish no open secrets')
+  const counts=JSON.parse(original.coverage_json).code_findings['northstar/web'].source_counts['secret-scanning'];assert.deepEqual(counts,{filtered:0,detailed:1});assert.match(original.coverage_json,/Conflicting secret-scanning source answers/)
   assert.equal(rows.find(r=>r.kind==='dependabot').cve,'CVE-2026-12345');assert.equal(rows.find(r=>r.kind==='secret-scanning').severity,null,'secret severity is not invented')
   assert.equal((await get('/api/vulnerabilities')).findings.length,0,'source alerts never enter manual retest closure')
   app.setCookie('');assert.equal((await app.fetch('/api/vulnerabilities/source-findings')).status,401);app.setCookie(cookie)
