@@ -192,6 +192,7 @@ try {
   const path = '/api/connections/' + connection.id
   let time = Date.parse((await get(path)).runs[0].started_at)
   const collect = async () => { time += 60000; await at(new Date(time).toISOString()); await owner(path + '/collect', {}); return (await get(path)).runs[0] }
+  aws.denied.clear(); await collect()
   const cases = [
    ['iam','us-east-1','GetAccountSummary', () => xml(200,'<GetAccountSummaryResponse><GetAccountSummaryResult><SummaryMap/></GetAccountSummaryResult></GetAccountSummaryResponse>'), 'aws.root-mfa'],
    ['iam','us-east-1','GetCredentialReport', () => xml(200,'<GetCredentialReportResponse><GetCredentialReportResult><Content>' + Buffer.from('user,password_enabled,mfa_active\nalice,true,true').toString('base64') + '</Content></GetCredentialReportResult></GetCredentialReportResponse>'), 'aws.console-user-mfa'],
@@ -205,7 +206,7 @@ try {
    ['guardduty','us-east-1','/detector/det-1', () => jsonReply(200,{}), 'aws.guardduty'],
    ['s3','us-east-1','/northstar-logs?publicAccessBlock', () => xml(200,'<PublicAccessBlockConfiguration><BlockPublicAcls>true</BlockPublicAcls></PublicAccessBlockConfiguration>'), 'aws.s3-public-access'],
    ['s3','us-east-1','/northstar-logs?encryption', () => xml(200,'<ServerSideEncryptionConfiguration><Rule/></ServerSideEncryptionConfiguration>'), 'aws.s3-encryption'],
-   ['s3','us-east-1','/northstar-site?policyStatus', () => xml(200,'<PolicyStatus/>'), 'aws.s3-public-access'],
+   ['s3','us-west-2','/northstar-site?policyStatus', () => xml(200,'<PolicyStatus/>'), 'aws.s3-public-access'],
   ]
   const failures = []
   for (const [service,region,action,reply,catalogue] of cases) {

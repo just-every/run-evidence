@@ -2,6 +2,7 @@ import { at, items, list, parseXml, textAt, type XmlValue } from './xml'
 const record = (v: unknown): v is Record<string, any> => !!v && typeof v === 'object' && !Array.isArray(v)
 const named = (v: unknown): v is string => typeof v === 'string' && v.trim().length > 0
 const boolean = (v: unknown) => v === 'true' || v === 'false'
+const cidr = (value: string, ipv6: boolean) => { const [address, mask, extra] = value.split('/'); return extra === undefined && /^\d+$/.test(mask ?? '') && Number(mask) <= (ipv6 ? 128 : 32) && (ipv6 ? /^[0-9a-f:]+$/i.test(address) && address.includes(':') : address.split('.').length === 4 && address.split('.').every(n => /^\d{1,3}$/.test(n) && Number(n) <= 255)) }
 const natural = (v: unknown) => typeof v === 'string' && /^\d+$/.test(v) && Number.isSafeInteger(Number(v))
 const collection = (v: XmlValue | undefined, keys: string[]) => v === '' || record(v) && Object.keys(v).length > 0 && Object.keys(v).every(k => keys.includes(k))
 const present = (v: XmlValue | undefined) => v !== undefined && (v === '' || record(v))
@@ -31,7 +32,7 @@ export function queryShape(action: string, doc: XmlValue): string | null {
     for (const [field,key] of [['ipRanges','cidrIp'],['ipv6Ranges','cidrIpv6']]) {
      const container = at(rule,field)
      if (container !== undefined && !collection(container,['item'])) return 'security group source ranges'
-     if (!items(rule,field).every(r => named(textAt(r,key)) && /\/\d{1,3}$/.test(textAt(r,key)!))) return 'security group source CIDR'
+     if (!items(rule,field).every(r => named(textAt(r,key)) && cidr(textAt(r,key)!,key === 'cidrIpv6'))) return 'security group source CIDR'
     }
    }
   }

@@ -4185,7 +4185,7 @@
       "executable": false
     },
     "src/evidence/cloud/aws-schema.ts": {
-      "sha256": "855bb1d5c36609cac9d4aa62dfea74d70dd1512908c44f33ab08702779544b88",
+      "sha256": "40a941e20dfe1d79e669e364d123f22954db9c75da789d7dd0fc56998c79e737",
       "executable": false
     },
     "src/evidence/cloud/aws.ts": {
@@ -6781,7 +6781,7 @@
       "executable": false
     },
     "tests/cloud.mjs": {
-      "sha256": "b1b2522055385eecc2f311fc33909f977d0fce8e38c7180cedbf0483ac20390c",
+      "sha256": "952951be2bbd3e333073862d96d1d2ab409b05f4e482005bf2d964c45c20b00f",
       "executable": false
     },
     "tests/clouds.mjs": {
