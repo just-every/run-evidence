@@ -313,7 +313,7 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
 ### Portability and migration
 
-- **MIGRATE-001 — Switch from Vanta, Drata and Secureframe · partial.** For each incumbent, use a representative authorized customer export through Move-in, preview it, resolve a duplicate identity, admit, export and undo. Reconcile each record class separately, showing source count, admitted, unsupported and refused for each:
+- **MIGRATE-001 — Switch from Vanta, Drata and Secureframe · done.** For each incumbent, use a representative authorized customer export through Move-in, preview it, resolve a duplicate identity, admit, export and undo. Reconcile each record class separately, showing source count, admitted, unsupported and refused for each:
   - frameworks, controls and mappings;
   - test history;
   - policies with approval history and attestations;
@@ -327,7 +327,9 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Reconnect one actual source and verify imported history stays distinct from fresh observations. If an incumbent does not export a record type, the UI names it and offers an authorized API/manual mapping route without silently dropping it. A switch inside an open audit period follows MIGRATE-002.
 
-  Current evidence: `src/evidence/import/plan.ts`; `src/evidence/import/http.ts`; `tests/import.mjs`. Current limit: Only the documented Drata archive shape is implemented and exercised with synthetic fixtures; Vanta, Secureframe, broader objects and live migration validation are missing.
+  Proved in `tests/import.mjs` through `tests/helpers/migrate-journey.mjs`: “MIGRATE-001 / Vanta…” (a documented-shape Vanta API-pages export through Move-in: preview that writes nothing; refused wrong-door, malformed and mixed ZIPs; identity groups for duplicate and already-known people that block the mapping until the owner decides; approval with an exact fingerprint; the ten record classes reconciling as source, admitted, unsupported and refused with each reason; original ids, timestamps, audit periods and the export date retained as imported provenance; exhibit bytes and SHA-256; not-exported classes named with API and manual routes in the page; no native record, run, observation or connection created; JSON and CSV export, audited; a GitHub source reconnected through its network-edge fake whose fresh observations stay source-observed apart from the imported Vanta test history; archive restore with the same additions and an inert job; undo unlinking every live record while retaining additions and the source ZIP), “MIGRATE-001 / Secureframe…” (the same ten classes from the Secureframe API, its different unsupported, refused and not-exported sets, a keep-separate identity decision, undo), “A Drata control that duplicates an existing proof requirement is resolved onto it…” and the Drata scenarios “Imported receipts retain provenance…” and “Undo unlinks only imported additions…” (Drata's reconciliation, receipts, export and undo; its package carries controls and files only, so every other class is named as not exported). `tests/browser.mjs` (`tests/helpers/move-in-browser.mjs`) drives Vanta, Secureframe and Drata Move-in at 1440 and 390: reconciliation, identity decision, approval, records and undo. Source shapes are in `docs/MOVE-IN.md`.
+
+  Gap: live acceptance needs an account. No real Vanta, Drata or Secureframe tenant has been read; the fixtures are built from each provider's published schema and no provider-verification claim is made (ct 19 Oct 2026). Evidence reads API responses the owner captured; it does not call the incumbents' APIs.
 
   This incumbent-switching workflow carries OPEN-001’s migration obligation; open-source availability alone does not prove a switch.
 

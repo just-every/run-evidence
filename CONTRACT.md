@@ -545,6 +545,8 @@ Before shipping, questionnaire assignments join LIFECYCLE-002 handover: a depart
 
 MIGRATE-001 carries OPEN-001’s incumbent-switching obligation: open-source availability alone does not prove a completed switch.
 
+**Current semantics (22 October 2026):** Vanta and Secureframe are read from the API list responses the owner captured (Vanta Manage and Auditor APIs, `results.data` pages; the Secureframe API, `data` pages), one ZIP per incumbent, with required fields, nullability and enums taken from each provider's published reference; Drata is read from its evidence package. A malformed page refuses the ZIP; a malformed record is refused alone. For each of the ten record classes the preview and the post-approval reconciliation show source, admitted, unsupported and refused counts with every reason: *refused* is a record that is invalid or inconsistent inside the export (a failed schema check, a duplicate source id, a mapping to an absent record, file bytes that the export lists but does not hold), *unsupported* is a record the incumbent exports that Evidence cannot carry (a deleted file, a document with no file, evidence metadata with no downloadable bytes, a remediation task that is not an access-review item, a control resolved onto an existing proof requirement), and a class the incumbent's API or package does not export at all is named as not exported with an authorized API or manual route. Admitted records are retained history in the immutable import additions (with a live link that undo removes), labeled imported with the incumbent, original ids, original timestamps, a hash of the source record and the export date (or "not stated"); they are never verified, never current proof, never a source observation, and never change People, Vendors, Risks, Policies, tests or connections. People who share an email in the export, or whose email matches a person already in People, are decided by the owner (same person, different people, or link to the existing person, with no People change) before the mapping can be saved. Drata's evidence package carries no people, so its duplicate-identity step is a source control that duplicates an existing proof requirement, resolved onto it. Exhibits keep their bytes and SHA-256 in the retained ZIP and download from the import. Export (JSON or CSV) and every import action are audited with revision. Reconnecting a source starts fresh observations that stay separate from imported history; credentials are never read from a ZIP, and connectors and external access are reauthorized by the owner. ERASE-001 inherits the obligation to erase or anonymize the personal data held in imported people, vendor-contact and trust-request records, and MIGRATE-002 inherits the imported test history and audit periods as its pre-cutover records.
+
 **Acceptance evidence:** For each incumbent, use a representative authorized customer export through Move-in, preview it, resolve a duplicate identity, admit, export and undo. Reconcile each record class separately, showing source count, admitted, unsupported and refused for each:
 - frameworks, controls and mappings;
 - test history;
@@ -736,7 +738,7 @@ Every capability claim on the homepage (`src/site/landing/`, rebuilt on the owne
 | 2 | Hero | "collects the proof" | COLLECTION-001, CLOUD-001, IDENTITY-001, CODE-001, PROOF-001 | partial | partly: `src/evidence/cloud/`, `src/evidence/identity/`, `src/evidence/connect/github.ts`, `src/evidence/upload.ts` |
 | 3 | Hero | "fixes what drifts" | REMEDY-001, REMEDY-002, AGENT-003 | partial | partly: `src/evidence/remedy/` |
 | 4 | Hero | "hands your auditor everything they ask for" | AUDIT-001, AUDIT-003, REVIEW-001 | partial | partly: `src/evidence/review/` |
-| 5 | Hero | "100% free, open source alternative to Vanta, Drata and Secureframe" | OPEN-001, MIGRATE-001 | partial | partly: `LICENSE`, `src/evidence/import/` |
+| 5 | Hero | "100% free, open source alternative to Vanta, Drata and Secureframe" | OPEN-001, MIGRATE-001 | done | `LICENSE`, `src/evidence/import/`, `tests/import.mjs` |
 | 6 | Hero | Board: SOC 2 criteria on controls (CC6.1 Logical access, CC7.2 Monitoring) | LIBRARY-001, PROGRAM-001 | done | `src/evidence/library/soc2.ts`, `src/evidence/library/controls.ts` |
 | 7 | Hero | Exhibit A: "MFA enforced for all 42 users · Okta" | IDENTITY-001, TEST-001 | done | `src/evidence/identity/okta.ts`, `src/evidence/identity/catalogue.ts` |
 | 8 | Hero | Exhibit B: "S3 buckets encrypted · AWS · 12 of 12" | CLOUD-001, TEST-001 | done | `src/evidence/cloud/aws.ts`, `src/evidence/cloud/catalogue.ts` |
@@ -783,8 +785,8 @@ Every capability claim on the homepage (`src/site/landing/`, rebuilt on the owne
 | 49 | Trust center | "209 answered from evidence · 3 sent to Dana Lee" | ANSWER-001, ANSWER-003 | partial | Basic cited drafts implemented; collaboration remains unbuilt. |
 | 50 | ISO 27001 | "SOC 2, ISO 27001 and HIPAA share controls, so one passing test counts everywhere it applies" | PROGRAM-002, LIBRARY-001 | done | `src/evidence/library/controls.ts`, `src/evidence/library/iso27001.ts` |
 | 51 | ISO 27001 | "Add framework · ISO 27001:2022 · 71 of 93 controls already tested", A.5.15 ← CC6.1, A.8.24 ← CC6.7, a new control with an owner | PROGRAM-001, PROGRAM-002, READINESS-001 | done | `src/evidence/program/`, `src/evidence/library/iso27001.ts` |
-| 52 | Moving in | "Coming from Vanta, Drata or Secureframe? Import controls, policies, evidence and vendors" | MIGRATE-001, IMPORT-001 | partial | partly: `src/evidence/import/` (Drata archive) |
-| 53 | Moving in | "check every count before you switch" (86 controls, 18 policies, 1,412 evidence files, 37 vendors) | MIGRATE-001, IMPORT-001 | partial | partly: `src/evidence/import/plan.ts` |
+| 52 | Moving in | "Coming from Vanta, Drata or Secureframe? Import controls, policies, evidence and vendors" | MIGRATE-001, IMPORT-001 | done | `src/evidence/import/`, `tests/import.mjs` |
+| 53 | Moving in | "check every count before you switch" (86 controls, 18 policies, 1,412 evidence files, 37 vendors) | MIGRATE-001, IMPORT-001 | done | `src/evidence/import/bundle/`, `tests/import.mjs` |
 | 54 | Limits | "Evidence is not an auditor. A licensed CPA firm still tests your controls and signs your report." | BOUNDARY-001 | done | `src/evidence/program/boundary.ts`, `/contract#area-honest-product-boundaries` |
 | 55 | Closing | "Open source compliance for SOC 2, ISO 27001 and HIPAA"; "Free and open source, MIT licensed" | PROGRAM-001, OPEN-001 | done | `src/evidence/library/`, `LICENSE` |
 
@@ -805,8 +807,8 @@ ACCESS-001 updated 20 October 2026 with clause-named campaign, revocation-eviden
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 6 | 2 | 0 | 8 |
-| Target and push further | 34 | 13 | 24 | 71 |
-| All | 40 | 15 | 24 | 79 |
+| Target and push further | 35 | 12 | 24 | 71 |
+| All | 41 | 14 | 24 | 79 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -867,7 +869,7 @@ ACCESS-001 updated 20 October 2026 with clause-named campaign, revocation-eviden
 | `ANSWER-002` | Portal and web-form questionnaire capture and fill-back | target | missing |  | No implementing path |
 | `ANSWER-003` | Questionnaire collaboration, PDF capture and answer-library import | target | missing |  | No implementing path |
 | `IMPORT-001` | Reviewed Drata archive admission and undo | published | done | `src/evidence/import/http.ts`; `src/evidence/import/plan.ts`; `tests/import.mjs`; `docs/DRATA-IMPORT.md` |  |
-| `MIGRATE-001` | Switch from Vanta, Drata and Secureframe | target | partial | `src/evidence/import/plan.ts`; `src/evidence/import/http.ts`; `tests/import.mjs` | Only the documented Drata archive shape is implemented and exercised with synthetic fixtures; Vanta, Secureframe, broader objects and live migration validation are missing. |
+| `MIGRATE-001` | Switch from Vanta, Drata and Secureframe | target | done | `src/evidence/import/`; `src/evidence/import/bundle/`; `tests/import.mjs` ("MIGRATE-001 / Vanta…", "MIGRATE-001 / Secureframe…", "A Drata control that duplicates an existing proof requirement…", "Imported receipts retain provenance…", "Undo unlinks only imported additions…") via `tests/helpers/migrate-journey.mjs`; `tests/browser.mjs` via `tests/helpers/move-in-browser.mjs` (Vanta, Secureframe and Drata Move-in at 1440/390); `docs/MOVE-IN.md` | Live acceptance needs an account: no real Vanta, Drata or Secureframe tenant has been read (named Gap, ct 19 Oct 2026); the fixtures follow each provider's published schema and no provider-verification claim is made. Evidence reads API responses the owner has captured, not a live API call. |
 | `MIGRATE-002` | Switching in the middle of an audit period | target | missing |  | No implementing path |
 | `CUSTODY-001` | Complete custody archive and empty-target restore | published | done | `tests/archive.mjs` |  |
 | `PORTABLE-001` | Full-program transfer and Base replacement obligations | target | done | `src/evidence/archive/service.ts`; `src/evidence/archive/portable-export.ts`; `src/evidence/archive/portable-restore.ts`; `tests/archive.mjs`; `tests/helpers/portable-journey.mjs`; `tests/review-browser.mjs`; `tests/helpers/portable-browser.mjs`; `tests/vulns.mjs`; `tests/work.mjs`; `tests/import.mjs`; `tests/agent.mjs`; `tests/population.mjs`; `tests/identity.mjs`; `tests/risk.mjs`; `tests/github.mjs`; `tests/private-collector.mjs`; `tests/readiness.mjs`; `docs/BACKUP-RESTORE.md` | Current records and originals conform; named future capabilities inherit archive parity before shipping. |

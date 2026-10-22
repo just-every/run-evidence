@@ -3,6 +3,8 @@ import { spawn } from 'node:child_process'
 import { mkdir, writeFile, unlink } from 'node:fs/promises'
 import { join } from 'node:path'
 import { fixture } from '../fixtures/drata/fixture.mjs'
+import { vantaZip } from '../fixtures/vanta/bundle.mjs'
+import { secureframeZip } from '../fixtures/secureframe/bundle.mjs'
 
 // Runs after the ordinary owner proof journey in the same disposable checkout.
 export async function moveInAndPrepare(page, origin, width, capture, scratch) {
@@ -12,7 +14,7 @@ export async function moveInAndPrepare(page, origin, width, capture, scratch) {
  await capture(page,`${width}-import-shape`)
  await page.goto(origin+'/app/import')
  await page.getByLabel('Audit evidence ZIP').setInputFiles({name:'drata-audit.zip',mimeType:'application/zip',buffer:await fixture({deflate:width===390})})
- await page.getByRole('button',{name:'Check ZIP and review mapping'}).click()
+ await page.getByRole('button',{name:'Check Drata ZIP and review'}).click()
  await page.waitForURL(/\/app\/import\/[a-f0-9-]+$/)
  for (const field of await page.locator('[name^="covered_from_"]').all()) await field.fill('2026-09-01')
  for (const field of await page.locator('[name^="covered_to_"]').all()) await field.fill('2026-09-30')
@@ -29,6 +31,34 @@ export async function moveInAndPrepare(page, origin, width, capture, scratch) {
  await page.getByRole('button',{name:'Undo imported additions',exact:true}).click()
  assert.match(await page.locator('main').innerText(),/undone/)
  await capture(page,`${width}-import-undone`)
+
+ // Vanta and Secureframe: reconciliation per record class, owner identity decision, approval, records, undo.
+ for (const [name,label,buffer] of [['Vanta','Vanta API pages ZIP',vantaZip()],['Secureframe','Secureframe API pages ZIP',secureframeZip()]]) {
+  const key=name.toLowerCase()
+  await page.goto(origin+'/app/import')
+  await page.getByLabel(label).setInputFiles({name:key+'.zip',mimeType:'application/zip',buffer})
+  await page.getByRole('button',{name:`Check ${name} ZIP and review`}).click()
+  await page.waitForURL(/\/app\/import\/[a-f0-9-]+$/)
+  await page.getByRole('heading',{name:'Reconciliation by record class'}).waitFor()
+  assert.match(await page.locator('.import-reconciliation').innerText(),/Original exhibits/)
+  await capture(page,`${width}-${key}-reconciliation`)
+  await page.locator('select[name="decision_0"]').selectOption('same')
+  await page.getByRole('button',{name:'Save review for approval'}).click()
+  await page.getByRole('heading',{name:'Approve this import',exact:true}).waitFor()
+  await page.getByRole('checkbox',{name:/I reviewed the reconciliation/}).check()
+  await page.getByRole('button',{name:'Approve and import',exact:true}).click()
+  await page.getByRole('heading',{name:'Durable import journal'}).waitFor()
+  for (let i=0;i<5&&!/completed/.test(await page.locator('main').innerText());i++){await page.getByRole('button',{name:'Continue durable job'}).click();await page.getByRole('heading',{name:'Durable import journal'}).waitFor()}
+  assert.match(await page.locator('main').innerText(),/completed/)
+  await page.locator('.import-reconciliation').getByRole('link',{name:'People'}).click()
+  await page.locator('.import-records').waitFor()
+  assert.match(await page.locator('.import-records').innerText(),/Imported from /)
+  await capture(page,`${width}-${key}-records`)
+  await page.getByRole('checkbox',{name:/Unlink this import/}).check()
+  await page.getByRole('button',{name:'Undo imported additions',exact:true}).click()
+  assert.match(await page.locator('main').innerText(),/undone/)
+  await capture(page,`${width}-${key}-undone`)
+ }
 
  await page.goto(origin+'/app/agent')
  await page.getByLabel('Agent label').fill('Audit preparation assistant')

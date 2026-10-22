@@ -12,14 +12,14 @@ export function crc32(bytes: Uint8Array) {
  for (const byte of bytes) { value ^= byte; for (let b=0;b<8;b++) value=(value>>>1)^((value&1)?0xedb88320:0) }
  return (value^0xffffffff)>>>0
 }
-export function unzip(bytes: Uint8Array): Map<string, Uint8Array> {
+export function unzip(bytes: Uint8Array, limits: { maxEntries?: number } = {}): Map<string, Uint8Array> {
  if (bytes.length > MAX_ARCHIVE || bytes.length < 22) fail()
  const v = new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength), u16=(n:number)=>v.getUint16(n,true), u32=(n:number)=>v.getUint32(n,true)
  let end = bytes.length-22
  while (end>=Math.max(0,bytes.length-65557) && u32(end)!==0x06054b50) end--
  if (end<0 || end<bytes.length-65557 || end+22+u16(end+20)!==bytes.length || u16(end+4) || u16(end+6) || u16(end+8)!==u16(end+10)) fail()
  const count=u16(end+10), central=u32(end+16), centralSize=u32(end+12)
- if (!count || count>150 || central+centralSize!==end) fail()
+ if (!count || count>(limits.maxEntries??150) || central+centralSize!==end) fail()
  const files=new Map<string,Uint8Array>(), seen=new Set<string>(), spans:{from:number;to:number}[]=[]
  let pos=central,total=0
  for(let i=0;i<count;i++) {

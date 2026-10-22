@@ -16,7 +16,7 @@ export const targets:D1TargetAdapter={
    statements.push(q('INSERT OR IGNORE INTO controls(id,name,group_name,created_at) VALUES(?,?,?,?)',v.control_id,v.name,v.group,v.created_at),q('INSERT OR IGNORE INTO requirements(id,control_id,name,cadence,created_at) VALUES(?,?,?,?,?)',v.requirement_id,v.control_id,v.proof,v.cadence,v.created_at))
   }else if(row.targetKind==='receipt'){
    statements.push(q('INSERT OR IGNORE INTO exhibits(id,object_key,filename,size,media_type) VALUES(?,?,?,?,?)',v.exhibit_id,v.object_key,v.filename,v.size,'application/octet-stream'),q('INSERT OR IGNORE INTO receipts(id,requirement_id,exhibit_id,origin,source,covered_from,covered_to,added_by,added_by_name,added_at,sha256,supersedes) VALUES(?,?,?,?,?,?,?,?,?,?,?,NULL)',v.receipt_id,v.requirement_id,v.exhibit_id,'imported',v.source,v.covered_from,v.covered_to,v.added_by,v.added_by_name,v.added_at,v.sha256))
-  }else throw new Error('Unsupported import target')
+  }else if(row.targetKind!=='record')throw new Error('Unsupported import target')
   statements.push(q('INSERT OR IGNORE INTO import_additions(kind,id,review_id,value_json) VALUES(?,?,?,?)',row.targetKind,row.targetId,v.review_id,value),q('INSERT INTO import_active(kind,id,revision,value_json) VALUES(?,?,?,?) ON CONFLICT(kind,id) DO UPDATE SET revision=excluded.revision,value_json=excluded.value_json',row.targetKind,row.targetId,row.revision,value))
   return statements
  },
