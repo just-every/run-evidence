@@ -6994,7 +6994,7 @@
       "executable": false
     },
     "tests/helpers/collector-browser.mjs": {
-      "sha256": "45020e85fac34a8ac895de2a8d8626ee62f0d06afda033739e4d74f586d523a9",
+      "sha256": "acbcb6a3acf623ffcba43d5df02fc7d317245f3e24730e6c4218c31211f5de10",
       "executable": false
     },
     "tests/helpers/control-browser.mjs": {
@@ -7130,7 +7130,7 @@
       "executable": false
     },
     "tests/helpers/readiness-fixture.mjs": {
-      "sha256": "8dc9ac5cb7156e32d536c150629c2d0f8109f4c8f287886401c2581e4bfb3171",
+      "sha256": "3031c4c7001560136823e8474d18236bff0ca30297de0aaaa2548fcd00d54f26",
       "executable": false
     },
     "tests/helpers/review-browser-archive.mjs": {
