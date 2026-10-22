@@ -6,7 +6,7 @@ import { addMonths } from '../cadence'
 import { sha } from '../archive/format'
 import { documentBytes,documents,profileOf,storeDocument,type DocumentRow } from './storage'
 import { answersOf,requestsOf } from './diligence'
-import { extractFields,readPages,validateExtraction,fieldKinds,type Extraction } from './review-model'
+import { extractFields,readDocumentPages,validateExtraction,fieldKinds,type Extraction } from './review-model'
 export interface Review {id:string;document_id:string;vendor_id:string;revision:number;snapshot_json:string;snapshot_hash:string;reason:string;proposed_by:string;proposed_at:string}
 const digest=(s:string)=>sha(new TextEncoder().encode(s))
 export async function reviewOf(env:Bindings,vendor:string,id:string) {const row=await env.DB.prepare('SELECT * FROM vendor_document_reviews WHERE vendor_id=? AND id=?').bind(vendor,id).first<Review>();if(!row)throw new Refusal('Document review not found.',404);return row}
@@ -24,8 +24,8 @@ async function append(env:Bindings,vendor:string,document:string,snapshot:Extrac
 export async function prepareReview(env:Bindings,vendor:string,document:string,actor:Actor,now:Date) {
  const doc=(await documents(env,vendor)).find(d=>d.id===document);if(!doc)throw new Refusal('Document not found.',404)
  const bytes=await documentBytes(env,doc);if(!bytes)throw new Refusal('Original bytes are unavailable or changed.',409)
- const pages=await readPages(bytes)
- return append(env,vendor,document,extractFields(document,doc.sha256,pages,doc.kind),'Initial extraction; all pages need human review',actor,now)
+ const source=await readDocumentPages(bytes,doc.filename,doc.media_type)
+ return append(env,vendor,document,{...extractFields(document,doc.sha256,source.pages,doc.kind),source_format:source.source_format},'Initial extraction; all pages need human review',actor,now)
 }
 // Final supplier answers are immutable. Retain a lossless, paginated JSON
 // transcript beside them; citations resolve to this exact source snapshot.
@@ -43,7 +43,7 @@ export async function prepareQuestionnaireReview(env:Bindings,vendor:string,requ
   if(e.answer==='no'||e.answer==='na')fields.push({id:'field-'+(fields.length+1),kind:'finding',value:e.answer==='no'?`Supplier answered no to ${e.question_id}: ${e.question}`:`Applicability requires review for ${e.question_id}: ${e.question}`,page:i+1,quote:pages[i]})
  }
  unresolved.push('Supplier answers are unverified statements. Review every question, including yes answers and all comments; no affirmative answer is independent evidence.')
- return append(env,vendor,doc.id,{document_id:doc.id,document_sha256:doc.sha256,pages,fields,unresolved},'Review immutable supplier questionnaire submission; one source page per question',actor,now)
+ return append(env,vendor,doc.id,{document_id:doc.id,document_sha256:doc.sha256,pages,source_format:'questionnaire',fields,unresolved},'Review immutable supplier questionnaire submission; one source page per question',actor,now)
 }
 export async function correctReview(env:Bindings,vendor:string,id:string,input:Input,actor:Actor,now:Date) {
  const prior=await reviewOf(env,vendor,id)
