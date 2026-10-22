@@ -15,6 +15,7 @@ export async function extendedProgramsJourney({ app, post, get, upload, libraryR
  const specs = [
   ['usdp', '2026-10', /self-attested|counsel/i, { figures }, null],
   ['iso27701', '2019', /accredited certification body/i, { categories: ['controller', 'processor'] }, 55],
+  ['iso27701', '2025', /accredited certification body/i, { categories: ['controller', 'processor'] }, 103],
   ['gdpr', '2016-679', /No GDPR certification/i, {}, null],
   ['iso42001', '2023', /accredited certification body/i, {}, 65],
   ['nistairmf', '1.0', /self-assessed/i, {}, 72],
@@ -121,6 +122,15 @@ const rights = await generate(usdp, 'usdp-rights-requests'); await post(`${docUr
  const pims = (await get('/api/programs/' + programs['iso27701:2019'])).readiness
  assert.ok(pims.roles.controller.included > 0 && pims.roles.processor.included > 0 && pims.roles.both.included > 0)
  assert.ok(pims.requirements.some(r => r.ref === 'A.7.2.1' && r.state === 'included') && pims.requirements.some(r => r.ref === 'B.8.2.1' && r.state === 'included'))
+ for (const key of ['iso27701:2019', 'iso27701:2025']) { const r = (await get('/api/programs/' + programs[key])).readiness; assert.ok(r.reuse.some(x => x.framework === 'ISO/IEC 27001' && x.shared_controls > 0 && x.requirements_covered > 0), key + ' reuses ISO 27001') }
+ const pims25 = (await get('/api/programs/' + programs['iso27701:2025'])).readiness
+ assert.ok(pims25.roles.controller.included === 31 && pims25.roles.processor.included === 18); assert.equal(pims25.requirements.find(r => r.ref === 'A.1.2.2').state, 'included'); assert.equal(pims25.requirements.find(r => r.ref === 'A.3.23').state, 'included')
+ // The 2019 extension moves to the 2025 standalone edition as a reviewable mapping change; its exclusion carries to the successor.
+ const upgrade = await post(`/api/programs/${programs['iso27701:2019']}/editions`, { edition: '2025' })
+ assert.ok(upgrade.diff.added.some(a => a.ref === 'A.3.3')); assert.deepEqual(upgrade.diff.carried.find(c => c.ref === 'A.1.2.2').from, ['A.7.2.1']); assert.equal(upgrade.diff.removed.length, 0)
+ await post(`/api/programs/${programs['iso27701:2019']}/editions/${upgrade.id}`, { decision: 'accepted', reason: 'Move to the 2025 standalone edition before the surveillance audit' }, 200)
+ const moved = await get('/api/programs/' + programs['iso27701:2019']); assert.equal(moved.program.edition, '2025'); assert.equal(moved.readiness.totals.requirements, 103)
+ assert.equal(moved.readiness.requirements.find(r => r.ref === '4.1').state, 'excluded'); assert.match(moved.readiness.requirements.find(r => r.ref === '4.1').rationale, /Carried at edition change from excluded 5\.2\.1/)
  const controllerOnly = await make('iso27701', '2019', { name: 'PIMS controller only', categories: ['controller'] }), only = (await get('/api/programs/' + controllerOnly.id)).readiness
  assert.equal(only.requirements.find(r => r.ref === 'B.8.2.1').state, 'excluded'); assert.match(only.requirements.find(r => r.ref === 'B.8.2.1').rationale, /processor role is not in this program/); assert.equal(only.requirements.find(r => r.ref === 'A.7.2.1').state, 'included')
  await make('iso27701', '2019', { name: 'No role', categories: [] }, 400)
