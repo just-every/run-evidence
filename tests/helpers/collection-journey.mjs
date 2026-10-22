@@ -105,6 +105,7 @@ export async function collectionJourney() {
   await collectionScheduleBrowser(app, [(await get(path)).connection])
   await send(path + '/schedule', { minutes: 15 })
   github.overrides.clear()
+  github.repos['northstar/web'].dependabot=11
   const alerts = '/repos/northstar/web/dependabot/alerts?state=open&severity=critical&per_page=100'
   for (let page=1;page<=11;page++) {
    const key = alerts + (page === 1 ? '' : '&page=' + page)

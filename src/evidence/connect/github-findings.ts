@@ -44,3 +44,16 @@ export async function githubFindings(client:Client,base:string,repository:string
  }
  return {rows,gaps,complete}
 }
+
+// Separate HTTP responses are not an atomic source snapshot. Preserve a
+// contradiction instead of selecting whichever answer would make a test pass.
+export function reconcileGithubFindingCounts(attributes:Record<string,unknown>,feed:{rows:CodeFinding[];complete:string[]}){
+ const counts:Record<string,{filtered:unknown;detailed:number}>={},patch:Record<string,unknown>={},gaps:string[]=[]
+ for(const [kind,field]of [['dependabot','open_critical_dependabot_alerts'],['secret-scanning','open_secret_scanning_alerts']]){
+  if(!feed.complete.includes(kind))continue
+  const detailed=feed.rows.filter(r=>r.kind===kind&&r.state==='open'&&(kind!=='dependabot'||r.severity==='critical')).length,filtered=attributes[field]
+  counts[kind]={filtered,detailed}
+  if(typeof filtered==='number'&&filtered!==detailed){patch[field]=null;gaps.push('Conflicting '+kind+' source answers: filtered count '+filtered+', detailed current count '+detailed+'; no single current count is established')}
+ }
+ return {counts,patch,gaps}
+}
