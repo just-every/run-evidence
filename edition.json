@@ -2602,6 +2602,7 @@
           "src/evidence/collector/profile.ts",
           "src/evidence/collector/storage.ts",
           "src/evidence/collector/view.ts",
+          "src/evidence/connect/code-members.ts",
           "src/evidence/connect/collect.ts",
           "src/evidence/connect/custody.ts",
           "src/evidence/connect/event-context.ts",

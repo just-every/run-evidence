@@ -9,7 +9,7 @@ import type { Connection } from './storage'
 export async function collectionContext(env: Bindings, connection: Connection) {
  const identity = ['okta', 'google', 'entra', 'jumpcloud'].includes(connection.provider)
  const types = identity ? 'identity.%' : connection.provider === 'knowbe4' ? 'training.%' : connection.provider + '.%'
- const tests = (await env.DB.prepare("SELECT id,resource_type,revision,criteria_json FROM tests WHERE enabled=1 AND (resource_type LIKE ? OR (? AND resource_type='identity.account')) ORDER BY id LIMIT 1001").bind(types,['github','gitlab'].includes(connection.provider)?1:0).all<{ id: string; resource_type: string; revision: number; criteria_json: string }>()).results
+ const tests = (await env.DB.prepare("SELECT id,resource_type,revision,criteria_json FROM tests WHERE enabled=1 AND (resource_type LIKE ? OR (? AND resource_type='identity.account')) ORDER BY id LIMIT 1001").bind(types,['github','gitlab','bitbucket'].includes(connection.provider)?1:0).all<{ id: string; resource_type: string; revision: number; criteria_json: string }>()).results
  if (tests.length > 1000) throw new Refusal('Collection context exceeds 1,000 enabled tests; reduce the source test scope.', 409)
  const ids = tests.map(t => t.id)
  const links = (await env.DB.prepare('SELECT DISTINCT control_id FROM test_controls WHERE test_id IN (SELECT value FROM json_each(?)) ORDER BY control_id').bind(JSON.stringify(ids)).all<{ control_id: string }>()).results

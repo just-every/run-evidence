@@ -5,7 +5,7 @@ import { resolve, extname, join } from 'node:path'
 import { chromium } from 'playwright'
 // COLLECTION-001: existing schedule form, shipped styling and real owner HTTP
 // handlers. The loopback bridge retains this harness's authenticated owner.
-export async function collectionScheduleBrowser(app, connections, { suffix = '', expected = [], reportExpected = [], expandHistory = false, extraScreens = [] } = {}) {
+export async function collectionScheduleBrowser(app, connections, { suffix = '', expected = [], reportExpected = [], expandHistory = false, extraScreens = [], productionReview = false } = {}) {
  const output = resolve(process.env.EVIDENCE_BROWSER_OUTPUT ?? '.cache/browser/collection-schedules')
  let server, browser, origin
  try {
@@ -29,6 +29,13 @@ export async function collectionScheduleBrowser(app, connections, { suffix = '',
     await page.goto(origin + '/app/connections/' + c.id)
     await page.getByRole('heading', { name: 'Collection schedule', exact: true }).waitFor()
     await page.getByRole('heading',{name:'Source-event collection',exact:true}).waitFor()
+    if(productionReview){
+     const form=page.locator('#code-environments'),box=form.getByRole('checkbox').first()
+     await box.uncheck();await form.getByLabel('Reason for production classification').fill('Review production classification in the owner browser')
+     await form.getByRole('button',{name:'Save production classification',exact:true}).click();await page.waitForURL('**#code-environments');await page.reload();assert.equal(await box.isChecked(),false)
+     await box.check();await form.getByLabel('Reason for production classification').fill('Confirm our observed production deployment environment')
+     await form.getByRole('button',{name:'Save production classification',exact:true}).click();await page.waitForURL('**#code-environments');await page.reload();assert.equal(await box.isChecked(),true)
+    }
     const interval = page.getByRole('spinbutton', { name: 'Interval in minutes', exact: true })
     assert.equal(await interval.inputValue(), '60')
     await interval.fill('30'); await page.getByRole('button', { name: 'Save collection schedule', exact: true }).click()

@@ -3,6 +3,7 @@ import { escape } from './view'
 // 19 October 2026. Examples are provider plans, never Evidence activation fees.
 interface Cost { name: string; basis: string; url: string }
 const costs: Record<string, Cost> = {
+ 'bitbucket': {name:'Bitbucket Cloud',basis:'Your Atlassian plan, seats and Pipelines minutes determine the USD cost; enforced merge checks may require a paid plan. Review the current monthly USD quote and included build minutes before connecting.',url:'https://www.atlassian.com/software/bitbucket/pricing'},
  'gitlab': { name: 'GitLab', basis: 'Your provider subscription and API entitlements determine the cost. Obtain the monthly USD amount for your seats, billing term and API access from your provider billing page or quote before connecting.', url: 'https://about.gitlab.com/pricing/' },
  'azure-boards': { name: 'Azure Boards', basis: 'Your provider subscription and API entitlements determine the cost. Obtain the monthly USD amount for your seats, billing term and API access from your provider billing page or quote before connecting.', url: 'https://azure.microsoft.com/en-us/pricing/details/devops/azure-devops-services/' },
  'shortcut': { name: 'Shortcut', basis: 'Your provider subscription and API entitlements determine the cost. Obtain the monthly USD amount for your seats, billing term and API access from your provider billing page or quote before connecting.', url: 'https://www.shortcut.com/pricing' },

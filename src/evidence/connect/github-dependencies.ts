@@ -5,7 +5,7 @@ import { record } from './github-schema'
 // https://docs.github.com/en/rest/dependency-graph/sboms#export-a-software-bill-of-materials-sbom-for-a-repository
 export class DependencyGap extends Error {}
 export interface Dependency { id:string;name:string;version:string|null }
-export interface Dependencies { generated_at:string|null;packages:Dependency[];note:string }
+export interface Dependencies { source_revision?:string; generated_at:string|null;packages:Dependency[];note:string }
 export async function githubDependencies(client:Client,name:string):Promise<Dependencies> {
  const reply=await client.get('/repos/'+name.split('/').map(encodeURIComponent).join('/')+'/dependency-graph/sbom')
  if(reply.status!==200)throw new DependencyGap('dependency graph unreadable: GitHub answered '+reply.status)
