@@ -1,5 +1,5 @@
 import { usDate } from '../../format'
-import { states, obligations } from '../../library/extended/usdp-data'
+import { obligations } from '../../library/extended/usdp-data'
 import { programCite, programRevision, rows, type Ctx, type Generated } from './context'
 import type { Section } from './model'
 import type { Kind } from './kinds'
@@ -14,7 +14,7 @@ const cols = (v: unknown, names: string[]) => lines(v).map(l => { const p = l.sp
 const WINDOW_DAYS = 45
 const late = (received: string, answered: string, now: Date) => !answered && /^\d{4}-\d{2}-\d{2}$/.test(received) && (now.getTime() - Date.parse(received + 'T00:00:00Z')) / 86400000 > WINDOW_DAYS
 export interface TableKind { key: string; names: string[]; label: string; kind: Omit<Kind, 'generate' | 'parse'> & { blurb: string } }
-const table = (framework: Kind['framework'], title: string, blurb: string, key: string, names: string[], label: string, flag?: (r: Record<string, string>, now: Date) => string | null): [Kind, TableKind] => {
+export const tableKind = (framework: Kind['framework'], title: string, blurb: string, key: string, names: string[], label: string, flag?: (r: Record<string, string>, now: Date) => string | null): [Kind, TableKind] => {
  const kind: Kind = { framework, title, blurb, parse: (f, cur) => f[key] !== undefined ? { ...cur, [key]: cols(f[key], names) } : cur,
   async generate(c: Ctx): Promise<Generated> {
    const given = rows(c.inputs[key]), revision = await programRevision(c.env, c.program.id), cite = programCite(c.program, revision)
@@ -25,14 +25,17 @@ const table = (framework: Kind['framework'], title: string, blurb: string, key: 
   } }
  return [kind, { key, names, label, kind }]
 }
-const defs: [Kind, TableKind][] = [
- table('usdp', 'Consumer-rights request records', 'Each request received, the state and right, its status and when it was answered. Requests open past 45 days are flagged.', 'requests', ['received', 'state', 'right', 'status', 'responded'], 'One per line: received (YYYY-MM-DD) | state | right | status | responded (YYYY-MM-DD)', (r, now) => late(r.received, r.responded, now) ? `open more than ${WINDOW_DAYS} days; counsel confirms the state's response deadline` : null),
- table('usdp', 'Privacy notice and opt-out evidence', 'The privacy notice revision, the opt-out mechanisms and the tests that universal opt-out signals are honored.', 'optouts', ['item', 'location_or_revision', 'verified_on', 'result'], 'One per line: item (notice, opt-out link, universal opt-out signal) | location or revision | verified on (YYYY-MM-DD) | result'),
- table('usdp', 'Data protection assessment records', 'High-risk processing activities, when each was assessed, the outcome and the reviewer.', 'assessments', ['activity', 'assessed_on', 'outcome', 'reviewer'], 'One per line: activity | assessed on (YYYY-MM-DD) | outcome | reviewer'),
- table('gdpr', 'Records of processing activities (Article 30)', 'Purposes, data subjects, categories of data, recipients, transfers and retention for each processing activity.', 'processing', ['activity', 'purpose', 'data_subjects', 'data_categories', 'recipients', 'transfers', 'retention'], 'One per line: activity | purpose | data subjects | data categories | recipients | transfers | retention'),
- table('gdpr', 'Data protection impact assessment records', 'Each assessment, its date, the residual risk and the data protection officer\'s advice.', 'dpias', ['activity', 'assessed_on', 'residual_risk', 'dpo_advice'], 'One per line: activity | assessed on (YYYY-MM-DD) | residual risk | DPO advice'),
- table('gdpr', 'Data-subject request evidence', 'Each request, the right exercised, its status and when it was answered. Requests open past 30 days are flagged.', 'requests', ['received', 'right', 'status', 'responded'], 'One per line: received (YYYY-MM-DD) | right | status | responded (YYYY-MM-DD)', (r, now) => late(r.received, r.responded, now) && (now.getTime() - Date.parse(r.received + 'T00:00:00Z')) / 86400000 > 30 ? 'open more than 30 days; Article 12(3) allows one month unless extended' : null),
- table('iso27701', 'PIMS records of PII processing', 'The PII processing the privacy information management system covers, in which role, for what purpose and to which recipients.', 'pii_processing', ['processing', 'role', 'purpose', 'recipients'], 'One per line: processing | role (controller or processor) | purpose | recipients'),
+const defs: [string, [Kind, TableKind]][] = [
+ ['usdp-rights-requests', tableKind('usdp', 'Consumer-rights request records', 'Each request received, the state and right, its status and when it was answered. Requests open past 45 days are flagged.', 'requests', ['received', 'state', 'right', 'status', 'responded'], 'One per line: received (YYYY-MM-DD) | state | right | status | responded (YYYY-MM-DD)', (r, now) => late(r.received, r.responded, now) ? `open more than ${WINDOW_DAYS} days; counsel confirms the state's response deadline` : null)],
+ ['usdp-notice-optout', tableKind('usdp', 'Privacy notice and opt-out evidence', 'The privacy notice revision, the opt-out mechanisms and the tests that universal opt-out signals are honored.', 'optouts', ['item', 'location_or_revision', 'verified_on', 'result'], 'One per line: item (notice, opt-out link, universal opt-out signal) | location or revision | verified on (YYYY-MM-DD) | result')],
+ ['usdp-assessments', tableKind('usdp', 'Data protection assessment records', 'High-risk processing activities, when each was assessed, the outcome and the reviewer.', 'assessments', ['activity', 'assessed_on', 'outcome', 'reviewer'], 'One per line: activity | assessed on (YYYY-MM-DD) | outcome | reviewer')],
+ ['gdpr-ropa', tableKind('gdpr', 'Records of processing activities (Article 30)', 'Purposes, data subjects, categories of data, recipients, transfers and retention for each processing activity.', 'processing', ['activity', 'purpose', 'data_subjects', 'data_categories', 'recipients', 'transfers', 'retention'], 'One per line: activity | purpose | data subjects | data categories | recipients | transfers | retention')],
+ ['gdpr-dpia', tableKind('gdpr', 'Data protection impact assessment records', 'Each assessment, its date, the residual risk and the data protection officer\'s advice.', 'dpias', ['activity', 'assessed_on', 'residual_risk', 'dpo_advice'], 'One per line: activity | assessed on (YYYY-MM-DD) | residual risk | DPO advice')],
+ ['gdpr-dsr', tableKind('gdpr', 'Data-subject request evidence', 'Each request, the right exercised, its status and when it was answered. Requests open past 30 days are flagged.', 'requests', ['received', 'right', 'status', 'responded'], 'One per line: received (YYYY-MM-DD) | right | status | responded (YYYY-MM-DD)', (r, now) => late(r.received, r.responded, now) && (now.getTime() - Date.parse(r.received + 'T00:00:00Z')) / 86400000 > 30 ? 'open more than 30 days; Article 12(3) allows one month unless extended' : null)],
+ ['pims-records', tableKind('iso27701', 'PIMS records of PII processing', 'The PII processing the privacy information management system covers, in which role, for what purpose and to which recipients.', 'pii_processing', ['processing', 'role', 'purpose', 'recipients'], 'One per line: processing | role (controller or processor) | purpose | recipients')],
+ ['iso42001-ai-register', tableKind('iso42001', 'AI system register', 'Each AI system in scope, its purpose, owner, risk rank and status (clause 4.3, A.4.2, A.6.1).', 'systems', ['system', 'purpose', 'owner', 'risk_rank', 'status'], 'One per line: system | purpose | owner | risk rank | status')],
+ ['iso42001-impact', tableKind('iso42001', 'AI system impact assessment records', 'Each assessment of an AI system\'s impact on individuals, groups and society (6.1.4, A.5).', 'impacts', ['system', 'assessed_on', 'affected_groups', 'outcome'], 'One per line: system | assessed on (YYYY-MM-DD) | affected groups | outcome')],
+ ['airmf-ai-register', tableKind('nistairmf', 'AI system inventory', 'Each AI system, its purpose, owner, risk rank and status (GOVERN 1.6).', 'systems', ['system', 'purpose', 'owner', 'risk_rank', 'status'], 'One per line: system | purpose | owner | risk rank | status')],
 ]
 export const privacyKinds: Record<string, Kind> = {
  'usdp-self-attestation': { framework: 'usdp', title: 'Self-attestation', blurb: 'The states that apply on the recorded figures, the states excluded with those figures, and the obligations in scope. The officer\'s statement is the owner\'s to write; Evidence attests nothing.', parse: (f, cur) => f.statement !== undefined ? { ...cur, statement: String(f.statement).slice(0, 4000) } : cur,
@@ -52,7 +55,6 @@ export const privacyKinds: Record<string, Kind> = {
     { id: 'statement', heading: 'Officer\'s self-attestation statement', status: statement ? 'owner-written' : 'owner-needed', statements: [], ...(statement ? { owner_text: statement } : {}) },
    ] }
   } },
- ...Object.fromEntries(defs.map(([k], i) => [['usdp-rights-requests', 'usdp-notice-optout', 'usdp-assessments', 'gdpr-ropa', 'gdpr-dpia', 'gdpr-dsr', 'pims-records'][i], k])),
+ ...Object.fromEntries(defs.map(([id, [k]]) => [id, k])),
 }
-export const privacyTables: Record<string, TableKind> = Object.fromEntries(defs.map(([, t], i) => [['usdp-rights-requests', 'usdp-notice-optout', 'usdp-assessments', 'gdpr-ropa', 'gdpr-dpia', 'gdpr-dsr', 'pims-records'][i], t]))
-export { states }
+export const privacyTables: Record<string, TableKind> = Object.fromEntries(defs.map(([id, [, t]]) => [id, t]))

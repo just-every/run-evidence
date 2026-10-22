@@ -2730,6 +2730,7 @@
           "src/evidence/program/documents/pci.ts",
           "src/evidence/program/documents/pdf.ts",
           "src/evidence/program/documents/privacy.ts",
+          "src/evidence/program/documents/regulated.ts",
           "src/evidence/program/documents/saq-scope.ts",
           "src/evidence/program/documents/saq-scopes.json",
           "src/evidence/program/documents/saq-wording.ts",

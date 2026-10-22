@@ -6,6 +6,7 @@ import { isoAuditProgramme, isoManagementReview, isoRiskTreatment, isoSoa } from
 import { hipaaBaaInventory, hipaaPolicySet, hipaaRiskAnalysis } from './hipaa'
 import { pciAocHandoff, pciCdeScope, pciSaq, answerOptions, responses } from './pci'
 import { privacyKinds } from './privacy'
+import { regulatedKinds } from './regulated'
 // The documents each core program generates, versions and exports.
 export interface Kind { framework: FrameworkId; title: string; blurb: string; generate: (c: Ctx) => Promise<Generated>; parse: (form: Record<string, string | string[]>, current: Inputs) => Inputs }
 const keep = (_: Record<string, string | string[]>, current: Inputs) => current
@@ -36,6 +37,6 @@ export const kinds: Record<string, Kind> = {
   } },
  'pci-aoc-handoff': { framework: 'pci', title: 'Attestation of Compliance handoff package', blurb: 'The package the merchant or QSA signs. Evidence signs nothing.', generate: pciAocHandoff, parse: keep },
 }
-Object.assign(kinds, privacyKinds)
+Object.assign(kinds, privacyKinds, regulatedKinds)
 export const kindsFor = (framework: FrameworkId) => Object.entries(kinds).filter(([, k]) => k.framework === framework).map(([id, k]) => ({ id, ...k }))
 

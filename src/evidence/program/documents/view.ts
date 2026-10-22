@@ -10,6 +10,7 @@ import { answerOptions, selectSaq } from './pci'
 import { reviewInputNames, type ApprovalRow, type RevisionRow, type DocumentRow } from './storage'
 import { ephiScenarios } from './hipaa'
 import { privacyTables } from './privacy'
+import { regulatedForms } from './regulated'
 import type { Inputs } from './context'
 export interface ListedDocument { kind: string; title: string; blurb: string; generated: boolean; state: string; owner_person_id: string | null; latest: number; drift: { items: unknown[] }; approved: ApprovalRow | null }
 export async function documentsPage(program: { id: string; name: string }, docs: ListedDocument[], people: Person[], owner: string) {
@@ -21,6 +22,7 @@ const kindForms = (kind: string, base: string, inputs: Inputs, sections: Section
  const input = (name: string, label: string, body: string) => `<form method="post" action="${base}/revisions" class="stack"><h3>${escape(label)}</h3>${body}<label>Reason<input name="reason" required maxlength="500"></label><button class="button-secondary">Save as a new revision</button></form>`
  const lines = (v: unknown, cols: string[]) => (Array.isArray(v) ? v as Record<string, string>[] : []).map(r => cols.map(c => r[c] ?? '').join(' | ')).join('\n')
  if (privacyTables[kind]) { const t = privacyTables[kind]; return input(t.key, t.kind.title, `<label>${escape(t.label)}<textarea name="${t.key}" rows="5">${escape(lines(inputs[t.key], t.names))}</textarea></label>`) }
+ if (regulatedForms[kind]) { const t = regulatedForms[kind]; return input(t.key, t.title, `<label>${escape(t.label)}<textarea name="${t.key}" rows="5">${escape(t.names ? lines(inputs[t.key], t.names) : typeof inputs[t.key] === 'string' ? inputs[t.key] as string : '')}</textarea></label>`) }
  if (kind === 'usdp-self-attestation') return input('statement', 'Officer\'s statement', `<label>Self-attestation statement<textarea name="statement" rows="4" maxlength="4000">${escape(typeof inputs.statement === 'string' ? inputs.statement : '')}</textarea></label>`)
  if (kind === 'soc2-description') {
   const sub = sections.find(s => s.id === 'subservice')?.table?.rows ?? []

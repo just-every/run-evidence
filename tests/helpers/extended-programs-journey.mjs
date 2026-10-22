@@ -7,6 +7,8 @@ import { runtime } from './runtime.mjs'
 export async function extendedProgramsJourney({ app, post, get, upload, libraryRequirement, soc2, owner }) {
  const pdfText = bytes => [...Buffer.from(bytes).toString('latin1').matchAll(/\((.*)\) Tj/g)].map(m => m[1].replace(/\\([\\()])/g, '$1')).join('\n')
  const bytesOf = async path => { const r = await app.fetch(path); assert.equal(r.status, 200, path); return new Uint8Array(await r.arrayBuffer()) }
+ const docUrl = (program, kind) => `/api/programs/${program}/documents/${kind}`, tip = async (program, kind) => (await get(docUrl(program, kind))).revision.revision
+ const generate = async (program, kind) => { await post(`/api/programs/${program}/documents`, { kind, owner_person_id: owner.id }); return get(docUrl(program, kind)) }
  const make = (framework, edition, extra = {}, status = 201) => post('/api/programs', { framework, edition, name: `${framework} ${edition}`, legal_entity: 'Northstar Studio, Inc.', products: ['Web app'], regions: ['us-east-1'], audit_from: '2026-07-01', audit_to: '2027-06-30', ...extra }, status)
  const programs = {}
  const figures = { annual_revenue_usd: 40_000_000, small_business: false, sale_revenue_percent: 5, sensitive_data: false, consumers: { CA: 12_000, TX: 8_000, MT: 30_000 } }
@@ -53,6 +55,17 @@ export async function extendedProgramsJourney({ app, post, get, upload, libraryR
  const partial = (await get('/api/programs/' + cmmc)).readiness.sprs
  assert.equal(partial.score - better.score, 4); assert.deepEqual(partial.qualifiers, { mfa: 'privileged-remote', fips: 'not-validated' }); assert.match(partial.blocked, /3\.12\.4/)
  await post(`/api/programs/${cmmc}/inputs`, { mfa: 'bad', fips: 'validated', reason: 'x' }, 400)
+ // CMMC records: the system security plan derives each requirement's implementation from live proof; the plan of action lists the rest.
+ const ssp = await generate(cmmc, 'cmmc-ssp'), table = ssp.revision.content.sections.find(x => x.id === 'status').table.rows
+ assert.equal(table.length, 110); assert.equal(table.find(r => r[0] === '3.7.1')[2], 'implemented'); assert.equal(table.find(r => r[0] === '3.5.3')[2], 'not implemented'); assert.equal(table.find(r => r[0] === '3.1.1')[2], 'not applicable (excluded)')
+ assert.equal(ssp.revision.content.sections.find(x => x.id === 'boundary').status, 'owner-needed')
+ await post(`${docUrl(cmmc, 'cmmc-ssp')}/approvals`, { revision: await tip(cmmc, 'cmmc-ssp'), approver_person_id: owner.id }, 409)
+ const plan = await generate(cmmc, 'cmmc-poam'), open = plan.revision.content.sections[0].statements
+ assert.equal(open.length, table.filter(r => !['implemented', 'not applicable (excluded)'].includes(r[2])).length); assert.ok(open.some(x => /^3\.5\.3 .*No plan of action recorded/.test(x.text)))
+ await post(`${docUrl(cmmc, 'cmmc-poam')}/revisions`, { inputs: JSON.stringify({ plans: [{ requirement: '3.5.3', planned_action: 'Enforce MFA for all users', owner: 'Priya Shah', due: '2026-12-31' }] }), reason: 'Plan for MFA' })
+ assert.match((await get(docUrl(cmmc, 'cmmc-poam'))).revision.content.sections[0].statements.find(x => /^3\.5\.3 /.test(x.text)).text, /Planned action: Enforce MFA for all users; owner Priya Shah; due 2026-12-31[^]*does not make a requirement implemented/)
+ for (const [key, kind] of [['nist80053:r5-moderate', 'nist80053-ssp'], ['nist80053:r5-moderate', 'nist80053-poam'], ['nistcsf:2.0', 'nistcsf-profile'], ['nistairmf:1.0', 'nistairmf-profile'], ['nistairmf:1.0', 'airmf-ai-register'], ['iso42001:2023', 'iso42001-soa'], ['iso42001:2023', 'iso42001-ai-register'], ['iso42001:2023', 'iso42001-impact'], ['hitrust:v11', 'hitrust-readiness']]) assert.ok((await generate(programs[key], kind)).revision.revision >= 1, kind)
+ assert.equal((await get(docUrl(programs['nistcsf:2.0'], 'nistcsf-profile'))).revision.content.sections.find(x => x.id === 'status').table.rows.length, 106)
  // US Data Privacy: thresholds evaluated on the figures; raising Montana's figures is a reviewable change.
  const usdp = programs['usdp:2026-10'], first = (await get('/api/programs/' + usdp)).readiness, byState = Object.fromEntries(first.usdp.states.map(s => [s.code, s]))
  assert.deepEqual(['CA', 'TX', 'MT'].map(c => byState[c].applies), [true, true, false]); assert.ok(first.usdp.states.filter(s => !['CA', 'TX'].includes(s.code)).every(s => !s.applies))
@@ -63,8 +76,6 @@ export async function extendedProgramsJourney({ app, post, get, upload, libraryR
  const ids = r => first.requirements.filter(x => x.ref.startsWith(r)).length; assert.ok(ids('CA.') > 0 && ids('MT.') > 0 && ids('RI.') > 0)
 
  // The self-attestation and the program's required records are versioned program documents.
- const docUrl = (program, kind) => `/api/programs/${program}/documents/${kind}`, tip = async (program, kind) => (await get(docUrl(program, kind))).revision.revision
- const generate = async (program, kind) => { await post(`/api/programs/${program}/documents`, { kind, owner_person_id: owner.id }); return get(docUrl(program, kind)) }
  const attestation = await generate(usdp, 'usdp-self-attestation'), sections = Object.fromEntries(attestation.revision.content.sections.map(x => [x.id, x]))
  assert.deepEqual(sections.applicable.statements.map(x => x.text.split(':')[0]).sort(), ['California', 'Texas']); assert.match(sections.applicable.statements.find(x => /^California/.test(x.text)).text, /effective Jan 1, 2020/)
  assert.ok(sections.excluded.statements.some(x => /Montana does not apply[^]*30,000 Montana consumers/.test(x.text)))
