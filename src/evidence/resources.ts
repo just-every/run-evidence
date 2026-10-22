@@ -110,3 +110,22 @@ export async function upsertRegister(env: Bindings, type: string, schema: Resour
  }
  return {results,changed}
 }
+
+// Internal source collection may span several public push-size batches. Validate
+// the whole population first, retire only after a complete read, and never
+// admit an early valid subset of a malformed or duplicate population.
+export async function upsertCollectedResources(env:Bindings,type:string,schema:ResourceSchema,items:unknown[],source:Source,complete:boolean,now:Date){
+ const seen=new Set<string>(),problems:string[]=[]
+ for(const item of items){const checked=validate(schema,item);if('reasons' in checked)problems.push(...checked.reasons);else if(seen.has(checked.uniqueId))problems.push('repeated source identity');else seen.add(checked.uniqueId)}
+ if(problems.length){
+  const reason='Collected population refused before admission: '+[...new Set(problems)].join('; '),known=(await env.DB.prepare('SELECT unique_id,display_name FROM resources WHERE type=? AND source_ref=? AND removed_at IS NULL').bind(type,source.ref).all<{unique_id:string;display_name:string}>()).results
+  const unknown=Object.fromEntries(Object.keys(schema.fields).map(k=>[k,k==='readable'?false:null])),results:ItemResult[]=[],changed:string[]=[]
+  for(let i=0;i<known.length;i+=MAX_ITEMS){const written=await upsertResources(env,type,schema,known.slice(i,i+MAX_ITEMS).map(r=>({uniqueId:r.unique_id,displayName:r.display_name,attributes:unknown})),source,false,now);results.push(...written.results.map(r=>({...r,outcome:'rejected' as const,reasons:[reason]})));changed.push(...written.changed)}
+  if(!results.length)results.push({uniqueId:'(source population)',outcome:'rejected',reasons:[reason]})
+  return {results,changed}
+ }
+ if(complete)return upsertRegister(env,type,schema,items as {uniqueId:string}[],source,now)
+ const results:ItemResult[]=[],changed:string[]=[]
+ for(let i=0;i<items.length;i+=MAX_ITEMS){const written=await upsertResources(env,type,schema,items.slice(i,i+MAX_ITEMS),source,false,now);results.push(...written.results);changed.push(...written.changed)}
+ return {results,changed}
+}

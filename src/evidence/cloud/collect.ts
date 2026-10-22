@@ -1,6 +1,6 @@
 import { sourceReadTime } from '../connect/pages'
 import type { Bindings } from '../../auth.server'
-import { upsertResources, type ResourceSchema } from '../resources'
+import { upsertResources, upsertCollectedResources, type ResourceSchema } from '../resources'
 import { runForType } from '../tests/engine'
 import { unseal } from '../connect/custody'
 import { backoffUpdate, reconnectUpdate, startRun } from '../connect/runs'
@@ -114,7 +114,8 @@ export async function runAwsCollection(env: Bindings, connection: Connection, tr
  const fresh: string[] = []
  for (const [type, schema] of Object.entries(types)) {
   const gaps = unread.get(type)!, items = out.get(type)!
-  const written = await upsertResources(env, type, schema, items, source, gaps.length ? false : 'source', now)
+  const written = await upsertCollectedResources(env, type, schema, items, source, !gaps.length, now)
+  for(const r of written.results.filter(r=>r.outcome==='rejected'))coverage.gaps.push({account:'',class:type,region:'',reason:(r.reasons??[]).join('; ')})
   fresh.push(...written.results.filter(r => r.id && r.outcome !== 'removed' && r.outcome !== 'rejected' && !placeholders.has(type + ' ' + r.uniqueId)).map(r => r.id!))
  }
  if (fresh.length) await env.DB.prepare('UPDATE resources SET observed_at=? WHERE id IN (SELECT value FROM json_each(?))').bind(sourceReadTime(now), JSON.stringify(fresh)).run()

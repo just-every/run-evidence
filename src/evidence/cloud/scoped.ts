@@ -6,7 +6,7 @@ import { auditStatement, text, type Actor, type Input } from '../door'
 import { seal, unseal } from '../connect/custody'
 import { backoffUpdate, reconnectUpdate, startRun } from '../connect/runs'
 import type { Connection } from '../connect/storage'
-import { upsertResources, type ResourceSchema } from '../resources'
+import { upsertResources, upsertCollectedResources, type ResourceSchema } from '../resources'
 import { catalogueStatements } from '../tests/storage'
 import { runForType } from '../tests/engine'
 // CLOUD-001 for clouds organized in scopes (Google Cloud projects, Azure
@@ -123,7 +123,7 @@ export async function runScopedCollection(env: Bindings, connection: Connection,
  const fresh: string[] = []
  for (const [type, schema] of Object.entries(cloud.types)) {
   const items = [...out.get(type)!.values()].map(i => ({ ...i, attributes: Object.fromEntries(Object.keys(schema.fields).map(f => [f, i.attributes[f] ?? null])) }))
-  const written = await upsertResources(env, type, schema, items, source, unread.get(type)!.size ? false : 'source', now)
+  const written = await upsertCollectedResources(env, type, schema, items, source, !unread.get(type)!.size, now)
   for (const r of written.results.filter(r => r.outcome === 'rejected')) coverage.gaps.push({ account: '', class: type, region: '', reason: `${r.uniqueId} not stored: ${(r.reasons ?? []).join('; ')}` })
   fresh.push(...written.results.filter(r => r.id && r.outcome !== 'removed' && r.outcome !== 'rejected' && !placeholders.has(type + ' ' + r.uniqueId)).map(r => r.id!))
  }
