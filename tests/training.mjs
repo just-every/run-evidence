@@ -117,6 +117,17 @@ try {
   let time = Date.parse((await get(path)).runs[0].started_at)
   const collect = async () => { time += 60000; await app.clock(new Date(time).toISOString()); return post(path + '/collect', {}) }
   const original = (await get('/api/training')).completions
+  const counts={first:0,second:0};let throttle=true
+  enrollmentResponse=page=>{if(page===1){counts.first++;return Response.json([knowbe4[0],...Array.from({length:499},(_,i)=>({...knowbe4[1],enrollment_id:10000+i}))])}counts.second++;return throttle?Response.json({},{status:429}):Response.json([])}
+  time+=60000;await app.clock(new Date(time).toISOString());await post(path+'/collect',{})
+  const interrupted=(await get(path)).runs[0]
+  assert.equal(interrupted.outcome,'throttled');assert.deepEqual((await get('/api/training')).completions,original)
+  throttle=false;time+=300000;await app.clock(new Date(time).toISOString());await post(path+'/collect',{})
+  assert.equal((await get(path)).runs[0].outcome,'complete');assert.equal(counts.first,1);assert.equal(counts.second,2)
+  assert.equal(JSON.parse((await get(path)).runs[0].coverage_json).source_read_started_at,interrupted.started_at)
+  assert.deepEqual((await get(path)).runs.find(r=>r.id===interrupted.id),interrupted)
+  assert.deepEqual((await get('/api/training')).completions,original)
+  enrollmentResponse=null
   const failures = []
   for (const body of [null, {}, [null], [{ ...knowbe4[0], enrollment_id: '501' }], [{ ...knowbe4[0], user: {} }], [{ ...knowbe4[0], completion_date: 'not a timestamp' }], [{ ...knowbe4[0], completion_date: null }], [{ ...knowbe4[0], status: 'Not Completed' }]]) {
    enrollmentResponse = () => Response.json(body)
@@ -128,10 +139,12 @@ try {
   assert.equal((await collect()).outcome,'partial')
   failures.push((await get(path)).runs[0]); assert.match(failures.at(-1).coverage_json,/repeated enrollment/)
   assert.deepEqual((await get('/api/training')).completions,original)
+  await post(path+'/rotate',{secret:key},200)
   enrollmentResponse = page => Response.json(Array.from({ length: 500 }, (_,i) => ({ ...knowbe4[0], enrollment_id: page * 500 + i + 1000 })))
   assert.equal((await collect()).outcome,'partial')
   failures.push((await get(path)).runs[0]); assert.match(failures.at(-1).coverage_json,/50 full pages/)
   assert.deepEqual((await get('/api/training')).completions,original)
+  await post(path+'/rotate',{secret:key},200)
   enrollmentResponse = () => Response.json({}, { status:429 })
   assert.equal((await collect()).outcome,'throttled')
   failures.push((await get(path)).runs[0]); assert.ok((await get(path)).connection.next_attempt_at > new Date(time).toISOString())

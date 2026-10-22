@@ -1,3 +1,4 @@
+import { readPageStream, retainFields } from '../connect/pages'
 import { call, continuation, DirectoryFailure, type Directory, type DirectoryAccount } from './directory'
 import { microsoftToken, OAuthFailure } from '../oauth'
 // Microsoft Entra ID (Microsoft 365) through Microsoft Graph with an app
@@ -9,13 +10,12 @@ async function token(config: Record<string, string>, secret: string) {
  try { return await microsoftToken(config.tenant_id, config.client_id, secret, 'https://graph.microsoft.com') }
  catch (error) { if (error instanceof OAuthFailure) throw new DirectoryFailure(error.kind, error.message); throw error }
 }
-async function all(access: string, url: string, limit = 50) {
- const out: Record<string, unknown>[] = []
- const seen = new Set([url])
- let next: string | null = url, pages = 0
- while (next && pages++ < limit) { const page = (await call(next, { headers: { authorization: 'Bearer ' + access, accept: 'application/json' } }, label)).body as { value?: Record<string, unknown>[]; '@odata.nextLink'?: string }; out.push(...(page.value ?? [])); next = continuation(page['@odata.nextLink'] ?? null, url, seen) }
- if (next) throw new DirectoryFailure('unavailable', 'Entra pagination incomplete: page limit reached')
- return { items: out, complete: true }
+async function all(access:string,url:string,limit=50) {
+ const items=await readPageStream<Record<string,unknown>>(url.includes('/memberOf/')?'nested:'+url:url,url,async next=>{
+  const page=(await call(next,{headers:{authorization:'Bearer '+access,accept:'application/json'}},label)).body
+  return {items:retainFields(page.value as Record<string,unknown>[],['id','displayName','userPrincipalName','mail','accountEnabled','userType','employeeType','createdDateTime','signInActivity','lastSignInDateTime','isMfaRegistered','members']),next:continuation(page['@odata.nextLink'] as string|null??null,url,new Set())}
+ },limit,m=>new DirectoryFailure('unavailable','Entra '+m))
+ return {items,complete:true}
 }
 export const entra: Directory = {
  name: 'Microsoft Entra ID', credential: 'An app registration client secret', permissions: ['User.Read.All', 'GroupMember.Read.All', 'AuditLog.Read.All (sign-in activity and MFA registration; Entra ID P1)', 'RoleManagement.Read.Directory'],

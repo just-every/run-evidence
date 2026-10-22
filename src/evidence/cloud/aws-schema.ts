@@ -22,6 +22,7 @@ export function queryShape(action: string, doc: XmlValue): string | null {
  if (action === 'GetCredentialReport' && !named(textAt(result,'Content'))) return 'IAM credential report content'
  if (action === 'GetEbsEncryptionByDefault' && !boolean(textAt(root,'ebsEncryptionByDefault'))) return 'EBS encryption flag'
  if (action === 'DescribeSecurityGroups') {
+  if (at(root,'nextToken')!==undefined && textAt(root,'nextToken')===null) return 'security group continuation'
   if (!collection(at(root,'securityGroupInfo'),['item'])) return 'security group list'
   for (const g of items(root,'securityGroupInfo')) {
    if (!named(textAt(g,'groupId')) || !named(textAt(g,'groupName')) || !collection(at(g,'ipPermissions'),['item'])) return 'security group identity or permissions'
@@ -38,6 +39,7 @@ export function queryShape(action: string, doc: XmlValue): string | null {
   }
  }
  if (action === 'DescribeDBInstances') {
+  if (at(result,'Marker')!==undefined && textAt(result,'Marker')===null) return 'RDS continuation'
   if (!collection(at(result,'DBInstances'),['DBInstance'])) return 'RDS instance list'
   for (const d of list(at(result,'DBInstances','DBInstance'))) if (!named(textAt(d,'DBInstanceIdentifier')) || !boolean(textAt(d,'StorageEncrypted')) || !boolean(textAt(d,'PubliclyAccessible')) || !natural(textAt(d,'BackupRetentionPeriod'))) return 'RDS identity, encryption, public network or retention'
  }
@@ -57,14 +59,14 @@ export function restShape(service: string, url: URL, raw: string): string | null
    if (!record(body)) return 'GuardDuty object'
    if (url.pathname === '/detector') {
     if (!Array.isArray(body.detectorIds) || !body.detectorIds.every(named)) return 'GuardDuty detector list'
-    if (body.nextToken) return 'GuardDuty pagination incomplete'
+    if (body.nextToken !== undefined && body.nextToken !== null && !named(body.nextToken)) return 'GuardDuty continuation'
    } else if (!['ENABLED','DISABLED'].includes(body.status)) return 'GuardDuty detector status'
    return null
   }
   const doc = parseXml(raw)
   if (url.pathname === '/' && !url.hostname.includes('s3-control')) {
    if (!collection(at(doc,'ListAllMyBucketsResult','Buckets'),['Bucket']) || !list(at(doc,'ListAllMyBucketsResult','Buckets','Bucket')).every(b => named(textAt(b,'Name')))) return 'S3 bucket list or identity'
-   if (textAt(doc,'ListAllMyBucketsResult','ContinuationToken')) return 'S3 bucket pagination incomplete'
+   if (at(doc,'ListAllMyBucketsResult','ContinuationToken') !== undefined && textAt(doc,'ListAllMyBucketsResult','ContinuationToken') === null) return 'S3 bucket continuation'
   } else if (url.search === '?location') {
    const region = textAt(doc,'LocationConstraint')
    if (region === null || region !== '' && !/^[a-z]{2}(?:-gov)?-[a-z]+-\d$/.test(region)) return 'S3 location'

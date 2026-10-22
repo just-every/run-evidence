@@ -2610,6 +2610,7 @@
           "src/evidence/connect/github.ts",
           "src/evidence/connect/http.ts",
           "src/evidence/connect/interval.ts",
+          "src/evidence/connect/pages.ts",
           "src/evidence/connect/report.ts",
           "src/evidence/connect/run-context.ts",
           "src/evidence/connect/runs.ts",

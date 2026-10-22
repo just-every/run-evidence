@@ -1,3 +1,4 @@
+import { readPageStream, retainFields } from '../connect/pages'
 import { scopedFetch } from '../ops/execution'
 import type { Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
@@ -18,6 +19,7 @@ const completed = (status: string) => ['passed', 'completed'].includes(status.to
 function enrollment(v: unknown): v is { enrollment_id: number; module_name: string; user: { email: string }; completion_date: string | null; status: string } {
  return record(v) && typeof v.enrollment_id === 'number' && Number.isSafeInteger(v.enrollment_id) && v.enrollment_id > 0 && named(v.module_name) && record(v.user) && named(v.user.email) && /^[^\s@]+@[^\s@]+$/.test(v.user.email) && named(v.status) && ['passed','completed','failed','in progress','not started','past due'].includes(v.status.toLowerCase()) && (v.completion_date === null || v.completion_date === undefined ? !completed(v.status) : validTime(v.completion_date))
 }
+class EnrollmentFailure extends Error {constructor(public kind:'unauthorized'|'throttled'|'unavailable'|'gap',message:string){super(message)}}
 const regions = ['us', 'eu', 'ca', 'uk', 'de'] as const
 const base = (region: string) => `https://${region}.api.knowbe4.com`
 async function get(url: string, key: string) {
@@ -61,23 +63,24 @@ export async function runKnowBe4(env: Bindings, connection: Connection, trigger:
  if (connection.status !== 'active' || !connection.secret_ciphertext || !connection.secret_iv) return finish('failed', {}, 'connection is ' + connection.status)
  const key = await unseal(env, connection.secret_ciphertext, connection.secret_iv, connection.id).catch(() => null)
  if (!key) return finish('failed', {}, 'credential unreadable', reconnectUpdate(env, connection, 'Stored credential cannot be decrypted; reconnect.', now))
- const seen = new Set<number>()
- const fail = (reason: string, page: number) => finish('partial', { pages: page, gaps: [reason], completions_read: 0 }, reason, env.DB.prepare('UPDATE connections SET last_attempt_at=?,last_error=? WHERE id=?').bind(at, reason, connection.id))
- const rows: { enrollment_id: string; module: string; email: string; completed: string; status: string }[] = []
- for (let page = 1; page <= 50; page++) {
-  const reply = await get(`${base(c.region)}/v1/training/enrollments?page=${page}&per_page=500`, key)
-  if (reply.status === 429) return finish('throttled', { pages: page - 1, gaps: ['KnowBe4 rate limited the enrollment read'] }, 'rate limited', backoffUpdate(env, connection, now.getTime() + 60000, 'KnowBe4', now))
-  if (reply.status === 401 || reply.status === 403) return finish('failed', { pages: page - 1 }, 'credential rejected', reconnectUpdate(env, connection, 'KnowBe4 refused the API key; reconnect.', now))
-  if (reply.status === 200 && (!Array.isArray(reply.body) || !reply.body.every(enrollment))) return fail('KnowBe4 schema drift: enrollment identity, module, user, completion status or timestamp', page - 1)
-  if (reply.status !== 200 || !Array.isArray(reply.body)) return finish('failed', { pages: page - 1 }, `KnowBe4 answered ${reply.status}`, env.DB.prepare('UPDATE connections SET last_attempt_at=?,last_error=? WHERE id=?').bind(at, `KnowBe4 answered ${reply.status}`, connection.id))
-  for (const e of reply.body as { enrollment_id: number; module_name: string; user: { email: string }; completion_date: string | null; status: string }[]) {
-   if (seen.has(e.enrollment_id)) return fail('KnowBe4 pagination incomplete: repeated enrollment identity', page)
-   seen.add(e.enrollment_id)
-   if (e.completion_date && completed(e.status)) rows.push({ enrollment_id: String(e.enrollment_id), module: e.module_name, email: e.user.email, completed: new Date(e.completion_date).toISOString(), status: e.status })
-  }
-  if (reply.body.length < 500) break
-  if (page === 50) return fail('KnowBe4 pagination incomplete: 50 full pages; remaining coverage unknown', page)
+ let enrollments:{enrollment_id:number;module_name:string;user:{email:string};completion_date:string|null;status:string}[]
+ try {
+  enrollments=await readPageStream('knowbe4:enrollments','1',async cursor=>{
+   const page=Number(cursor),reply=await get(`${base(c.region)}/v1/training/enrollments?page=${page}&per_page=500`,key)
+   if(reply.status===401||reply.status===403)throw new EnrollmentFailure('unauthorized','KnowBe4 refused the API key; reconnect.')
+   if(reply.status===429)throw new EnrollmentFailure('throttled','KnowBe4 rate limited the enrollment read')
+   if(reply.status!==200)throw new EnrollmentFailure('unavailable',`KnowBe4 answered ${reply.status}`)
+   if(!Array.isArray(reply.body)||!reply.body.every(enrollment))throw new EnrollmentFailure('gap','KnowBe4 schema drift: enrollment identity, module, user, completion status or timestamp')
+   return {items:retainFields(reply.body,['enrollment_id','module_name','user','email','completion_date','status']),next:reply.body.length<500?null:String(page+1)}
+  },50,m=>new EnrollmentFailure('gap',m.includes('page limit')?'KnowBe4 pagination incomplete: 50 full pages; durable cursor retained':'KnowBe4 '+m.replace('repeated source identity','repeated enrollment identity')),e=>String(e.enrollment_id))
+  if(new Set(enrollments.map(e=>e.enrollment_id)).size!==enrollments.length)throw new EnrollmentFailure('gap','KnowBe4 pagination incomplete: repeated enrollment identity')
+ } catch(error) {
+  if(!(error instanceof EnrollmentFailure))throw error
+  if(error.kind==='unauthorized')return finish('failed',{},error.message,reconnectUpdate(env,connection,error.message,now))
+  if(error.kind==='throttled')return finish('throttled',{gaps:[error.message]},error.message,backoffUpdate(env,connection,now.getTime()+60000,'KnowBe4',now))
+  return finish(error.kind==='gap'?'partial':'failed',{gaps:[error.message],completions_read:0},error.message,env.DB.prepare('UPDATE connections SET last_attempt_at=?,last_error=? WHERE id=?').bind(at,error.message,connection.id))
  }
+ const rows=enrollments.filter(e=>e.completion_date&&completed(e.status)).map(e=>({enrollment_id:String(e.enrollment_id),module:e.module_name,email:e.user.email,completed:new Date(e.completion_date!).toISOString(),status:e.status}))
  const added = await importKnowBe4(env, rows, c.modules, connection.id, now)
  return finish('complete', { completions_read: rows.length, added }, '', env.DB.prepare('UPDATE connections SET last_attempt_at=?,last_success_at=?,last_error=? WHERE id=?').bind(at, at, '', connection.id))
 }

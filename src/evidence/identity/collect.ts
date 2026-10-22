@@ -1,3 +1,4 @@
+import { sourceReadTime } from '../connect/pages'
 import type { Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
 import { auditStatement, text, type Actor, type Input } from '../door'
@@ -80,7 +81,7 @@ export async function runDirectoryCollection(env: Bindings, connection: Connecti
  const fresh = written.results.filter(r => r.id && r.outcome !== 'removed' && r.outcome !== 'rejected').map(r => r.id!)
  // An account Evidence could not store is a gap, never a silent omission.
  for (const r of written.results.filter(r => r.outcome === 'rejected')) read.gaps.push(`account ${r.uniqueId} not stored: ${(r.reasons ?? []).join('; ')}`)
- if (fresh.length) await env.DB.prepare('UPDATE resources SET observed_at=? WHERE id IN (SELECT value FROM json_each(?))').bind(at, JSON.stringify(fresh)).run()
+ if (fresh.length) await env.DB.prepare('UPDATE resources SET observed_at=? WHERE id IN (SELECT value FROM json_each(?))').bind(sourceReadTime(now), JSON.stringify(fresh)).run()
  await proposeMatches(env, now)
  const outcome = read.gaps.length ? 'partial' : 'complete'
  const result = await finish(outcome, { accounts: read.accounts.length, populations: Object.fromEntries(['person', 'contractor', 'guest', 'service'].map(p => [p, read.accounts.filter(a => a.population === p).length])), suspended: read.accounts.filter(a => a.status !== 'active').length, gaps: read.gaps }, '', env.DB.prepare('UPDATE connections SET last_attempt_at=?,last_success_at=?,next_attempt_at=NULL,backoff_seconds=0,last_error=? WHERE id=?').bind(at, at, read.gaps.join('; '), connection.id))

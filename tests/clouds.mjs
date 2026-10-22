@@ -1,3 +1,4 @@
+import { gunzipSync } from 'node:zlib'
 // Google Cloud and Microsoft Azure connections through the owner's doors and
 // the Cron Trigger. The clouds are the only fakes: network-edge stand-ins for
 // Google OAuth (verifying the service account's RS256 assertion), Resource
@@ -15,7 +16,7 @@ const SA = 'evidence-reader@ops-host.example.test', TENANT = '0e5f1c2a-2222-4333
 const gcpKey = JSON.stringify({ client_email: SA, private_key: privateKey })
 const ago = days => new Date(Date.parse('2026-10-11T12:00:00Z') - days * 86400000).toISOString()
 const g = {
- responses: new Map(),
+ responses: new Map(), statuses: new Map(), calls: [],
  projects: ['northstar-prod', 'northstar-sandbox'], denied: new Set(['northstar-sandbox:iam']), disabled: new Set(['northstar-sandbox:compute']),
  iam: { 'northstar-prod': { bindings: [{ role: 'roles/viewer', members: ['allUsers'] }, { role: 'roles/owner', members: ['user:ana@northstar.test'] }], auditConfigs: [{ service: 'allServices', auditLogConfigs: [{ logType: 'DATA_READ' }, { logType: 'DATA_WRITE' }] }] } },
  buckets: { 'northstar-prod': [{ name: 'prod-assets', prevention: 'inherited', members: ['allUsers'] }, { name: 'prod-logs', prevention: 'enforced', members: [] }], 'northstar-sandbox': [] },
@@ -24,7 +25,7 @@ const g = {
  firewalls: { 'northstar-prod': [{ name: 'allow-ssh', ranges: ['0.0.0.0/0'], ports: ['22'] }, { name: 'allow-https', ranges: ['0.0.0.0/0'], ports: ['443'] }] },
 }
 const az = {
- responses: new Map(), calls: [],
+ responses: new Map(), statuses: new Map(), calls: [],
  subs: [['11111111-aaaa-4bbb-8ccc-000000000001', 'Production'], ['11111111-aaaa-4bbb-8ccc-000000000002', 'Development']], denied: new Set(),
  diag: { Production: 1, Development: 0 }, defender: { Production: 'Standard', Development: 'Free' },
  storage: { Production: [{ name: 'prodblobs', public: true, https: true, tls: 'TLS1_0' }], Development: [] },
@@ -42,7 +43,8 @@ async function fakeClouds(request) {
   return ok ? json({ access_token: 'gcp-access' }) : json({ error: 'invalid_grant' }, 400)
  }
  if (url.hostname.endsWith('.googleapis.com')) {
-  if (g.responses.has(url.href)) return json(g.responses.get(url.href))
+  g.calls.push(url.href)
+  if (g.responses.has(url.href)) return json(g.responses.get(url.href),g.statuses.get(url.href)??200)
   if (auth !== 'Bearer gcp-access') return json({ error: { code: 401 } }, 401)
   const project = /projects\/([a-z0-9-]+)/.exec(url.pathname)?.[1] ?? url.searchParams.get('project')
   if (url.hostname === 'cloudresourcemanager.googleapis.com' && url.pathname === '/v1/projects') return json({ projects: g.projects.map(p => ({ projectId: p, name: p.replace('northstar-', 'Northstar '), lifecycleState: 'ACTIVE' })) })
@@ -67,7 +69,7 @@ async function fakeClouds(request) {
  if (url.hostname === 'management.azure.com') {
   if (auth !== 'Bearer arm-access') return json({ error: { code: 'InvalidAuthenticationToken' } }, 401)
   const requested = url.pathname + url.search; az.calls.push(requested)
-  if (az.responses.has(requested)) return json(az.responses.get(requested))
+  if (az.responses.has(requested)) return json(az.responses.get(requested),az.statuses.get(requested)??200)
   if (url.pathname === '/subscriptions') return json({ value: az.subs.map(([subscriptionId, displayName]) => ({ subscriptionId, displayName, state: 'Enabled' })) })
   const [, id] = /^\/subscriptions\/([^/]+)/.exec(url.pathname), name = az.subs.find(s => s[0] === id)[1], path = url.pathname.slice(`/subscriptions/${id}`.length)
   if (az.denied.has(`${name}:${path}`)) return json({ error: { code: 'AuthorizationFailed' } }, 403)
@@ -341,6 +343,33 @@ try {
   const history = (await get(path)).runs
   for (const original of originals) assert.deepEqual(history.find(r => r.id === original.id), original)
   await collectionScheduleBrowser(app, [(await get(path)).connection], { suffix: '-gcp-schema', expected: ['Google Cloud schema drift', 'Google Cloud pagination incomplete'] })
+ })
+ await scenario('COLLECTION-001: Azure and Google Cloud resume only the interrupted page after restart, preserve original source times and never persist unexpected provider fields',async()=>{
+  let time=Math.max(...await Promise.all(Object.values(conn).map(async c=>Date.parse((await get('/api/connections/'+c.id)).runs[0].started_at))))
+  const subscription=az.subs[1][0],armPath=`/subscriptions/${subscription}/providers/Microsoft.Network/networkSecurityGroups?api-version=2023-09-01`
+  const storage='https://storage.googleapis.com/storage/v1/b?project=northstar-prod&maxResults=1000'
+  const cases=[
+   {provider:'azure',first:armPath,second:armPath+'&page=synthetic-resume-2',responses:az.responses,statuses:az.statuses,calls:az.calls,one:{value:[{name:'dev-nsg',properties:{securityRules:[]},unexpected_secret:'synthetic-evidence-private'}],nextLink:'https://management.azure.com'+armPath+'&page=synthetic-resume-2'},two:{value:[]}},
+   {provider:'gcp',first:storage,second:storage+'&pageToken=synthetic-resume-2',responses:g.responses,statuses:g.statuses,calls:g.calls,one:{items:[{name:g.buckets['northstar-prod'][0].name,iamConfiguration:{publicAccessPrevention:g.buckets['northstar-prod'][0].prevention},unexpected_secret:'synthetic-evidence-private'}],nextPageToken:'synthetic-resume-2'},two:{items:[{name:g.buckets['northstar-prod'][1].name,iamConfiguration:{publicAccessPrevention:g.buckets['northstar-prod'][1].prevention}}]}},
+  ]
+  for(const c of cases){
+   const path='/api/connections/'+conn[c.provider].id,before=c.calls.length
+   c.responses.set(c.first,c.one);c.responses.set(c.second,c.two);c.statuses.set(c.second,429)
+   time+=60000;await app.clock(new Date(time).toISOString());await owner(path+'/collect',{})
+   const interrupted=(await get(path)).runs[0],metadata=JSON.parse(interrupted.coverage_json)
+   assert.equal(interrupted.outcome,'throttled');assert.equal(metadata.resume_pages.pending,true)
+   assert.ok(Object.values(metadata.resume_pages.cursors).some(cursor=>cursor.includes('synthetic-resume-2')))
+   assert.ok(!gunzipSync(Buffer.from(metadata.resume_pages.data,'base64')).toString().includes('synthetic-evidence-private'))
+   c.statuses.delete(c.second)
+   time+=300000;await app.clock(new Date(time).toISOString());await owner(path+'/collect',{})
+   const completed=(await get(path)).runs[0],recovered=JSON.parse(completed.coverage_json)
+   assert.ok(['complete','partial'].includes(completed.outcome));assert.equal(recovered.resume_pages.pending,false)
+   assert.equal(recovered.source_read_started_at,interrupted.started_at);assert.equal(recovered.received_at,completed.finished_at)
+   assert.equal(c.calls.slice(before).filter(url=>url===c.first).length,1,'the completed first page is never fetched twice')
+   assert.equal(c.calls.slice(before).filter(url=>url===c.second).length,2,'only the throttled page retries')
+   assert.deepEqual((await get(path)).runs.find(r=>r.id===interrupted.id),interrupted)
+   c.responses.clear();c.statuses.clear()
+  }
  })
  await scenario('COLLECTION-001: hosted collector schedules through owner doors, Cron, browser and restore', () => collectionScheduleJourney(app))
  console.log(`${passed} Google Cloud and Azure public-door scenarios passed; the clouds are faked only at the network edge.`)

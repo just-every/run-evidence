@@ -1,3 +1,4 @@
+import { gunzipSync } from 'node:zlib'
 // Okta, Google Workspace, Microsoft Entra ID and JumpCloud directory
 // connections, identity populations, tests and reviewable matches through the
 // owner's doors and the Cron Trigger. The four directories are the only fakes:
@@ -18,13 +19,14 @@ const dir = {
  google: [{ id: 'g1', email: 'ana@northstar.test', name: 'Ana Ruiz', admin: true, mfa: true, last: ago(1), suspended: false }, { id: 'g2', email: 'cy@northstar.test', name: 'Cy Park', admin: false, mfa: false, last: '1970-01-01T00:00:00.000Z', created: ago(120), suspended: false }],
  entra: [{ id: 'e1', mail: 'ana@northstar.test', name: 'Ana Ruiz', enabled: true, type: 'Member', mfa: true, roles: ['Global Administrator'], last: ago(3) }, { id: 'e2', mail: 'partner@vendor.test', name: 'Partner', enabled: true, type: 'Guest', mfa: true, roles: ['User Administrator'], last: ago(4) }, { id: 'e3', mail: 'eve@northstar.test', name: 'Eve Moss', enabled: true, type: 'Member', mfa: false, roles: [], last: ago(5) }],
  jumpcloud: [{ _id: 'a'.repeat(24), email: 'frank@northstar.test', firstname: 'Frank', sudo: { enabled: true }, mfa: { configured: false }, state: 'ACTIVATED', activated: true }, { _id: 'b'.repeat(24), email: 'gina@northstar.test', firstname: 'Gina', sudo: { enabled: false }, mfa: { configured: true }, state: 'ACTIVATED', activated: true }],
- entraDenied: new Set(), groupsDenied: new Set(), calls: [], overrides: new Map(),
+ entraDenied: new Set(), groupsDenied: new Set(), calls: [], overrides: new Map(), requests: [],
 }
 const b64url = value => Buffer.from(value, 'base64url')
 async function fakeDirectories(request) {
  const url = new URL(request.url), auth = request.headers.get('authorization') ?? ''
+ dir.requests.push(url.href)
  const override = dir.overrides.get(url.href)
- if (override) return Response.json(override.body, { headers: override.headers ?? {} })
+ if (override) return Response.json(override.body, { status:override.status??200,headers: override.headers ?? {} })
  if (url.hostname === 'northstar.okta.com') {
   dir.calls.push('okta ' + url.pathname)
   if (auth !== 'SSWS ' + secrets.okta) return Response.json({ errorCode: 'E0000011' }, { status: 401 })
@@ -201,6 +203,7 @@ try {
   // A source may declare another membership page; never admit its first page as complete.
   const group = new URL('https://admin.googleapis.com/admin/directory/v1/groups?userKey=ana%40northstar.test&maxResults=200').href
   dir.overrides.set(group, { body: { groups: [], nextPageToken: 'unread-membership-page' } })
+  dir.overrides.set(group+'&pageToken=unread-membership-page', { body: { groups: [], nextPageToken: 'unread-membership-page' } })
   const incomplete = await send('google'); failures.get('google').push(incomplete)
   assert.equal(incomplete.outcome, 'failed'); assert.match(incomplete.error_code, /pagination incomplete/)
   dir.overrides.clear(); await send('google')
@@ -214,6 +217,38 @@ try {
    for (const provider of Object.keys(conn)) assert.deepEqual((await (await target.fetch('/api/connections/' + conn[provider].id)).json()).runs,source.get(provider))
   } finally { await target.close() }
   await collectionScheduleBrowser(app, await Promise.all(Object.keys(conn).map(async provider => (await get('/api/connections/' + conn[provider].id)).connection)), { suffix: '-directory-schema', expected: ['schema drift'] })
+ })
+ await scenario('COLLECTION-001: every directory resumes its saved user page after restart and throttling, with no duplicate first-page read or unexpected cached fields',async()=>{
+  let time=Math.max(...await Promise.all(Object.values(conn).map(async c=>Date.parse((await get('/api/connections/'+c.id)).runs[0].started_at))))
+  const configs=[
+   ['okta','https://northstar.okta.com/api/v1/users?limit=200','https://northstar.okta.com/api/v1/users?limit=200&after=3',{authorization:'SSWS '+secrets.okta}],
+   ['google','https://admin.googleapis.com/admin/directory/v1/users?customer=my_customer&maxResults=500&projection=basic','https://admin.googleapis.com/admin/directory/v1/users?customer=my_customer&maxResults=500&projection=basic&pageToken=synthetic-page-2',{authorization:'Bearer google-access'}],
+   ['entra','https://graph.microsoft.com/v1.0/users?$select=id,displayName,userPrincipalName,mail,accountEnabled,userType,employeeType,createdDateTime,signInActivity&$top=999','https://graph.microsoft.com/v1.0/users?$select=id,displayName,userPrincipalName,mail,accountEnabled,userType,employeeType,createdDateTime,signInActivity&$top=999&$skiptoken=synthetic-page-2',{authorization:'Bearer graph-access'}],
+   ['jumpcloud','https://console.jumpcloud.com/api/systemusers?limit=100&skip=0','https://console.jumpcloud.com/api/systemusers?limit=100&skip=1',{'x-api-key':secrets.jumpcloud}],
+  ]
+  for(const [provider,rawFirst,rawSecond,headers]of configs){
+   const first=new URL(rawFirst).href,second=new URL(rawSecond).href,path='/api/connections/'+conn[provider].id
+   const body=await(await fakeDirectories(new Request(first,{headers}))).json()
+   let one,two,extra={}
+   if(provider==='okta'){one=body.map((u,i)=>i?u:{...u,unexpected_secret:'synthetic-evidence-private'});two=await(await fakeDirectories(new Request(second,{headers}))).json();extra={link:'<'+second+'>; rel="next"'}}
+   if(provider==='google'){one={...body,users:body.users.map((u,i)=>i?u:{...u,unexpected_secret:'synthetic-evidence-private'}),nextPageToken:'synthetic-page-2'};two={users:[]}}
+   if(provider==='entra'){one={value:body.value.map((u,i)=>i?u:{...u,unexpected_secret:'synthetic-evidence-private'}),'@odata.nextLink':second};two={value:[]}}
+   if(provider==='jumpcloud'){one={totalCount:body.totalCount,results:[{...body.results[0],unexpected_secret:'synthetic-evidence-private'}]};two={totalCount:body.totalCount,results:body.results.slice(1)}}
+   const before=dir.requests.length
+   dir.overrides.set(first,{body:one,headers:extra});dir.overrides.set(second,{status:429,body:{}})
+   time+=60000;await app.clock(new Date(time).toISOString());await owner(path+'/collect',{})
+   const failed=(await get(path)).runs[0],paused=JSON.parse(failed.coverage_json)
+   assert.equal(failed.outcome,'throttled');assert.equal(paused.resume_pages.pending,true)
+   assert.ok(!gunzipSync(Buffer.from(paused.resume_pages.data,'base64')).toString().includes('synthetic-evidence-private'))
+   dir.overrides.set(second,{body:two})
+   time+=300000;await app.clock(new Date(time).toISOString());await owner(path+'/collect',{})
+   const restored=(await get(path)).runs[0],metadata=JSON.parse(restored.coverage_json)
+   assert.equal(restored.outcome,'complete');assert.equal(metadata.source_read_started_at,failed.started_at)
+   assert.equal(dir.requests.slice(before).filter(url=>url===first).length,1,provider+' never rereads a completed page')
+   assert.equal(dir.requests.slice(before).filter(url=>url===second).length,2,provider+' retries only the throttled page')
+   assert.deepEqual((await get(path)).runs.find(r=>r.id===failed.id),failed)
+   dir.overrides.clear()
+  }
  })
  await scenario('COLLECTION-001: hosted collector schedules through owner doors, Cron, browser and restore', () => collectionScheduleJourney(app))
  console.log(`${passed} identity public-door scenarios passed; the four directories are faked only at the network edge.`)
