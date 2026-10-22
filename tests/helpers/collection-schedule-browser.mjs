@@ -51,7 +51,7 @@ export async function collectionScheduleBrowser(app, connections, { suffix = '',
     const summaries = page.getByText('Account, gaps, timestamps, controls and audit periods', { exact: true })
     if (await summaries.count()) {
      await summaries.first().click()
-     assert.match(await summaries.first().locator('..').innerText(), /context/)
+     assert.match(await summaries.first().locator('..').innerText(), /Library revision/)
     }
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'collection report overflow at ' + width)
     await page.screenshot({ path: join(output, `${width}-${c.provider}${suffix}-period-report.png`), fullPage: true })
