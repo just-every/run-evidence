@@ -122,7 +122,7 @@ export async function collectionJourney() {
   const resumed = (await get(path)).runs[0], recovered = JSON.parse(resumed.coverage_json)
   assert.equal(resumed.outcome,'complete')
   assert.equal(recovered.resume.streams[alerts].numbers.length,11)
-  assert.equal(recovered.source_read_started_at,'2026-10-11T13:35:00.000Z'); assert.equal(recovered.received_at,'2026-10-11T13:45:00.000Z')
+  assert.equal(recovered.source_read_started_at,'2026-10-11T13:35:00.000Z'); assert.equal(recovered.received_at,'2026-10-11T13:45:03.000Z','resumed receipt also uses the trusted completion clock')
   assert.equal((await get('/api/inventory')).records.find(r=>r.source_ref==='github:'+connection.id && r.source_type==='github.repository').last_observation,'2026-10-11T13:35:00.000Z','resumed cached facts never gain a fabricated fresh timestamp')
   const read = github.requests.slice(requests).filter(p=>p.startsWith(alerts))
   assert.equal(read.filter(p=>p===alerts).length,1,'completed pages are never read again after restart/backoff')
