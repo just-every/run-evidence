@@ -35,7 +35,7 @@ export function collectorHandler(clock: () => Date) {
     // Preserve the resource in the denominator, immediately invalidate its read
     // time, and never stamp the failure as a successful source observation.
     await env.DB.prepare('UPDATE resources SET observed_at=NULL WHERE source_ref=?').bind('private-git:' + row.id).run()
-    const result = await started.finish('failed', { resources_expected: 1, resources_read: 0, unsupported }, 'repository_unreadable', env.DB.prepare('UPDATE connections SET last_attempt_at=?,last_error=? WHERE id=?').bind(now.toISOString(), 'Private repository could not be read. Check its local path and permissions; run the collector again.', row.id))
+    const result = await started.finish('failed', { resources_expected: 1, resources_read: 0, received_at: now.toISOString(), unsupported }, 'repository_unreadable', env.DB.prepare('UPDATE connections SET last_attempt_at=?,last_error=? WHERE id=?').bind(now.toISOString(), 'Private repository could not be read. Check its local path and permissions; run the collector again.', row.id))
     await runForType(env, resourceType, now)
     return json(result, 202)
    }

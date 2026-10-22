@@ -21,7 +21,7 @@ const server = createServer(async (req, res) => {
 })
 await new Promise(done => server.listen(0, '127.0.0.1', done))
 const origin = `http://127.0.0.1:${server.address().port}`
-const git = (...args) => execFileSync('git', args, { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim()
+const git = (...args) => execFileSync(args[0]==='commit'?'env':'git', args[0]==='commit'?['GIT_AUTHOR_NAME=Run Edit Run fleet','GIT_AUTHOR_EMAIL=fleet@runeditrun.com','GIT_COMMITTER_NAME=Run Edit Run fleet','GIT_COMMITTER_EMAIL=fleet@runeditrun.com','git',...args]:args, { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim()
 const post = async (path, body, expected = 201, target = app) => {
  const r = await target.fetch(path, { method: 'POST', headers: { origin: target.origin, 'content-type': 'application/json' }, body: JSON.stringify(body) })
  assert.equal(r.status, expected, path + ': ' + await r.clone().text()); return r.json()
@@ -46,7 +46,7 @@ try {
   assert.equal(JSON.parse((await get('/api/connections/' + issued.id)).connection.config_json).collection_minutes, undefined)
   reader = await post('/api/api-tokens', { name: 'Read collector inventory', scopes: ['read', 'resource-push'], expires_at: new Date(Date.now() + 86400000).toISOString() })
   await new Promise((done, fail) => { const p = spawn('git', ['init', '--initial-branch=main', repo], { stdio: 'ignore' }); p.once('error', fail); p.once('close', n => n === 0 ? done() : fail(Error('git init failed'))) })
-  git('config', 'user.name', 'Northstar owner'); git('config', 'user.email', 'owner@northstar.test')
+  git('config', 'user.name', 'Run Edit Run fleet'); git('config', 'user.email', 'fleet@runeditrun.com')
   await writeFile(join(repo, 'service.txt'), 'Private application contents never leave Git.\n')
   git('add', 'service.txt'); git('commit', '-m', 'Private source initialization'); git('branch', 'release')
   const head = git('rev-parse', 'HEAD'), before = await readFile(join(repo, '.git', 'HEAD'))
@@ -75,6 +75,7 @@ try {
   assert.equal((await get('/api/tests/' + supported)).latest[0].result, 'unknown')
   assert.equal((await resource()).length, 1)
   assert.equal((await get('/api/connections/' + issued.id)).runs[0].outcome, 'failed')
+  assert.equal(JSON.parse((await get('/api/connections/'+issued.id)).runs[0].coverage_json).received_at,app.harnessState().settings.HARNESS_NOW,'a private-source clock never overwrites the server receipt clock')
   await clockNow(app); assert.equal((await cli(issued.token)).code, 0)
   const recovered = await get('/api/tests/' + supported)
   assert.equal(recovered.latest[0].result, 'pass'); assert.ok(recovered.runs.some(r => r.unknown === 1))

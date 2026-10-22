@@ -3028,7 +3028,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "91fd21dc55d22dffbc54651715db9dc121b37d7f4d7669a60d3dece2bb288d5c",
+      "sha256": "3f0b4b43e6856badde554b6fba8e80630b11e83b786975e64e3509530d91af56",
       "executable": false
     },
     "AGENTS.md": {
@@ -3044,7 +3044,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "0d9221ac9b5c053b1ca9d5999cd291dc240d8d4f2a237f2138326aa0a20e44b2",
+      "sha256": "e4b819a3b3c1e2344fa9a6b4d80491a13006bf37cccefd958fa842638d0b8927",
       "executable": false
     },
     "DEMO.md": {
@@ -4236,7 +4236,7 @@
       "executable": false
     },
     "src/evidence/collector/ingest.ts": {
-      "sha256": "979258e685827f3c9ea832ab9cef36c951137f24a4be18f3ac2f12d389af1ab2",
+      "sha256": "8bf33bd2ac32a6b3d84316b938ad6763b1de3bc0e1227f7c051a1b3a71be029c",
       "executable": false
     },
     "src/evidence/collector/profile.ts": {
@@ -4296,7 +4296,7 @@
       "executable": false
     },
     "src/evidence/connect/runs.ts": {
-      "sha256": "95da978ae37a368a6b8693872331a2b36363ee5e191ff8c1d4c8284dc553ae0c",
+      "sha256": "eaa9f48c07500cbaf7eff3bd56f9a242fb2e0ca0bd2e41250b634be7c384b0a6",
       "executable": false
     },
     "src/evidence/connect/schedule.ts": {
@@ -7092,7 +7092,7 @@
       "executable": false
     },
     "tests/private-collector.mjs": {
-      "sha256": "55f47f732d89c6f96340f4cefc1007d29a0f29d96916d0a8800d4b2036e1238b",
+      "sha256": "f073ee586d34d06e1b266c6f0a27ccbe90c2541ba92cbcbd23ac36a0b814d62c",
       "executable": false
     },
     "tests/program-documents-browser.mjs": {
