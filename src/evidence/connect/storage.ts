@@ -1,3 +1,4 @@
+import {rotateAzureDevops} from './azuredevops-collect'
 import {rotateBitbucket} from './bitbucket-collect'
 import {rotateGitlab} from './gitlab-collect'
 import type { Bindings } from '../../auth.server'
@@ -50,6 +51,7 @@ export async function connectGithub(env: Bindings, actor: Actor, input: Input, n
 export async function rotateCredential(env: Bindings, actor: Actor, id: string, input: Input, now: Date) {
  const row = await requireConnection(env, id)
  if (row.provider === 'private-git') throw new Refusal('Use the collector token rotation door.', 409)
+ if (row.provider === 'azuredevops') return rotateAzureDevops(env,actor,row,input,now)
  if (row.provider === 'bitbucket') return rotateBitbucket(env,actor,row,input,now)
  if (row.provider === 'gitlab') return rotateGitlab(env,actor,row,input,now)
  if (row.provider === 'aws') return rotateAws(env, actor, row, input, now)

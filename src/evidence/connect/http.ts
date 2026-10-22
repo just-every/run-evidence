@@ -1,3 +1,4 @@
+import {connectAzureDevops} from './azuredevops-collect'
 import {Refusal} from '../upload'
 import {connectBitbucket} from './bitbucket-collect'
 import {productionEnvironments} from './code-settings'
@@ -24,9 +25,10 @@ export function connectHandler(clock: () => Date) {
   { method: 'GET', pattern: both('/connections'), run: async c => { const rows = await connections(c.env), tokens = await apiTokens(c.env); return c.isApi ? json({ connections: rows.map(safe), api_tokens: tokens }) : connectionsPage(rows, tokens, null, c.actor.name) } },
   { method: 'POST', pattern: both('/connections'), run: async c => {
    const input = await readInput(c.request)
-   if(input.provider&&!['github','aws','knowbe4','gitlab','bitbucket'].includes(String(input.provider))&&!isDirectory(String(input.provider))&&!isScopedCloud(String(input.provider)))throw new Refusal('Choose a supported source provider; no credential was sent.')
+   if(input.provider&&!['github','aws','knowbe4','gitlab','bitbucket','azuredevops'].includes(String(input.provider))&&!isDirectory(String(input.provider))&&!isScopedCloud(String(input.provider)))throw new Refusal('Choose a supported source provider; no credential was sent.')
    if (typeof input.provider === 'string' && isDirectory(input.provider)) { const created = await connectDirectory(c.env, c.actor, input, c.now); return done(c, '/app/connections/' + created.id + '#runs-title', created, 201) }
    if (typeof input.provider === 'string' && isScopedCloud(input.provider)) { const created = await connectScoped(c.env, c.actor, input.provider, scopedClouds[input.provider], input, c.now); return done(c, '/app/connections/' + created.id + '#runs-title', created, 201) }
+   if (input.provider === 'azuredevops') {const created=await connectAzureDevops(c.env,c.actor,input,c.now);return done(c,'/app/connections/'+created.id+'#repos-title',created,201)}
    if (input.provider === 'bitbucket') {const created=await connectBitbucket(c.env,c.actor,input,c.now);return done(c,'/app/connections/'+created.id+'#repos-title',created,201)}
    if (input.provider === 'gitlab') {const created=await connectGitlab(c.env,c.actor,input,c.now);return done(c,'/app/connections/'+created.id+'#repos-title',created,201)}
    if (input.provider === 'knowbe4') { const created = await connectKnowBe4(c.env, c.actor, input, c.now); return done(c, '/app/connections/' + created.id + '#runs-title', created, 201) }

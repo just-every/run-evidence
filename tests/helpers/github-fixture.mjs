@@ -7,7 +7,7 @@ export function githubFixture(apiBase = 'https://api.github.com') {
  'northstar/site': { private: false, protection: null, dependabot: 2, secrets: 0 },
  'northstar/tools': { private: true, protection: null, dependabot: 0, secrets: 0 },
 } }
-const reply = (status, body, headers = {}) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', 'x-ratelimit-remaining': '4999', ...headers } })
+const reply = (status, body, headers = {}) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', 'x-ratelimit-remaining': '4999', date:'2035-01-01T00:00:00Z', ...headers } })
  async function outbound(request) {
  const url = new URL(request.url)
  if (url.origin !== apiBase) return null

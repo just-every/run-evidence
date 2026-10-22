@@ -1,3 +1,4 @@
+import {sourceInstant,sourceAtOrAfter} from './source-time'
 import {scopedFetch} from '../ops/execution'
 import {record,natural} from './github-schema'
 import {readPageStream} from './pages'
@@ -9,8 +10,7 @@ export class BitbucketFailure extends Error{constructor(message:string,public ki
 const string=(v:unknown):v is string=>typeof v==='string'&&v.length>0&&v.length<=200
 const uuid=(v:unknown):v is string=>typeof v==='string'&&/^\{?[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\}?$/i.test(v)
 const revision=(v:unknown):v is string=>typeof v==='string'&&/^[a-f0-9]{40,64}$/i.test(v)
-const nanos=(v:string)=>{const m=/^(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)(?:\.(\d{1,9}))?(Z|[+-]\d\d:\d\d)$/.exec(v);if(!m)throw new BitbucketFailure('unsupported source timestamp precision');return BigInt(Date.parse(m[1]+m[3]))*1000000n+BigInt((m[2]??'').padEnd(9,'0'))}
-const date=(v:unknown):v is string=>typeof v==='string'&&/^\d{4}-\d\d-\d\dT/.test(v)&&Number.isFinite(Date.parse(v))
+const date=(v:unknown):v is string=>sourceInstant(v)!==null
 export const bitbucketPermissions=['repository (read)','pullrequest (read)','pipeline (read)','account (workspace membership)','repository:admin (Bitbucket requires this write-capable scope to READ branch restrictions; explicit owner consent required)']
 // Official Bitbucket Cloud OpenAPI schemas, read 22 Oct 2026:
 // https://dac-static.atlassian.com/cloud/bitbucket/swagger.v3.json
@@ -51,8 +51,8 @@ export async function bitbucketRepository(client:Client,name:string){
  }))
  const applicable=restrictions?.filter(r=>glob(r.pattern,branch)),enforced=applicable?.some(r=>r.kind==='enforce_merge_checks')??false
  const required=(kinds:string[])=>restrictions===null||(applicable??[]).some(r=>kinds.includes(r.kind)&&r.value===null)?null:!enforced?0:Math.max(0,...(applicable??[]).filter(r=>kinds.includes(r.kind)).map(r=>r.value??0))
- if(applicable?.some(r=>['require_approvals_to_merge','require_default_reviewer_approvals_to_merge','require_passing_builds_to_merge'].includes(r.kind)&&r.value===null))gaps.push('schema drift: numeric merge-check requirement unavailable')
- const attributes={private:repo.is_private,archived:null,default_branch:branch,branch_protection:restrictions===null?null:enforced||!!applicable?.some(r=>['push','force','delete','restrict_merges'].includes(r.kind)),required_reviews:required(['require_approvals_to_merge','require_default_reviewer_approvals_to_merge']),required_status_checks:required(['require_passing_builds_to_merge']),readable:true}
+ if(applicable?.some(r=>['require_approvals_to_merge','require_review_group_approvals_to_merge','require_default_reviewer_approvals_to_merge','require_passing_builds_to_merge'].includes(r.kind)&&r.value===null))gaps.push('schema drift: numeric merge-check requirement unavailable')
+ const attributes={private:repo.is_private,archived:null,default_branch:branch,branch_protection:restrictions===null?null:enforced||!!applicable?.some(r=>['push','force','delete','restrict_merges'].includes(r.kind)),required_reviews:required(['require_approvals_to_merge','require_review_group_approvals_to_merge','require_default_reviewer_approvals_to_merge']),required_status_checks:required(['require_passing_builds_to_merge']),readable:true}
  const changes=await attempt('merged changes',async()=>{
   const rows=await client.list(root+'/pullrequests?state=MERGED&pagelen=100',v=>{
    if(!record(v)||!natural(v.id)||v.id<1||v.state!=='MERGED'||!record(v.source)||!record(v.source.commit)||!revision(v.source.commit.hash)||!record(v.merge_commit)||!revision(v.merge_commit.hash)||!record(v.destination)||!record(v.destination.branch)||!string(v.destination.branch.name))throw new BitbucketFailure('schema drift: merged pull request revision')
@@ -84,7 +84,7 @@ export async function bitbucketRepository(client:Client,name:string){
   const state=v.state.name==='COMPLETED'&&record(v.state.status)?v.state.status.name:v.state.name
   if(!['SUCCESSFUL','FAILED','STOPPED','IN_PROGRESS','UNDEPLOYED'].includes(String(state))||!(v.state.completion_date===undefined||date(v.state.completion_date)))throw new BitbucketFailure('schema drift: deployment outcome')
   const commit=v.release.commit.hash,started=v.state.start_date
-  return {id:v.uuid,revision:commit,environment:v.environment.name,environment_key:name+':'+v.environment.uuid,release_uuid:v.release.uuid,pipeline_uuid:null,production:null,created_at:v.state.start_date,current_state:String(state),statuses:date(v.state.completion_date)?[{state:String(state),created_at:v.state.completion_date}]:null,change_numbers:(changes??[]).filter(c=>c.merge_revision===commit&&nanos(c.merged_at)<=nanos(started)).map(c=>c.number)} as DeploymentFact
+  return {id:v.uuid,revision:commit,environment:v.environment.name,environment_key:name+':'+v.environment.uuid,release_uuid:v.release.uuid,pipeline_uuid:null,production:null,created_at:v.state.start_date,current_state:String(state),statuses:date(v.state.completion_date)?[{state:String(state),created_at:v.state.completion_date}]:null,change_numbers:(changes??[]).filter(c=>c.merge_revision===commit&&sourceAtOrAfter(started,c.merged_at)).map(c=>c.number)} as DeploymentFact
  }))
  if(deployments&&deployments.length>20){deployments=null;gaps.push('more than 20 deployments; history incomplete')}
  for(const deployment of deployments??[]){

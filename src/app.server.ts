@@ -1,3 +1,4 @@
+import {withCollectionClock} from './evidence/connect/clock'
 import { tailoringHandler } from './evidence/agent/tailoring-http'
 import { answerHandler } from './evidence/answer/http'
 import { vendorReviewHandler } from './evidence/vendor/review-http'
@@ -57,7 +58,7 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
  const api = apiHandler(clock)
  const hooks = hookHandler(clock)
  const member = memberHandler(clock)
- return (request: Request, env: Bindings) => withShellScope(request, env, () => respond(request, env))
+ return (request: Request, env: Bindings) => withCollectionClock(clock,()=>withShellScope(request, env, () => respond(request, env)))
  async function respond(request: Request, env: Bindings) {
   const path = new URL(request.url).pathname
   if (/^\/(?:app(?:\/|$)|api(?:\/|$)|auth(?:\/|$)|v1(?:\/|$)|collectors\/|hooks\/|signin$|setup$)/.test(path)) {
