@@ -5,7 +5,7 @@ import { resolve, extname, join } from 'node:path'
 import { chromium } from 'playwright'
 // COLLECTION-001: existing schedule form, shipped styling and real owner HTTP
 // handlers. The loopback bridge retains this harness's authenticated owner.
-export async function collectionScheduleBrowser(app, connections, { suffix = '', expected = [], reportExpected = [], expandHistory = false } = {}) {
+export async function collectionScheduleBrowser(app, connections, { suffix = '', expected = [], reportExpected = [], expandHistory = false, extraScreens = [] } = {}) {
  const output = resolve(process.env.EVIDENCE_BROWSER_OUTPUT ?? '.cache/browser/collection-schedules')
  let server, browser, origin
  try {
@@ -78,6 +78,12 @@ export async function collectionScheduleBrowser(app, connections, { suffix = '',
      await page.getByRole('heading', { name: 'Source collection history', exact: true }).waitFor()
      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'control collection report overflow at ' + width)
      await page.screenshot({ path: join(output, `${width}-${c.provider}${suffix}-control-report.png`), fullPage: true })
+    }
+    for(const screen of extraScreens){
+     await page.goto(origin+screen.path);await page.getByRole('heading',{name:screen.heading,exact:true}).waitFor()
+     for(const text of screen.text??[])assert.ok((await page.locator('main').innerText()).includes(text),text)
+     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),screen.heading+' overflow at '+width)
+     await page.screenshot({path:join(output,`${width}-${c.provider}${suffix}-${screen.key}.png`),fullPage:true})
     }
     console.log(`PASS COLLECTION-001: ${c.provider} schedule saved and reloaded at ${width}`)
    }
