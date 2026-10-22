@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "018fc1319cc9178a20520cfdf9543f754252437939594470745e0689e22f7c7f",
+  "manifest": "0167256999da0458ea467d344a200b8f1fefdeef445175e404b7298808e3fc40",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2689,6 +2689,7 @@
           "src/evidence/library/extended/cmmc-data.ts",
           "src/evidence/library/extended/controls.ts",
           "src/evidence/library/extended/csf-data.ts",
+          "src/evidence/library/extended/fedramp-data.ts",
           "src/evidence/library/extended/gdpr-data.ts",
           "src/evidence/library/extended/hitrust-data.ts",
           "src/evidence/library/extended/index.ts",
@@ -3020,7 +3021,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "bb1a8c856f378604ea78220d2887c2347ce4b1435e427f6a6757c7d1c137027d",
+      "sha256": "df2aeb5cd1dd1f67d853ac6b858d293a9c8e587785b9ce6d1e0ba0110473829b",
       "executable": false
     },
     "AGENTS.md": {
@@ -3036,7 +3037,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "f6caad00b27a0f85111f37ce95f95108adb749d91c10e48d1607e5c293bdc4cc",
+      "sha256": "057937062fc1e5ba11414e67614f3ccc3550dec68d5ed95c37ee4bbf2016f56a",
       "executable": false
     },
     "DEMO.md": {
@@ -3092,7 +3093,7 @@
       "executable": false
     },
     "docs/PROGRAMS.md": {
-      "sha256": "96ff5ff27442ae989e397c70a3f76b1b893cf4e4803518fcc4d85c6a043e2b3d",
+      "sha256": "9dded63dd325d13675eea9afcbadc8bed11b7bc3e28b2a48677bfe222286d9ef",
       "executable": false
     },
     "docs/PROVIDER-COSTS.md": {
@@ -3112,7 +3113,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "018fc1319cc9178a20520cfdf9543f754252437939594470745e0689e22f7c7f",
+      "sha256": "0167256999da0458ea467d344a200b8f1fefdeef445175e404b7298808e3fc40",
       "executable": false
     },
     "LICENSE": {
@@ -5167,6 +5168,10 @@
       "sha256": "2d4e4e79d5d5801a18537c8df1d058362e4730e2c616544c2060967be0b22979",
       "executable": false
     },
+    "src/evidence/library/extended/fedramp-data.ts": {
+      "sha256": "669533c9b2a38369b93584fc0fb8c34f45b90fa8f3f3f6687ed26e406bcf3359",
+      "executable": false
+    },
     "src/evidence/library/extended/gdpr-data.ts": {
       "sha256": "96e93d92536782c2c43796b743bebbe9ebcf7c01df310563191535c5265bd6f1",
       "executable": false
@@ -5176,7 +5181,7 @@
       "executable": false
     },
     "src/evidence/library/extended/index.ts": {
-      "sha256": "8d0fd447acbf18d5436912f1d18ef71ec7b4dcee797fa9abdda42c72c67e764b",
+      "sha256": "cd163e508463b886ededf9a82490a4afd918f6b7ed5818f9bae2454ea63b10c6",
       "executable": false
     },
     "src/evidence/library/extended/iso27701-data.ts": {
@@ -5220,7 +5225,7 @@
       "executable": false
     },
     "src/evidence/library/types.ts": {
-      "sha256": "0c04cb4c59f9df66c778b2c561ee677299c0cf63a626511d151762aa662e5416",
+      "sha256": "b4dd48de6541336630df9211623a8cdce5f99adc63bde6df7ed5d1cdaaf4cf30",
       "executable": false
     },
     "src/evidence/me/http.ts": {
@@ -5304,7 +5309,7 @@
       "executable": false
     },
     "src/evidence/program/boundary.ts": {
-      "sha256": "aa54aa8fd7a5052cf3b13d918956885e57293fe0c9dd2cf759793b42e62dd060",
+      "sha256": "f50a1d2d400b1894715d3f63d23a603da80c81fb953013b88472a33b1d23ec48",
       "executable": false
     },
     "src/evidence/program/checklist.ts": {
@@ -5364,7 +5369,7 @@
       "executable": false
     },
     "src/evidence/program/documents/regulated.ts": {
-      "sha256": "1373570dcd323d2e101be690568ba0c008410dc4ff1a7a059847322cccda9924",
+      "sha256": "7ed0ac85823a65b48d7c9d183211fe6c3f0764bd2957eaef2075c4cda3683ca8",
       "executable": false
     },
     "src/evidence/program/documents/saq-scope.ts": {
@@ -6852,7 +6857,7 @@
       "executable": false
     },
     "tests/helpers/extended-programs-journey.mjs": {
-      "sha256": "af6d27ae291a98c9606c86122810e0fb47c4ad4d3ab1b72fb3ec7c3670f44617",
+      "sha256": "c90971800806928e733278663653d544bad4ea49307ff68c1ca00a40a9cabe45",
       "executable": false
     },
     "tests/helpers/framework-browser.mjs": {

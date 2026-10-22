@@ -21,6 +21,7 @@ export async function extendedProgramsJourney({ app, post, get, upload, libraryR
   ['nistcsf', '2.0', /self-assessed/i, {}, 106],
   ['nist80053', 'r5-moderate', /FedRAMP authorization is a separate program/i, {}, 287],
   ['nist80053', 'r5-low', /FedRAMP authorization is a separate program/i, {}, 149],
+  ['fedramp', 'rev5-moderate', /3PAO/i, {}, 323],
   ['cmmc', 'level-2', /C3PAO/i, {}, 110],
   ['cmmc', 'level-1', /C3PAO/i, {}, 17],
   ['hitrust', 'v11', /External Assessor/i, {}, 19],
@@ -64,7 +65,7 @@ export async function extendedProgramsJourney({ app, post, get, upload, libraryR
  assert.equal(open.length, table.filter(r => !['implemented', 'not applicable (excluded)'].includes(r[2])).length); assert.ok(open.some(x => /^3\.5\.3 .*No plan of action recorded/.test(x.text)))
  await post(`${docUrl(cmmc, 'cmmc-poam')}/revisions`, { inputs: JSON.stringify({ plans: [{ requirement: '3.5.3', planned_action: 'Enforce MFA for all users', owner: 'Priya Shah', due: '2026-12-31' }] }), reason: 'Plan for MFA' })
  assert.match((await get(docUrl(cmmc, 'cmmc-poam'))).revision.content.sections[0].statements.find(x => /^3\.5\.3 /.test(x.text)).text, /Planned action: Enforce MFA for all users; owner Priya Shah; due 2026-12-31[^]*does not make a requirement implemented/)
- for (const [key, kind] of [['nist80053:r5-moderate', 'nist80053-ssp'], ['nist80053:r5-moderate', 'nist80053-poam'], ['nistcsf:2.0', 'nistcsf-profile'], ['nistairmf:1.0', 'nistairmf-profile'], ['nistairmf:1.0', 'airmf-ai-register'], ['iso42001:2023', 'iso42001-soa'], ['iso42001:2023', 'iso42001-ai-register'], ['iso42001:2023', 'iso42001-impact'], ['hitrust:v11', 'hitrust-readiness']]) assert.ok((await generate(programs[key], kind)).revision.revision >= 1, kind)
+ for (const [key, kind] of [['nist80053:r5-moderate', 'nist80053-ssp'], ['nist80053:r5-moderate', 'nist80053-poam'], ['fedramp:rev5-moderate', 'fedramp-ssp'], ['fedramp:rev5-moderate', 'fedramp-poam'], ['nistcsf:2.0', 'nistcsf-profile'], ['nistairmf:1.0', 'nistairmf-profile'], ['nistairmf:1.0', 'airmf-ai-register'], ['iso42001:2023', 'iso42001-soa'], ['iso42001:2023', 'iso42001-ai-register'], ['iso42001:2023', 'iso42001-impact'], ['hitrust:v11', 'hitrust-readiness']]) assert.ok((await generate(programs[key], kind)).revision.revision >= 1, kind)
  assert.equal((await get(docUrl(programs['nistcsf:2.0'], 'nistcsf-profile'))).revision.content.sections.find(x => x.id === 'status').table.rows.length, 106)
  // US Data Privacy: thresholds evaluated on the figures; raising Montana's figures is a reviewable change.
  const usdp = programs['usdp:2026-10'], first = (await get('/api/programs/' + usdp)).readiness, byState = Object.fromEntries(first.usdp.states.map(s => [s.code, s]))

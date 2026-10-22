@@ -40,6 +40,8 @@ const entries: [string, [Kind, Form]][] = [
  ['cmmc-poam', poam('cmmc', 'Plan of action and milestones (3.12.2)', 'Each requirement not implemented, with your planned action, owner and due date.')],
  ['nist80053-ssp', status('nist80053', 'System security plan', 'The system description you write, with each NIST SP 800-53 control\'s implementation derived from live proof and tests.', 'boundary', 'System description, boundary and authorization context')],
  ['nist80053-poam', poam('nist80053', 'Plan of action and milestones', 'Each control not implemented, with your planned action, owner and due date.')],
+ ['fedramp-ssp', status('fedramp', 'System security plan', 'The system description and authorization boundary you write, with each FedRAMP Moderate control\'s implementation derived from live proof and tests.', 'boundary', 'System description, authorization boundary and leveraged authorizations')],
+ ['fedramp-poam', poam('fedramp', 'Plan of action and milestones', 'Each control not implemented, with your planned action, owner and due date.')],
  ['nistcsf-profile', status('nistcsf', 'Current profile', 'Each CSF 2.0 subcategory with its derived implementation, as the organization\'s current profile.', 'scope', 'Profile scope and target outcomes')],
  ['nistairmf-profile', status('nistairmf', 'AI RMF profile', 'Each AI RMF subcategory with its derived implementation, as the organization\'s current profile.', 'scope', 'AI systems in scope and target outcomes')],
  ['iso42001-soa', status('iso42001', 'AI management system statement of applicability', 'Every clause and Annex A control with its derived implementation and any exclusion rationale.', 'scope', 'Scope of the AI management system')],

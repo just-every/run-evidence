@@ -44,6 +44,9 @@ const prerequisites: Record<FrameworkId, Prerequisite[]> = {
  iso42001: [
   { kind: 'licensed content', title: 'ISO/IEC 42001 standard', detail: 'Evidence ships clause and control ids with short summaries; buy the standard from ISO or your national standards body.' },
  ],
+ fedramp: [
+  { kind: 'agreement', title: 'Agency sponsor and 3PAO engagement', detail: 'A federal agency sponsor and a FedRAMP-recognized 3PAO are engaged before an authorization to operate; Evidence prepares readiness evidence and holds neither role.' },
+ ],
  nistairmf: [],
  nistcsf: [],
  nist80053: [],

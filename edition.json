@@ -2681,6 +2681,7 @@
           "src/evidence/library/extended/cmmc-data.ts",
           "src/evidence/library/extended/controls.ts",
           "src/evidence/library/extended/csf-data.ts",
+          "src/evidence/library/extended/fedramp-data.ts",
           "src/evidence/library/extended/gdpr-data.ts",
           "src/evidence/library/extended/hitrust-data.ts",
           "src/evidence/library/extended/index.ts",

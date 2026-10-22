@@ -7,6 +7,7 @@ import { hitrust } from './hitrust-data'
 import { iso27701 } from './iso27701-data'
 import { iso42001 } from './iso42001-data'
 import { sp80053 } from './nist80053-data'
+import { fedramp } from './fedramp-data'
 import { obligations, states } from './usdp-data'
 // The extended and regulated programs (PROGRAM-004). They run on the same versioned program, library and readiness model as the core programs:
 // each ships requirements, a pre-mapped set of library controls (the core controls it shares plus the privacy, AI and CUI controls), and names the
@@ -27,6 +28,7 @@ export const extendedFrameworks: Partial<Record<FrameworkId, Framework>> = {
  cmmc: { id: 'cmmc', name: 'CMMC 2.0', licence: 'NIST SP 800-171 Rev. 2 text is public (NIST); point values are from the DoD Assessment Methodology v1.2.1.', assessor: 'A certified third-party assessment organization (C3PAO) assesses CMMC Level 2 where the contract requires it; the business submits its own SPRS score. Level 1 is a self-assessment with an annual affirmation.', editions: [
   { id: 'level-2', label: 'CMMC Level 2 · NIST SP 800-171 Rev. 2 (110 requirements)', requirements: sp800171.map(([ref, title, section, weight]) => req(ref, title, section, { weight })) },
   { id: 'level-1', label: 'CMMC Level 1 · basic safeguarding (17 practices)', requirements: sp800171.filter(r => level1.has(r[0])).map(([ref, title, section, weight]) => req(ref, title, section, { weight })) }] },
+ fedramp: { id: 'fedramp', name: 'FedRAMP', licence: 'The FedRAMP Rev. 5 baseline is public (FedRAMP, built on NIST SP 800-53 Rev. 5). Evidence names each control with its title.', assessor: 'A FedRAMP-recognized third-party assessment organization (3PAO) assesses the cloud service and an agency sponsor authorizes it; FedRAMP\'s PMO holds the authorization. Evidence prepares readiness evidence only.', editions: [{ id: 'rev5-moderate', label: 'FedRAMP Rev. 5 · Moderate baseline (323 controls)', requirements: fedramp.map(([ref, title, section]) => req(ref, title, section)) }] },
  hitrust: { id: 'hitrust', name: 'HITRUST CSF', licence: 'HITRUST requirement statements and scoring are licensed and not shipped. Evidence lists the assessment domains for readiness.', assessor: 'An authorized HITRUST External Assessor validates the assessment, and HITRUST issues the report. Evidence prepares evidence only.', editions: [{ id: 'v11', label: 'HITRUST CSF v11 · assessment domains', requirements: hitrust.map(([ref, title, section]) => req(ref, title, section)) }] },
 }
 // Which library controls satisfy each requirement. Core controls are shared with SOC 2, ISO 27001, HIPAA and PCI DSS, so their evidence is reused.
@@ -49,6 +51,7 @@ const mappings: Partial<Record<FrameworkId, Pairs>> = {
  nistairmf: airmf.map(([ref, , section]) => [ref, aiMap(ref, section)]),
  nistcsf: csf.map(([ref, , section]) => [ref, csfCategory[ref.slice(0, 5)] ?? []]),
  nist80053: sp80053.map(([ref, , fam]) => [ref, m53(ref, ref.split('-')[0])]),
+ fedramp: fedramp.map(([ref]) => [ref, m53(ref, ref.split('-')[0])]),
  cmmc: sp800171.map(([ref]) => [ref, m171Over[ref] ?? m171[ref.split('.').slice(0, 2).join('.')] ?? []]),
  hitrust: hitrust.map(([ref]) => [ref, hitrustMap[ref] ?? []]),
 }
