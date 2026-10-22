@@ -26,6 +26,8 @@ try {
   const f=new FormData();f.set('kind','soc2');f.set('file',new File([socReport()],'supplier-soc2.pdf',{type:'application/pdf'}))
   const r=await app.fetch(`/api/vendors/${v.id}/documents`,{method:'POST',headers:{origin:app.origin},body:f});assert.equal(r.status,201)
   reports[width]={vendor:v.id,doc:(await r.json()).id}
+  const text=new FormData();text.set('kind','dpa');text.set('file',new File(['Processing scope: Customer contact records\fSecurity measures: Restricted access for opérators\nLimitation: The support subprocessor is outside the signed scope.'],'supplier-terms.txt',{type:'text/plain'}))
+  const tr=await app.fetch(`/api/vendors/${v.id}/documents`,{method:'POST',headers:{origin:app.origin},body:text});assert.equal(tr.status,201);reports[width].text=(await tr.json()).id
  }
  app.setCookie('')
  server = createServer(async (req, res) => {
@@ -165,6 +167,16 @@ try {
   await page.goto(origin+'/app/programs/'+reportProgram.id)
   await page.getByRole('link',{name:/open vendor CUEC obligations/}).waitFor()
   await capture('vendor-cuec-readiness')
+  await page.goto(origin+`/app/vendors/${report.vendor}/documents/${report.text}/reviews`)
+  await page.getByRole('button',{name:'Prepare cited review'}).click()
+  await page.getByRole('heading',{name:'Vendor document review',exact:true}).waitFor()
+  await page.getByText('UTF-8 text source.',{exact:false}).waitFor()
+  await capture('vendor-text-review')
+  await page.getByRole('link',{name:'Source page 2',exact:true}).first().click()
+  await page.getByRole('heading',{name:'Original document page',exact:true}).waitFor()
+  assert.match(await page.locator('pre').innerText(),/opérators/)
+  await page.getByRole('link',{name:'Download original text report',exact:true}).waitFor()
+  await capture('vendor-text-source')
   // ERASE-001: privacy requests, hold review and the confirmed receipt use the
   // existing application shell at both required widths.
   await page.goto(origin + '/app/privacy')

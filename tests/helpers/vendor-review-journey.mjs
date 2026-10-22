@@ -72,6 +72,32 @@ export async function vendorReviewJourney() {
    await post(rp+'/decision',{snapshot_hash:proposal.snapshot_hash,decision:'rejected',reviewer_person_id:reviewer.id,reason:'Corpus review rejected pending independent diligence'},200)
    assert.deepEqual(Buffer.from(await (await app.fetch(`/app/vendors/${vendor.id}/documents/${record.id}/download`)).arrayBuffer()),original)
   }
+  // Real report phrasing must never turn an unrecognized or negative
+  // opinion into unqualified assurance. Every proposal still needs approval.
+  for(const [sentence,expected]of [
+   ['In our opinion, the controls were suitably designed and operated effectively.','unqualified'],
+   ['In our opinion, except for the matter described, controls operated effectively.','qualified'],
+   ['In our opinion, the controls were not suitably designed or operated effectively.','adverse'],
+   ['We do not express an opinion on the suitability of the controls.','disclaimer'],
+   ['In our opinion, further evidence is needed before conclusions can be drawn.',null],
+   ['In our opinion, controls were not appropriately designed but operated effectively.',null],
+  ]){
+   const source=pdfFixture([['SOC 2 Type II',sentence]]),record=await upload(vendor.id,'soc2',source),proposal=await post(`/api/vendors/${vendor.id}/documents/${record.id}/reviews`,{}),rp=`/api/vendors/${vendor.id}/document-reviews/${proposal.id}`,value=await get(rp)
+   assert.deepEqual(value.snapshot.fields.filter(f=>f.kind==='opinion').map(f=>f.value),expected?[expected]:[])
+   if(!expected)assert.ok(value.snapshot.unresolved.some(x=>x.startsWith('opinion:')))
+   for(const f of value.snapshot.fields)assert.ok((await get(rp+'/pages/'+f.page)).text.includes(f.quote))
+   assert.equal((await get('/api/vendors/'+vendor.id)).findings.length,3)
+  }
+  const text=Buffer.from('Data processing agreement\r\nProcessing scope: Customer contact records\f\fSecurity measures: Restricted access for opérators\r\nLimitation: One support subprocessor is outside the signed scope.','utf8')
+  const form=new FormData();form.set('kind','dpa');form.set('file',new File([text],'supplier-terms.txt',{type:'text/plain'}))
+  const response=await app.fetch(`/api/vendors/${vendor.id}/documents`,{method:'POST',headers:{origin:app.origin},body:form});assert.equal(response.status,201)
+  const textDoc=await response.json(),textReview=await post(`/api/vendors/${vendor.id}/documents/${textDoc.id}/reviews`,{}),tp=`/api/vendors/${vendor.id}/document-reviews/${textReview.id}`,td=await get(tp)
+  assert.equal(td.snapshot.source_format,'utf8-text');assert.equal(td.snapshot.pages.length,3);assert.equal((await get(tp+'/pages/2')).text,'','blank source pages are still addressable')
+  assert.equal(td.snapshot.fields.find(f=>f.kind==='finding').page,3);assert.match((await get(tp+'/pages/3')).text,/opérators/)
+  for(const f of td.snapshot.fields)assert.ok((await get(tp+'/pages/'+f.page)).text.includes(f.quote))
+  assert.deepEqual(Buffer.from(await(await app.fetch(`/app/vendors/${vendor.id}/documents/${textDoc.id}/download`)).arrayBuffer()),text)
+  await post(tp+'/decision',{snapshot_hash:textReview.snapshot_hash,decision:'rejected',reviewer_person_id:reviewer.id,reason:'Readable text source reviewed; supplier scope still requires diligence'},200)
+  assert.equal((await get('/api/vendors/'+vendor.id)).findings.length,3)
   const unreadable=await upload(vendor.id,'other',Buffer.from('Not a readable PDF'))
   await post(`/api/vendors/${vendor.id}/documents/${unreadable.id}/reviews`,{},422)
   // Native questionnaire responses have a lossless original JSON transcript,
@@ -94,7 +120,7 @@ export async function vendorReviewJourney() {
   assert.equal((await get('/api/vendors/'+vendor.id)).findings.length,5)
   await assert.rejects(app.db.prepare('UPDATE vendor_document_reviews SET snapshot_hash=? WHERE id=?').bind('a'.repeat(64),prepared.id).run(),/immutable_vendor_review/)
   const archive=Buffer.from(await (await app.fetch('/api/archive/export')).arrayBuffer()),dest=await runtime()
-  try{await dest.signin();const r=await dest.fetch('/api/archive/restore',{method:'POST',headers:{origin:dest.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:archive});assert.equal(r.status,200,await r.clone().text());assert.deepEqual((await (await dest.fetch(correctedPath)).json()).snapshot,(await get(correctedPath)).snapshot);assert.deepEqual((await (await dest.fetch('/api/vendors/obligations')).json()).obligations,(await get('/api/vendors/obligations')).obligations);assert.deepEqual((await (await dest.fetch(np)).json()).snapshot,ns.snapshot);assert.deepEqual(Buffer.from(await (await dest.fetch(`/app/vendors/${vendor.id}/documents/${native.document_id}/download`)).arrayBuffer()),transcript)}finally{await dest.close()}
+  try{await dest.signin();const r=await dest.fetch('/api/archive/restore',{method:'POST',headers:{origin:dest.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:archive});assert.equal(r.status,200,await r.clone().text());assert.deepEqual((await (await dest.fetch(correctedPath)).json()).snapshot,(await get(correctedPath)).snapshot);assert.deepEqual((await (await dest.fetch('/api/vendors/obligations')).json()).obligations,(await get('/api/vendors/obligations')).obligations);assert.deepEqual((await (await dest.fetch(np)).json()).snapshot,ns.snapshot);assert.deepEqual((await(await dest.fetch(tp)).json()).snapshot,(await get(tp)).snapshot);assert.deepEqual(Buffer.from(await(await dest.fetch(`/app/vendors/${vendor.id}/documents/${textDoc.id}/download`)).arrayBuffer()),text);assert.deepEqual(Buffer.from(await (await dest.fetch(`/app/vendors/${vendor.id}/documents/${native.document_id}/download`)).arrayBuffer()),transcript)}finally{await dest.close()}
   console.log('PASS VENDOR-003: PDF page citations, review corrections, exact named approvals, CUECs in readiness, bridge letters, qualified findings and archive parity')
  }finally{await app.close()}
 }
