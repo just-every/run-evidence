@@ -88,6 +88,8 @@ export async function vendorReviewJourney() {
    for(const f of value.snapshot.fields)assert.ok((await get(rp+'/pages/'+f.page)).text.includes(f.quote))
    assert.equal((await get('/api/vendors/'+vendor.id)).findings.length,3)
   }
+  const conflicting=await upload(vendor.id,'soc2',pdfFixture([['SOC 2 Type II','Opinion: unqualified','In our opinion, controls were not suitably designed.']])),conflict=await post(`/api/vendors/${vendor.id}/documents/${conflicting.id}/reviews`,{}),cd=await get(`/api/vendors/${vendor.id}/document-reviews/${conflict.id}`)
+  assert.deepEqual(cd.snapshot.fields.filter(f=>f.kind==='opinion').map(f=>f.value),['unqualified','adverse']);assert.ok(cd.snapshot.unresolved.some(x=>x.startsWith('Conflicting opinion passages:')))
   const text=Buffer.from('Data processing agreement\r\nProcessing scope: Customer contact records\f\fSecurity measures: Restricted access for opérators\r\nLimitation: One support subprocessor is outside the signed scope.','utf8')
   const form=new FormData();form.set('kind','dpa');form.set('file',new File([text],'supplier-terms.txt',{type:'text/plain'}))
   const response=await app.fetch(`/api/vendors/${vendor.id}/documents`,{method:'POST',headers:{origin:app.origin},body:form});assert.equal(response.status,201)
@@ -98,6 +100,11 @@ export async function vendorReviewJourney() {
   assert.deepEqual(Buffer.from(await(await app.fetch(`/app/vendors/${vendor.id}/documents/${textDoc.id}/download`)).arrayBuffer()),text)
   await post(tp+'/decision',{snapshot_hash:textReview.snapshot_hash,decision:'rejected',reviewer_person_id:reviewer.id,reason:'Readable text source reviewed; supplier scope still requires diligence'},200)
   assert.equal((await get('/api/vendors/'+vendor.id)).findings.length,3)
+  for(const corrupt of [Buffer.from([0xff,0xfe,0xfd]),Buffer.from('Processing scope: Customer records\0hidden binary')]){
+   const f=new FormData();f.set('kind','dpa');f.set('file',new File([corrupt],'corrupt-report.txt',{type:'text/plain'}));const u=await app.fetch(`/api/vendors/${vendor.id}/documents`,{method:'POST',headers:{origin:app.origin},body:f});assert.equal(u.status,201);const record=await u.json()
+   await post(`/api/vendors/${vendor.id}/documents/${record.id}/reviews`,{},422)
+   assert.equal((await get(`/api/vendors/${vendor.id}/documents/${record.id}/reviews`)).reviews.length,0,'invalid text cannot create a clean proposal')
+  }
   const unreadable=await upload(vendor.id,'other',Buffer.from('Not a readable PDF'))
   await post(`/api/vendors/${vendor.id}/documents/${unreadable.id}/reviews`,{},422)
   // Native questionnaire responses have a lossless original JSON transcript,
