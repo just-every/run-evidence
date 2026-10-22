@@ -5,7 +5,7 @@ import { resolve, extname, join } from 'node:path'
 import { chromium } from 'playwright'
 // COLLECTION-001: existing schedule form, shipped styling and real owner HTTP
 // handlers. The loopback bridge retains this harness's authenticated owner.
-export async function collectionScheduleBrowser(app, connections, { suffix = '', expected = [], reportExpected = [] } = {}) {
+export async function collectionScheduleBrowser(app, connections, { suffix = '', expected = [], reportExpected = [], expandHistory = false } = {}) {
  const output = resolve(process.env.EVIDENCE_BROWSER_OUTPUT ?? '.cache/browser/collection-schedules')
  let server, browser, origin
  try {
@@ -62,6 +62,12 @@ export async function collectionScheduleBrowser(app, connections, { suffix = '',
      assert.match(await summaries.first().locator('..').innerText(), /Library revision/)
     }
     for(const text of reportExpected){const entry=page.locator('details').filter({hasText:text}).first();assert.ok(await entry.count(),text+' retained in period report');if(!await entry.evaluate(e=>e.open))await entry.locator('summary').click();assert.ok((await entry.innerText()).includes(text))}
+    if(expandHistory){
+     const change=page.locator('[data-code-change]').first(),deployment=page.locator('[data-code-deployment]').first()
+     await change.locator('summary').first().click();await deployment.locator('summary').first().click()
+     assert.match(await change.innerText(),/CHANGES_REQUESTED/);assert.match(await change.innerText(),/failure/)
+     assert.match(await deployment.innerText(),/Production/);assert.match(await deployment.innerText(),/14/)
+    }
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'collection report overflow at ' + width)
     await page.screenshot({ path: join(output, `${width}-${c.provider}${suffix}-period-report.png`), fullPage: true })
     await page.screenshot({ path: join(output, `${width}-${c.provider}${suffix}-period-viewport.png`) })

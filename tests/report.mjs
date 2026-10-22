@@ -82,7 +82,7 @@ try {
   assert.deepEqual([totals.open_obligations, totals.sla_missed, totals.sla_approaching, totals.sla_within], [1, 1, 0, 0])
  })
  await scenario('REMEDY-002: The board report reconciles per-item SLA, freshness, exceptions, policies and trend in JSON and CSV; a filter narrows items and never improves readiness', async () => {
-  const connection = await owner('/api/connections', { account: 'northstar', token: 'github_pat_any' })
+  const connection = await owner('/api/connections', { account: 'northstar', token: 'synthetic-evidence-1' })
   await owner(`/api/connections/${connection.id}/collect`, {})
   github.up = false
   await app.clock('2026-10-19T13:00:00Z'); await app.tick()
