@@ -5,7 +5,7 @@ import { auditStatement, list, oneOf, parseList, text, type Actor, type Input } 
 import { edition, editionChange, frameworks, frameworkIds, latestEdition, mappedControls, type FrameworkId, type LibraryControl } from '../library'
 import { requirePerson } from './people'
 import { parseFigures, programInputs, stateOf, stateRationale } from './extended'
-import { states } from '../library/extended/usdp-data'
+import { statesAt } from '../library/extended/usdp-data'
 import { acceptedLibraryRevision } from './library-revision'
 export interface ProgramRow { id: string; framework: FrameworkId; edition: string; name: string; legal_entity: string; report_type: string | null; categories: string; products: string; teams: string; regions: string; systems: string; audit_from: string; audit_to: string; assessor: string; lead_person_id: string | null; milestones: string; created_at: string; updated_at: string }
 export const reportTypes = ['Type I', 'Type II'] as const
@@ -57,7 +57,8 @@ export async function createProgram(env: Bindings, actor: Actor, input: Input, n
  const row = { id, framework, edition: editionId, ...fields, lead_person_id: lead, created_at: at, updated_at: at, ...(figures ? { inputs: { figures } } : {}) }
  const chosen = parseList(fields.categories), outOfScope = framework === 'soc2' || framework === 'iso27701' ? edition(framework, editionId)!.requirements.filter(r => r.optional && !chosen.includes(r.optional)) : []
  const excluded = outOfScope.map(r => ({ ref: r.ref, rationale: framework === 'soc2' ? `Trust services category ${r.optional} is not in this report's scope.` : `The ${r.optional} role is not in this program's scope.` }))
- if (figures) for (const r of edition(framework, editionId)!.requirements) { const state = states.find(s => s.code === stateOf(r.ref))!; if (!state.applies(figures, figures.consumers[state.code] ?? 0)) excluded.push({ ref: r.ref, rationale: stateRationale(figures, state.code, 1) }) }
+ const libraryRevision = await acceptedLibraryRevision(env)
+ if (figures) for (const r of edition(framework, editionId)!.requirements) { const state = statesAt(libraryRevision).find(s => s.code === stateOf(r.ref))!; if (!state.applies(figures, figures.consumers[state.code] ?? 0)) excluded.push({ ref: r.ref, rationale: stateRationale(figures, state.code, 1, libraryRevision) }) }
  await env.DB.batch([
   env.DB.prepare('INSERT INTO programs(id,framework,edition,name,legal_entity,report_type,categories,products,teams,regions,systems,audit_from,audit_to,assessor,lead_person_id,milestones,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(id, framework, editionId, row.name, row.legal_entity, row.report_type, row.categories, row.products, row.teams, row.regions, row.systems, row.audit_from, row.audit_to, row.assessor, lead, row.milestones, at, at),
   env.DB.prepare('INSERT INTO program_editions(id,program_id,edition,effective_at,change_id) VALUES(?,?,?,?,NULL)').bind(crypto.randomUUID(), id, editionId, at),

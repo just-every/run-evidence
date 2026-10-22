@@ -2,7 +2,8 @@ import type { Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
 import { auditStatement, type Actor, type Input } from '../door'
 import { controlsFor, edition, frameworks, mappedControls } from '../library'
-import { states, type Figures } from '../library/extended/usdp-data'
+import { statesAt, states, type Figures } from '../library/extended/usdp-data'
+import { acceptedLibraryRevision } from './library-revision'
 import type { ProgramRow } from './storage'
 // PROGRAM-004: what the extended programs add to the shared program model. Business figures, the SPRS
 // qualifiers and the ISO/IEC 27701 roles are inputs kept in the program's own revision snapshots; nothing here
@@ -29,17 +30,17 @@ export function parseFigures(input: Input): Figures {
  for (const code of Object.keys(consumers)) if (!states.some(s => s.code === code)) throw new Refusal(`${code} is not a state with a comprehensive privacy law in this library.`)
  return { annual_revenue_usd: num(raw.annual_revenue_usd ?? raw.usdp_revenue ?? 0, 'Annual gross revenue', 1e13), small_business: flag(raw.small_business ?? raw.usdp_small_business), sale_revenue_percent: num(raw.sale_revenue_percent ?? raw.usdp_sale_percent ?? 0, 'Revenue from selling personal data (percent)', 100), sensitive_data: flag(raw.sensitive_data ?? raw.usdp_sensitive), consumers }
 }
-export function stateRationale(f: Figures, code: string, rev: number) {
- const s = states.find(x => x.code === code)!, c = f.consumers[code] ?? 0
+export function stateRationale(f: Figures, code: string, rev: number, libraryRevision = 1) {
+ const s = statesAt(libraryRevision).find(x => x.code === code)!, c = f.consumers[code] ?? 0
  return `${s.name} does not apply on the recorded figures (revision ${rev}): its threshold is ${s.threshold}. Recorded: ${c.toLocaleString('en-US')} ${s.name} consumers, ${money(f.annual_revenue_usd)} annual gross revenue, ${f.sale_revenue_percent}% of revenue from selling personal data, ${f.small_business ? 'a small business' : 'not a small business'}, ${f.sensitive_data ? 'processes' : 'does not process'} sensitive data.`.slice(0, 1000)
 }
 export const stateOf = (ref: string) => ref.split('.')[0]
 export interface StateLine { code: string; name: string; act: string; effective: string; threshold: string; applies: boolean; consumers: number; decision: 'included' | 'excluded'; pending: 'include' | 'exclude' | null }
 // The state review: the thresholds evaluated on the recorded figures, set against the program's current applicability decisions.
 export async function stateReview(env: Bindings, row: ProgramRow, current: Map<string, { state: string }>): Promise<{ figures: Figures | null; revision: number; states: StateLine[] }> {
- const { inputs, revision } = await programInputs(env, row.id), f = inputs.figures ?? null
+ const { inputs, revision } = await programInputs(env, row.id), f = inputs.figures ?? null, laws = statesAt(await acceptedLibraryRevision(env))
  const refs = edition(row.framework, row.edition)!.requirements.map(r => r.ref)
- return { figures: f, revision, states: states.map(s => {
+ return { figures: f, revision, states: laws.map(s => {
   const mine = refs.filter(r => stateOf(r) === s.code), excluded = mine.filter(r => current.get(r)?.state === 'excluded').length, decision = excluded === mine.length ? 'excluded' as const : 'included' as const
   const applies = f ? s.applies(f, f.consumers[s.code] ?? 0) : false
   return { code: s.code, name: s.name, act: s.act, effective: s.effective, threshold: s.threshold, applies, consumers: f?.consumers[s.code] ?? 0, decision, pending: f && applies && decision === 'excluded' ? 'include' : f && !applies && decision === 'included' ? 'exclude' : null }
@@ -69,7 +70,7 @@ export async function decideStateChange(env: Bindings, actor: Actor, id: string,
  const review = await stateReview(env, row, current), line = review.states.find(s => s.code === code)
  if (!line?.pending || !review.figures) throw new Refusal('That state has no pending applicability change.', 409)
  const refs = edition(row.framework, row.edition)!.requirements.map(r => r.ref).filter(r => stateOf(r) === code), include = line.pending === 'include'
- const rationale = include ? `${line.name} now applies on the recorded figures (revision ${review.revision}): ${line.threshold}. Accepted by ${actor.name}: ${reason}`.slice(0, 1000) : stateRationale(review.figures, code, review.revision)
+ const rationale = include ? `${line.name} now applies on the recorded figures (revision ${review.revision}): ${line.threshold}. Accepted by ${actor.name}: ${reason}`.slice(0, 1000) : stateRationale(review.figures, code, review.revision, await acceptedLibraryRevision(env))
  const data = JSON.stringify(refs), at = now.toISOString()
  await env.DB.batch([
   env.DB.prepare("INSERT INTO program_applicability(id,program_id,ref,state,rationale,actor_id,actor_name,decided_at) SELECT lower(hex(randomblob(16))),?,value,?,?,?,?,? FROM json_each(?)").bind(id, include ? 'included' : 'excluded', rationale, actor.id, actor.name, at, data),

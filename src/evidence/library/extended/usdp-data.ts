@@ -11,7 +11,7 @@ export const states: StateLaw[] = [
  law('CA', 'California', 'California Consumer Privacy Act, Cal. Civ. Code § 1798.100 et seq., as amended by the CPRA', '2020-01-01', { text: '$26,625,000 annual gross revenue (as adjusted for 2025), or 100,000 consumers or households, or 50% of revenue from selling or sharing personal information', test: (f, c) => f.annual_revenue_usd > 26_625_000 || c >= 100_000 || f.sale_revenue_percent >= 50 }),
  law('VA', 'Virginia', 'Virginia Consumer Data Protection Act, Va. Code § 59.1-575 et seq.', '2023-01-01', either(100_000, 25_000, 50, true)),
  law('CO', 'Colorado', 'Colorado Privacy Act, C.R.S. § 6-1-1301 et seq.', '2023-07-01', anySale(100_000, 25_000)),
- law('CT', 'Connecticut', 'Connecticut Data Privacy Act, Conn. Gen. Stat. § 42-515 et seq., as amended by SB 1295 (effective 1 July 2026)', '2023-07-01', { text: '35,000 consumers, or processing sensitive data, or selling personal data', test: (f, c) => c >= 35_000 || f.sensitive_data || f.sale_revenue_percent > 0 }),
+ law('CT', 'Connecticut', 'Connecticut Data Privacy Act, Conn. Gen. Stat. § 42-515 et seq.', '2023-07-01', either(100_000, 25_000, 25, true)),
  law('UT', 'Utah', 'Utah Consumer Privacy Act, Utah Code § 13-61-101 et seq.', '2023-12-31', { text: '$25,000,000 annual revenue and either 100,000 consumers, or 25,000 consumers and more than 50% of gross revenue from selling personal data', test: (f, c) => f.annual_revenue_usd >= 25_000_000 && (c >= 100_000 || (c >= 25_000 && f.sale_revenue_percent > 50)) }),
  law('TX', 'Texas', 'Texas Data Privacy and Security Act, Tex. Bus. & Com. Code ch. 541', '2024-07-01', { text: 'no numeric threshold: doing business in Texas, processing or selling personal data, and not a small business as defined by the SBA', test: f => !f.small_business }),
  law('OR', 'Oregon', 'Oregon Consumer Privacy Act, ORS 646A.570 to 646A.589', '2024-07-01', either(100_000, 25_000, 25, false)),
@@ -28,6 +28,9 @@ export const states: StateLaw[] = [
  law('KY', 'Kentucky', 'Kentucky Consumer Data Protection Act, Ky. Rev. Stat. § 367.3611 et seq.', '2026-01-01', either(100_000, 25_000, 50, true)),
  law('RI', 'Rhode Island', 'Rhode Island Data Transparency and Privacy Protection Act, R.I. Gen. Laws § 6-48.1-1 et seq.', '2026-01-01', either(35_000, 10_000, 20, true)),
 ]
+// Revision 4 of the library carries Connecticut's SB 1295 amendment (effective 1 July 2026). An installation evaluates the thresholds of its accepted library revision.
+const amended = new Map<number, StateLaw[]>([[4, [law('CT', 'Connecticut', 'Connecticut Data Privacy Act, Conn. Gen. Stat. § 42-515 et seq., as amended by SB 1295 (effective 1 July 2026)', '2023-07-01', { text: '35,000 consumers, or processing sensitive data, or selling personal data', test: (f, c) => c >= 35_000 || f.sensitive_data || f.sale_revenue_percent > 0 })]]])
+export const statesAt = (revision: number): StateLaw[] => states.map(s => [...amended].filter(([r]) => r <= revision).flatMap(([, laws]) => laws).findLast(l => l.code === s.code) ?? s)
 // The consolidated control set: one obligation per row, generated for each state that applies and imposes it.
 const all = states.map(s => s.code)
 const without = (...codes: string[]) => all.filter(c => !codes.includes(c))

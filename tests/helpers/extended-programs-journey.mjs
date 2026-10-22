@@ -106,6 +106,16 @@ const rights = await generate(usdp, 'usdp-rights-requests'); await post(`${docUr
  const drifted = await get(docUrl(usdp, 'usdp-self-attestation')); assert.equal(drifted.state, 'needs review'); assert.ok(drifted.drift.items.some(i => /Montana/.test(i.label)))
  const trail = (await get('/api/audit?action=program.')).entries.filter(e => e.subject === 'program:' + usdp)
  assert.ok(trail.some(e => e.action === 'program.state-change' && /MT included/.test(e.detail) && e.reason === 'Counsel confirmed Montana applies'))
+ // An amended state law arrives as a reviewable library revision: Connecticut's SB 1295 lowers its threshold at revision 4.
+ await post(`/api/programs/${usdp}/inputs`, { annual_revenue_usd: 40_000_000, small_business: false, sale_revenue_percent: 5, consumers: { CA: 12_000, TX: 8_000, MT: 60_000, CT: 40_000 }, reason: 'Connecticut customers' }, 200)
+ const stateOf = async code => (await get('/api/programs/' + usdp)).readiness.usdp.states.find(s => s.code === code)
+ assert.equal((await stateOf('CT')).applies, false); assert.equal((await stateOf('CT')).pending, null)
+ const waiting = (await get('/api/library')).pending.find(r => r.revision === 4); assert.match(waiting.summary, /Connecticut SB 1295/); assert.ok(waiting.stateChanges[0].programs.some(p => p.id === usdp))
+ await post('/api/library/revisions/4', { reason: 'Reviewed the Connecticut amendment with counsel' }, 200)
+ assert.equal((await stateOf('CT')).applies, true); assert.equal((await stateOf('CT')).pending, 'include'); assert.match((await stateOf('CT')).threshold, /35,000 consumers, or processing sensitive data/)
+ assert.equal((await get('/api/programs/' + usdp)).readiness.requirements.find(r => r.ref === 'CT.ACCESS').state, 'excluded', 'an accepted library revision changes nothing in the program until the state change is accepted')
+ await post(`/api/programs/${usdp}/state-changes`, { state: 'CT', reason: 'Counsel confirmed the amended Connecticut threshold applies' }, 200)
+ assert.equal((await get('/api/programs/' + usdp)).readiness.requirements.find(r => r.ref === 'CT.ACCESS').state, 'included')
  // ISO/IEC 27701: reuse from ISO 27001, with controller and processor controls separately applicable.
  const pims = (await get('/api/programs/' + programs['iso27701:2019'])).readiness
  assert.ok(pims.roles.controller.included > 0 && pims.roles.processor.included > 0 && pims.roles.both.included > 0)

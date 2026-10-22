@@ -16,7 +16,7 @@ for (const framework of Object.values(frameworks)) for (const edition of framewo
  for (let revision = 1; revision <= latestLibraryRevision; revision++) if (!controlsFor(framework.id, edition.id, requirement.ref, revision).length) failures.push(`${framework.id} ${edition.id} ${requirement.ref} has no mapped control at library revision ${revision}`)
 }
 libraryRevisions.forEach((r, i) => {
- if (r.revision !== i + 2 || (!r.changes.length && !r.saqChanges?.length)) failures.push(`library revision ${r.revision} is out of sequence or empty`)
+ if (r.revision !== i + 2 || (!r.changes.length && !r.saqChanges?.length && !r.stateChanges?.length)) failures.push(`library revision ${r.revision} is out of sequence or empty`)
  for (const x of r.saqChanges ?? []) {
   const before = saqScope(x.type, r.revision - 1), after = saqScope(x.type, r.revision)
   if (!currentScopes[x.type] || !x.from || !x.to || !x.removed.length || before.revision === after.revision || x.removed.some(id => !before.ids.includes(id) || after.ids.includes(id))) failures.push(`library revision ${r.revision} has an invalid SAQ change`)
