@@ -1,3 +1,4 @@
+import { collectionScheduleJourney } from './collection-schedule-journey.mjs'
 import assert from 'node:assert/strict'
 import { runtime } from './runtime.mjs'
 import { collectionScheduleBrowser } from './collection-schedule-browser.mjs'
@@ -162,5 +163,7 @@ export async function collectionJourney() {
   const copy = await (await target.fetch(path)).json()
   assert.deepEqual((await (await target.fetch(path + '/report' + query)).json()).attempts, report.attempts); assert.deepEqual(copy.runs, (await get(path)).runs); assert.equal(JSON.parse(copy.connection.config_json).collection_minutes, 15)
   assert.equal(copy.connection.status, 'inactive after restore')
+  await at('2026-10-11T14:00:00Z'); await send(path + '/rotate',{token:'synthetic-evidence-2'})
+  await collectionScheduleJourney(app,at)
  } finally { await app.close(); await target.close() }
 }
