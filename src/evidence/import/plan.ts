@@ -40,7 +40,7 @@ export function importInputs(review:Review,parsed:ParsedArchive,mapping:Mapping[
    return{effects:[{targetKind:'control',targetId:control,value:value as unknown as Json}]}
   }
   const bytes=parsed.files.get(payload.path)
-  if(!bytes)return{effects:[],unmapped:[{reason:'Referenced file is missing. No receipt issued.'}]}
+  if(!bytes)return{effects:[],rejection:'Referenced file is missing from the ZIP. No receipt issued.'}
   const id=targetId(review.id,'receipt',record.sourceId),exhibit=targetId(review.id,'exhibit',record.sourceId)
   const value:ReceiptValue={review_id:review.id,receipt_id:id,requirement_id:requirement,exhibit_id:exhibit,object_key:'exhibits/'+exhibit,filename:payload.original_path.split(/[\\/]/).at(-1).slice(0,240),size:bytes.length,sha256:sha256(bytes),source:('Historical Drata import; owner-assigned coverage; '+payload.source).slice(0,1000),covered_from:m.covered_from!,covered_to:m.covered_to!,added_by:review.actor_id,added_by_name:review.actor_name,added_at:review.staged_at,source_collected_at:payload.collected_at,source_exported_at:manifest.exported_at,source_id:record.sourceId,source_path:payload.path,archive_sha256:review.archive_sha256}
   return{effects:[{targetKind:'receipt',targetId:id,value:value as unknown as Json}]}

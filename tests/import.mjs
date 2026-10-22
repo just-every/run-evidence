@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { runtime } from './helpers/runtime.mjs'
 import { fixture,zip,digest } from './fixtures/drata/fixture.mjs'
+import { migrateVanta,migrateSecureframe } from './helpers/migrate-journey.mjs'
 let app,target,passed=0
 const scenario=async(name,fn)=>{await fn();passed++;console.log('PASS '+name)}
 const post=(app,path,body)=>app.fetch(path,{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify(body)})
@@ -12,7 +13,7 @@ const mappings=[{action:'create',name:'Review who has customer access',proof:'Da
 try{
  app=await runtime();await app.signin();let review,bytes,plan,job,receipts
  await scenario('Every import door enforces owner authentication and origin before storage',async()=>{
-  for(const path of ['/api/import','/app/import','/app/import/shape','/api/import/drata','/api/import/00000000-0000-0000-0000-000000000000','/api/import/00000000-0000-0000-0000-000000000000/mapping','/api/import/00000000-0000-0000-0000-000000000000/commit','/api/import/00000000-0000-0000-0000-000000000000/resume','/api/import/00000000-0000-0000-0000-000000000000/undo','/api/import/00000000-0000-0000-0000-000000000000/source','/api/import/00000000-0000-0000-0000-000000000000/manifest']){
+  for(const path of ['/api/import','/app/import','/app/import/shape','/api/import/drata','/api/import/vanta','/api/import/secureframe','/app/import/vanta','/app/import/secureframe','/api/import/records','/api/import/00000000-0000-0000-0000-000000000000/records','/api/import/00000000-0000-0000-0000-000000000000/export','/app/import/00000000-0000-0000-0000-000000000000/export.csv','/api/import/00000000-0000-0000-0000-000000000000/exhibit/00000000-0000-0000-0000-000000000000','/api/import/00000000-0000-0000-0000-000000000000','/api/import/00000000-0000-0000-0000-000000000000/mapping','/api/import/00000000-0000-0000-0000-000000000000/commit','/api/import/00000000-0000-0000-0000-000000000000/resume','/api/import/00000000-0000-0000-0000-000000000000/undo','/api/import/00000000-0000-0000-0000-000000000000/source','/api/import/00000000-0000-0000-0000-000000000000/manifest']){
    assert.equal((await app.fetch(path,{headers:{cookie:''}})).status,401)
    for(const headers of [{host:'evil.test'},{origin:'https://evil.test'},{'sec-fetch-site':'cross-site'}])assert.equal((await app.fetch(path,{headers})).status,403)
   }
@@ -23,14 +24,14 @@ try{
   await app.db.prepare("INSERT INTO oa_operators(id,email,display_name,role,status,created_at) VALUES(?,?,?,'owner','active',?)").bind(spare,'second-owner@example.test','Second owner',Date.now()).run()
   await app.db.prepare("UPDATE oa_operators SET role='member' WHERE id=?").bind(owner.id).run()
   await app.db.prepare('UPDATE oa_sessions SET operator_version=(SELECT version FROM oa_operators WHERE id=?) WHERE operator_id=?').bind(owner.id,owner.id).run()
-  for(const path of ['/api/import','/app/import/shape','/api/import/drata','/api/import/00000000-0000-0000-0000-000000000000/mapping','/api/import/00000000-0000-0000-0000-000000000000/commit','/api/import/00000000-0000-0000-0000-000000000000/undo'])assert.equal((await app.fetch(path)).status,403)
+  for(const path of ['/api/import','/app/import/shape','/api/import/drata','/api/import/vanta','/api/import/secureframe','/api/import/records','/api/import/00000000-0000-0000-0000-000000000000/export','/api/import/00000000-0000-0000-0000-000000000000/exhibit/00000000-0000-0000-0000-000000000000','/api/import/00000000-0000-0000-0000-000000000000/mapping','/api/import/00000000-0000-0000-0000-000000000000/commit','/api/import/00000000-0000-0000-0000-000000000000/undo'])assert.equal((await app.fetch(path)).status,403)
   await app.db.prepare("UPDATE oa_operators SET role='owner' WHERE id=?").bind(owner.id).run()
   await app.db.prepare('UPDATE oa_sessions SET operator_version=(SELECT version FROM oa_operators WHERE id=?) WHERE operator_id=?').bind(owner.id,owner.id).run()
   await app.db.prepare('DELETE FROM oa_operators WHERE id=?').bind(spare).run()
  })
  await scenario('ZIP dry-run counts, digests, missing and unmapped files are truthful and inert',async()=>{
   bytes=await fixture({deflate:true});const response=await upload(app,bytes);assert.equal(response.status,201);const data=await response.json();review=data.review;for(let i=0;i<mappings.length;i++)mappings[i].source_id=data.summary.controls[i].id
-  assert.deepEqual(data.summary.counts,{controls:2,evidence:3,available:2,missing:1,unreferenced:3});assert.deepEqual(data.summary.missing,['Evidence/2.pdf']);assert.equal(data.summary.archive_sha256,await digest(bytes));assert.equal(data.summary.evidence.find(e=>e.path==='Evidence/1.txt').sha256,await digest(Buffer.from('Historical access review\n')))
+  assert.deepEqual(data.summary.counts,{controls:2,evidence:3,available:2,missing:1,unreferenced:3});assert.deepEqual(data.summary.missing,['Evidence/2.pdf']);assert.deepEqual(Object.fromEntries(data.summary.classes.map(c=>[c.id,[c.source,c.admitted,c.unsupported,c.refused]])),{frameworks_controls:[2,2,0,0],test_history:[0,0,0,0],policies:[0,0,0,0],people:[0,0,0,0],vendors:[0,0,0,0],risks:[0,0,0,0],access_reviews:[0,0,0,0],audit_requests:[0,0,0,0],trust_answers:[0,0,0,0],exhibits:[3,2,0,1]});assert.ok(data.summary.classes.filter(c=>!c.source).every(c=>c.absent.length===1&&/Not part of Drata/.test(c.absent[0].what)&&c.absent[0].manual));assert.equal(data.summary.archive_sha256,await digest(bytes));assert.equal(data.summary.evidence.find(e=>e.path==='Evidence/1.txt').sha256,await digest(Buffer.from('Historical access review\n')))
   assert.equal((await rows(app,'receipts')).length,0);assert.equal((await rows(app,'controls')).length,0);assert.equal((await rows(app,'ik_jobs')).length,0)
   const source=await app.fetch('/api/import/'+review.id+'/source');assert.equal(source.status,200);assert.deepEqual(Buffer.from(await source.arrayBuffer()),bytes)
   const manifest=await app.fetch('/api/import/'+review.id+'/manifest');assert.match(manifest.headers.get('content-disposition'),/^attachment/);assert.deepEqual(Buffer.from(await manifest.arrayBuffer()),await readFile(new URL('./fixtures/drata/evidence_manifest.html',import.meta.url)))
@@ -46,7 +47,7 @@ try{
  await scenario('Owner must review mapping and explicitly approve its exact saved fingerprint',async()=>{
   const path='/api/import/'+review.id
   assert.equal((await post(app,path+'/commit',{approve:'commit',fingerprint:'stale'})).status,409)
-  const response=await post(app,path+'/mapping',{mapping:mappings});assert.equal(response.status,200);plan=await response.json();assert.equal(plan.counts.mapped,4);assert.equal(plan.counts.unmapped,1)
+  const response=await post(app,path+'/mapping',{mapping:mappings});assert.equal(response.status,200);plan=await response.json();assert.equal(plan.counts.mapped,4);assert.equal(plan.counts.unmapped,0);assert.equal(plan.counts.rejected,1)
   assert.equal((await rows(app,'receipts')).length,0);assert.equal((await rows(app,'ik_jobs')).length,0)
   assert.equal((await post(app,path+'/commit',{fingerprint:plan.review.fingerprint})).status,409)
   assert.equal((await post(app,path+'/commit',{approve:'commit',fingerprint:'0'.repeat(64)})).status,409)
@@ -81,6 +82,7 @@ try{
   for(const r of receipts)assert.equal((await app.fetch('/api/receipts/'+r.id+'/download')).status,200)
   const desk=await(await app.fetch('/api/desk?date=2026-10-11')).json();assert.ok(desk.requirements.some(r=>r.id===later.requirement_id&&['covered','due soon'].includes(r.gap)))
   assert.ok((await rows(app,'ik_originals')).length>=2);assert.ok((await rows(app,'import_reviews'))[0].approved_at)
+  const exported=await(await app.fetch('/api/import/'+review.id+'/export')).json();assert.equal(exported.review.incumbent,'Drata');assert.deepEqual(exported.records.map(r=>[r.class,r.active]).sort(),[['exhibits',false],['exhibits',false],['frameworks_controls',false],['frameworks_controls',false]]);assert.ok(exported.records.every(r=>r.origin==='imported'))
  })
  await scenario('LOG-001 / Uploads, refused and approved commits, undo, evidence replacement and refused owner writes are audited with outcomes; the owner filters and exports the audit, each export is recorded, and a restart and a restore keep it',async()=>{
   assert.equal((await app.fetch('/api/audit',{headers:{cookie:''}})).status,401)
@@ -118,5 +120,15 @@ try{
    for(const entry of all)assert.ok(ids.has(JSON.stringify(entry)),entry.action)
   }finally{await receiver.close()}
  })
+ await scenario('A Drata control that duplicates an existing proof requirement is resolved onto it, and the reconciliation shows each class',async()=>{
+  const second=await(await upload(app,await fixture())).json(),sid=second.review.id,existing=(await rows(app,'requirements'))[0].id
+  const map=second.summary.controls.map((c,i)=>i===0?{source_id:c.id,action:'existing',requirement_id:existing,covered_from:'2026-09-01',covered_to:'2026-09-30'}:{source_id:c.id,action:'skip'})
+  const saved=await post(app,'/api/import/'+sid+'/mapping',{mapping:map});assert.equal(saved.status,200)
+  const view=await(await app.fetch('/api/import/'+sid)).json(),by=Object.fromEntries(view.reconciliation.map(c=>[c.id,c]))
+  assert.equal(by.frameworks_controls.source,2);assert.equal(by.exhibits.source,3)
+  assert.match(await(await app.fetch('/app/import/'+sid)).text(),/Reconciliation by record class/)
+ })
+ await scenario('MIGRATE-001 / Vanta: an API-pages export is previewed, identities are resolved by the owner, every record class reconciles as source, admitted, unsupported and refused, exhibits keep bytes and digest, imported history stays distinct from a reconnected source, and export, restore and undo keep the additions',migrateVanta)
+ await scenario('MIGRATE-001 / Secureframe: its API-pages export reconciles the same ten classes, names what Secureframe does not export, and undoes without deleting custody',migrateSecureframe)
  console.log(`${passed} import scenarios passed`)
 }finally{await app?.close();await target?.close()}

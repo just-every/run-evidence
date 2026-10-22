@@ -3,6 +3,7 @@ import { Refusal } from '../upload'
 import { canonicalJson, sha256 } from './base/provenance/identity'
 import { unzip } from './zip'
 import { manifestRows } from './html'
+import { drataClasses } from './bundle/parse'
 export interface EvidenceItem { id:string;path:string;source:string;requirement:string;original_path:string;covered_from:null;covered_to:null;collected_at:null }
 export interface SourceControl { id:string;name:string;evidence:EvidenceItem[] }
 export interface Manifest { format:'drata-evidence-html';account_id:null;exported_at:null;controls:SourceControl[] }
@@ -10,7 +11,7 @@ export interface ParsedArchive { manifest:Manifest;manifestBytes:Uint8Array;arch
 function summary(manifest:Manifest,files:Map<string,Uint8Array>,archive:Uint8Array,manifestBytes:Uint8Array){
  const evidence=manifest.controls.flatMap(c=>c.evidence.map(e=>({...e,control_id:c.id,...(files.has(e.path)?{available:true,size:files.get(e.path)!.length,sha256:sha256(files.get(e.path)!)}:{available:false,size:null,sha256:null})})))
  const referenced=new Set(evidence.map(e=>e.path))
- return{provider:'Drata',shape:manifest.format,account_id:null,exported_at:null,archive_sha256:sha256(archive),manifest_sha256:sha256(manifestBytes),controls:manifest.controls.map(c=>({id:c.id,name:c.name})),evidence,counts:{controls:manifest.controls.length,evidence:evidence.length,available:evidence.filter(e=>e.available).length,missing:evidence.filter(e=>!e.available).length,unreferenced:[...files.keys()].filter(p=>p!=='evidence_manifest.html'&&!referenced.has(p)).length},missing:evidence.filter(e=>!e.available).map(e=>e.path),unreferenced:[...files.keys()].filter(p=>p!=='evidence_manifest.html'&&!referenced.has(p))}
+ return{provider:'Drata' as const,classes:drataClasses(manifest.controls.length,evidence),shape:manifest.format,account_id:null,exported_at:null,archive_sha256:sha256(archive),manifest_sha256:sha256(manifestBytes),controls:manifest.controls.map(c=>({id:c.id,name:c.name})),evidence,counts:{controls:manifest.controls.length,evidence:evidence.length,available:evidence.filter(e=>e.available).length,missing:evidence.filter(e=>!e.available).length,unreferenced:[...files.keys()].filter(p=>p!=='evidence_manifest.html'&&!referenced.has(p)).length},missing:evidence.filter(e=>!e.available).map(e=>e.path),unreferenced:[...files.keys()].filter(p=>p!=='evidence_manifest.html'&&!referenced.has(p))}
 }
 export function parseArchive(archive:Uint8Array):ParsedArchive{
  const files=unzip(archive),manifestBytes=files.get('evidence_manifest.html')
