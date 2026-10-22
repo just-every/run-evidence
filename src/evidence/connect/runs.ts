@@ -23,7 +23,7 @@ export async function startRun(env: Bindings, connection: Connection, revision: 
   return { run, outcome }
  }
  const checkpoint = async (coverage: Record<string, unknown>) => { await env.DB.prepare('UPDATE collection_runs SET coverage_json=? WHERE id=? AND finished_at IS NULL').bind(JSON.stringify({ ...metadata, ...coverage }),run).run() }
- return { run, finish, checkpoint }
+ return { run, finish, checkpoint, context: metadata.context }
 }
 // Throttling backs off exponentially within an hour; a refused credential needs reconnecting.
 export const MAX_BACKOFF = 3600
