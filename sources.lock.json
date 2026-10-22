@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "91340d5b976850093dff1ef0506b7368499dc31bc7762e09fdc3dcaca3057d0a",
+  "manifest": "9052353aad566ddda26f90b41a833ef9408b4ace4ed3dd220459fb868013703a",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2594,6 +2594,7 @@
           "src/evidence/audit/storage.ts",
           "src/evidence/audit/view.ts",
           "src/evidence/cadence.ts",
+          "src/evidence/cloud/aws-schema.ts",
           "src/evidence/cloud/aws.ts",
           "src/evidence/cloud/azure.ts",
           "src/evidence/cloud/catalogue.ts",
@@ -3024,7 +3025,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "e07c9b4a4de9994ca0587bd3eda9b8bdf42832f2e88df50c597546a3ea5d66e3",
+      "sha256": "18fa253ecaf4d2318181e76c43925946c746cec23a098c68d1b34562e55c5fca",
       "executable": false
     },
     "AGENTS.md": {
@@ -3040,7 +3041,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "1a2a36e62529d2e8bbe451f71c7dbb08f1bb506ed3644982300415eb2d50e405",
+      "sha256": "9fadd4e0d0ed4e8e4e79abefae5c4ca7f470672bb103b2ffa4e5c434a0394a82",
       "executable": false
     },
     "DEMO.md": {
@@ -3116,7 +3117,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "91340d5b976850093dff1ef0506b7368499dc31bc7762e09fdc3dcaca3057d0a",
+      "sha256": "9052353aad566ddda26f90b41a833ef9408b4ace4ed3dd220459fb868013703a",
       "executable": false
     },
     "LICENSE": {
@@ -4183,8 +4184,12 @@
       "sha256": "0cd05118ece9d6e9019c65cfb56333dc01bf9be28c610e2bd1105f8b9af81286",
       "executable": false
     },
+    "src/evidence/cloud/aws-schema.ts": {
+      "sha256": "855bb1d5c36609cac9d4aa62dfea74d70dd1512908c44f33ab08702779544b88",
+      "executable": false
+    },
     "src/evidence/cloud/aws.ts": {
-      "sha256": "cce62c192fb5ad692ad820138d6413d9719b532b351620c02e15beae51aa7c53",
+      "sha256": "61bb2587bd2fd1baa882dd055838289068f3d9cc0a2b969687daa7a97e1a1629",
       "executable": false
     },
     "src/evidence/cloud/azure.ts": {
@@ -4200,7 +4205,7 @@
       "executable": false
     },
     "src/evidence/cloud/collect.ts": {
-      "sha256": "1a038daada0c604105ec4bc032f55e491eface951f0716e5b8c94014a5f89fe9",
+      "sha256": "222718a8ad4404b8ba350be90b2003297cca8f6f2b3c39d3b3e9bb65ebc07ec8",
       "executable": false
     },
     "src/evidence/cloud/connect.ts": {
@@ -4272,7 +4277,7 @@
       "executable": false
     },
     "src/evidence/connect/run-context.ts": {
-      "sha256": "5ac38b83af0bf783138018898205a89fce62cce0696fa1216185bf12a2a08cb2",
+      "sha256": "8d1e27284af53c49502ee3d092618d6c013081ab9ce515cb7622e085d89cfd3b",
       "executable": false
     },
     "src/evidence/connect/runs.ts": {
@@ -4288,7 +4293,7 @@
       "executable": false
     },
     "src/evidence/connect/view.ts": {
-      "sha256": "4ceb254f428317e939a12d351d792b3d6e730f977c416722e564070b8c674dbb",
+      "sha256": "a88a877aca69e5d8f385aa9488759f30f70c586f148c9fb6bb78159342a201f2",
       "executable": false
     },
     "src/evidence/control-definition/storage.ts": {
@@ -6776,7 +6781,7 @@
       "executable": false
     },
     "tests/cloud.mjs": {
-      "sha256": "824aae554fb76fe89e84548bec32625ee6f148af2d562513f2f1b11754436c10",
+      "sha256": "b1b2522055385eecc2f311fc33909f977d0fce8e38c7180cedbf0483ac20390c",
       "executable": false
     },
     "tests/clouds.mjs": {
