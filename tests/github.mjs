@@ -178,7 +178,7 @@ try {
    assert.equal(await receipts(), stored)
    // Revision 2 waits as a reviewable change set; current mappings stay at revision 1.
    const review = await read('/api/library')
-   assert.equal(review.accepted, 1); assert.equal(review.latest, 2); assert.deepEqual(review.history, [])
+   assert.equal(review.accepted, 1); assert.equal(review.latest, 3); assert.deepEqual(review.history, [])
    const change = review.pending[0].changes.find(x => x.control === 'AC-13')
    assert.deepEqual([change.framework, change.ref, change.change, change.programs.map(p => p.id)], ['iso27001', 'A.5.16', 'added', [programs.iso27001]])
    const isoRow = async ref => (await read('/api/programs/' + programs.iso27001)).readiness.requirements.find(r => r.ref === ref).controls.map(c => c.library_id)
@@ -186,7 +186,7 @@ try {
    assert.match(await (await lib.fetch('/app/library')).text(), /Revision 2 · waiting for review/)
    await send('/api/library/revisions/2', {}, 400)
    await send('/api/library/revisions/2', { reason: 'x' }, 403, 'https://evil.test')
-   await send('/api/library/revisions/3', { reason: 'Not shipped' }, 404)
+   await send('/api/library/revisions/4', { reason: 'Not shipped' }, 404)
    assert.deepEqual((await send('/api/library/revisions/2', { reason: 'Reviewed with our assessor' }, 200)).accepted, 2)
    await send('/api/library/revisions/2', { reason: 'again' }, 409); await send('/api/library/revisions/1', { reason: 'back' }, 409)
    assert.ok((await isoRow('A.5.16')).includes('AC-13')); assert.ok((await isoRow('A.8.5')).includes('AC-12'))

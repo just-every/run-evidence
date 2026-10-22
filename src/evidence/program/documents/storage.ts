@@ -12,6 +12,7 @@ import { sha256 } from '../../vendor/storage'
 import type { Ctx, Generated, Inputs } from './context'
 import { kinds, kindsFor } from './kinds'
 import { ephiScenarios } from './hipaa'
+import { explanationNeeded } from './saq-scope'
 import { notice, type Rendered, type Section } from './model'
 // PROGRAM-003: each document is generated from live program state into an
 // immutable revision. Owner edits and inputs, reconciliations and approvals add
@@ -98,7 +99,8 @@ export async function approveDocument(env: Bindings, actor: Actor, programId: st
  if (kind === 'pci-saq') {
   const rows = sections.find(s => s.id === 'worksheet')?.table?.rows ?? []
   if (!rows.length) throw new Refusal('Select an SAQ type before approving the worksheet.', 409)
-  if (rows.some(r => r[3] === 'unanswered')) throw new Refusal('Answer every worksheet requirement before approving.', 409)
+  if (rows.some(r => r[3] === 'unanswered')) throw new Refusal('Answer every worksheet requirement with a response allowed by this SAQ revision before approving.', 409)
+  if (rows.some(r => explanationNeeded(r[3]) && !r[5]?.trim())) throw new Refusal('Provide the required explanation for every not-applicable, CCW, not-tested or not-in-place response before approving.', 409)
  }
  const due = day(addMonths(new Date(effective + 'T00:00:00Z'), doc.review_months)), note = text(input, 'note', 1000, true)
  await env.DB.batch([env.DB.prepare('INSERT INTO program_document_approvals(revision_id,document_id,approver_person_id,approved_by,approved_at,effective_date,review_due,note) VALUES(?,?,?,?,?,?,?,?)').bind(prior.id, doc.id, approver.id, actor.name, now.toISOString(), effective, due, note), auditStatement(env, actor, 'program-document.approved', `program-document:${doc.id}`, now, 'succeeded', `${kinds[kind].title} revision ${prior.revision}; approver ${approver.name}; review by ${due}`, { reason: note, revision: prior.revision })])

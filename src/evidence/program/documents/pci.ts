@@ -1,3 +1,5 @@
+import { acceptedLibraryRevision } from '../library-revision'
+import { saqScope, saqPrompt, responseChoices } from './saq-scope'
 import { usDate } from '../../format'
 import { implementation, list, programCite, programRevision, record, rows, scope, vendorCite, vendorLines, type Ctx, type Generated } from './context'
 import type { Section } from './model'
@@ -21,11 +23,7 @@ export function selectSaq(raw: Record<string, unknown>) {
  const top = found.reduce((a, b) => rank.indexOf(b[0]) > rank.indexOf(a[0]) ? b : a)
  return { type: top[0], rationale: top[1] + (found.length > 1 ? ' The most demanding channel decides the type.' : '') }
 }
-// The principal requirements each type addresses (Evidence's working summary;
-// the exact sub-requirement list is in the licensed PCI SSC SAQ for the type).
-export const coverage: Record<Saq, number[]> = { 'A': [2, 3, 6, 8, 9, 11, 12], 'A-EP': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], 'B': [3, 4, 7, 9, 12], 'B-IP': [1, 2, 3, 4, 6, 7, 8, 9, 11, 12], 'C-VT': [2, 3, 4, 6, 7, 8, 9, 12], 'C': [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12], 'P2PE': [3, 9, 12], 'D-Merchant': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], 'D-Service Provider': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] }
 export const responses = ['in place', 'in place with CCW', 'not applicable', 'not tested', 'not in place'] as const
-const principal = (ref: string) => Number(/^(\d+)\./.exec(ref)?.[1] ?? 0)
 export async function exhibitsOf(c: Ctx) { return (await c.env.DB.prepare('SELECT id,label,filename,size,sha256,uploaded_at FROM program_document_exhibits WHERE document_id=? ORDER BY uploaded_at,rowid').bind(c.documentId).all<{ id: string; label: string; filename: string; size: number; sha256: string; uploaded_at: string }>()).results }
 export async function pciCdeScope(c: Ctx): Promise<Generated> {
  const p = c.program, revision = await programRevision(c.env, p.id), s = scope(p), facts: Generated['facts'] = {}, cite = programCite(p, revision)
@@ -43,28 +41,36 @@ export async function pciCdeScope(c: Ctx): Promise<Generated> {
 }
 export async function pciSaq(c: Ctx): Promise<Generated> {
  const p = c.program, answers = record(c.inputs.saq_answers), channels = list((c.inputs.saq_answers as Record<string, unknown> | undefined)?.channels), selection = selectSaq({ ...answers, channels }), facts: Generated['facts'] = {}
- const given = record(c.inputs.saq_responses), covered = selection.type ? coverage[selection.type] : []
- const reqs = c.ready.requirements.filter(r => /^\d/.test(r.ref) ? covered.includes(principal(r.ref)) : selection.type === 'D-Service Provider').sort((a, b) => a.ref.localeCompare(b.ref, 'en', { numeric: true }))
+ const given = record(c.inputs.saq_responses), explanations = record(c.inputs.saq_explanations), library = await acceptedLibraryRevision(c.env), mapping = selection.type ? saqScope(selection.type, library) : null
  facts['saq:type'] = { label: 'Selected SAQ type', value: selection.type ?? 'none' }
- const table = reqs.map(r => { const status = implementation(r); facts['saq:' + r.ref] = { label: `Requirement ${r.ref} ${r.title}`, value: `${r.state}|${status}` }; return [r.ref, r.title, status, given[r.ref] ?? 'unanswered', r.controls.map(x => x.name).join('; ') || 'none mapped'] })
+ facts['saq:revision'] = { label: 'SAQ source revision', value: mapping?.revision ?? 'none' }
+ facts['saq:scope'] = { label: 'SAQ assessed requirement ids', value: JSON.stringify(mapping?.ids ?? []) }
+ const table = (mapping?.ids ?? []).map(ref => {
+  const parent = c.ready.requirements.filter(r => ref === r.ref || ref.startsWith(r.ref + '.')).sort((a, b) => b.ref.length - a.ref.length)[0]
+  const status = parent ? implementation(parent) : 'not implemented (no mapped control)', response = selection.type && responseChoices(selection.type).includes(given[ref]) ? given[ref] : 'unanswered'
+  facts['saq:' + ref] = { label: `Requirement ${ref}`, value: `${parent?.state ?? 'unmapped'}|${status}` }
+  return [ref, saqPrompt(ref), status, response, parent?.controls.map(x => x.name).join('; ') || 'none mapped', explanations[ref] ?? '']
+ })
  const asked = [...Object.entries(answers).filter(([k]) => k !== 'channels').map(([k, v]) => `${k.replaceAll('_', ' ')}: ${v}`), ...(channels.length ? [`payment channels: ${channels.join(', ')}`] : [])]
  return { subtitle: `${p.legal_entity} · PCI DSS ${p.edition} · ${selection.type ? 'SAQ ' + selection.type : 'SAQ not selected'}`, facts, sections: [
   mk('answers', 'Recorded SAQ selection answers', asked.map(text => ({ text, cites: [] }))),
   mk('selected', 'Selected SAQ type', [{ text: selection.type ? `SAQ ${selection.type}. ${selection.rationale} The merchant or QSA confirms the type against the PCI SSC criteria.` : selection.rationale, cites: [] }]),
-  mk('worksheet', 'Requirement-by-requirement worksheet', [{ text: selection.type ? `Evidence's working scope for SAQ ${selection.type} covers principal requirements ${covered.join(', ')}; confirm the exact sub-requirements in your licensed SAQ. "Evidence records" is derived from linked controls and tests and is not an assessment.` : 'Select an SAQ type to produce its worksheet.', cites: [] }], { table: selection.type ? { head: ['Requirement', 'Title', 'Evidence records', 'Owner response', 'Linked controls'], rows: table } : undefined }),
+  mk('worksheet', 'Requirement-by-requirement worksheet', [{ text: selection.type ? `Evidence mapping: SAQ ${selection.type} ${mapping!.revision}; ${mapping!.ids.length} assessed requirement ids. PCI SSC text is licensed and is not shipped. The merchant or QSA must confirm this worksheet, eligibility and each response against the licensed SAQ. Evidence records are derived from linked parent requirements and controls, not an assessment. Source: ${mapping!.source}.` : 'Select an SAQ type to produce its worksheet.', cites: [] }], { table: selection.type ? { head: ['Requirement', 'Evidence wording', 'Evidence records', 'Owner response', 'Linked controls', 'Response explanation'], rows: table } : undefined }),
  ] }
 }
 export async function pciAocHandoff(c: Ctx): Promise<Generated> {
  const p = c.program, facts: Generated['facts'] = {}
  const saq = await c.env.DB.prepare("SELECT d.id,r.revision,r.inputs_json,r.facts_json FROM program_documents d JOIN program_document_revisions r ON r.document_id=d.id WHERE d.program_id=? AND d.kind='pci-saq' ORDER BY r.revision DESC LIMIT 1").bind(p.id).first<{ id: string; revision: number; inputs_json: string; facts_json: string }>()
  const inputs = saq ? JSON.parse(saq.inputs_json) as Record<string, unknown> : {}, selection = selectSaq({ ...record(inputs.saq_answers), channels: list((inputs.saq_answers as Record<string, unknown> | undefined)?.channels) }), given = record(inputs.saq_responses)
- const counts = Object.fromEntries(responses.map(r => [r, Object.values(given).filter(v => v === r).length]))
+ const mapping = selection.type ? saqScope(selection.type, await acceptedLibraryRevision(c.env)) : null
+ const counts = Object.fromEntries(responses.map(r => [r, (mapping?.ids ?? []).filter(id => given[id] === r).length]))
  facts['saq:type'] = { label: 'Selected SAQ type', value: selection.type ?? 'none' }
+ facts['saq:revision'] = { label: 'SAQ source revision', value: mapping?.revision ?? 'none' }
  facts['saq:responses'] = { label: 'Worksheet responses', value: JSON.stringify(counts) }
  const cite = saq ? [{ kind: 'program-document', ref: saq.id, revision: saq.revision, label: 'SAQ worksheet' }] : []
  return { subtitle: `${p.legal_entity} · PCI DSS ${p.edition} · Attestation of Compliance handoff`, facts, sections: [
   mk('merchant', 'Part 1 - assessed entity', [{ text: `${p.legal_entity}; assessor: ${p.assessor || 'not recorded'}; reporting period ${usDate(p.audit_from)} to ${usDate(p.audit_to)}.`, cites: [programCite(p, await programRevision(c.env, p.id))] }]),
-  mk('saq', 'Part 2 - validation type', [{ text: selection.type ? `Validation uses SAQ ${selection.type}.` : 'No SAQ type is selected in the SAQ worksheet yet.', cites: cite }, { text: `Worksheet responses: ${responses.map(r => `${counts[r]} ${r}`).join(', ')}.`, cites: cite }]),
+  mk('saq', 'Part 2 - validation type', [{ text: selection.type ? `Validation uses SAQ ${selection.type} ${mapping!.revision}. PCI SSC text is licensed and is not shipped; the merchant or QSA confirms the worksheet and this handoff against that licensed SAQ.` : 'No SAQ type is selected in the SAQ worksheet yet.', cites: cite }, { text: `Worksheet responses: ${responses.map(r => `${counts[r]} ${r}`).join(', ')}.`, cites: cite }]),
   mk('signatures', 'Part 3 - signatures', [{ text: 'Evidence has not signed and cannot sign this Attestation of Compliance. The merchant executive officer signs Part 3, and a QSA signs where one assessed the entity. Unsigned: merchant executive officer; QSA.', cites: [] }], { table: { head: ['Signatory', 'Name', 'Signature', 'Date'], rows: [['Merchant executive officer', '', 'NOT SIGNED', ''], ['Qualified Security Assessor (if used)', '', 'NOT SIGNED', '']] } }),
  ] }
 }

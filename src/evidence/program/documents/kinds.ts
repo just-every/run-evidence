@@ -28,9 +28,10 @@ export const kinds: Record<string, Kind> = {
   parse: (f, cur) => {
    const answers = { ...((cur.saq_answers ?? {}) as Record<string, unknown>) }
    for (const k of Object.keys(answerOptions)) if (f['answer.' + k] !== undefined) answers[k] = k === 'channels' ? list(f['answer.' + k]) : String(f['answer.' + k])
-   const given = { ...record(cur.saq_responses) }
+   const given = { ...record(cur.saq_responses) }, explanations = { ...record(cur.saq_explanations) }
    for (const [k, v] of Object.entries(f)) if (k.startsWith('response.') && (responses as readonly string[]).includes(String(v))) given[k.slice(9)] = String(v)
-   return { ...cur, saq_answers: answers, saq_responses: given }
+   for (const [k, v] of Object.entries(f)) if (k.startsWith('explanation.')) explanations[k.slice(12)] = String(v).trim().slice(0, 8000)
+   return { ...cur, saq_answers: answers, saq_responses: given, saq_explanations: explanations }
   } },
  'pci-aoc-handoff': { framework: 'pci', title: 'Attestation of Compliance handoff package', blurb: 'The package the merchant or QSA signs. Evidence signs nothing.', generate: pciAocHandoff, parse: keep },
 }
