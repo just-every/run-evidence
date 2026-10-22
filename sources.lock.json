@@ -6868,7 +6868,7 @@
       "executable": false
     },
     "tests/helpers/collection-schedule-browser.mjs": {
-      "sha256": "1f29a702c874b98ad59277693e92251c452cf878fd0c580b0bded12d74466c5d",
+      "sha256": "d84d066dd979253cce27bc03fecfa6389e8dac9da7ca55bd592afdfa359b3c79",
       "executable": false
     },
     "tests/helpers/collection-schedule-journey.mjs": {

@@ -64,6 +64,7 @@ export async function collectionScheduleBrowser(app, connections, { suffix = '',
     for(const text of reportExpected){const entry=page.locator('details').filter({hasText:text}).first();assert.ok(await entry.count(),text+' retained in period report');if(!await entry.evaluate(e=>e.open))await entry.locator('summary').click();assert.ok((await entry.innerText()).includes(text))}
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'collection report overflow at ' + width)
     await page.screenshot({ path: join(output, `${width}-${c.provider}${suffix}-period-report.png`), fullPage: true })
+    await page.screenshot({ path: join(output, `${width}-${c.provider}${suffix}-period-viewport.png`) })
     const detail = await (await app.fetch('/api/connections/' + c.id)).json()
     const linked = detail.runs.map(r => JSON.parse(r.coverage_json).context?.controls ?? []).flat()[0]
     if (linked) {
