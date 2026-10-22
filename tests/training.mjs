@@ -152,7 +152,7 @@ try {
   assert.equal((await collect()).outcome,'complete'); assert.deepEqual((await get('/api/training')).completions,original)
   const history = (await get(path)).runs
   for (const run of failures) assert.deepEqual(history.find(r=>r.id===run.id),run)
-  await collectionScheduleBrowser(app, [(await get(path)).connection], { suffix:'-knowbe4-schema' })
+  await collectionScheduleBrowser(app, [(await get(path)).connection], { suffix:'-knowbe4-schema', reportExpected:['knowbe4:enrollments'] })
  })
  await scenario('COLLECTION-001: hosted collector schedules through owner doors, Cron, browser and restore', () => collectionScheduleJourney(app))
  console.log(`${passed} training public-door scenarios passed with Base invitations and member sign-in.`)

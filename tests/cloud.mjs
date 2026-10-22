@@ -255,6 +255,7 @@ try {
    assert.deepEqual((await get(path)).runs.find(r=>r.id===interrupted.id),interrupted)
    aws.overrides.clear()
   }
+  await collectionScheduleBrowser(app,[(await get(path)).connection],{suffix:'-aws-resume',reportExpected:['synthetic-page-2']})
  })
  await scenario('COLLECTION-001: hosted collector schedules through owner doors, Cron, browser and restore', () => collectionScheduleJourney(app, at))
  console.log(`${passed} AWS public-door scenarios passed; AWS is faked only at the network edge, with every signature checked.`)
