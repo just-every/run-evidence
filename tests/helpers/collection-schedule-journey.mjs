@@ -32,6 +32,12 @@ export async function collectionScheduleJourney(app, at = time => app.clock(time
   assert.ok(['complete', 'partial'].includes(run.outcome), c.provider + ' ' + run.error_code)
   assert.equal(run.trigger, 'schedule'); assert.equal(run.started_at, new Date(baseline).toISOString())
   assert.equal(JSON.parse(run.coverage_json).interval_minutes, 15)
+  const context = JSON.parse(run.coverage_json)
+  assert.equal(context.context.account, c.account); assert.equal(context.context.provider, c.provider)
+  assert.ok(Array.isArray(context.context.controls) && Array.isArray(context.context.tests) && Array.isArray(context.context.audit_periods))
+  assert.equal(context.source_read_started_at, run.started_at); assert.equal(context.received_at, run.finished_at)
+  assert.equal(context.source_event_at, null)
+
  }
  await step(10)
  for (const c of connections) assert.equal((await history(c))[0].id, first.get(c.id).id, 'no early read: ' + c.provider)
