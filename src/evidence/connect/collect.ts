@@ -1,3 +1,5 @@
+import { digest } from '../api/tokens'
+import type { AlertCursor } from './github'
 import { collectionMinutes } from './interval'
 import { capabilityAllowed } from '../archive/capabilities'
 import { Refusal } from '../upload'
@@ -27,14 +29,31 @@ export async function runCollection(env: Bindings, connection: Connection, trigg
  if (isScopedCloud(connection.provider)) return runScopedCollection(env, connection, scopedClouds[connection.provider], trigger, now)
  const at = now.toISOString(), started = await startRun(env, connection, connectorRevision, trigger, now, { interval_minutes: collectionMinutes(connection), gaps: [] })
  if (!started) return { run: null, outcome: 'already running' }
- const { finish } = started
+ const { finish, checkpoint } = started
  if (connection.status !== 'active' || !connection.secret_ciphertext || !connection.secret_iv) return finish('failed', {}, 'connection is ' + connection.status)
  let token: string
  try { token = await unseal(env, connection.secret_ciphertext, connection.secret_iv, connection.id) }
  catch { return finish('failed', {}, 'credential unreadable under this installation key', reconnectUpdate(env, connection, 'Stored credential cannot be decrypted; reconnect.', now)) }
- const client = githubClient(connection.api_base, token, () => now.getTime())
  const selected = (await env.DB.prepare('SELECT full_name FROM connection_repositories WHERE connection_id=? AND selected=1 ORDER BY full_name').bind(connection.id).all<{ full_name: string }>()).results.map(r => r.full_name)
  const coverage: { organization: string; repositories_selected: number; repositories_read: string[]; unreadable: { repository: string; reason: string }[]; gaps: { asset: string; reason: string }[]; interval_minutes: number } = { organization: 'unread', repositories_selected: selected.length, repositories_read: [], unreadable: [], gaps: [], interval_minutes: collectionMinutes(connection) }
+ const authority = await digest(JSON.stringify([connection.secret_ciphertext,connection.secret_iv,connection.rotated_at,connection.config_json,selected,connectorRevision]))
+ type Resume = { authority: string; started_at: string; streams: Record<string,AlertCursor> }
+ const previous = await env.DB.prepare('SELECT coverage_json FROM collection_runs WHERE connection_id=? AND id!=? ORDER BY started_at DESC,rowid DESC LIMIT 1').bind(connection.id,started.run).first<{coverage_json:string}>()
+ const prior = previous ? JSON.parse(previous.coverage_json).resume as Resume | undefined : undefined
+ const resumable = prior && prior.authority === authority && typeof prior.started_at === 'string' && now.getTime()-Date.parse(prior.started_at) >= 0 && now.getTime()-Date.parse(prior.started_at) <= 3600000 && prior.streams && Object.values(prior.streams).some(s => !s.complete)
+ const resume: Resume = resumable ? prior : { authority, started_at: at, streams:{} }
+ const tracked = coverage as typeof coverage & { resume: Resume; cursor: Record<string,string|null>; source_read_started_at: string }
+ tracked.resume = resume; tracked.cursor = {}; tracked.source_read_started_at = resume.started_at
+ const client = githubClient(connection.api_base,token,()=>now.getTime(),{
+  load: path => resume.streams[path],
+  async save(path,cursor) {
+   const streams = {...resume.streams}; if (cursor) streams[path]=cursor; else delete streams[path]
+   if (JSON.stringify(streams).length > 65536) return false
+   resume.streams=streams; tracked.cursor=Object.fromEntries(Object.entries(streams).filter(([,s])=>!s.complete).map(([path,s])=>[path,s.next]))
+   await checkpoint(tracked)
+   return true
+  },
+ })
  const source = { kind: 'source-observed' as const, ref: 'github:' + connection.id, label: `GitHub ${connection.account} via ${connection.label}` }
  const repos: { uniqueId: string; displayName: string; attributes: Record<string, unknown> }[] = []
  let organization: { uniqueId: string; displayName: string; attributes: Record<string, unknown> } | null = null
@@ -60,8 +79,8 @@ export async function runCollection(env: Bindings, connection: Connection, trigg
  const written = await upsertResources(env, 'github.repository', repositorySchema, repos, source, 'source', now)
  const fresh = written.results.filter(r => r.id && r.outcome !== 'removed' && coverage.repositories_read.includes(r.uniqueId)).map(r => r.id!)
  const observed = [
-  ...(coverage.organization === 'read' ? [env.DB.prepare("UPDATE resources SET observed_at=? WHERE type='github.organization' AND unique_id=? AND source_ref=?").bind(at, connection.account, source.ref)] : []),
-  ...(fresh.length ? [env.DB.prepare('UPDATE resources SET observed_at=? WHERE id IN (SELECT value FROM json_each(?))').bind(at, JSON.stringify(fresh))] : []),
+  ...(coverage.organization === 'read' ? [env.DB.prepare("UPDATE resources SET observed_at=? WHERE type='github.organization' AND unique_id=? AND source_ref=?").bind(resume.started_at, connection.account, source.ref)] : []),
+  ...(fresh.length ? [env.DB.prepare('UPDATE resources SET observed_at=? WHERE id IN (SELECT value FROM json_each(?))').bind(resume.started_at, JSON.stringify(fresh))] : []),
  ]
  // Nothing read is nothing stamped: an empty batch would abort the run before it finishes.
  if (observed.length) await env.DB.batch(observed)

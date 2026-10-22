@@ -100,6 +100,42 @@ export async function collectionJourney() {
   await send(path + '/schedule', { minutes: 60 })
   await collectionScheduleBrowser(app, [(await get(path)).connection])
   await send(path + '/schedule', { minutes: 15 })
+  github.overrides.clear()
+  const alerts = '/repos/northstar/web/dependabot/alerts?state=open&severity=critical&per_page=100'
+  for (let page=1;page<=11;page++) {
+   const key = alerts + (page === 1 ? '' : '&page=' + page)
+   github.overrides.set(key,{body:[{number:page}],headers:page < 11 ? {link:`<${apiBase}${alerts}&page=${page+1}>; rel="next"`} : {}})
+  }
+  const requests = github.requests.length
+  await at('2026-10-11T13:35:00Z'); await send(path + '/collect',{},201)
+  const paused = (await get(path)).runs[0], saved = JSON.parse(paused.coverage_json)
+  assert.equal(paused.outcome,'partial'); assert.match(paused.coverage_json,/durable cursor retained/)
+  assert.equal(saved.resume.streams[alerts].numbers.length,10); assert.ok(saved.cursor[alerts].endsWith('&page=11'))
+  assert.deepEqual((await latest('github.dependabot-critical')).map(o=>o.result),['unknown'])
+  github.overrides.set(alerts + '&page=11',{status:429,body:{message:'rate limited'}})
+  await at('2026-10-11T13:40:00Z'); await send(path + '/collect',{},201)
+  const limited = (await get(path)).runs[0]
+  assert.equal(limited.outcome,'throttled')
+  github.overrides.set(alerts + '&page=11',{body:[{number:11}]})
+  await at('2026-10-11T13:45:00Z'); await send(path + '/collect',{},201)
+  const resumed = (await get(path)).runs[0], recovered = JSON.parse(resumed.coverage_json)
+  assert.equal(resumed.outcome,'complete')
+  assert.equal(recovered.resume.streams[alerts].numbers.length,11)
+  assert.equal(recovered.source_read_started_at,'2026-10-11T13:35:00.000Z'); assert.equal(recovered.received_at,'2026-10-11T13:45:00.000Z')
+  assert.equal((await get('/api/inventory')).records.find(r=>r.source_ref==='github:'+connection.id && r.source_type==='github.repository').last_observation,'2026-10-11T13:35:00.000Z','resumed cached facts never gain a fabricated fresh timestamp')
+  const read = github.requests.slice(requests).filter(p=>p.startsWith(alerts))
+  assert.equal(read.filter(p=>p===alerts).length,1,'completed pages are never read again after restart/backoff')
+  assert.equal(read.filter(p=>p.endsWith('&page=11')).length,2,'only the throttled page retries')
+  assert.deepEqual((await get(path)).runs.find(r=>r.id===paused.id),paused); assert.deepEqual((await get(path)).runs.find(r=>r.id===limited.id),limited)
+  // Rotating the authority invalidates every cached page, even for the same scope.
+  github.tokens.add('synthetic-evidence-2')
+  await at('2026-10-11T13:50:00Z'); await send(path + '/rotate',{token:'synthetic-evidence-2'})
+  const beforeRotation = github.requests.length
+  await send(path + '/collect',{},201)
+  assert.equal((await get(path)).runs[0].outcome,'partial')
+  assert.ok(github.requests.slice(beforeRotation).includes(alerts))
+  assert.equal(JSON.parse((await get(path)).runs[0].coverage_json).resume.started_at,'2026-10-11T13:50:00.000Z')
+  github.overrides.clear()
   await send(path + '/revoke', {})
   await send(path + '/collect', {}, 201)
   const refused = (await get(path)).runs[0]
