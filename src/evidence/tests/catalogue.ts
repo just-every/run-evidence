@@ -1,3 +1,4 @@
+import {gitlabCatalogue} from '../connect/gitlab-catalogue'
 import type { Criterion } from './criteria'
 import { awsCatalogue } from '../cloud/catalogue'
 import { gcpCatalogue } from '../cloud/gcp'
@@ -72,6 +73,7 @@ export const catalogue: CatalogueEntry[] = [
    api: 'gh api -X DELETE orgs/ORG/members/USERNAME',
    noTerraform: 'Membership removal is an operational action; github_membership resources can manage it if you hold membership in Terraform.',
   } } },
+ ...gitlabCatalogue,
  ...awsCatalogue,
  ...gcpCatalogue,
  ...azureCatalogue,

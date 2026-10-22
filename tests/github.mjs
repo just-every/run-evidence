@@ -1,3 +1,4 @@
+import {gitlabScopeJourney,gitlabHistoryJourney,gitlabPagingJourney} from './helpers/gitlab-journey.mjs'
 // GitHub connection custody, scheduled collection and catalogue tests through
 // the owner's doors and the Cron Trigger. GitHub itself is the only fake: a
 // network-edge stand-in for api.github.com that answers the documented REST
@@ -225,5 +226,8 @@ try {
    assert.equal((await (await target.fetch('/api/library')).json()).accepted, 2)
   } finally { await lib.close(); await target.close() }
  })
- console.log(`${passed} GitHub connection public-door scenarios passed; GitHub is faked only at the network edge.`)
+ await scenario('CODE-001: GitLab owner authorization, scoped privacy and protection tests, source fixes, lost access, credential rotation and revocation',gitlabScopeJourney)
+ await scenario('CODE-001: GitLab source reviews, exact-head pipelines, deployments and dependency inventory retain unknown event times, earlier failures and custody',gitlabHistoryJourney)
+ await scenario('CODE-001 / COLLECTION-001: GitLab resumes the saved page after restart, refuses query-filter changes and inherits schedules, events and inactive restore',gitlabPagingJourney)
+ console.log(`${passed} code connection public-door scenarios passed; GitHub is faked only at the network edge.`)
 } finally { await app.close() }
