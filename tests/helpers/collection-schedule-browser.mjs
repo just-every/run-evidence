@@ -56,7 +56,7 @@ export async function collectionScheduleBrowser(app, connections, { suffix = '',
     await page.getByRole('heading', { name: 'Collection period report', exact: true }).waitFor()
     await page.getByRole('heading', { name: 'Missing coverage', exact: true }).waitFor()
     await page.getByRole('heading', { name: 'Collection attempts and retained revisions', exact: true }).waitFor()
-    const summaries = page.getByText('Account, gaps, timestamps, controls and audit periods', { exact: true })
+    const summaries = page.locator('details[data-collection-context] > summary')
     if (await summaries.count()) {
      await summaries.first().click()
      assert.match(await summaries.first().locator('..').innerText(), /Library revision/)
