@@ -1,3 +1,4 @@
+import {runAzureDevops} from './azuredevops-collect'
 import {runBitbucket} from './bitbucket-collect'
 import {runGitlab} from './gitlab-collect'
 import { collectGithubMembers } from './github-members'
@@ -30,6 +31,7 @@ const organizationSchema: ResourceSchema = { fields: { login: 'string', two_fact
 async function collectConnection(env: Bindings, connection: Connection, trigger: 'schedule' | 'manual', now: Date): Promise<{ run: string | null; outcome: string }> {
  if (!await capabilityAllowed(env,'collections',connection.id)) return {run:null,outcome:'inactive after restore'}
  if (connection.provider === 'private-git') throw new Refusal('Run the installed read-only collector on its private computer.', 409)
+ if (connection.provider === 'azuredevops') return runAzureDevops(env,connection,trigger,now)
  if (connection.provider === 'bitbucket') return runBitbucket(env,connection,trigger,now)
  if (connection.provider === 'gitlab') return runGitlab(env,connection,trigger,now)
  if (connection.provider === 'aws') return runAwsCollection(env, connection, trigger, now)

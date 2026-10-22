@@ -1,3 +1,4 @@
+import {withCollectionClock} from './connect/clock'
 import { configurationFailures } from './ops/configuration'
 import { runStep, reconcileDeliveries } from './ops/outcomes'
 import { EXECUTION_TIMEOUT_MS } from './ops/execution'
@@ -25,7 +26,8 @@ import { handoverWork } from './handover/storage'
 // The Worker's Cron Trigger (every five minutes): collect due connector reads,
 // read linked tracker tickets, run due tests, run queued re-tests, then send deduplicated follow-ups. Each
 // step records its own durable outcome; a failed step does not hide the others.
-export async function scheduledWork(env: Bindings, now: Date) {
+export const scheduledWork=(env:Bindings,now:Date)=>withCollectionClock(()=>new Date(),()=>scheduledWorkImpl(env,now))
+async function scheduledWorkImpl(env: Bindings, now: Date) {
  const missing = configurationFailures(env)
  if (missing.length) throw new Error('Required configuration is missing or invalid: ' + missing.join(', '))
  const outcome: Record<string, number | string> = {}

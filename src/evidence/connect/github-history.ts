@@ -1,3 +1,4 @@
+import {sourceInstant,sourceAtOrAfter} from './source-time'
 import { githubDependencies, DependencyGap, type Dependencies } from './github-dependencies'
 import type { Client } from './github'
 import { natural, record } from './github-schema'
@@ -13,13 +14,13 @@ import { readPageStream } from './pages'
 class HistoryGap extends Error {}
 const str = (v: unknown, max = 200): v is string => typeof v === 'string' && v.length > 0 && v.length <= max
 const sha = (v: unknown): v is string => typeof v === 'string' && /^[a-f0-9]{40,64}$/i.test(v)
-const date = (v: unknown): v is string => typeof v === 'string' && /^\d{4}-\d\d-\d\dT/.test(v) && Number.isFinite(Date.parse(v))
+const date = (v: unknown): v is string => sourceInstant(v)!==null
 const actor = (v: unknown): string => { if (!record(v) || !natural(v.id) || !str(v.login)) throw new HistoryGap('schema drift: source actor'); return v.login }
 export interface ReviewFact { id:number|string; actor:string; state:string; commit:string|null; submitted_at:string|null }
 export interface CheckFact { name:string; state:string; conclusion:string|null; completed_at:string|null; revision:string }
 export interface ChangeFact { number:number; merged_at:string; source_revision:string; merge_revision:string; base:string; reviews:ReviewFact[]|null; checks:CheckFact[]|null; statuses:{context:string;state:string;created_at:string}[]|null }
-export interface DeploymentFact { pipeline_state?:string; pipeline_completed_at?:string|null; release_uuid?:string; pipeline_uuid?:string|null; environment_key?:string; current_state?:string; id:number|string; revision:string; environment:string; production:boolean|null; created_at:string; statuses:{state:string;created_at:string}[]|null; change_numbers:number[] }
-export interface GithubHistory { changes:ChangeFact[]|null; deployments:DeploymentFact[]|null; dependencies:Dependencies|null; gaps:string[]; note:string }
+export interface DeploymentFact { pipeline_state?:string; pipeline_completed_at?:string|null; release_uuid?:string; pipeline_uuid?:string|null; source_url?:string; pipeline_identity?:string; environment_key?:string; current_state?:string; id:number|string; revision:string; environment:string; production:boolean|null; created_at:string; statuses:{state:string;created_at:string}[]|null; change_numbers:number[] }
+export interface GithubHistory { label?:string; changes:ChangeFact[]|null; deployments:DeploymentFact[]|null; dependencies:Dependencies|null; gaps:string[]; note:string }
 export async function readGithubHistory(client:Client,base:string,name:string):Promise<GithubHistory> {
  const root='/repos/'+name.split('/').map(encodeURIComponent).join('/'), gaps:string[]=[]
  async function list<T>(path:string,normalize:(row:unknown)=>T,property?:string):Promise<T[]> {
@@ -73,7 +74,7 @@ export async function readGithubHistory(client:Client,base:string,name:string):P
     if(!record(value)||!['error','failure','inactive','pending','success','queued','in_progress'].includes(String(value.state))||!date(value.created_at))throw new HistoryGap('schema drift: deployment status')
     return {state:String(value.state),created_at:value.created_at}
    }))
-   result.push({...row,statuses,change_numbers:(changes??[]).filter(c=>c.merge_revision===row.revision&&Date.parse(c.merged_at)<=Date.parse(row.created_at)).map(c=>c.number)})
+   result.push({...row,statuses,change_numbers:(changes??[]).filter(c=>c.merge_revision===row.revision&&sourceAtOrAfter(row.created_at,c.merged_at)).map(c=>c.number)})
   }
   return result
  })

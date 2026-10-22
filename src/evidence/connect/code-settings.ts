@@ -4,7 +4,7 @@ import {auditStatement,list,text,type Actor,type Input} from '../door'
 import {requireConnection} from './storage'
 import {digest} from '../api/tokens'
 export async function productionEnvironments(env:Bindings,actor:Actor,id:string,input:Input,now:Date){
- const c=await requireConnection(env,id);if(c.provider!=='bitbucket')throw new Refusal('Production environment review is not available for this provider.')
+ const c=await requireConnection(env,id);if(!['bitbucket','azuredevops'].includes(c.provider))throw new Refusal('Production environment review is not available for this provider.')
  const latest=await env.DB.prepare('SELECT id,coverage_json FROM collection_runs WHERE connection_id=? AND outcome IS NOT NULL ORDER BY started_at DESC,rowid DESC LIMIT 1').bind(id).first<{id:string;coverage_json:string}>()
  if(!latest||input.source_run!==latest.id)throw new Refusal('Review the latest source history before classifying environments.',409)
  const history=JSON.parse(latest.coverage_json).code_history??{},known=new Set(Object.values(history).flatMap((h:any)=>(h.deployments??[]).map((d:any)=>d.environment_key)))

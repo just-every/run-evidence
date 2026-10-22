@@ -1,3 +1,4 @@
+import {azuredevopsCatalogue} from '../connect/azuredevops-catalogue'
 import {bitbucketCatalogue} from '../connect/bitbucket-catalogue'
 import {gitlabCatalogue} from '../connect/gitlab-catalogue'
 import type { Criterion } from './criteria'
@@ -74,6 +75,7 @@ export const catalogue: CatalogueEntry[] = [
    api: 'gh api -X DELETE orgs/ORG/members/USERNAME',
    noTerraform: 'Membership removal is an operational action; github_membership resources can manage it if you hold membership in Terraform.',
   } } },
+ ...azuredevopsCatalogue,
  ...bitbucketCatalogue,
  ...gitlabCatalogue,
  ...awsCatalogue,

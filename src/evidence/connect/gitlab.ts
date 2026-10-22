@@ -1,3 +1,4 @@
+import {sourceInstant,sourceAtOrAfter} from './source-time'
 import {persistCodeMembers} from './code-members'
 import type {Bindings} from '../../auth.server'
 import type {Connection} from './storage'
@@ -8,7 +9,7 @@ import type {GithubHistory,ChangeFact,DeploymentFact} from './github-history'
 export class GitlabFailure extends Error{constructor(message:string,public kind:'gap'|'unauthorized'|'throttled'='gap',public reset=0){super(message)}}
 const string=(v:unknown):v is string=>typeof v==='string'&&v.length>0&&v.length<=200
 const revision=(v:unknown):v is string=>typeof v==='string'&&/^[a-f0-9]{40,64}$/i.test(v)
-const instant=(v:unknown):v is string=>typeof v==='string'&&Number.isFinite(Date.parse(v))&&/^\d{4}-\d\d-\d\dT/.test(v)
+const instant=(v:unknown):v is string=>sourceInstant(v)!==null
 export const gitlabPermissions=['read_api (groups, projects, protected branches, approvals, deployments, dependency metadata)','read_repository (authorized private repository metadata)']
 // Consumed schemas only; no source descriptions, secrets or arbitrary objects.
 // https://docs.gitlab.com/api/{groups,projects,protected_branches,merge_requests,merge_request_approvals,deployments,dependencies}/
@@ -93,7 +94,7 @@ export async function gitlabRepository(client:GitlabClient,name:string){
  const deployments=await attempt('deployments',async()=>{
   const rows=await client.list(root+'/deployments?per_page=100',v=>{
    if(!record(v)||!natural(v.id)||!revision(v.sha)||!instant(v.created_at)||!(v.updated_at===undefined||instant(v.updated_at))||!['created','running','success','failed','canceled','blocked'].includes(String(v.status))||!record(v.environment)||!string(v.environment.name))throw new GitlabFailure('schema drift: deployment')
-   return {id:v.id,revision:v.sha,environment:v.environment.name,production:typeof v.environment.tier==='string'?v.environment.tier==='production':null,created_at:v.created_at,statuses:typeof v.updated_at==='string'?[{state:v.status,created_at:v.updated_at}]:null,current_state:v.status,change_numbers:(changes??[]).filter(c=>c.merge_revision===v.sha&&Date.parse(c.merged_at)<=Date.parse(v.created_at as string)).map(c=>c.number)} as DeploymentFact
+   return {id:v.id,revision:v.sha,environment:v.environment.name,production:typeof v.environment.tier==='string'?v.environment.tier==='production':null,created_at:v.created_at,statuses:typeof v.updated_at==='string'?[{state:v.status,created_at:v.updated_at}]:null,current_state:v.status,change_numbers:(changes??[]).filter(c=>c.merge_revision===v.sha&&sourceAtOrAfter(v.created_at as string,c.merged_at)).map(c=>c.number)} as DeploymentFact
   });if(rows.length>20)throw new GitlabFailure('more than 20 deployments; history incomplete');return rows
  })
  const dependencies=await attempt('dependency metadata',async()=>{

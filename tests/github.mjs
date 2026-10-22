@@ -1,3 +1,4 @@
+import {azuredevopsScopeJourney,azuredevopsHistoryJourney,azuredevopsPagingJourney} from './helpers/azuredevops-journey.mjs'
 import {bitbucketScopeJourney,bitbucketHistoryJourney,bitbucketPagingJourney} from './helpers/bitbucket-journey.mjs'
 import {gitlabScopeJourney,gitlabHistoryJourney,gitlabPagingJourney,gitlabMembersJourney} from './helpers/gitlab-journey.mjs'
 // GitHub connection custody, scheduled collection and catalogue tests through
@@ -234,5 +235,8 @@ try {
  await scenario('CODE-001: Bitbucket requires audited admin-scope consent, reads only selected repositories, preserves unknown membership attributes and compares reviewed departures',bitbucketScopeJourney)
  await scenario('CODE-001: Bitbucket real merge activity, exact-revision statuses and Pipelines readback preserve precise times, contradictory outcomes, owner production classification and custody',bitbucketHistoryJourney)
  await scenario('CODE-001 / COLLECTION-001: Bitbucket resumes the interrupted restriction page, rejects altered filters and inherits schedules, events and inactive restore',bitbucketPagingJourney)
+ await scenario('CODE-001: Azure DevOps reads selected immutable repositories, applies only blocking in-scope policies and preserves unknown subjects, reviewed departures and revoked authority',azuredevopsScopeJourney)
+ await scenario('CODE-001: Azure Repos review and exact-commit statuses link to actual Pipelines release build artifacts with separate outcomes, prospective production classification and custody',azuredevopsHistoryJourney)
+ await scenario('CODE-001 / COLLECTION-001: Azure DevOps resumes the saved Graph page, retains denied populations and inherits schedules, events and inactive restore',azuredevopsPagingJourney)
  console.log(`${passed} code connection public-door scenarios passed; providers are faked only at the network edge.`)
 } finally { await app.close() }
