@@ -1,3 +1,6 @@
+import {persistCodeMembers} from './code-members'
+import type {Bindings} from '../../auth.server'
+import type {Connection} from './storage'
 import {scopedFetch} from '../ops/execution'
 import {record,natural} from './github-schema'
 import {readPageStream} from './pages'
@@ -78,8 +81,10 @@ export async function gitlabRepository(client:GitlabClient,name:string){
    })
    const check=await attempt('pipeline for change '+row.number,async()=>{
     const {body}=await client.get(root+'/merge_requests/'+row.number)
-    if(!record(body)||body.sha!==row.source_revision||!record(body.head_pipeline)||body.head_pipeline.sha!==row.source_revision||!string(body.head_pipeline.status)||!(body.head_pipeline.finished_at===null||instant(body.head_pipeline.finished_at)))throw new GitlabFailure('pipeline unavailable or source revision mismatch')
-    return {name:'GitLab head pipeline',state:body.head_pipeline.finished_at?'completed':'in progress',conclusion:body.head_pipeline.status as string,completed_at:body.head_pipeline.finished_at as string|null,revision:row.source_revision}
+    if(!record(body)||body.sha!==row.source_revision||!record(body.head_pipeline)||!natural(body.head_pipeline.id)||body.head_pipeline.sha!==row.source_revision)throw new GitlabFailure('pipeline unavailable or source revision mismatch')
+    const pipeline=(await client.get(root+'/pipelines/'+body.head_pipeline.id)).body
+    if(!record(pipeline)||pipeline.id!==body.head_pipeline.id||pipeline.sha!==row.source_revision||!['created','waiting_for_resource','preparing','pending','running','success','failed','canceled','skipped','manual','scheduled'].includes(String(pipeline.status))||!(pipeline.finished_at===null||instant(pipeline.finished_at)))throw new GitlabFailure('pipeline details unavailable or source revision mismatch')
+    return {name:'GitLab head pipeline',state:pipeline.finished_at?'completed':'in progress',conclusion:pipeline.status as string,completed_at:pipeline.finished_at as string|null,revision:row.source_revision}
    })
    result.push({...row,reviews,checks:check?[check]:null,statuses:null})
   }
@@ -87,8 +92,8 @@ export async function gitlabRepository(client:GitlabClient,name:string){
  })
  const deployments=await attempt('deployments',async()=>{
   const rows=await client.list(root+'/deployments?per_page=100',v=>{
-   if(!record(v)||!natural(v.id)||!revision(v.sha)||!instant(v.created_at)||!(v.updated_at===undefined||instant(v.updated_at))||!string(v.status)||!record(v.environment)||!string(v.environment.name))throw new GitlabFailure('schema drift: deployment')
-   return {id:v.id,revision:v.sha,environment:v.environment.name,production:typeof v.environment.tier==='string'?v.environment.tier==='production':null,created_at:v.created_at,statuses:[{state:v.status,created_at:typeof v.updated_at==='string'?v.updated_at:v.created_at}],change_numbers:(changes??[]).filter(c=>c.merge_revision===v.sha&&Date.parse(c.merged_at)<=Date.parse(v.created_at as string)).map(c=>c.number)} as DeploymentFact
+   if(!record(v)||!natural(v.id)||!revision(v.sha)||!instant(v.created_at)||!(v.updated_at===undefined||instant(v.updated_at))||!['created','running','success','failed','canceled','blocked'].includes(String(v.status))||!record(v.environment)||!string(v.environment.name))throw new GitlabFailure('schema drift: deployment')
+   return {id:v.id,revision:v.sha,environment:v.environment.name,production:typeof v.environment.tier==='string'?v.environment.tier==='production':null,created_at:v.created_at,statuses:typeof v.updated_at==='string'?[{state:v.status,created_at:v.updated_at}]:null,current_state:v.status,change_numbers:(changes??[]).filter(c=>c.merge_revision===v.sha&&Date.parse(c.merged_at)<=Date.parse(v.created_at as string)).map(c=>c.number)} as DeploymentFact
   });if(rows.length>20)throw new GitlabFailure('more than 20 deployments; history incomplete');return rows
  })
  const dependencies=await attempt('dependency metadata',async()=>{
@@ -101,4 +106,17 @@ export async function gitlabRepository(client:GitlabClient,name:string){
  const history:GithubHistory={changes,deployments,dependencies,gaps,note:'GitLab source metadata at read time. Current approvals do not establish an approval timestamp or reviewed revision. Pipeline results are on the source head revision; outcomes before merge remain unknown. Deployment production tier is unknown when absent. Original failures and unmatched deployments remain separate facts.'}
  if(new TextEncoder().encode(JSON.stringify(history)).length>50000){history.changes=null;history.deployments=null;history.dependencies=null;gaps.push('history exceeds 50,000 bytes; detailed source history unavailable')}
  return {attributes,history,gaps}
+}
+
+// https://docs.gitlab.com/api/members/#list-all-members-of-a-group-or-project-including-inherited-and-invited-members
+export async function gitlabMembers(env:Bindings,c:Connection,client:GitlabClient,now:Date){
+ const gaps:string[]=[]
+ let members:import('./code-members').CodeMember[]|null=null
+ try{members=await client.list('/groups/'+encodeURIComponent(c.account)+'/members/all?per_page=100',v=>{
+  if(!record(v)||!natural(v.id)||v.id<1||!string(v.username)||!['active','blocked','ldap_blocked','deactivated','banned'].includes(String(v.state))||!natural(v.access_level)||![0,5,10,15,20,25,30,40,50].includes(v.access_level))throw new GitlabFailure('schema drift: inherited group membership')
+  return {id:String(v.id),name:v.username,status:String(v.state),admin:v.access_level>=40,roles:'GitLab group access level '+v.access_level,mfa:null,service:v.bot===true}
+ });if(new Set(members.map(m=>m.id)).size!==members.length)throw new GitlabFailure('repeated group member identity')}
+ catch(e){if(!(e instanceof GitlabFailure)||e.kind!=='gap')throw e;gaps.push('membership: '+e.message);members=null}
+ if(members?.length)gaps.push('GitLab group membership does not establish individual MFA enrollment or last sign-in; group enforcement is recorded separately. Use an authorized identity source or reviewed manual evidence for those attributes.')
+ return persistCodeMembers(env,c,members,gaps,now)
 }

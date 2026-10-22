@@ -16,6 +16,7 @@ export function gitlabFixture(){
   if(request.headers.get('authorization')!=='Bearer '+edge.token)return response({message:'Unauthorized'},401)
   const path=decodeURIComponent(url.pathname.replace('/api/v4','')),override=edge.overrides.get(path+url.search)??edge.overrides.get(path)
   if(override)return response(override.body,override.status??200,override.headers??{})
+  if(path==='/groups/northstar/members/all')return response([])
   if(path==='/groups/northstar')return response(edge.group)
   if(path==='/groups/northstar/projects'){
    const names=Object.keys(edge.projects),page=Number(url.searchParams.get('page')??1)
@@ -28,7 +29,8 @@ export function gitlabFixture(){
   if(tail==='/approval_rules')return response(p.reviews?[{id:5,rule_type:'regular',approvals_required:p.reviews,applies_to_all_protected_branches:true,protected_branches:[]}]:[])
   if(tail==='/merge_requests')return response(name==='northstar/web'?[{iid:31,sha:head,merge_commit_sha:merge,merged_at:'2026-10-10T15:00:00Z',target_branch:'main',description:'synthetic-evidence-private-change-description'}]:[])
   if(tail==='/merge_requests/31/approvals')return response({approved:true,approved_by:[],approvals_required:0})
-  if(tail==='/merge_requests/31')return response({iid:31,sha:head,head_pipeline:{id:6,sha:head,status:'failed',finished_at:'2026-10-10T14:50:00Z'}})
+  if(tail==='/pipelines/6')return response({id:6,sha:head,status:'failed',finished_at:'2026-10-10T14:50:00Z'})
+  if(tail==='/merge_requests/31')return response({iid:31,sha:head,head_pipeline:{id:6,sha:head,status:'failed'}})
   if(tail==='/deployments')return response(name==='northstar/web'?[{id:8,sha:merge,created_at:'2026-10-10T15:30:00Z',status:'success',environment:{id:4,name:'production'},deployable:null}]:[])
   if(tail==='/dependencies')return response(name==='northstar/web'?[{name:'openai',version:'6.0.0',package_manager:'npm',dependency_file_path:'package-lock.json',vulnerabilities:[],licenses:[],downloadLocation:'synthetic-evidence-private-package-field'}]:[])
   return response({message:'Not found'},404)

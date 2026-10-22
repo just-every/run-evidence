@@ -3,14 +3,14 @@ import {Refusal} from '../upload'
 import {auditStatement,text,type Actor,type Input} from '../door'
 import {publicBase} from '../net'
 import {seal,unseal} from './custody'
-import {requireConnection,type Connection} from './storage'
+import type {Connection} from './storage'
 import {startRun,backoffUpdate,reconnectUpdate} from './runs'
 import {catalogueStatements} from '../tests/storage'
 import {runForType} from '../tests/engine'
 import {sourceReadTime} from './pages'
 import {upsertResources,upsertRegister,type ResourceSchema} from '../resources'
 import {digest} from '../api/tokens'
-import {gitlabClient,gitlabGroup,gitlabProjects,gitlabRepository,gitlabPermissions,GitlabFailure} from './gitlab'
+import {gitlabClient,gitlabGroup,gitlabProjects,gitlabRepository,gitlabMembers,gitlabPermissions,GitlabFailure} from './gitlab'
 export const gitlabRevision='gitlab-1'
 async function verify(base:string,account:string,token:string,now:Date){
  try{const client=gitlabClient(base,token,now),group=await gitlabGroup(client,account),projects=await gitlabProjects(client,account);return {group,projects}}
@@ -40,13 +40,14 @@ export async function runGitlab(env:Bindings,c:Connection,trigger:'schedule'|'ma
  let token:string
  try{token=await unseal(env,c.secret_ciphertext,c.secret_iv,c.id)}catch{return finish('failed',{},'credential unavailable',reconnectUpdate(env,c,'Stored credential cannot be decrypted; reconnect.',now))}
  const client=gitlabClient(c.api_base,token,now),selected=(await env.DB.prepare('SELECT full_name FROM connection_repositories WHERE connection_id=? AND selected=1 ORDER BY full_name').bind(c.id).all<{full_name:string}>()).results.map(r=>r.full_name)
- const coverage={organization:'unread',repositories_selected:selected.length,repositories_read:[] as string[],unreadable:[] as {repository:string;reason:string}[],gaps:[] as {asset:string;reason:string}[],code_history:{} as Record<string,unknown>}
+ const coverage={organization:'unread',repositories_selected:selected.length,repositories_read:[] as string[],unreadable:[] as {repository:string;reason:string}[],gaps:[] as {asset:string;reason:string}[],code_history:{} as Record<string,unknown>,source_members:undefined as unknown}
  const repoSchema:ResourceSchema={fields:{private:'boolean',archived:'boolean',default_branch:'string',branch_protection:'boolean',required_reviews:'number',required_status_checks:'number',readable:'boolean'},required:[]}
- const orgSchema:ResourceSchema={fields:{login:'string',two_factor_requirement_enabled:'boolean',readable:'boolean'},required:[]}
+ const orgSchema:ResourceSchema={fields:{login:'string',two_factor_requirement_enabled:'boolean',departed_members:'number',readable:'boolean'},required:[]}
  const rows:{uniqueId:string;displayName:string;attributes:Record<string,unknown>}[]=[],packages:typeof rows=[],source={kind:'source-observed' as const,ref:'gitlab:'+c.id,label:'GitLab '+c.account+' via '+c.label},dependencySource={...source,ref:'gitlab-dependencies:'+c.id}
  let org:Record<string,unknown>={login:c.account,two_factor_requirement_enabled:null,readable:false},dependenciesComplete=true
  try{
   try{org={...await gitlabGroup(client,c.account),readable:true};delete org.id;coverage.organization='read'}catch(e){if(!(e instanceof GitlabFailure)||e.kind!=='gap')throw e;coverage.gaps.push({asset:c.account,reason:e.message})}
+  const members=await gitlabMembers(env,c,client,now);coverage.source_members=members;org.departed_members=members.departed_members;coverage.gaps.push(...members.gaps.map(reason=>({asset:c.account,reason})))
   for(const name of selected){
    try{
     const read=await gitlabRepository(client,name);rows.push({uniqueId:name,displayName:name,attributes:read.attributes});coverage.repositories_read.push(name)
@@ -74,5 +75,5 @@ export async function runGitlab(env:Bindings,c:Connection,trigger:'schedule'|'ma
  }
  const outcome=coverage.organization!=='read'&&!coverage.repositories_read.length?'failed':coverage.gaps.length?'partial':'complete'
  const result=await finish(outcome,coverage,'',env.DB.prepare("UPDATE connections SET last_attempt_at=?,last_success_at=CASE WHEN ?='failed' THEN last_success_at ELSE ? END,next_attempt_at=NULL,backoff_seconds=0,last_error=? WHERE id=?").bind(at,outcome,at,coverage.gaps.length+' source gaps',c.id))
- await runForType(env,'gitlab.repository',now);await runForType(env,'gitlab.organization',now);return result
+ await runForType(env,'gitlab.repository',now);await runForType(env,'gitlab.organization',now);await runForType(env,'identity.account',now);return result
 }
