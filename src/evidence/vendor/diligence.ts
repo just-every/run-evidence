@@ -31,7 +31,7 @@ export async function createTemplate(env: Bindings, actor: Actor, input: Input, 
 export const templateData = (raw: string): TemplateData => { const value = JSON.parse(raw); return Array.isArray(value) ? { questions: value } : value }
 export async function templates(env: Bindings): Promise<Template[]> {
  const own = (await env.DB.prepare('SELECT id,name,questions_json FROM vendor_templates ORDER BY created_at,rowid').all<{ id: string; name: string; questions_json: string }>()).results
- return [...shipped.map(t => ({ ...t, owner_built: false })), ...own.map(t => ({ id: t.id, name: t.name, revision: 1, source: 'Owner-built template', ...templateData(t.questions_json), owner_built: true }))]
+ return [...shipped.map(t => ({ ...t, owner_built: false })), ...own.map(t => { const data = templateData(t.questions_json); return { id: t.id, name: t.name, revision: 1, source: data.workbook ? `${data.workbook.type} ${data.workbook.edition}; licensed workbook confirmed by ${data.workbook.confirmed_by}` : 'Owner-built template', ...data, owner_built: true } })]
 }
 export interface LinkRow { id: string; vendor_id: string; contact_email: string; expires_at: string; created_by: string; created_at: string; closed_at: string | null; emailed_at: string | null }
 const linkColumns = 'id,vendor_id,contact_email,expires_at,created_by,created_at,closed_at,emailed_at'

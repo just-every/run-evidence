@@ -164,6 +164,9 @@ export async function vendorJourney(app, owner, get, person, runtime) {
  assert.equal(JSON.stringify((await get(`/api/vendors/${globex.id}`)).documents), globexBefore)
  detail = await get(`/api/vendors/${acme.id}`); assert.ok(detail.events.filter(e => e.outcome === 'refused').length >= 4)
  assert.equal(detail.documents.filter(d => d.kind === 'pentest').length, 0)
+ // The owner can close a currently valid link immediately.
+ await owner(`/api/vendors/${globex.id}/links/${globexLink.link_id}/close`, {}, 200)
+ assert.equal((await supplier(new URL(globexLink.url).pathname)).status, 404)
  // 10. Time passes: the contract renews, the condition lapses and reminders chase the owner once each.
  await owner(`/api/vendors/${acme.id}`, { reason: 'Contract renewed for another term', renewal_date: '2028-02-01', criticality: 'high', data_types: ['PHI', 'personal data'], region: 'us-east-1', annual_cost_usd: '52000', contact_email: 'security@acme-notes.example' }, 200)
  await app.clock('2027-02-02T15:00:00Z'); await app.tick()

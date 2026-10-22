@@ -45,7 +45,7 @@ export interface SupplierAnswer { answer: string; comment: string; ownership?: s
 // Keep structured CAIQ fields in the existing immutable answer record. A tagged
 // envelope distinguishes it from historical free-text comments without a schema rewrite.
 const tag = 'evidence-answer-v1:'
-export const encodeAnswer = (a: SupplierAnswer) => a.ownership || a.implementation ? tag + JSON.stringify({ comment: a.comment, ownership: a.ownership ?? '', implementation: a.implementation ?? '' }) : a.comment
+export const encodeAnswer = (a: SupplierAnswer) => tag + JSON.stringify({ comment: a.comment, ownership: a.ownership ?? '', implementation: a.implementation ?? '' })
 export function decodeAnswer(comment: string): Pick<SupplierAnswer, 'comment' | 'ownership' | 'implementation'> {
  if (comment.startsWith(tag)) { try { const v = JSON.parse(comment.slice(tag.length)); if (typeof v.comment === 'string' && typeof v.ownership === 'string' && typeof v.implementation === 'string') return v } catch { /* historical comment */ } }
  return { comment }

@@ -132,6 +132,7 @@ export async function programDocumentsJourney() {
   await post(`${doc(pci, 'pci-saq')}/approvals`, { revision: await tip(pci, 'pci-saq'), approver_person_id: approver.id })
   const approvedSaq = await tip(pci, 'pci-saq'), beforeChange = await get(doc(pci, 'pci-saq'))
   const library = await get('/api/library')
+  assert.deepEqual(library.pending.find(r => r.revision === 3).saqChanges[0].programs.map(p => p.id), [pci])
   assert.deepEqual(library.pending.find(r => r.revision === 3).saqChanges[0].removed, ['6.4.3', '11.6.1', '12.3.1'])
   assert.equal((await get(doc(pci, 'pci-saq'))).state, 'approved', 'pending library updates do not mutate an approval')
   await post('/api/library/revisions/3', { reason: 'Merchant and QSA reviewed SAQ A revision 1' }, 200)

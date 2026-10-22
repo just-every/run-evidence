@@ -16,4 +16,3 @@ export const saqPrompt = (ref: string) => {
 }
 export const responseChoices = (type: Saq) => ['in place', 'in place with CCW', 'not applicable', ...(type.startsWith('D-') ? ['not tested'] : []), 'not in place']
 export const explanationNeeded = (response: string) => response !== 'in place'
-export const explanationPrompt = (response: string) => response === 'in place with CCW' ? 'Explain the constraint, objective, risk, compensating controls, validation and maintenance (CCW).' : response === 'not applicable' ? 'Explain why this requirement does not apply (Appendix C).' : response === 'not tested' ? 'Explain the testing limitation and reason (Appendix D).' : 'Record what is missing and the remediation plan for the assessor’s Part 4.'
