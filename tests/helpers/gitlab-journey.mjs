@@ -48,7 +48,7 @@ export async function gitlabHistoryJourney(){
   assert.equal(original.outcome,'complete');assert.equal(h.changes[0].source_revision,head);assert.equal(h.changes[0].merge_revision,merge)
   assert.deepEqual(h.changes[0].reviews,[],'approved=true with no rules is not an invented human approval')
   assert.equal(h.changes[0].checks[0].conclusion,'failed');assert.equal(h.changes[0].checks[0].revision,head)
-  assert.deepEqual(h.deployments[0].change_numbers,[31]);assert.equal(h.deployments[0].production,null,'environment name alone does not establish production tier')
+  assert.equal(h.deployments[0].current_state,'success');assert.equal(h.deployments[0].statuses,null,'an unexposed status-change time is never replaced by deployment creation time');assert.deepEqual(h.deployments[0].change_numbers,[31]);assert.equal(h.deployments[0].production,null,'environment name alone does not establish production tier')
   assert.ok(cov.context.audit_periods.some(p=>p.audit_from==='2026-10-01'))
   assert.ok((await get('/api/inventory')).records.some(r=>r.source_type==='gitlab.dependency'&&r.name==='openai'&&r.attributes.source_revision===null))
   for(const marker of ['private-project-description','private-runner-field','private-change-description','private-package-field'])assert.ok(!JSON.stringify(cov).includes(marker))
@@ -82,5 +82,31 @@ export async function gitlabPagingJourney(){
   assert.ok(!edge.requests.some(r=>r.path.includes('search=omit')))
   edge.overrides.clear()
   await collectionScheduleJourney(app,at)
+ }finally{await app.close()}
+}
+
+export async function gitlabMembersJourney(){
+ const {app,edge,get,post,at}=await context()
+ try{
+  const person=await post('/api/people',{name:'GitLab Former',email:'former@northstar.test',kind:'employee'},201)
+  const c=await post('/api/connections',{provider:'gitlab',account:'northstar',token:edge.token},201),path='/api/connections/'+c.id,memberPath='/groups/northstar/members/all'
+  edge.overrides.set(memberPath,{body:[{id:80,username:'former',state:'active',access_level:40}]})
+  await post(path+'/collect',{},201)
+  const account=(await get('/api/identities')).accounts.find(a=>a.name==='former')
+  assert.equal(account.mfa,null,'group enforcement never fabricates individual enrollment');assert.equal(account.admin,true);assert.equal(account.match,null)
+  await post('/api/identities/'+account.id+'/match',{decision:'approved',person_id:person.id,reason:'Reviewed inherited GitLab membership'})
+  await post('/api/people/'+person.id+'/depart',{reason:'Owner recorded departure'})
+  await at('2026-10-11T13:00:00Z');await app.tick()
+  const t=(await get('/api/tests')).tests.find(t=>t.catalogue_id==='gitlab.departed-members'),latest=async()=>(await get('/api/tests/'+t.id)).latest[0]
+  assert.equal((await latest()).result,'fail')
+  const original=(await get(path)).runs[0]
+  edge.overrides.set(memberPath,{status:403,body:{message:'Forbidden'}})
+  await at('2026-10-11T14:00:00Z');await app.tick();assert.equal((await latest()).result,'unknown');assert.equal((await get('/api/identities')).accounts.length,1)
+  edge.overrides.set(memberPath,{body:[]});await at('2026-10-11T15:10:00Z');await app.tick();assert.equal((await latest()).result,'pass')
+  assert.deepEqual((await get(path)).runs.find(r=>r.id===original.id),original);assert.equal((await get('/api/people')).people.length,1)
+  // Retain another current member for the browser's explicit unknown attributes.
+  edge.overrides.set(memberPath,{body:[{id:81,username:'current',state:'active',access_level:30}]})
+  await at('2026-10-11T16:20:00Z');await app.tick()
+  await collectionScheduleBrowser(app,[(await get(path)).connection],{suffix:'-members',extraScreens:[{path:'/app/identities',heading:'Directory accounts',key:'identities',text:['current','not exposed']},{path:'/app/inventory',heading:'Inventory',key:'inventory',text:['GitLab Former']}]})
  }finally{await app.close()}
 }

@@ -18,7 +18,7 @@ const actor = (v: unknown): string => { if (!record(v) || !natural(v.id) || !str
 export interface ReviewFact { id:number; actor:string; state:string; commit:string|null; submitted_at:string|null }
 export interface CheckFact { name:string; state:string; conclusion:string|null; completed_at:string|null; revision:string }
 export interface ChangeFact { number:number; merged_at:string; source_revision:string; merge_revision:string; base:string; reviews:ReviewFact[]|null; checks:CheckFact[]|null; statuses:{context:string;state:string;created_at:string}[]|null }
-export interface DeploymentFact { id:number; revision:string; environment:string; production:boolean|null; created_at:string; statuses:{state:string;created_at:string}[]|null; change_numbers:number[] }
+export interface DeploymentFact { current_state?:string; id:number; revision:string; environment:string; production:boolean|null; created_at:string; statuses:{state:string;created_at:string}[]|null; change_numbers:number[] }
 export interface GithubHistory { changes:ChangeFact[]|null; deployments:DeploymentFact[]|null; dependencies:Dependencies|null; gaps:string[]; note:string }
 export async function readGithubHistory(client:Client,base:string,name:string):Promise<GithubHistory> {
  const root='/repos/'+name.split('/').map(encodeURIComponent).join('/'), gaps:string[]=[]
