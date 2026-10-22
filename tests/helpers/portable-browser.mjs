@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { join } from 'node:path'
 import { writeFile } from 'node:fs/promises'
+import { sanitize } from './review-browser-runtime.mjs'
 // Caller supplies separate real RER development sessions (already signed in)
 // and owns their processes. No browser or server is started by this helper.
 export async function portableBrowserJourney({sourcePage,targetPage,artifacts,width=1440,archiveBytes,journalBytes,capture,expectJournalRefusal=()=>{}}) {
@@ -9,6 +10,11 @@ export async function portableBrowserJourney({sourcePage,targetPage,artifacts,wi
  // direct browser actions exercise only the archive interface and endpoints.
  await targetPage.setViewportSize({width,height:1000})
  const snap=async(page,name)=>capture?capture(page,name):page.screenshot({path:join(artifacts,name+'.png'),fullPage:true})
+ const expectStatus=async expected=>{
+  await targetPage.waitForFunction(expected=>{const text=document.querySelector('#archive-status')?.textContent??'';return text.includes(expected)||(text&&!document.querySelector('#archive-file')?.disabled)},expected,{timeout:120000})
+  const actual=await targetPage.locator('#archive-status').innerText()
+  assert.ok(actual.includes(expected),`Archive expected ${expected}; got ${sanitize(actual)}`)
+ }
  const archivePath=join(artifacts,`portable-${width}.evidence`),journalPath=join(artifacts,`portable-${width}-journal.json`)
  if(sourcePage){
   await sourcePage.setViewportSize({width,height:1000})
@@ -23,22 +29,23 @@ export async function portableBrowserJourney({sourcePage,targetPage,artifacts,wi
  await targetPage.goto(new URL('/app/archive',targetPage.url()).href)
  await targetPage.locator('#archive-file').setInputFiles(archivePath)
  await targetPage.locator('#archive-dry-run').click()
- await targetPage.waitForFunction(()=>document.querySelector('#archive-status')?.textContent?.includes('Dry run passed'),{},{timeout:120000})
+ await expectStatus('Dry run passed')
  assert.equal(await targetPage.locator('#archive-confirm').isDisabled(),true)
  await snap(targetPage,`portable-unverified-${width}`)
  const invalidJournal=join(artifacts,`portable-invalid-journal-${width}.json`);await writeFile(invalidJournal,JSON.stringify({format:'invalid'}))
  expectJournalRefusal(true)
  await targetPage.locator('#archive-journal').setInputFiles(invalidJournal)
  await targetPage.locator('#archive-dry-run').click()
- await targetPage.waitForFunction(()=>document.querySelector('#archive-status')?.textContent?.includes('Invalid source erasure journal'))
+ await expectStatus('Invalid source erasure journal')
  await snap(targetPage,`portable-refused-${width}`)
  expectJournalRefusal(false)
  await targetPage.locator('#archive-journal').setInputFiles(journalPath)
  await targetPage.locator('#archive-dry-run').click()
- await targetPage.waitForFunction(()=>document.querySelector('#archive-status')?.textContent?.includes('Ready for confirmation'),{},{timeout:120000})
+ await expectStatus('Ready for confirmation')
  await snap(targetPage,`portable-dry-run-${width}`)
  await targetPage.locator('#archive-confirm').click()
- await targetPage.waitForFunction(()=>document.querySelector('#archive-status')?.textContent?.startsWith('Restore complete'),{},{timeout:120000})
+ await expectStatus('Restore complete')
+ assert.ok((await targetPage.locator('#archive-status').innerText()).startsWith('Restore complete'))
  await snap(targetPage,`portable-restored-${width}`)
  await targetPage.locator('#archive-capability').selectOption('schedules')
  await targetPage.locator('#archive-reauthorize-form button').click()

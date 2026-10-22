@@ -233,7 +233,7 @@ try {
  console.log('PASS PORTABLE-001 and r2 browser journeys at 1440 and 390; independent review, closure, real expiry, archive round trip, zero overflow/errors.')
 } catch(error) {
  await writeFile(join(output,'failure.json'),JSON.stringify({error:sanitize(error.message),errors,measurements,comparisons},null,2)+'\n')
- throw new Error(sanitize(error.message))
+ throw new Error(sanitize(error.stack ?? error.message))
 }
 finally {
  const cleanup=await Promise.allSettled([browser?.close(),...installations.reverse().map(item=>item.close())])
