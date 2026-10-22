@@ -48,9 +48,10 @@ export async function collectionScheduleBrowser(app, connections, { suffix = '',
     await page.getByRole('heading', { name: 'Collection period report', exact: true }).waitFor()
     await page.getByRole('heading', { name: 'Missing coverage', exact: true }).waitFor()
     await page.getByRole('heading', { name: 'Collection attempts and retained revisions', exact: true }).waitFor()
-    if (await page.locator('details').count()) {
-     await page.locator('details').first().locator('summary').click()
-     assert.match(await page.locator('details').first().innerText(), /context/)
+    const summaries = page.getByText('Account, gaps, timestamps, controls and audit periods', { exact: true })
+    if (await summaries.count()) {
+     await summaries.first().click()
+     assert.match(await summaries.first().locator('..').innerText(), /context/)
     }
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'collection report overflow at ' + width)
     await page.screenshot({ path: join(output, `${width}-${c.provider}${suffix}-period-report.png`), fullPage: true })

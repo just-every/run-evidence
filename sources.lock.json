@@ -6843,7 +6843,7 @@
       "executable": false
     },
     "tests/helpers/collection-schedule-browser.mjs": {
-      "sha256": "29cf2fbdac6e015b3732284bea7bb084a97166573988f2a79c68ecf25fb7740c",
+      "sha256": "cf2caf443631330b40a09654ae2edf1bf4b495c1492f3f076d7aec8543ff14b2",
       "executable": false
     },
     "tests/helpers/collection-schedule-journey.mjs": {
