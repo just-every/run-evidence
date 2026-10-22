@@ -251,6 +251,22 @@ try {
    await collectionScheduleBrowser(app,[(await get(path)).connection],{suffix:'-resume-'+provider,reportExpected:[provider==='okta'?'after=3':provider==='jumpcloud'?'jumpcloud:systemusers':'synthetic-page-2']})
   }
  })
+ await scenario('COLLECTION-001: a complete directory population crosses push-sized batches; malformed recovery retains every identity as unknown without admitting a valid subset',async()=>{
+  const original=dir.google,endpoint='https://admin.googleapis.com/admin/directory/v1/users?customer=my_customer&maxResults=500&projection=basic'
+  let clock=Date.parse((await get('/api/connections/'+conn.google.id)).runs[0].started_at)
+  const collect=async()=>{clock+=3600000;await app.clock(new Date(clock).toISOString());await owner('/api/connections/'+conn.google.id+'/collect',{})}
+  const rows=async()=>(await get('/api/inventory')).records.filter(r=>r.source_type==='identity.account'&&r.source_ref==='directory:'+conn.google.id&&r.collection_state!=='removed')
+  try{
+   dir.google=Array.from({length:201},(_,i)=>({id:'bulk'+i,email:'bulk'+i+'@northstar.test',name:'Bulk Person '+i,admin:false,mfa:true,last:ago(1),suspended:false}))
+   await collect();const complete=await rows();assert.equal(complete.length,201);assert.ok(complete.every(r=>r.collection_state==='observed'))
+   const keys=complete.map(r=>r.source_key).sort()
+   const body={users:dir.google.map(u=>({id:u.id,primaryEmail:u.email,name:{fullName:u.name},isAdmin:false,isDelegatedAdmin:false,isEnrolledIn2Sv:true,suspended:false,archived:false,lastLoginTime:u.last,creationTime:ago(400)}))}
+   body.users.at(-1).isEnrolledIn2Sv='malformed'
+   dir.overrides.set(endpoint,{body});await collect();const failed=await rows();assert.deepEqual(failed.map(r=>r.source_key).sort(),keys);assert.ok(failed.every(r=>r.collection_state==='unread'))
+   const gap=(await get('/api/connections/'+conn.google.id)).runs[0];assert.equal(gap.outcome,'failed')
+   dir.overrides.delete(endpoint);await collect();assert.ok((await rows()).every(r=>r.collection_state==='observed'));assert.deepEqual((await get('/api/connections/'+conn.google.id)).runs.find(r=>r.id===gap.id),gap)
+  }finally{dir.google=original;dir.overrides.delete(endpoint);await collect()}
+ })
  await scenario('COLLECTION-001: hosted collector schedules through owner doors, Cron, browser and restore', () => collectionScheduleJourney(app))
  console.log(`${passed} identity public-door scenarios passed; the four directories are faked only at the network edge.`)
 } finally { await app.close() }

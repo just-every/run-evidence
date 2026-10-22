@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "0f5be06e136a5878eaf2e0c618832c3bc2dbfc7b9979e7732457ff67759a1ec4",
+  "manifest": "c8c9722e2ee076af37a7d01df76653a0ba8dc7771f5daef3365e073f7dd53921",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2610,9 +2610,13 @@
           "src/evidence/collector/profile.ts",
           "src/evidence/collector/storage.ts",
           "src/evidence/collector/view.ts",
+          "src/evidence/connect/azuredevops-catalogue.ts",
+          "src/evidence/connect/azuredevops-collect.ts",
+          "src/evidence/connect/azuredevops.ts",
           "src/evidence/connect/bitbucket-catalogue.ts",
           "src/evidence/connect/bitbucket-collect.ts",
           "src/evidence/connect/bitbucket.ts",
+          "src/evidence/connect/clock.ts",
           "src/evidence/connect/code-members.ts",
           "src/evidence/connect/code-settings.ts",
           "src/evidence/connect/collect.ts",
@@ -2634,6 +2638,7 @@
           "src/evidence/connect/run-context.ts",
           "src/evidence/connect/runs.ts",
           "src/evidence/connect/schedule.ts",
+          "src/evidence/connect/source-time.ts",
           "src/evidence/connect/storage.ts",
           "src/evidence/connect/view.ts",
           "src/evidence/control-definition/storage.ts",
@@ -2935,6 +2940,8 @@
           "tests/helpers/answer-journey.mjs",
           "tests/helpers/assurance-browser.mjs",
           "tests/helpers/azure-deadline-browser.mjs",
+          "tests/helpers/azuredevops-fixture.mjs",
+          "tests/helpers/azuredevops-journey.mjs",
           "tests/helpers/basecamp-webhook-journey.mjs",
           "tests/helpers/bitbucket-fixture.mjs",
           "tests/helpers/bitbucket-journey.mjs",
@@ -3138,7 +3145,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "0f5be06e136a5878eaf2e0c618832c3bc2dbfc7b9979e7732457ff67759a1ec4",
+      "sha256": "c8c9722e2ee076af37a7d01df76653a0ba8dc7771f5daef3365e073f7dd53921",
       "executable": false
     },
     "LICENSE": {
@@ -4226,7 +4233,7 @@
       "executable": false
     },
     "src/evidence/cloud/collect.ts": {
-      "sha256": "c1b856306fa5da184f9431debc7069598c0c5e48cfab711951124bd4aa2f80c8",
+      "sha256": "86bb842a72569a646e1ee31d57c733c6fa59b12daaae0ad09aeeb2920664ade2",
       "executable": false
     },
     "src/evidence/cloud/connect.ts": {
@@ -4238,7 +4245,7 @@
       "executable": false
     },
     "src/evidence/cloud/scoped.ts": {
-      "sha256": "0438e8be63e414349f01a4060964fe292f6840a05b56ab86520b061211c44331",
+      "sha256": "c6e86dc44a7382fb50e1d487e9d2fc4854b339167fe7a8f8e62809be97bbf8e7",
       "executable": false
     },
     "src/evidence/cloud/sigv4.ts": {
@@ -4274,7 +4281,7 @@
       "executable": false
     },
     "src/evidence/connect/azuredevops-collect.ts": {
-      "sha256": "85ba55f7d5139bf3f41a0fd7c47ca9736fe7161b006f0ca0b62d49c2660133ca",
+      "sha256": "e6e888159a5e7fe7e60d1e536dbd803d0fe1e62362b83d2806f973b54585c1e6",
       "executable": false
     },
     "src/evidence/connect/azuredevops.ts": {
@@ -4286,7 +4293,7 @@
       "executable": false
     },
     "src/evidence/connect/bitbucket-collect.ts": {
-      "sha256": "6ae51770e1ac3bc7696a65fdbb071535beb41e7bfacdf8104303b6bc31980eab",
+      "sha256": "b7a1d47e1fa345bb6df7d76820f373de885a08bf9771458d5eb2eb2954b40b20",
       "executable": false
     },
     "src/evidence/connect/bitbucket.ts": {
@@ -4306,7 +4313,7 @@
       "executable": false
     },
     "src/evidence/connect/collect.ts": {
-      "sha256": "cac8643cec389cf84464d63c5664a6ad4e5cc4fa2059b67cbe2b9639022bec31",
+      "sha256": "0de72b09c6c8aefb0b3659cc126b2c8f22016ac96f51985f8810484bdcb15550",
       "executable": false
     },
     "src/evidence/connect/custody.ts": {
@@ -4346,7 +4353,7 @@
       "executable": false
     },
     "src/evidence/connect/gitlab-collect.ts": {
-      "sha256": "c6daeca9e7c853c46d4bf727c0ad3e32b8f696dbaef0abbbf0cacf79e99be66e",
+      "sha256": "2bc3befbc199eb2cd54786ad7ddea55b2756c7a1ef92404661622914695e1b1f",
       "executable": false
     },
     "src/evidence/connect/gitlab.ts": {
@@ -4510,7 +4517,7 @@
       "executable": false
     },
     "src/evidence/identity/collect.ts": {
-      "sha256": "5ed777d61cded42c68622cb32d0a4c45504982a232d2649a6dd388145359e80f",
+      "sha256": "d25cc9f3e5cdfb05dcc02a62bc157c125f8e0e50edf567c085f5ab6a100e5756",
       "executable": false
     },
     "src/evidence/identity/directory.ts": {
@@ -5590,7 +5597,7 @@
       "executable": false
     },
     "src/evidence/resources.ts": {
-      "sha256": "bc1a5abdf9074efc03706b63d05275e2a2805eb01a2537e8329b507ca688441f",
+      "sha256": "620aa773ad15a4df0ab8508446ddf398157337a1993d6ef00acee184c9434f70",
       "executable": false
     },
     "src/evidence/review/frame.ts": {
@@ -7170,7 +7177,7 @@
       "executable": false
     },
     "tests/identity.mjs": {
-      "sha256": "06c384c0bf3f84b1b903b683ff2d81bec190e0cf50c31600c643f4ee69b12c99",
+      "sha256": "f490fbd6f884c560a02f7a23cf476edf401443f32ea1263fa779641927268a23",
       "executable": false
     },
     "tests/import.mjs": {

@@ -5,7 +5,7 @@ import { auditStatement, text, type Actor, type Input } from '../door'
 import { seal, unseal } from '../connect/custody'
 import { backoffUpdate, reconnectUpdate, startRun } from '../connect/runs'
 import type { Connection } from '../connect/storage'
-import { upsertResources, type ResourceSchema } from '../resources'
+import { upsertResources, upsertCollectedResources, type ResourceSchema } from '../resources'
 import { catalogueStatements } from '../tests/storage'
 import { runForType } from '../tests/engine'
 import { DirectoryFailure, type Directory } from './directory'
@@ -64,7 +64,7 @@ export async function runDirectoryCollection(env: Bindings, connection: Connecti
   if (error.kind === 'unauthorized') return finish('failed', {}, error.message, reconnectUpdate(env, connection, `${error.message}; reconnect with a new credential.`, now))
   // Nothing read: known accounts are rewritten unread, so their tests are unknown, not carried forward.
   const known = (await env.DB.prepare('SELECT unique_id,display_name FROM resources WHERE type=? AND source_ref=? AND removed_at IS NULL').bind('identity.account', 'directory:' + connection.id).all<{ unique_id: string; display_name: string }>()).results
-  await upsertResources(env, 'identity.account', schema, known.map(k => ({ uniqueId: k.unique_id, displayName: k.display_name, attributes: { readable: false } })), { kind: 'source-observed', ref: 'directory:' + connection.id, label: `${directory.name} ${connection.account}` }, false, now)
+  await upsertCollectedResources(env, 'identity.account', schema, known.map(k => ({ uniqueId: k.unique_id, displayName: k.display_name, attributes: { readable: false } })), { kind: 'source-observed', ref: 'directory:' + connection.id, label: `${directory.name} ${connection.account}` }, false, now)
   await runForType(env, 'identity.account', now)
   return finish('failed', { gaps: [error.message] }, error.message, env.DB.prepare('UPDATE connections SET last_attempt_at=?,last_error=? WHERE id=?').bind(at, error.message, connection.id))
  }
@@ -77,7 +77,7 @@ export async function runDirectoryCollection(env: Bindings, connection: Connecti
   } }
  })
  const source = { kind: 'source-observed' as const, ref: 'directory:' + connection.id, label: `${directory.name} ${connection.account} via ${connection.label}` }
- const written = await upsertResources(env, 'identity.account', schema, items, source, read.complete ? 'source' : false, now)
+ const written = await upsertCollectedResources(env, 'identity.account', schema, items, source, read.complete, now)
  const fresh = written.results.filter(r => r.id && r.outcome !== 'removed' && r.outcome !== 'rejected').map(r => r.id!)
  // An account Evidence could not store is a gap, never a silent omission.
  for (const r of written.results.filter(r => r.outcome === 'rejected')) read.gaps.push(`account ${r.uniqueId} not stored: ${(r.reasons ?? []).join('; ')}`)

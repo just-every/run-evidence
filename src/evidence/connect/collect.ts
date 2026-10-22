@@ -18,7 +18,7 @@ import { isDirectory, runDirectoryCollection } from '../identity/collect'
 import { isScopedCloud, scopedClouds } from '../cloud/clouds'
 import { runScopedCollection } from '../cloud/scoped'
 import { runKnowBe4 } from '../training/knowbe4'
-import { upsertResources, upsertRegister, type ResourceSchema } from '../resources'
+import { upsertResources, upsertRegister, upsertCollectedResources, type ResourceSchema } from '../resources'
 import { runForType } from '../tests/engine'
 import { unseal } from './custody'
 import { connectorRevision, githubClient, readOrganization, readRepository, Throttled, Unauthorized } from './github'
@@ -107,8 +107,9 @@ async function collectConnection(env: Bindings, connection: Connection, trigger:
  if(dependencyComplete)await env.DB.prepare("UPDATE resources SET observed_at=? WHERE type='github.dependency' AND source_ref=? AND removed_at IS NULL").bind(resume.started_at,dependencySource.ref).run()
  // Unread repositories stay in the denominator with readable=false: their tests are unknown.
  await upsertResources(env, 'github.organization', organizationSchema, organization ? [organization] : [], source, false, now)
- const written = await upsertResources(env, 'github.repository', repositorySchema, repos, source, 'source', now)
- const fresh = written.results.filter(r => r.id && r.outcome !== 'removed' && coverage.repositories_read.includes(r.uniqueId)).map(r => r.id!)
+ const written = await upsertCollectedResources(env, 'github.repository', repositorySchema, repos, source, true, now)
+ for(const r of written.results.filter(r=>r.outcome==='rejected'))coverage.gaps.push({asset:r.uniqueId,reason:(r.reasons??[]).join('; ')})
+ const fresh = written.results.filter(r => r.id && r.outcome !== 'removed' && r.outcome !== 'rejected' && coverage.repositories_read.includes(r.uniqueId)).map(r => r.id!)
  const observed = [
   ...(coverage.organization === 'read' ? [env.DB.prepare("UPDATE resources SET observed_at=? WHERE type='github.organization' AND unique_id=? AND source_ref=?").bind(resume.started_at, connection.account, source.ref)] : []),
   ...(fresh.length ? [env.DB.prepare('UPDATE resources SET observed_at=? WHERE id IN (SELECT value FROM json_each(?))').bind(resume.started_at, JSON.stringify(fresh))] : []),

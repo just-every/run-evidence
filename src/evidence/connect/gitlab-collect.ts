@@ -8,7 +8,7 @@ import {startRun,backoffUpdate,reconnectUpdate} from './runs'
 import {catalogueStatements} from '../tests/storage'
 import {runForType} from '../tests/engine'
 import {sourceReadTime} from './pages'
-import {upsertResources,upsertRegister,type ResourceSchema} from '../resources'
+import {upsertResources,upsertRegister,upsertCollectedResources,type ResourceSchema} from '../resources'
 import {digest} from '../api/tokens'
 import {gitlabClient,gitlabGroup,gitlabProjects,gitlabRepository,gitlabMembers,gitlabPermissions,GitlabFailure} from './gitlab'
 export const gitlabRevision='gitlab-1'
@@ -66,7 +66,8 @@ export async function runGitlab(env:Bindings,c:Connection,trigger:'schedule'|'ma
   return finish('failed',coverage,'transport failure',env.DB.prepare('UPDATE connections SET last_attempt_at=?,last_error=? WHERE id=?').bind(at,'GitLab did not complete an authorized read.',c.id))
  }
  await upsertResources(env,'gitlab.organization',orgSchema,[{uniqueId:c.account,displayName:c.account+' (group)',attributes:org}],source,false,now)
- const written=await upsertResources(env,'gitlab.repository',repoSchema,rows,source,'source',now),fresh=written.results.filter(r=>r.id&&r.outcome!=='removed'&&coverage.repositories_read.includes(r.uniqueId)).map(r=>r.id!)
+ const written=await upsertCollectedResources(env,'gitlab.repository',repoSchema,rows,source,true,now),fresh=written.results.filter(r=>r.id&&r.outcome!=='removed'&&r.outcome!=='rejected'&&coverage.repositories_read.includes(r.uniqueId)).map(r=>r.id!)
+ for(const r of written.results.filter(r=>r.outcome==='rejected'))coverage.gaps.push({asset:r.uniqueId,reason:(r.reasons??[]).join('; ')})
  if(fresh.length)await env.DB.prepare('UPDATE resources SET observed_at=? WHERE id IN (SELECT value FROM json_each(?))').bind(sourceReadTime(now),JSON.stringify(fresh)).run()
  if(coverage.organization==='read')await env.DB.prepare("UPDATE resources SET observed_at=? WHERE type='gitlab.organization' AND source_ref=?").bind(sourceReadTime(now),source.ref).run()
  const dependencySchema:ResourceSchema={fields:{repository:'string',name:'string',version:'string',generated_at:'string',source_revision:'string',readable:'boolean'},required:[]}
