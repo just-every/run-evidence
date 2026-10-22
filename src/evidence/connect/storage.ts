@@ -1,3 +1,4 @@
+import {runForConnection} from '../tests/engine'
 import {rotateAzureDevops} from './azuredevops-collect'
 import {rotateBitbucket} from './bitbucket-collect'
 import {rotateGitlab} from './gitlab-collect'
@@ -70,6 +71,7 @@ export async function rotateCredential(env: Bindings, actor: Actor, id: string, 
 export async function revokeConnection(env: Bindings, actor: Actor, id: string, now: Date) {
  await requireConnection(env, id)
  await env.DB.batch([env.DB.prepare("UPDATE connections SET status='revoked',secret_ciphertext=NULL,secret_iv=NULL,collector_token_hash=NULL,revoked_at=? WHERE id=?").bind(now.toISOString(), id), auditStatement(env, actor, 'connection.revoked', 'connection:' + id, now)])
+ await runForConnection(env,id,now)
 }
 export async function selectRepositories(env: Bindings, actor: Actor, id: string, input: Input, now: Date) {
  await requireConnection(env, id)

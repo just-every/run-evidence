@@ -4381,11 +4381,15 @@
       "executable": false
     },
     "src/evidence/connect/runs.ts": {
-      "sha256": "410cb541d295f62bfb378fc3ea106cb7921c083474e4d828236ff7a97f267df4",
+      "sha256": "b8fa270dee38ef10832561c8d171baf99e1452c2d22d77f69b5d216f414c8bc2",
       "executable": false
     },
     "src/evidence/connect/schedule.ts": {
       "sha256": "f4dc2d000d81c32abdf4d22c1adb465881e2c3e1856d5af3b951ff379c83739f",
+      "executable": false
+    },
+    "src/evidence/connect/source-authority.ts": {
+      "sha256": "5da89733932e44e4415af3040fd4daad0d5723cd093aeb35a017ef7bd9239458",
       "executable": false
     },
     "src/evidence/connect/source-time.ts": {
@@ -4393,7 +4397,7 @@
       "executable": false
     },
     "src/evidence/connect/storage.ts": {
-      "sha256": "32b8b12e425e4a6c121abf079f1445fa727fcd76cd18b5e918f6c9f7a5ea1022",
+      "sha256": "6b9055536cb72af215eed932a4ee02d68af43deb3c8a6db961b16496bfb028d9",
       "executable": false
     },
     "src/evidence/connect/view.ts": {
@@ -5693,7 +5697,7 @@
       "executable": false
     },
     "src/evidence/tests/engine.ts": {
-      "sha256": "38e5b63f9e0826e4ae7eca5eec967eeb9cfe4c6592ddde511b75c85c44d4ff93",
+      "sha256": "db18d563ed65d11e450454d6f710ab07cf6c80ddeb50f33fc6afc64124828c9a",
       "executable": false
     },
     "src/evidence/tests/http.ts": {
@@ -5701,7 +5705,7 @@
       "executable": false
     },
     "src/evidence/tests/storage.ts": {
-      "sha256": "626662af647082640846e165abe6a4c3d69900a38bbae0db112c2c4175f4907d",
+      "sha256": "af592f8eae626dee37c320f2bb1270aecfdfbaacb3ec0b4ec4473bc24ffbce3b",
       "executable": false
     },
     "src/evidence/tests/view.ts": {
@@ -6929,7 +6933,7 @@
       "executable": false
     },
     "tests/github.mjs": {
-      "sha256": "1e8bdc5f9afb88951448d33ccfac0d2debe01773a4768224683442a0d6d7229d",
+      "sha256": "0e9489dbea01bdbb0602ed269bbb2f16edd1fa7f68c8072e0fa23fce89b66d27",
       "executable": false
     },
     "tests/handover.mjs": {
@@ -6969,7 +6973,7 @@
       "executable": false
     },
     "tests/helpers/collection-journey.mjs": {
-      "sha256": "3c2751f9d0179037dd99f4051994d89163b90dc292e12e286487dc25adf16c01",
+      "sha256": "25d55e3b9eec5019e346d1a1ff8f4407dec46ef6113b9e002099c0aef7cfb335",
       "executable": false
     },
     "tests/helpers/collection-schedule-browser.mjs": {

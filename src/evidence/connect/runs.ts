@@ -1,3 +1,4 @@
+import {runForConnection} from '../tests/engine'
 import {collectionReceiptTime} from './clock'
 import { attachPages, pageContext, pageSnapshot, sourceReadTime } from './pages'
 import { sourceEvent } from './event-context'
@@ -35,6 +36,7 @@ export async function startRun(env: Bindings, connection: Connection, revision: 
    ...(connectionUpdate ? [connectionUpdate] : []),
    auditStatement(env, system, 'collection.' + outcome, 'connection:' + connection.id, completed, outcome === 'failed' ? 'failed' : 'succeeded', error),
   ])
+  if(connectionUpdate){const live=await env.DB.prepare('SELECT status FROM connections WHERE id=?').bind(connection.id).first<{status:string}>();if(live?.status!=='active')await runForConnection(env,connection.id,completed)}
   return { run, outcome }
  }
  const checkpoint = async (coverage: Record<string, unknown>) => { const value=JSON.stringify({ ...metadata, ...coverage });if(value.length>250000)throw Error('Durable cursor exceeds the portable metadata bound');await env.DB.prepare('UPDATE collection_runs SET coverage_json=? WHERE id=? AND finished_at IS NULL').bind(value,run).run() }

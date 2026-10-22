@@ -41,6 +41,9 @@ export async function collectionJourney() {
   assert.ok(initialContext.context.audit_periods.some(p => p.id === program.id && p.audit_from === '2026-10-01' && p.audit_to === '2026-10-31' && p.revision === 1))
   assert.equal(initialContext.source_read_started_at, initial.started_at)
   assert.equal(initialContext.received_at, initial.finished_at);assert.equal(initialContext.received_at,'2026-10-11T12:00:03.000Z','trusted completion clock, not dispatch or provider time'); assert.equal(initialContext.source_event_at, null, 'a poll never invents a source event time')
+  const firstTests=(await get('/api/tests')).tests
+  const firstProtection=await get('/api/tests/'+firstTests.find(t=>t.catalogue_id==='github.branch-protection').id)
+  assert.equal(firstProtection.latest[0].observed_at,initialContext.received_at,'post-read evaluation uses the receipt clock, never a backdated dispatch clock')
   await send('/api/controls/' + mapped.id + '/revisions', { revision: 1, name: mapped.name, group: mapped.group_name, applicability: 'Included', test_intent: 'Review authorized changes', evaluation_criteria: 'Read source protection', reason: 'Prospective source-period definition' })
   const resourceCount = (await app.db.prepare('SELECT COUNT(*) AS n FROM resource_versions').first()).n
   await at('2026-10-11T12:10:00Z'); await app.tick()
