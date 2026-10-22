@@ -26,6 +26,7 @@ const reply = (status, body, headers = {}) => new Response(JSON.stringify(body),
  const match = /^\/repos\/(northstar\/[a-z]+)(\/.*)?$/.exec(path), repo = match && github.repos[match[1]]
  if (!repo || github.hidden.has(match[1])) return reply(404, { message: 'Not Found' })
  if (!match[2]) return reply(200, { full_name: match[1], private: repo.private, archived: false, default_branch: 'main' })
+ if (match[2] === '/pulls' || match[2] === '/deployments') return reply(200, [])
  if (match[2] === '/branches/main/protection') return repo.protection ? reply(200, { required_pull_request_reviews: { required_approving_review_count: repo.protection.reviews }, required_status_checks: { contexts: repo.protection.checks }, enforce_admins: { enabled: true } }) : reply(404, { message: 'Branch not protected' })
  if (match[2] === '/dependabot/alerts') return reply(200, Array.from({ length: repo.dependabot }, (_, i) => ({ number: i + 1, state: 'open' })))
  if (match[2] === '/secret-scanning/alerts') return reply(200, Array.from({ length: repo.secrets }, (_, i) => ({ number: i + 1, state: 'open' })))

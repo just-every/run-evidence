@@ -2,8 +2,8 @@ import { scopedFetch } from '../ops/execution'
 import { natural, protectionFields, record } from './github-schema'
 // Read-only GitHub REST client for collection. Every call is a GET; nothing in
 // this file can write to GitHub. Unreadable fields are null, never a pass.
-export const connectorRevision = 'github-2'
-export const readPermissions = ['Metadata: read', 'Administration: read (branch protection)', 'Dependabot alerts: read', 'Secret scanning alerts: read', 'Organization members: read (two-factor requirement)']
+export const connectorRevision = 'github-3'
+export const readPermissions = ['Metadata: read', 'Pull requests: read', 'Checks: read', 'Commit statuses: read', 'Deployments: read', 'Administration: read (branch protection)', 'Dependabot alerts: read', 'Secret scanning alerts: read', 'Organization members: read (two-factor requirement)']
 export class Throttled extends Error { constructor(public resetAt: number) { super('GitHub rate limit reached') } }
 export class Unauthorized extends Error {}
 interface Reply { status: number; body: unknown; message: string; next: string | null; scopes: string | null }

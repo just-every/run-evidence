@@ -26,9 +26,10 @@ async function unpacked(data:string) {
  return value
 }
 export async function withPages<T>(env:Bindings,connection:Connection,now:Date,work:()=>Promise<T>):Promise<T> {
- if(connection.provider==='github'||connection.provider==='private-git'||connection.status!=='active')return work()
+ if(connection.provider==='private-git'||connection.status!=='active')return work()
  const context=await collectionContext(env,connection)
- const authority=await digest(JSON.stringify([connection.id,connection.provider,connection.secret_ciphertext,connection.secret_iv,connection.config_json,context]))
+ const selected=connection.provider==='github' ? (await env.DB.prepare('SELECT full_name FROM connection_repositories WHERE connection_id=? AND selected=1 ORDER BY full_name').bind(connection.id).all()).results : []
+ const authority=await digest(JSON.stringify([selected,connection.id,connection.provider,connection.secret_ciphertext,connection.secret_iv,connection.config_json,context]))
  const prior=await env.DB.prepare('SELECT coverage_json FROM collection_runs WHERE connection_id=? ORDER BY started_at DESC,rowid DESC LIMIT 1').bind(connection.id).first<{coverage_json:string}>()
  const saved=prior ? JSON.parse(prior.coverage_json).resume_pages as Snapshot|undefined : undefined
  let streams:Record<string,Stream>={},started=now.toISOString()
