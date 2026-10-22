@@ -54,7 +54,7 @@ async function fakeAws(request) {
  if (!who) { aws.unsigned++; return error('SignatureDoesNotMatch') }
  const params = Object.fromEntries(new URLSearchParams(body)), account = aws.accounts[who.account], action = params.Action ?? request.headers.get('x-amz-target')?.split('.').pop() ?? ''
  const override = aws.overrides.get(`${who.account} ${who.service} ${who.region} ${action || url.pathname + url.search}`)
- if (override) return override({params,url,who})
+ if (override) return override({params:body.startsWith('{')?JSON.parse(body):params,url,who})
  aws.calls.push(`${who.account} ${who.service} ${who.region} ${action || url.pathname + url.search}`)
  if (aws.denied.has(`${who.account}:${who.service}`)) return who.service === 'cloudtrail' || who.service === 'organizations' ? jsonReply(400, { __type: 'AccessDeniedException' }) : error('AccessDenied')
  if (who.service === 'sts') {

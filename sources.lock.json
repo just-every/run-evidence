@@ -6796,11 +6796,11 @@
       "executable": false
     },
     "tests/cloud.mjs": {
-      "sha256": "d4b2e0ca882ec7cbc33b8e738c086767c1b398e4fdadf627965de6ebd87a9801",
+      "sha256": "038c410a5273ed09cbb5b0f2a3e6c882dc2847cdf82736a08ad8f304c98cd987",
       "executable": false
     },
     "tests/clouds.mjs": {
-      "sha256": "8c2aa2fc084e3e859a9aefd79f7b60fea7dccce4bdd114a19b665a4e8789e3e8",
+      "sha256": "123795fa51f0b8e05c46e9dfb8bc63ab9aa5e2cbe21370f290a3ec6a16fc0042",
       "executable": false
     },
     "tests/email-link.mjs": {
@@ -6868,7 +6868,7 @@
       "executable": false
     },
     "tests/helpers/collection-schedule-browser.mjs": {
-      "sha256": "492f9f6c9e557285f6791fa3bc797925ef523108794b10f4f096b7632c13ecba",
+      "sha256": "1f29a702c874b98ad59277693e92251c452cf878fd0c580b0bded12d74466c5d",
       "executable": false
     },
     "tests/helpers/collection-schedule-journey.mjs": {
@@ -7052,7 +7052,7 @@
       "executable": false
     },
     "tests/identity.mjs": {
-      "sha256": "3d5ce5b08e4427bbb560ae3e40f366d123380de278e436cc1eb02b87e81107cf",
+      "sha256": "06c384c0bf3f84b1b903b683ff2d81bec190e0cf50c31600c643f4ee69b12c99",
       "executable": false
     },
     "tests/import.mjs": {
