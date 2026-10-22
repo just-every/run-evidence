@@ -7,6 +7,7 @@ process.env.RER_SERVER_JOURNEY = '1'
 import assert from 'node:assert/strict'
 import { generateKeyPairSync, randomBytes, verify as verifySignature } from 'node:crypto'
 import { runtime } from './helpers/runtime.mjs'
+import { collectionScheduleBrowser } from './helpers/collection-schedule-browser.mjs'
 import { collectionScheduleJourney } from './helpers/collection-schedule-journey.mjs'
 const TENANT = '0e5f1c2a-1111-4222-8333-944455556666', CLIENT = '7a1b2c3d-1111-4222-8333-944455556666'
 const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048, privateKeyEncoding: { type: 'pkcs8', format: 'pem' }, publicKeyEncoding: { type: 'spki', format: 'pem' } })
@@ -17,11 +18,13 @@ const dir = {
  google: [{ id: 'g1', email: 'ana@northstar.test', name: 'Ana Ruiz', admin: true, mfa: true, last: ago(1), suspended: false }, { id: 'g2', email: 'cy@northstar.test', name: 'Cy Park', admin: false, mfa: false, last: '1970-01-01T00:00:00.000Z', created: ago(120), suspended: false }],
  entra: [{ id: 'e1', mail: 'ana@northstar.test', name: 'Ana Ruiz', enabled: true, type: 'Member', mfa: true, roles: ['Global Administrator'], last: ago(3) }, { id: 'e2', mail: 'partner@vendor.test', name: 'Partner', enabled: true, type: 'Guest', mfa: true, roles: ['User Administrator'], last: ago(4) }, { id: 'e3', mail: 'eve@northstar.test', name: 'Eve Moss', enabled: true, type: 'Member', mfa: false, roles: [], last: ago(5) }],
  jumpcloud: [{ _id: 'a'.repeat(24), email: 'frank@northstar.test', firstname: 'Frank', sudo: { enabled: true }, mfa: { configured: false }, state: 'ACTIVATED', activated: true }, { _id: 'b'.repeat(24), email: 'gina@northstar.test', firstname: 'Gina', sudo: { enabled: false }, mfa: { configured: true }, state: 'ACTIVATED', activated: true }],
- entraDenied: new Set(), groupsDenied: new Set(), calls: [],
+ entraDenied: new Set(), groupsDenied: new Set(), calls: [], overrides: new Map(),
 }
 const b64url = value => Buffer.from(value, 'base64url')
 async function fakeDirectories(request) {
  const url = new URL(request.url), auth = request.headers.get('authorization') ?? ''
+ const override = dir.overrides.get(url.href)
+ if (override) return Response.json(override.body, { headers: override.headers ?? {} })
  if (url.hostname === 'northstar.okta.com') {
   dir.calls.push('okta ' + url.pathname)
   if (auth !== 'SSWS ' + secrets.okta) return Response.json({ errorCode: 'E0000011' }, { status: 401 })
@@ -145,6 +148,71 @@ try {
   assert.deepEqual((await target.db.prepare('SELECT * FROM identity_matches ORDER BY rowid').all()).results, (await app.db.prepare('SELECT * FROM identity_matches ORDER BY rowid').all()).results)
   assert.deepEqual([...new Set((await target.db.prepare('SELECT status,secret_ciphertext FROM connections').all()).results.map(r => JSON.stringify(r)))], [JSON.stringify({ status: 'inactive after restore', secret_ciphertext: null })])
   await target.close()
+ })
+ await scenario('COLLECTION-001: all four directories refuse malformed security facts and incomplete pages without losing known identities; fresh recovery preserves failures and custody', async () => {
+  dir.entraDenied.clear(); dir.groupsDenied.clear()
+  let time = Date.parse((await get('/api/connections/' + conn.okta.id)).runs[0].started_at)
+  const advance = async () => { time += 60000; await app.clock(new Date(time).toISOString()) }
+  const send = async provider => { await advance(); await owner('/api/connections/' + conn[provider].id + '/collect', {}); return (await get('/api/connections/' + conn[provider].id)).runs[0] }
+  for (const provider of Object.keys(conn)) await send(provider)
+  const fixtures = [
+   ['okta','https://northstar.okta.com/api/v1/users?limit=200', 'users', body => null],
+   ['okta','https://northstar.okta.com/api/v1/users?limit=200', 'users', body => body.map((u,i) => i ? u : { ...u, status: undefined })],
+   ['okta','https://northstar.okta.com/api/v1/users?limit=200', 'users', body => body.map((u,i) => i ? u : { ...u, lastLogin: 'not a timestamp' })],
+   ['okta','https://northstar.okta.com/api/v1/users/o1/factors', 'factor status', body => [{ status: true }]],
+   ['okta','https://northstar.okta.com/api/v1/iam/assignees/users?limit=200', 'admin assignments', body => ({ value: [{ id: null }] })],
+   ['google','https://admin.googleapis.com/admin/directory/v1/users?customer=my_customer&maxResults=500&projection=basic', 'security flags', body => ({ ...body, users: body.users.map((u,i) => i ? u : { ...u, suspended: 'false' }) })],
+   ['google','https://admin.googleapis.com/admin/directory/v1/users?customer=my_customer&maxResults=500&projection=basic', 'nextPageToken', body => ({ ...body, nextPageToken: 42 })],
+   ['google','https://admin.googleapis.com/admin/directory/v1/groups?userKey=ana%40northstar.test&maxResults=200', 'groups', body => ({ groups: 'admins' })],
+   ['entra','https://graph.microsoft.com/v1.0/users?$select=id,displayName,userPrincipalName,mail,accountEnabled,userType,employeeType,createdDateTime,signInActivity&$top=999', 'lifecycle', body => ({ value: body.value.map((u,i) => i ? u : { ...u, accountEnabled: undefined }) })],
+   ['entra','https://graph.microsoft.com/v1.0/reports/authenticationMethods/userRegistrationDetails?$top=999', 'MFA registration', body => ({ value: [{ id: 'e1', isMfaRegistered: 'true' }] })],
+   ['entra','https://graph.microsoft.com/v1.0/directoryRoles?$expand=members($select=id)', 'role members', body => ({ value: [{ displayName: 'Global Administrator', members: [{ id: null }] }] })],
+   ['jumpcloud','https://console.jumpcloud.com/api/systemusers?limit=100&skip=0', 'system users', body => ({ ...body, totalCount: '2' })],
+   ['jumpcloud','https://console.jumpcloud.com/api/systemusers?limit=100&skip=0', 'security flags', body => ({ ...body, results: body.results.map((u,i) => i ? u : { ...u, sudo: { enabled: 'false' } }) })],
+   ['jumpcloud','https://console.jumpcloud.com/api/v2/usergroups?limit=100', 'group identity', body => [{ id: null, name: 'Engineering' }]],
+  ]
+  const failures = new Map(Object.keys(conn).map(provider => [provider, []]))
+  const mfa = (await get('/api/tests')).tests.find(t => t.catalogue_id === 'idp.mfa').id
+  const observations = async provider => (await get('/api/tests/' + mfa)).latest.filter(o => o.source_ref === 'directory:' + conn[provider].id)
+  for (const [provider, raw, field, change] of fixtures) {
+   const url = new URL(raw).href
+   const headers = provider === 'okta' ? { authorization: 'SSWS ' + secrets.okta } : provider === 'google' ? { authorization: 'Bearer google-access' } : provider === 'entra' ? { authorization: 'Bearer graph-access' } : { 'x-api-key': secrets.jumpcloud }
+   const fixture = await (await fakeDirectories(new Request(url, { headers }))).json()
+   const before = await observations(provider); assert.ok(before.length)
+   dir.overrides.set(url, { body: change(fixture) })
+   const failed = await send(provider); failures.get(provider).push(failed)
+   assert.equal(failed.outcome, 'failed'); assert.match(failed.error_code, /schema drift/); assert.ok(failed.error_code.includes(field), failed.error_code)
+   const after = await observations(provider)
+   assert.deepEqual(after.map(o => o.resource_id).sort(), before.map(o => o.resource_id).sort())
+   assert.ok(after.every(o => o.result === 'unknown'), 'malformed source never leaves a false pass or removes an identity')
+   dir.overrides.clear(); await send(provider)
+   assert.deepEqual((await observations(provider)).map(o => o.result), before.map(o => o.result))
+  }
+  const url = new URL('https://northstar.okta.com/api/v1/users?limit=200').href
+  const fixture = await (await fakeDirectories(new Request(url, { headers: { authorization: 'SSWS ' + secrets.okta } }))).json()
+  for (const next of [url, 'https://outside.example.test/steal']) {
+   dir.overrides.set(url, { body: fixture, headers: { link: '<' + next + '>; rel="next"' } })
+   const run = await send('okta'); failures.get('okta').push(run)
+   assert.equal(run.outcome, 'failed'); assert.match(run.error_code, /pagination incomplete/)
+   assert.ok((await observations('okta')).every(o => o.result === 'unknown'))
+   dir.overrides.clear(); await send('okta')
+  }
+  // A source may declare another membership page; never admit its first page as complete.
+  const group = new URL('https://admin.googleapis.com/admin/directory/v1/groups?userKey=ana%40northstar.test&maxResults=200').href
+  dir.overrides.set(group, { body: { groups: [], nextPageToken: 'unread-membership-page' } })
+  const incomplete = await send('google'); failures.get('google').push(incomplete)
+  assert.equal(incomplete.outcome, 'failed'); assert.match(incomplete.error_code, /pagination incomplete/)
+  dir.overrides.clear(); await send('google')
+  const source = new Map()
+  for (const provider of Object.keys(conn)) { const runs = (await get('/api/connections/' + conn[provider].id)).runs; source.set(provider,runs); for (const row of failures.get(provider)) assert.deepEqual(runs.find(r => r.id === row.id),row) }
+  const target = await runtime()
+  try {
+   await target.signin()
+   const restored = await target.fetch('/api/archive/restore', { method: 'POST', headers: { origin: target.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore', 'x-evidence-erasure-history':'unverified acknowledged' }, body: await (await app.fetch('/api/archive/export')).arrayBuffer() })
+   assert.equal(restored.status,200,await restored.clone().text())
+   for (const provider of Object.keys(conn)) assert.deepEqual((await (await target.fetch('/api/connections/' + conn[provider].id)).json()).runs,source.get(provider))
+  } finally { await target.close() }
+  await collectionScheduleBrowser(app, await Promise.all(Object.keys(conn).map(async provider => (await get('/api/connections/' + conn[provider].id)).connection)), { suffix: '-directory-schema', expected: ['schema drift'] })
  })
  await scenario('COLLECTION-001: hosted collector schedules through owner doors, Cron, browser and restore', () => collectionScheduleJourney(app))
  console.log(`${passed} identity public-door scenarios passed; the four directories are faked only at the network edge.`)

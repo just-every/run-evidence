@@ -2647,6 +2647,7 @@
           "src/evidence/identity/http.ts",
           "src/evidence/identity/jumpcloud.ts",
           "src/evidence/identity/okta.ts",
+          "src/evidence/identity/source-schema.ts",
           "src/evidence/import/archive-schema.ts",
           "src/evidence/import/archive.ts",
           "src/evidence/import/base/SOURCE.md",

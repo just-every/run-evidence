@@ -49,7 +49,7 @@ export async function rotateDirectory(env: Bindings, actor: Actor, row: Connecti
  await env.DB.batch([env.DB.prepare("UPDATE connections SET secret_ciphertext=?,secret_iv=?,status='active',rotated_at=?,revoked_at=NULL,last_error='',backoff_seconds=0,next_attempt_at=NULL WHERE id=?").bind(sealed.ciphertext, sealed.iv, now.toISOString(), row.id), auditStatement(env, actor, row.status === 'active' ? 'connection.rotated' : 'connection.reconnected', 'connection:' + row.id, now)])
 }
 export async function runDirectoryCollection(env: Bindings, connection: Connection, trigger: 'schedule' | 'manual', now: Date) {
- const directory = directories[connection.provider], started = await startRun(env, connection, connection.provider + '-1', trigger, now)
+ const directory = directories[connection.provider], started = await startRun(env, connection, connection.provider + '-2', trigger, now)
  if (!started) return { run: null, outcome: 'already running' }
  const { finish } = started, at = now.toISOString()
  if (connection.status !== 'active' || !connection.secret_ciphertext || !connection.secret_iv) return finish('failed', {}, 'connection is ' + connection.status)

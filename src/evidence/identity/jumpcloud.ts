@@ -22,10 +22,17 @@ export const jumpcloud: Directory = {
    if (!page.results?.length) break
    skip += page.results.length
   }
-  const gaps = skip >= total ? [] : ['more than 10,000 users: the rest were not read']
+  if (skip < total) throw new DirectoryFailure('unavailable', 'JumpCloud user pagination incomplete: count or page limit')
+  const gaps: string[] = accounts.length > 2000 ? ['group membership not read beyond 2,000 accounts'] : []
   // User groups (v2 API): names once, then each user's memberships.
   try {
-   const names = new Map(((await call('https://console.jumpcloud.com/api/v2/usergroups?limit=100', { headers: headers(key, config.org_id ?? '') }, label)).body as unknown as { id: string; name: string }[]).map(g => [g.id, g.name]))
+   const names = new Map<string,string>()
+   for (let page = 0; ; page++) {
+    if (page >= 20) throw new DirectoryFailure('unavailable', 'JumpCloud group pagination incomplete: page limit')
+    const rows = (await call('https://console.jumpcloud.com/api/v2/usergroups?limit=100' + (page ? '&skip=' + page * 100 : ''), { headers: headers(key, config.org_id ?? '') }, label)).body as unknown as { id: string; name: string }[]
+    for (const row of rows) names.set(row.id,row.name)
+    if (rows.length < 100) break
+   }
    for (const a of accounts.slice(0, 2000)) a.groups = ((await call(`https://console.jumpcloud.com/api/v2/users/${encodeURIComponent(a.id)}/memberof`, { headers: headers(key, config.org_id ?? '') }, label)).body as unknown as { id: string; type: string }[]).filter(m => m.type === 'user_group').map(m => names.get(m.id) ?? m.id)
   } catch (error) { if (!(error instanceof DirectoryFailure) || error.kind !== 'denied') throw error; for (const a of accounts) a.groups = null; gaps.push('user groups not readable') }
   return { accounts, complete: !gaps.length, gaps }
