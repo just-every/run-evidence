@@ -1,3 +1,4 @@
+import { sourceReadTime } from '../connect/pages'
 import { scopedFetch } from '../ops/execution'
 import type { Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
@@ -126,7 +127,7 @@ export async function runScopedCollection(env: Bindings, connection: Connection,
   for (const r of written.results.filter(r => r.outcome === 'rejected')) coverage.gaps.push({ account: '', class: type, region: '', reason: `${r.uniqueId} not stored: ${(r.reasons ?? []).join('; ')}` })
   fresh.push(...written.results.filter(r => r.id && r.outcome !== 'removed' && r.outcome !== 'rejected' && !placeholders.has(type + ' ' + r.uniqueId)).map(r => r.id!))
  }
- if (fresh.length) await env.DB.prepare('UPDATE resources SET observed_at=? WHERE id IN (SELECT value FROM json_each(?))').bind(at, JSON.stringify(fresh)).run()
+ if (fresh.length) await env.DB.prepare('UPDATE resources SET observed_at=? WHERE id IN (SELECT value FROM json_each(?))').bind(sourceReadTime(now), JSON.stringify(fresh)).run()
  const anyRead = coverage.accounts.some(a => a.read), outcome = !anyRead ? 'failed' : coverage.gaps.length ? 'partial' : 'complete'
  const result = await finish(outcome, coverage, anyRead ? '' : `no ${cloud.scopeLabel} readable`, anyRead
   ? env.DB.prepare('UPDATE connections SET last_attempt_at=?,last_success_at=?,next_attempt_at=NULL,backoff_seconds=0,last_error=? WHERE id=?').bind(at, at, outcome === 'partial' ? `${coverage.gaps.length} gaps` : '', connection.id)

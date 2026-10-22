@@ -1,3 +1,4 @@
+import { sourceReadTime } from '../connect/pages'
 import type { Bindings } from '../../auth.server'
 import { upsertResources, type ResourceSchema } from '../resources'
 import { runForType } from '../tests/engine'
@@ -40,8 +41,8 @@ export async function runAwsCollection(env: Bindings, connection: Connection, tr
   }
  }
  try {
-  let primary: Client = awsClient(keys, clock)
-  if (config.role_arn) primary = awsClient(await assumeRole(primary, config.role_arn, config.external_id, 'evidence-collector'), clock)
+  let primary: Client = awsClient(keys, clock, connection.account)
+  if (config.role_arn) primary = awsClient(await assumeRole(primary, config.role_arn, config.external_id, 'evidence-collector'), clock, connection.account)
   const identity = await callerIdentity(primary)
   if (identity.account !== connection.account) return finish('failed', {}, 'account binding changed', reconnectUpdate(env, connection, `These credentials now reach account ${identity.account}, not ${connection.account}; reconnect deliberately.`, now))
   const members = await organizationAccounts(primary)
@@ -62,7 +63,7 @@ export async function runAwsCollection(env: Bindings, connection: Connection, tr
    const member = account.id !== connection.account
    let client: Client | null = member ? null : primary, reason = ''
    if (member && config.member_role) {
-    try { client = awsClient(await assumeRole(primary, `arn:aws:iam::${account.id}:role/${config.member_role}`, config.external_id, 'evidence-collector'), clock) }
+    try { client = awsClient(await assumeRole(primary, `arn:aws:iam::${account.id}:role/${config.member_role}`, config.external_id, 'evidence-collector'), clock, account.id) }
     catch (error) { if (!(error instanceof AwsFailure) || error.kind === 'throttled') throw error; reason = `cannot assume ${config.member_role}: ${error.message}` }
    } else if (member) reason = 'no member-account read role is configured'
    coverage.accounts.push({ id: account.id, name: account.name, read: !!client, reason })
@@ -116,7 +117,7 @@ export async function runAwsCollection(env: Bindings, connection: Connection, tr
   const written = await upsertResources(env, type, schema, items, source, gaps.length ? false : 'source', now)
   fresh.push(...written.results.filter(r => r.id && r.outcome !== 'removed' && r.outcome !== 'rejected' && !placeholders.has(type + ' ' + r.uniqueId)).map(r => r.id!))
  }
- if (fresh.length) await env.DB.prepare('UPDATE resources SET observed_at=? WHERE id IN (SELECT value FROM json_each(?))').bind(at, JSON.stringify(fresh)).run()
+ if (fresh.length) await env.DB.prepare('UPDATE resources SET observed_at=? WHERE id IN (SELECT value FROM json_each(?))').bind(sourceReadTime(now), JSON.stringify(fresh)).run()
  const anyRead = coverage.accounts.some(a => a.read)
  const outcome = !anyRead ? 'failed' : coverage.gaps.length || coverage.accounts.some(a => !a.read) ? 'partial' : 'complete'
  const result = await finish(outcome, coverage, anyRead ? '' : 'no account readable', anyRead

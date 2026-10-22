@@ -1,3 +1,4 @@
+import { readPageStream, retainFields } from '../connect/pages'
 import type { CatalogueEntry } from '../tests/catalogue'
 import { microsoftToken, OAuthFailure } from '../oauth'
 import { cloudCall, CloudFailure, type Item, type ScopedCloud } from './scoped'
@@ -24,23 +25,20 @@ function sqlIdentity(item: { id: string; name: string }, subscription: string, s
   || !named(parts[8]) || /[?#\\\x00-\x1f]/.test(item.id)) drift('SQL resource identity or scope')
  if (server ? parts[9].toLowerCase() !== 'databases' || parts.slice(0, 9).join('/').toLowerCase() !== server.id.toLowerCase() || parts[10] !== item.name : parts[8] !== item.name) drift('SQL resource identity or parent')
 }
-async function list<T>(url: string, token: string, limit = 20) {
- const items: T[] = [], seen = new Set<string>(); let next: string | null = url
- while (next) {
-  if (seen.has(next) || seen.size >= limit) throw new CloudFailure('unavailable', 'Azure pagination incomplete: repeated continuation or page limit reached')
-  seen.add(next)
-  const body = await cloudCall(next, token, label)
-  if (!record(body) || !Array.isArray(body.value) || !body.value.every(record)) drift('list value must be an array of records')
-  items.push(...body.value as T[])
-  const link = body.nextLink
-  if (link === undefined || link === null || link === '') { next = null; continue }
-  if (typeof link !== 'string') drift('nextLink must be a string')
-  let continuation: URL
-  try { continuation = new URL(link) } catch { throw new CloudFailure('unavailable', 'Azure pagination incomplete: invalid continuation') }
-  if (continuation.origin !== arm || continuation.username || continuation.password || continuation.hash) throw new CloudFailure('unavailable', 'Azure pagination incomplete: unsupported continuation')
-  next = continuation.href
- }
- return items
+async function list<T>(url:string,token:string,limit=20) {
+ return readPageStream<T>(url,url,async next=>{
+  const body=await cloudCall(next,token,label)
+  if(!record(body)||!Array.isArray(body.value)||!body.value.every(record))drift('list value must be an array of records')
+  const link=body.nextLink;let continuation:string|null=null
+  if(link!==undefined&&link!==null&&link!==''){
+   if(typeof link!=='string')drift('nextLink must be a string')
+   let parsed:URL
+   try{parsed=new URL(link)}catch{throw new CloudFailure('unavailable','Azure pagination incomplete: invalid continuation')}
+   if(parsed.origin!==arm||parsed.username||parsed.password||parsed.hash||parsed.pathname!==new URL(url).pathname)throw new CloudFailure('unavailable','Azure pagination incomplete: unsupported continuation')
+   continuation=parsed.href
+  }
+  return {items:retainFields(body.value,['subscriptionId','displayName','state','id','name','properties','logs','category','categoryGroup','enabled','workspaceId','storageAccountId','eventHubAuthorizationRuleId','pricingTier','allowBlobPublicAccess','supportsHttpsTrafficOnly','minimumTlsVersion','publicNetworkAccess','securityRules','direction','access','sourceAddressPrefix','sourceAddressPrefixes','destinationPortRange','destinationPortRanges','sourceApplicationSecurityGroups']) as T[],next:continuation}
+ },limit,message=>new CloudFailure('unavailable','Azure '+message))
 }
 const sub = (id: string) => `${arm}/subscriptions/${encodeURIComponent(id)}`
 const openToInternet = (rule: { direction?: string; access?: string; sourceAddressPrefix?: string; sourceAddressPrefixes?: string[]; destinationPortRange?: string; destinationPortRanges?: string[] }) => {

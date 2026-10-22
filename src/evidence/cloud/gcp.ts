@@ -1,3 +1,4 @@
+import { readPageStream, retainFields } from '../connect/pages'
 import type { CatalogueEntry } from '../tests/catalogue'
 import { googleToken, OAuthFailure, serviceAccount } from '../oauth'
 import { cloudCall, CloudFailure, type Item, type ScopedCloud } from './scoped'
@@ -24,19 +25,13 @@ function bindings(body: unknown) {
  return result
 }
 const world = (members: unknown) => Array.isArray(members) && members.some(m => m === 'allUsers' || m === 'allAuthenticatedUsers')
-async function all<T>(url: string, token: string, key: string, limit = 20) {
- const items: T[] = [], seen = new Set<string>(); let page = ''
- for (let n = 0; n < limit; n++) {
-  if (seen.has(page)) throw new CloudFailure('unavailable', 'Google Cloud pagination incomplete: repeated page token')
-  seen.add(page)
-  const body = await cloudCall(url + (page ? (url.includes('?') ? '&' : '?') + new URLSearchParams({pageToken:page}).toString() : ''), token, label)
-  items.push(...rows(body, key) as T[])
-  const next = body!.nextPageToken
-  if (next === undefined || next === '') return items
-  if (!named(next)) drift('nextPageToken')
-  page = next
- }
- throw new CloudFailure('unavailable', 'Google Cloud pagination incomplete: page limit reached')
+async function all<T>(url:string,token:string,key:string,limit=20) {
+ return readPageStream<T>(url,'',async page=>{
+  const body=await cloudCall(url+(page?(url.includes('?')?'&':'?')+new URLSearchParams({pageToken:page}).toString():''),token,label)
+  const items=rows(body,key),next=body!.nextPageToken
+  if(next!==undefined&&next!==''&&!named(next))drift('nextPageToken')
+  return {items:retainFields(items,['projectId','name','lifecycleState','iamConfiguration','publicAccessPrevention','email','settings','backupConfiguration','enabled','ipConfiguration','ipv4Enabled','authorizedNetworks','value','requireSsl','sslMode','network','direction','disabled','sourceRanges','allowed','IPProtocol','ports']) as T[],next:typeof next==='string'&&next?next:null}
+ },limit,message=>new CloudFailure('unavailable','Google Cloud '+message.replace('repeated continuation','repeated page token')))
 }
 const adminPorts = (allowed: { IPProtocol?: string; ports?: string[] }[] | undefined) => (allowed ?? []).some(a => a.IPProtocol === 'all' || (a.IPProtocol === 'tcp' && (!a.ports?.length || a.ports.some(p => { const [from, to] = p.split('-').map(Number); return [22, 3389].some(port => from <= port && port <= (to ?? from)) }))))
 export const gcp: ScopedCloud = {

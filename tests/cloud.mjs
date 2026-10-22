@@ -1,3 +1,4 @@
+import { gunzipSync } from 'node:zlib'
 // AWS connection, organization discovery and the AWS catalogue through the
 // owner's doors and the Cron Trigger. AWS is the only fake: a network-edge
 // stand-in that checks every request's Signature Version 4 with its own Node
@@ -53,7 +54,7 @@ async function fakeAws(request) {
  if (!who) { aws.unsigned++; return error('SignatureDoesNotMatch') }
  const params = Object.fromEntries(new URLSearchParams(body)), account = aws.accounts[who.account], action = params.Action ?? request.headers.get('x-amz-target')?.split('.').pop() ?? ''
  const override = aws.overrides.get(`${who.account} ${who.service} ${who.region} ${action || url.pathname + url.search}`)
- if (override) return override()
+ if (override) return override({params,url,who})
  aws.calls.push(`${who.account} ${who.service} ${who.region} ${action || url.pathname + url.search}`)
  if (aws.denied.has(`${who.account}:${who.service}`)) return who.service === 'cloudtrail' || who.service === 'organizations' ? jsonReply(400, { __type: 'AccessDeniedException' }) : error('AccessDenied')
  if (who.service === 'sts') {
@@ -231,6 +232,29 @@ try {
   const history = (await get(path)).runs
   for (const run of failures) assert.deepEqual(history.find(r=>r.id===run.id),run)
   await collectionScheduleBrowser(app,[(await get(path)).connection],{suffix:'-aws-schema',expected:['AWS schema drift','pagination incomplete']})
+ })
+ await scenario('COLLECTION-001: AWS resumes interrupted source pages through fresh authentication without duplicate page reads or rewritten outcomes',async()=>{
+  const path='/api/connections/'+connection.id
+  let time=Date.parse((await get(path)).runs[0].started_at)
+  const cases=[
+   ['organizations','ListAccounts','NextToken',()=>jsonReply(200,{Accounts:[{Id:MGMT,Name:'management',Status:'ACTIVE',unexpected_secret:'synthetic-evidence-private'},{Id:MEMBER,Name:'production',Status:'ACTIVE'}],NextToken:'synthetic-page-2'}),()=>jsonReply(200,{Accounts:[{Id:LOCKED,Name:'sandbox',Status:'ACTIVE'}]})],
+   ['ec2','DescribeSecurityGroups','NextToken',()=>xml(200,'<DescribeSecurityGroupsResponse><securityGroupInfo/><nextToken>synthetic-page-2</nextToken></DescribeSecurityGroupsResponse>'),()=>xml(200,'<DescribeSecurityGroupsResponse><securityGroupInfo><item><groupId>sg-0web</groupId><groupName>web</groupName><ipPermissions/></item></securityGroupInfo></DescribeSecurityGroupsResponse>')],
+   ['rds','DescribeDBInstances','Marker',()=>xml(200,'<DescribeDBInstancesResponse><DescribeDBInstancesResult><DBInstances/><Marker>synthetic-page-2</Marker></DescribeDBInstancesResult></DescribeDBInstancesResponse>'),()=>xml(200,'<DescribeDBInstancesResponse><DescribeDBInstancesResult><DBInstances><DBInstance><DBInstanceIdentifier>orders-db</DBInstanceIdentifier><StorageEncrypted>true</StorageEncrypted><BackupRetentionPeriod>7</BackupRetentionPeriod><PubliclyAccessible>false</PubliclyAccessible></DBInstance></DBInstances></DescribeDBInstancesResult></DescribeDBInstancesResponse>')],
+  ]
+  for(const [service,action,cursor,one,two]of cases){
+   const key=`${MGMT} ${service} us-east-1 ${action}`;let first=0,second=0,throttle=true
+   aws.overrides.set(key,({params})=>{if(!params[cursor]){first++;return one()}second++;return throttle?jsonReply(429,{__type:'ThrottlingException'}):two()})
+   time+=60000;await at(new Date(time).toISOString());await owner(path+'/collect',{})
+   const interrupted=(await get(path)).runs[0],saved=JSON.parse(interrupted.coverage_json)
+   assert.equal(interrupted.outcome,'throttled');assert.equal(saved.resume_pages.pending,true)
+   assert.ok(!gunzipSync(Buffer.from(saved.resume_pages.data,'base64')).toString().includes('synthetic-evidence-private'))
+   throttle=false;time+=300000;await at(new Date(time).toISOString());await owner(path+'/collect',{})
+   const recovered=(await get(path)).runs[0],metadata=JSON.parse(recovered.coverage_json)
+   assert.equal(first,1);assert.equal(second,2);assert.ok(['complete','partial'].includes(recovered.outcome))
+   assert.equal(metadata.source_read_started_at,interrupted.started_at)
+   assert.deepEqual((await get(path)).runs.find(r=>r.id===interrupted.id),interrupted)
+   aws.overrides.clear()
+  }
  })
  await scenario('COLLECTION-001: hosted collector schedules through owner doors, Cron, browser and restore', () => collectionScheduleJourney(app, at))
  console.log(`${passed} AWS public-door scenarios passed; AWS is faked only at the network edge, with every signature checked.`)

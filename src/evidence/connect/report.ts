@@ -47,7 +47,7 @@ export function collectionDetails(raw: string) {
   ['Source-event hint', cov.source_event ? escape('Received '+cov.source_event.received_at+'; reported time '+(cov.source_event.reported_at ?? 'not supplied')+' (unverified)') : 'No event signal recorded'],
   ['Receipt time', escape(cov.received_at ?? 'Not captured')],
   ['Interval', escape(cov.interval_minutes === undefined ? 'Not captured' : cov.interval_minutes + ' minutes')],
-  ['Cursor', escape(cov.cursor === null || cov.cursor === undefined ? 'Not captured / no resumable cursor' : JSON.stringify(cov.cursor))],
+  ['Cursor', escape(cov.cursor || cov.resume_pages?.cursors ? JSON.stringify(cov.cursor ?? cov.resume_pages.cursors) : 'Not captured / no resumable cursor')],
   ['Gaps', list(cov.gaps ?? [])],
   ['Controls', context ? (context.controls as { control_id: string; name: string; revision: number }[]).map(c => `<a href="/app/controls/${escape(c.control_id)}">${escape(c.name)}</a> · revision ${escape(c.revision)}`).join('<br>') || 'No linked controls' : 'Not captured'],
   ['Tests', context ? (context.tests as { id: string; revision: number }[]).map(t => `<a href="/app/tests/${escape(t.id)}">Test revision ${escape(t.revision)}</a>`).join(' · ') || 'No enabled source tests' : 'Not captured'],

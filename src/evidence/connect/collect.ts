@@ -1,3 +1,4 @@
+import { withPages } from './pages'
 import { collectEvents } from './events'
 import { requireConnection } from './storage'
 import { digest } from '../api/tokens'
@@ -22,7 +23,7 @@ import type { Connection } from './storage'
 // authorized read issues source-observed facts; unread items become gaps.
 const repositorySchema: ResourceSchema = { fields: { private: 'boolean', archived: 'boolean', default_branch: 'string', branch_protection: 'boolean', required_reviews: 'number', required_status_checks: 'number', enforce_admins: 'boolean', open_critical_dependabot_alerts: 'number', open_secret_scanning_alerts: 'number', readable: 'boolean' }, required: [] }
 const organizationSchema: ResourceSchema = { fields: { login: 'string', two_factor_requirement_enabled: 'boolean', readable: 'boolean' }, required: [] }
-export async function runCollection(env: Bindings, connection: Connection, trigger: 'schedule' | 'manual', now: Date): Promise<{ run: string | null; outcome: string }> {
+async function collectConnection(env: Bindings, connection: Connection, trigger: 'schedule' | 'manual', now: Date): Promise<{ run: string | null; outcome: string }> {
  if (!await capabilityAllowed(env,'collections',connection.id)) return {run:null,outcome:'inactive after restore'}
  if (connection.provider === 'private-git') throw new Refusal('Run the installed read-only collector on its private computer.', 409)
  if (connection.provider === 'aws') return runAwsCollection(env, connection, trigger, now)
@@ -98,6 +99,7 @@ export async function runCollection(env: Bindings, connection: Connection, trigg
  await runForType(env, 'github.organization', now)
  return result
 }
+export const runCollection=(env:Bindings,connection:Connection,trigger:'schedule'|'manual',now:Date)=>withPages(env,connection,now,()=>collectConnection(env,connection,trigger,now))
 // Every hosted collector uses its owner-set elapsed interval.
 // Backoff is a lower bound even when a shorter schedule becomes due.
 export async function collectDue(env: Bindings, now: Date) {
