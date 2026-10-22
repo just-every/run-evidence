@@ -38,7 +38,7 @@ export async function runCollection(env: Bindings, connection: Connection, trigg
  catch { return finish('failed', {}, 'credential unreadable under this installation key', reconnectUpdate(env, connection, 'Stored credential cannot be decrypted; reconnect.', now)) }
  const selected = (await env.DB.prepare('SELECT full_name FROM connection_repositories WHERE connection_id=? AND selected=1 ORDER BY full_name').bind(connection.id).all<{ full_name: string }>()).results.map(r => r.full_name)
  const coverage: { organization: string; repositories_selected: number; repositories_read: string[]; unreadable: { repository: string; reason: string }[]; gaps: { asset: string; reason: string }[]; interval_minutes: number } = { organization: 'unread', repositories_selected: selected.length, repositories_read: [], unreadable: [], gaps: [], interval_minutes: collectionMinutes(connection) }
- const authority = await digest(JSON.stringify([connection.secret_ciphertext,connection.secret_iv,connection.rotated_at,connection.config_json,selected,connectorRevision]))
+ const authority = await digest(JSON.stringify([connection.secret_ciphertext,connection.secret_iv,connection.rotated_at,connection.config_json,selected,connectorRevision,started.context]))
  type Resume = { authority: string; started_at: string; streams: Record<string,AlertCursor> }
  const previous = await env.DB.prepare('SELECT coverage_json FROM collection_runs WHERE connection_id=? AND id!=? ORDER BY started_at DESC,rowid DESC LIMIT 1').bind(connection.id,started.run).first<{coverage_json:string}>()
  const prior = previous ? JSON.parse(previous.coverage_json).resume as Resume | undefined : undefined

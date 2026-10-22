@@ -136,6 +136,12 @@ export async function collectionJourney() {
   assert.equal((await get(path)).runs[0].outcome,'partial')
   assert.ok(github.requests.slice(beforeRotation).includes(alerts))
   assert.equal(JSON.parse((await get(path)).runs[0].coverage_json).resume.started_at,'2026-10-11T13:50:00.000Z')
+  await at('2026-10-11T13:52:00Z')
+  await send('/api/controls/' + mapped.id + '/revisions',{revision:2,name:mapped.name,group:mapped.group_name,applicability:'Included',test_intent:'A newly approved source test meaning',evaluation_criteria:'Read the source again after this approval',reason:'Do not reuse an older definition context'})
+  const beforeDefinition=github.requests.length
+  await send(path + '/collect',{},201)
+  assert.ok(github.requests.slice(beforeDefinition).includes(alerts),'a control-definition change invalidates the incomplete cursor context')
+  assert.equal(JSON.parse((await get(path)).runs[0].coverage_json).resume.started_at,'2026-10-11T13:52:00.000Z')
   github.overrides.clear()
   await at('2026-10-11T13:55:00Z')
   await send(path + '/revoke', {})
