@@ -48,7 +48,7 @@ const openToInternet = (rule: { direction?: string; access?: string; sourceAddre
  return rule.direction === 'Inbound' && rule.access === 'Allow' && sources.some(s => ['*', '0.0.0.0/0', 'Internet', 'Any'].includes(s)) && ports.some(p => { if (p === '*') return true; const [from, to] = p.split('-').map(Number); return [22, 3389].some(port => from <= port && port <= (to ?? from)) })
 }
 export const azure: ScopedCloud = {
- name: 'Microsoft Azure', scopeLabel: 'subscriptions', revision: 'azure-3', scopeType: 'azure.subscription',
+ name: 'Microsoft Azure', scopeLabel: 'subscriptions', revision: 'azure-4', scopeType: 'azure.subscription',
  credential: 'An app registration client secret; grant the app Reader and Security Reader on the subscriptions or a management group', permissions: ['Reader', 'Security Reader'],
  fields: [{ key: 'tenant_id', label: 'Directory (tenant) ID', required: true, pattern: /^[0-9a-f-]{36}$/ }, { key: 'client_id', label: 'Application (client) ID', required: true, pattern: /^[0-9a-f-]{36}$/ }],
  types: {
@@ -62,8 +62,28 @@ export const azure: ScopedCloud = {
  async authorize(config, secret) { try { return await microsoftToken(config.tenant_id, config.client_id, secret, arm) } catch (error) { if (error instanceof OAuthFailure) throw new CloudFailure(error.kind, error.message); throw error } },
  async discover(token) { const subs = await list<{ subscriptionId: string; displayName?: string; state?: string }>(`${arm}/subscriptions?api-version=2022-12-01`, token); if (!subs.every(s => typeof s.subscriptionId === 'string' && s.subscriptionId.length > 0 && (s.state === undefined || typeof s.state === 'string'))) drift('subscription identity or state'); return { scopes: subs.filter(s => s.state !== 'Disabled').map(s => ({ id: s.subscriptionId, name: `${s.displayName ?? s.subscriptionId} (${s.subscriptionId})` })), complete: true } },
  classes: [
-  { name: 'Activity log export', types: ['azure.subscription'], async read(token, s) { const settings = await list<unknown>(`${sub(s.id)}/providers/Microsoft.Insights/diagnosticSettings?api-version=2021-05-01-preview`, token); return { 'azure.subscription': [{ uniqueId: s.id, displayName: s.name, attributes: { activity_log_exported: settings.length > 0 } }] } } },
-  { name: 'Defender for Cloud', types: ['azure.subscription'], async read(token, s) { const plans = await list<{ name: string; properties?: { pricingTier?: string } }>(`${sub(s.id)}/providers/Microsoft.Security/pricings?api-version=2024-01-01`, token); return { 'azure.subscription': [{ uniqueId: s.id, displayName: s.name, attributes: { defender_enabled: plans.some(p => ['VirtualMachines', 'StorageAccounts', 'SqlServers'].includes(p.name) && p.properties?.pricingTier === 'Standard') } }] } } },
+  { name: 'Activity log export', types: ['azure.subscription'], async read(token, s) {
+   // ARM DiagnosticSettings 2021-05-01-preview: a setting's existence alone
+   // proves nothing. At least one enabled log must have an export destination.
+   const settings = await list<{ name: string; properties?: Record<string, unknown> }>(`${sub(s.id)}/providers/Microsoft.Insights/diagnosticSettings?api-version=2021-05-01-preview`, token)
+   for (const setting of settings) {
+    if (!named(setting.name) || !record(setting.properties) || !Array.isArray(setting.properties.logs)) drift('activity log setting identity or logs')
+    for (const log of setting.properties.logs) if (!record(log) || typeof log.enabled !== 'boolean' || !(named(log.category) || named(log.categoryGroup))) drift('activity log category or enabled flag')
+    for (const field of ['workspaceId', 'storageAccountId', 'eventHubAuthorizationRuleId']) if (setting.properties[field] !== undefined && setting.properties[field] !== null && !named(setting.properties[field])) drift('activity log export destination')
+   }
+   const exported = settings.some(setting => {
+    const p = setting.properties!
+    return ['workspaceId', 'storageAccountId', 'eventHubAuthorizationRuleId'].some(f => named(p[f])) && (p.logs as { enabled: boolean }[]).some(log => log.enabled)
+   })
+   return { 'azure.subscription': [{ uniqueId: s.id, displayName: s.name, attributes: { activity_log_exported: exported } }] }
+  } },
+  { name: 'Defender for Cloud', types: ['azure.subscription'], async read(token, s) {
+   const plans = await list<{ name: string; properties?: { pricingTier?: string } }>(`${sub(s.id)}/providers/Microsoft.Security/pricings?api-version=2024-01-01`, token)
+   if (!plans.every(p => named(p.name) && record(p.properties) && ['Free', 'Standard'].includes(p.properties.pricingTier as string)) || new Set(plans.map(p => p.name)).size !== plans.length) drift('Defender plan identity or pricingTier')
+   const required = ['VirtualMachines', 'StorageAccounts', 'SqlServers']
+   if (!required.every(name => plans.some(p => p.name === name))) drift('Defender required plan coverage')
+   return { 'azure.subscription': [{ uniqueId: s.id, displayName: s.name, attributes: { defender_enabled: required.every(name => plans.find(p => p.name === name)!.properties!.pricingTier === 'Standard') } }] }
+  } },
   { name: 'Storage accounts', types: ['azure.storage_account'], async read(token, s) {
    const accounts = await list<{ name: string; properties?: { allowBlobPublicAccess?: boolean; supportsHttpsTrafficOnly?: boolean; minimumTlsVersion?: string } }>(`${sub(s.id)}/providers/Microsoft.Storage/storageAccounts?api-version=2023-05-01`, token)
    return { 'azure.storage_account': accounts.map(a => {

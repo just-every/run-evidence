@@ -4185,7 +4185,7 @@
       "executable": false
     },
     "src/evidence/cloud/azure.ts": {
-      "sha256": "e93ee52ace25409456c956206196124f098c7466b9c0478a2f6b06e7f1eb625b",
+      "sha256": "c7b879f505182752c59ea146edc6d00f9b95da05dcec9bcd8e9f9b36c863fce3",
       "executable": false
     },
     "src/evidence/cloud/catalogue.ts": {
@@ -4205,7 +4205,7 @@
       "executable": false
     },
     "src/evidence/cloud/gcp.ts": {
-      "sha256": "0d346381d2695370089b928581337d15027186908f27925548d6b81b16b09952",
+      "sha256": "29d2463d8d402b9c4c4df66ae325dfcd09032852ca450eab6dd07eabb171afc8",
       "executable": false
     },
     "src/evidence/cloud/scoped.ts": {
@@ -6765,7 +6765,7 @@
       "executable": false
     },
     "tests/clouds.mjs": {
-      "sha256": "325533fd696135a88c5bec9f25d13e8a873103b5519d26f9c75dbc78da1639f0",
+      "sha256": "dec5aad5dc7154ef33088f5d69e23da50c475ac991190fe0147d79d4887c5bb3",
       "executable": false
     },
     "tests/email-link.mjs": {

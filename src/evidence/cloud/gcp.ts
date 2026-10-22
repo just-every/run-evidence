@@ -12,7 +12,7 @@ const world = (members: unknown) => Array.isArray(members) && members.some(m => 
 async function all<T>(url: string, token: string, key: string, limit = 20) {
  const items: T[] = []; let page: string | null = '', pages = 0
  while (page !== null && pages++ < limit) {
-  const body = await cloudCall(url + (page ? (url.includes('?') ? '&' : '?') + 'pageToken=' + encodeURIComponent(page) : ''), token, label)
+  const body = await cloudCall(url + (page ? (url.includes('?') ? '&' : '?') + new URLSearchParams({pageToken:page}).toString() : ''), token, label)
   if (!body) return items
   items.push(...((body[key] as T[] | undefined) ?? [])); page = typeof body.nextPageToken === 'string' ? body.nextPageToken : null
  }

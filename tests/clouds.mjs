@@ -69,8 +69,8 @@ async function fakeClouds(request) {
   if (url.pathname === '/subscriptions') return json({ value: az.subs.map(([subscriptionId, displayName]) => ({ subscriptionId, displayName, state: 'Enabled' })) })
   const [, id] = /^\/subscriptions\/([^/]+)/.exec(url.pathname), name = az.subs.find(s => s[0] === id)[1], path = url.pathname.slice(`/subscriptions/${id}`.length)
   if (az.denied.has(`${name}:${path}`)) return json({ error: { code: 'AuthorizationFailed' } }, 403)
-  if (path === '/providers/Microsoft.Insights/diagnosticSettings') return json({ value: Array.from({ length: az.diag[name] }, (_, i) => ({ name: 'export' + i })) })
-  if (path === '/providers/Microsoft.Security/pricings') return json({ value: [{ name: 'VirtualMachines', properties: { pricingTier: az.defender[name] } }] })
+  if (path === '/providers/Microsoft.Insights/diagnosticSettings') return json({ value: Array.from({ length: az.diag[name] }, (_, i) => ({ name: 'export' + i, properties: { workspaceId: `/subscriptions/${id}/resourceGroups/rg/providers/Microsoft.OperationalInsights/workspaces/audit`, logs: [{ category: 'Administrative', enabled: true }] } })) })
+  if (path === '/providers/Microsoft.Security/pricings') return json({ value: ['VirtualMachines', 'StorageAccounts', 'SqlServers'].map(plan => ({ name: plan, properties: { pricingTier: az.defender[name] } })) })
   if (path === '/providers/Microsoft.Storage/storageAccounts') return json({ value: az.storage[name].map(a => ({ name: a.name, properties: { allowBlobPublicAccess: a.public, supportsHttpsTrafficOnly: a.https, minimumTlsVersion: a.tls } })) })
   if (path === '/providers/Microsoft.Sql/servers') return json({ value: az.sql[name].map(x => ({ id: `/subscriptions/${id}/resourceGroups/rg/providers/Microsoft.Sql/servers/${x.name}`, name: x.name, properties: { publicNetworkAccess: x.publicAccess } })) })
   const dbs = /\/servers\/([^/]+)\/databases$/.exec(path)
@@ -194,6 +194,43 @@ try {
   assert.equal((await app.db.prepare('SELECT COUNT(*) AS n FROM receipts').first()).n, 0, 'no fabricated receipt')
   const connection = (await get(path)).connection
   await collectionScheduleBrowser(app, [connection], { suffix: '-azure-gaps', expected: ['Evidence gaps by run', 'Azure schema drift', 'Azure pagination incomplete'] })
+ })
+ await scenario('COLLECTION-001: activity export and Defender require typed source facts, enabled destination logs and every required plan; gaps survive recovery and restore', async () => {
+  const subscription = az.subs[0][0], path = '/api/connections/' + conn.azure.id
+  const prefix = `/subscriptions/${subscription}/providers/`, activity = prefix + 'Microsoft.Insights/diagnosticSettings?api-version=2021-05-01-preview', defender = prefix + 'Microsoft.Security/pricings?api-version=2024-01-01'
+  const collect = async () => { await app.clock(new Date(Date.parse((await get(path)).runs[0].started_at) + 60000).toISOString()); await owner(path + '/collect', {}); return (await get(path)).runs[0] }
+  const result = async catalogue => Object.entries(await results(catalogue)).find(([name]) => name.includes(subscription))[1]
+  const original = (await get(path)).runs
+  const failures = []
+  for (const [route, bodies, catalogue, field] of [
+   [activity, [{ value: [{ name: 'export' }] }, { value: [{ name: 'export', properties: { logs: {} } }] }, { value: [{ name: 'export', properties: { logs: [{ category: 'Security', enabled: 'true' }] } }] }, { value: [{ name: 'export', properties: { logs: [{ enabled: true }] } }] }, { value: [{ name: 'export', properties: { workspaceId: 42, logs: [] } }] }], 'azure.activity-log', 'Activity log export'],
+   [defender, [{ value: [] }, { value: [{ name: 'VirtualMachines', properties: { pricingTier: 'Standard' } }] }, { value: [{ name: 'VirtualMachines', properties: { pricingTier: true } }] }, { value: [{ properties: { pricingTier: 'Standard' } }] }, { value: ['VirtualMachines', 'VirtualMachines', 'StorageAccounts', 'SqlServers'].map(name => ({ name, properties: { pricingTier: 'Standard' } })) }], 'azure.defender', 'Defender for Cloud'],
+  ]) for (const body of bodies) {
+   az.responses.set(route, body)
+   const run = await collect(); failures.push(run)
+   assert.equal(run.outcome, 'partial'); assert.equal(await result(catalogue), 'unknown')
+   assert.ok(JSON.parse(run.coverage_json).gaps.some(g => g.account === subscription && g.class === field && /schema drift/.test(g.reason)))
+   az.responses.delete(route)
+  }
+  // Well-formed but disabled or destination-less settings are failures, not unknowns or passes.
+  for (const properties of [{ logs: [{ category: 'Security', enabled: true }] }, { workspaceId: 'workspace', logs: [{ categoryGroup: 'allLogs', enabled: false }] }, { workspaceId: 'workspace', logs: [] }]) {
+   az.responses.set(activity, { value: [{ name: 'export', properties }] }); await collect(); assert.equal(await result('azure.activity-log'), 'fail')
+  }
+  az.responses.delete(activity)
+  az.responses.set(defender, { value: ['VirtualMachines', 'StorageAccounts', 'SqlServers'].map(name => ({ name, properties: { pricingTier: name === 'SqlServers' ? 'Free' : 'Standard' } })) })
+  await collect(); assert.equal(await result('azure.defender'), 'fail', 'one covered class cannot stand in for all three')
+  az.responses.delete(defender)
+  await collect(); assert.equal(await result('azure.activity-log'), 'pass'); assert.equal(await result('azure.defender'), 'pass')
+  const history = (await get(path)).runs
+  for (const run of [...original, ...failures]) assert.deepEqual(history.find(r => r.id === run.id), run)
+  const target = await runtime()
+  try {
+   await target.signin()
+   const restored = await target.fetch('/api/archive/restore', { method: 'POST', headers: { origin: target.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore', 'x-evidence-erasure-history': 'unverified acknowledged' }, body: await (await app.fetch('/api/archive/export')).arrayBuffer() })
+   assert.equal(restored.status, 200, await restored.clone().text())
+   assert.deepEqual((await (await target.fetch(path)).json()).runs, history)
+  } finally { await target.close() }
+  await collectionScheduleBrowser(app, [(await get(path)).connection], { suffix: '-azure-activity-defender', expected: ['activity log', 'Defender', 'schema drift'] })
  })
  await scenario('COLLECTION-001: storage and SQL schema gaps preserve the known population; bounded SQL coverage, recovery and history stay honest', async () => {
   const subscription = az.subs[0][0], path = '/api/connections/' + conn.azure.id
