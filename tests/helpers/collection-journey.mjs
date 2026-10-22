@@ -96,6 +96,11 @@ export async function collectionJourney() {
   assert.equal(malformed.outcome, 'partial')
   assert.match(malformed.coverage_json, /expected an array/); assert.match(malformed.coverage_json, /alert entries/); assert.match(malformed.coverage_json, /two-factor/)
   for (const test of ['github.dependabot-critical', 'github.secret-scanning-open', 'github.org-two-factor']) assert.deepEqual((await latest(test)).map(o => o.result), ['unknown'])
+  github.overrides.clear();github.overrides.set('/repos/northstar/web',{body:{full_name:'outside-source/web',private:true,archived:false,default_branch:'main'}})
+  await at('2026-10-11T13:27:00Z');await send(path+'/collect',{},201)
+  assert.match((await get(path)).runs[0].coverage_json,/Source repository identity mismatch/)
+  assert.deepEqual((await latest('github.branch-protection')).map(o=>o.result),['unknown'],'a successful response for another repository cannot refresh the selected source')
+  github.overrides.clear()
   const html = await (await app.fetch('/app/connections/' + connection.id)).text()
   assert.match(html, /Evidence gaps by run/); assert.match(html, /schema drift/); assert.match(html, /pagination incomplete/)
   // Restart reopens real D1/R2 without changing the schedule or run facts.

@@ -24,7 +24,7 @@ async function verify(base: string, org: string, token: string, now: Date) {
  const client = githubClient(base, token, () => now.getTime())
  try {
   const organization = await readOrganization(client, org)
-  if (!organization.readable) throw new Refusal(organization.status === 404 ? `The organization ${org} is not visible to this credential.` : `GitHub answered ${organization.status} for the organization.`)
+  if (!organization.readable) throw new Refusal(organization.reason ?? (organization.status === 404 ? `The organization ${org} is not visible to this credential.` : `GitHub answered ${organization.status} for the organization.`))
   const repos = await listRepositories(client, org)
   if (!repos) throw new Refusal('This credential cannot list the organization\'s repositories (needs Metadata: read).')
   return { scopes: organization.scopes, repos: repos.names }

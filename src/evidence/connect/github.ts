@@ -54,6 +54,7 @@ export async function readOrganization(client: Client, org: string) {
  const reply = await client.get('/orgs/' + encodeURIComponent(org))
  if (reply.status !== 200) return { readable: false as const, status: reply.status, scopes: reply.scopes }
  if (!record(reply.body)) return { readable: false as const, status: 200, scopes: reply.scopes, reason: 'schema drift: expected an organization object' }
+ if(typeof reply.body.login!=='string'||reply.body.login.toLowerCase()!==org.toLowerCase())return {readable:false as const,status:200,scopes:reply.scopes,reason:'Source organization identity mismatch; authorize the intended organization explicitly'}
  const body = reply.body, gaps = []
  if (typeof body.login !== 'string' || !body.login) gaps.push('schema drift: organization login')
  if (typeof body.two_factor_requirement_enabled !== 'boolean') gaps.push('schema drift: organization two-factor requirement')
@@ -61,7 +62,7 @@ export async function readOrganization(client: Client, org: string) {
 }
 export async function listRepositories(client: Client, org: string) {
  const listed = await client.all(`/orgs/${encodeURIComponent(org)}/repos?per_page=100&type=all`)
- return listed.items && listed.complete && listed.items.every(r => record(r) && typeof r.full_name === 'string' && /^[^/\s]+\/[^/\s]+$/.test(r.full_name)) ? { complete: true, names: listed.items.map(r => String(r.full_name)) } : null
+ return listed.items && listed.complete && listed.items.every(r => record(r) && typeof r.full_name === 'string' && /^[^/\s]+\/[^/\s]+$/.test(r.full_name)&&r.full_name.split('/')[0].toLowerCase()===org.toLowerCase()) ? { complete: true, names: listed.items.map(r => String(r.full_name)) } : null
 }
 // One repository's evidence classes. A 403 or a 404 other than "not protected"
 // is an unreadable class (null); the repository itself unreadable is reported.
@@ -70,6 +71,7 @@ export async function readRepository(client: Client, fullName: string) {
  const repo = await client.get(path)
  if (repo.status !== 200) return { readable: false as const, reason: repo.status === 404 ? 'Repository not found or access revoked' : `GitHub answered ${repo.status}` }
  if (!record(repo.body)) return { readable: false as const, reason: 'schema drift: expected a repository object' }
+ if(typeof repo.body.full_name!=='string'||repo.body.full_name.toLowerCase()!==fullName.toLowerCase())return {readable:false as const,reason:'Source repository identity mismatch; no facts admitted for the selected repository'}
  const body = repo.body, gaps: string[] = [], branch = typeof body.default_branch === 'string' && body.default_branch ? body.default_branch : null
  const attributes: Record<string, unknown> = { private: typeof body.private === 'boolean' ? body.private : null, archived: typeof body.archived === 'boolean' ? body.archived : null, default_branch: branch, branch_protection: null, required_reviews: null, required_status_checks: null, enforce_admins: null, open_critical_dependabot_alerts: null, open_secret_scanning_alerts: null }
  for (const field of ['private', 'archived', 'default_branch']) if (attributes[field] === null) gaps.push('schema drift: repository ' + field)
