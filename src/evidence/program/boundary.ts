@@ -31,6 +31,28 @@ const prerequisites: Record<FrameworkId, Prerequisite[]> = {
   { kind: 'agreement', title: 'Third-party service provider agreements', detail: 'Written agreements in which each service provider acknowledges responsibility for the account data it handles (PCI DSS requirement 12.8).' },
   { kind: 'licensed content', title: 'PCI DSS standard', detail: 'Evidence ships requirement numbers with short summaries; read the standard from your copy under the PCI SSC license.' },
  ],
+ usdp: [
+  { kind: 'agreement', title: 'Processor and subprocessor contracts', detail: 'State privacy laws require a contract with each processor that binds it to your instructions and safeguards, and lets you assess it.' },
+ ],
+ iso27701: [
+  { kind: 'agreement', title: 'Data processing agreements (DPAs)', detail: 'A DPA with each PII processor and subprocessor in scope, and the customer agreements a PII processor needs (Annex B).' },
+  { kind: 'licensed content', title: 'ISO/IEC 27701 standard', detail: 'Evidence ships reference ids with short summaries; buy the standard from ISO or your national standards body.' },
+ ],
+ gdpr: [
+  { kind: 'agreement', title: 'Article 28 processor contracts and transfer mechanisms', detail: 'A processor contract for each processor, and a transfer mechanism (adequacy decision, standard contractual clauses or another Article 46 safeguard) for each transfer outside the EEA.' },
+ ],
+ iso42001: [
+  { kind: 'licensed content', title: 'ISO/IEC 42001 standard', detail: 'Evidence ships clause and control ids with short summaries; buy the standard from ISO or your national standards body.' },
+ ],
+ nistairmf: [],
+ nistcsf: [],
+ nist80053: [],
+ cmmc: [
+  { kind: 'agreement', title: 'Cloud service provider and DFARS 252.204-7012 obligations', detail: 'A cloud service provider that stores, processes or transmits covered defense information must meet FedRAMP Moderate or equivalent, and incidents are reported to DoD under DFARS 252.204-7012. Your contracting officer and C3PAO decide what applies.' },
+ ],
+ hitrust: [
+  { kind: 'licensed content', title: 'HITRUST CSF requirement statements', detail: 'HITRUST requirement statements and scoring are licensed through HITRUST; Evidence lists the assessment domains only.' },
+ ],
 }
 // A region counts as US when its name starts with "us" followed by a separator
 // or digit (us-east-1, us-central1, US), names the United States, or is an Azure

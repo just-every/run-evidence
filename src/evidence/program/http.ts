@@ -8,6 +8,7 @@ import { latestResults } from '../tests/storage'
 import { addPerson, people, type Person } from './people'
 import { applicability, createProgram, decideApplicability, decideEdition, programHistory, programs, proposeEdition, recordReview, requireProgram, updateProgram } from './storage'
 import { readiness } from './readiness'
+import { decideStateChange, extendedExport, recordInputs } from './extended'
 import { addMapping, assignOwner, changeScope, controlMappings, ownership, periodReport, removeMapping, requireControl, scopeAt } from './control'
 import { controlPage, peoplePage, programPage, programsPage, reportPage } from './view'
 import { scheduleRequirement, overrideRenewal } from './schedule'
@@ -44,6 +45,8 @@ export function programHandler(clock: () => Date) {
   } },
   { method: 'POST', pattern: both(`/programs/${id}`), run: async (c, m) => { await updateProgram(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/programs/' + m[1], { updated: true }) } },
   { method: 'POST', pattern: both(`/programs/${id}/applicability`), run: async (c, m) => { await decideApplicability(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, `/app/programs/${m[1]}?show=excluded#requirements`, { recorded: true }) } },
+  { method: 'POST', pattern: both(`/programs/${id}/inputs`), run: async (c, m) => { const row = await requireProgram(c.env, m[1]); return done(c, '/app/programs/' + m[1], await recordInputs(c.env, c.actor, m[1], row, await readInput(c.request), c.now)) } },
+  { method: 'POST', pattern: both(`/programs/${id}/state-changes`), run: async (c, m) => { const row = await requireProgram(c.env, m[1]); return done(c, '/app/programs/' + m[1], await decideStateChange(c.env, c.actor, m[1], row, (await applicability(c.env, m[1])).current, await readInput(c.request), c.now)) } },
   { method: 'POST', pattern: both(`/programs/${id}/reviews`), run: async (c, m) => done(c, '/app/programs/' + m[1], await recordReview(c.env, c.actor, m[1], await readInput(c.request), c.now)) },
   { method: 'POST', pattern: both(`/programs/${id}/editions`), run: async (c, m) => done(c, '/app/programs/' + m[1] + '#edition-title', await proposeEdition(c.env, c.actor, m[1], await readInput(c.request), c.now), 201) },
   { method: 'POST', pattern: both(`/programs/${id}/editions/${id}`), run: async (c, m) => { await decideEdition(c.env, c.actor, m[1], m[2], await readInput(c.request), c.now); return done(c, '/app/programs/' + m[1], { decided: true }) } },
@@ -52,7 +55,7 @@ export function programHandler(clock: () => Date) {
   { method: 'GET', pattern: both(`/programs/${id}/export`), run: async (c, m) => {
    const row = await requireProgram(c.env, m[1]), ready = await readiness(c.env, row, c.now), history = await programHistory(c.env, row.id), { history: decisions } = await applicability(c.env, row.id)
    const owners = await Promise.all([...new Set(ready.requirements.flatMap(r => r.controls.map(x => x.id)))].map(async control => ({ control, owner: (await ownership(c.env, control)).at(-1) ?? null })))
-   const body = { format: 'evidence-program', version: 1, exported_at: c.now.toISOString(), certification: 'None asserted. ' + ready.framework.assessor, program: row, readiness: ready.totals, calculation: ready.calculation, requirements: ready.requirements, checklist: ready.checklist, applicability_history: decisions, owners, history, unresolved: ready.requirements.filter(r => r.state === 'included' && (r.proof !== 'current' || r.testing === 'failing' || r.testing === 'unknown')).map(r => ({ ref: r.ref, title: r.title, proof: r.proof, testing: r.testing })) }
+   const body = { format: 'evidence-program', version: 1, exported_at: c.now.toISOString(), certification: 'None asserted. ' + ready.framework.assessor, program: row, readiness: ready.totals, calculation: ready.calculation, requirements: ready.requirements, checklist: ready.checklist, applicability_history: decisions, owners, history, extended: extendedExport(ready), unresolved: ready.requirements.filter(r => r.state === 'included' && (r.proof !== 'current' || r.testing === 'failing' || r.testing === 'unknown')).map(r => ({ ref: r.ref, title: r.title, proof: r.proof, testing: r.testing })) }
    await c.env.DB.prepare("INSERT INTO product_audit(id,actor_kind,actor_id,actor_name,action,subject,outcome,detail,at) VALUES(?,'owner',?,?,'program.exported',?,'succeeded','',?)").bind(crypto.randomUUID(), c.actor.id, c.actor.name, 'program:' + row.id, c.now.toISOString()).run()
    return new Response(JSON.stringify(body, null, 1), { headers: { 'content-type': 'application/json; charset=utf-8', 'content-disposition': `attachment; filename="program-${row.id}.json"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } })
   } },

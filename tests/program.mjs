@@ -5,6 +5,7 @@ process.env.RER_SERVER_JOURNEY = '1'
 import assert from 'node:assert/strict'
 import { runtime } from './helpers/runtime.mjs'
 import { programDocumentsJourney } from './helpers/program-documents-journey.mjs'
+import { extendedProgramsJourney } from './helpers/extended-programs-journey.mjs'
 const app = await runtime()
 let passed = 0
 const scenario = async (name, fn) => { await fn(); passed++; console.log('PASS ' + name) }
@@ -159,5 +160,6 @@ try {
   assert.equal(before.renewal.cadence, 'quarterly'); assert.deepEqual(before.renewal.period, { from: '2026-10-01', to: '2026-12-31' })
  })
  await scenario('PROGRAM-003: each core program generates, edits, approves, exports and reconciles its framework documents with cited sources, drift review and retained prior revisions', async () => { await programDocumentsJourney() })
+ await scenario('PROGRAM-004: the extended and regulated programs open readiness on a SOC 2 business with no unmapped requirement, reused SOC 2 evidence and their external dependency; CMMC computes an SPRS score, USDP evaluates state thresholds and ISO/IEC 27701 keeps controller and processor controls apart', async () => { await extendedProgramsJourney({ app, post, get, upload, libraryRequirement, soc2, owner }) })
  console.log(`${passed} program public-door scenarios passed with real workerd, D1, R2 and native owner sessions.`)
 } finally { await app.close() }

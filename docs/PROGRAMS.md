@@ -82,3 +82,14 @@ Archive version 6 carries current program records and verified original populati
 authenticate and restored connections stay inactive until reconnected. The
 existing limits (8 MiB metadata, 20,000 rows) now count observations too; an
 installation past them gets an explicit refusal, never a truncated archive.
+
+## Extended and regulated programs
+
+Start these from **Programs** like any other: pick the framework and edition, name the legal entity and scope. They use the same shipped control library, so a business that already runs SOC 2 reuses its proof and tests: each program page shows which controls it shares with your other programs and how many evidence items they hold. Evidence prepares evidence; each program names the body that decides (an accredited certification body, a C3PAO, a HITRUST assessor, or counsel) and asserts no certification.
+
+- **US Data Privacy (USDP)** covers nineteen state laws. Record your annual revenue, the share of revenue from selling personal data, small-business and sensitive-data status, and consumers per state. Each state's threshold is evaluated on those figures; only states that apply keep their obligations. The others stay visible as excluded with your figures. When you change the figures, the page proposes the resulting state changes; a state's obligations are added or excluded only when you accept the change with a reason. Counsel confirms which laws apply and the section-level citations.
+- **CMMC Level 2** shows a SPRS worksheet: 110 less the DoD Assessment Methodology weight of each requirement not implemented. A requirement counts as implemented when its mapped controls have current proof and no failing or unknown test. Record whether MFA covers all users and whether encryption is FIPS-validated, because the methodology gives partial credit. A plan of action never substitutes, and a missing system security plan (3.12.4) means the score is not valid to submit.
+- **ISO/IEC 27701** keeps PII controller (Annex A) and processor (Annex B) controls separately applicable: choose the roles when you start the program.
+- GDPR, ISO/IEC 42001, NIST AI RMF, NIST CSF 2.0, NIST SP 800-53 (Low and Moderate), CMMC Level 1 and HITRUST CSF (assessment domains) ship their requirements pre-mapped.
+
+The privacy programs keep their records as program documents with immutable revisions and named approval: USDP self-attestation (you write the officer's statement), consumer-rights requests, privacy-notice and opt-out evidence and data protection assessments; GDPR records of processing (Article 30), DPIAs and data-subject requests; ISO/IEC 27701 PII processing. Not yet shipped: FedRAMP readiness, ISO/IEC 27701:2025, new state laws as library revisions, and document records for CMMC, ISO/IEC 42001, NIST and HITRUST programs.

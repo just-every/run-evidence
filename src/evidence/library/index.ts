@@ -2,14 +2,20 @@ import { soc2 } from './soc2'
 import { iso27001 } from './iso27001'
 import { hipaa } from './hipaa'
 import { pci } from './pci'
-import { libraryControls } from './controls'
+import { libraryControls as coreControls } from './controls'
+import { extendedControls } from './extended/controls'
+import { extendedFrameworks, extendedMaps } from './extended'
 import { libraryRevisions } from './revisions'
-import type { Framework, FrameworkId, LibraryControl } from './types'
+import type { CoreFrameworkId, Framework, FrameworkId, LibraryControl } from './types'
 export type { Framework, FrameworkId, LibraryControl } from './types'
 export type { LibraryRevision, MappingChange } from './revisions'
-export { libraryControls, libraryRevisions }
-export const frameworks: Record<FrameworkId, Framework> = { soc2, iso27001, hipaa, pci }
+export { libraryRevisions }
+export const coreFrameworks: Record<CoreFrameworkId, Framework> = { soc2, iso27001, hipaa, pci }
+export const frameworks = { ...coreFrameworks, ...extendedFrameworks } as Record<FrameworkId, Framework>
+// The shipped library at revision 1: the core controls plus the privacy, AI and CUI controls, each carrying its extended-program mappings.
+export const libraryControls: LibraryControl[] = [...coreControls, ...extendedControls].map(c => extendedMaps[c.id] ? { ...c, maps: { ...c.maps, ...extendedMaps[c.id] } } : c)
 export const frameworkIds = Object.keys(frameworks) as FrameworkId[]
+export const coreFrameworkIds = Object.keys(coreFrameworks) as CoreFrameworkId[]
 export const isFramework = (value: unknown): value is FrameworkId => typeof value === 'string' && Object.hasOwn(frameworks, value)
 export const edition = (framework: FrameworkId, id: string) => frameworks[framework].editions.find(e => e.id === id)
 export const latestEdition = (framework: FrameworkId) => frameworks[framework].editions[0]
