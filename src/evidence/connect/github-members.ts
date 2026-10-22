@@ -16,7 +16,7 @@ export async function collectGithubMembers(env:Bindings,c:Connection,client:Clie
   const path=root+'?per_page=100&'+query,endpoint=new URL(c.api_base+path)
   return readPageStream<Member>('github-members:'+path,path,async cursor=>{
    const url=new URL(cursor.startsWith('http')?cursor:c.api_base+cursor)
-   if(url.origin!==endpoint.origin||url.pathname!==endpoint.pathname||url.username||url.password||url.hash)throw new MemberGap('unsafe membership continuation')
+   if(url.origin!==endpoint.origin||url.pathname!==endpoint.pathname||url.username||url.password||url.hash||[...endpoint.searchParams].some(([k,v])=>k!=='page'&&url.searchParams.get(k)!==v)||[...url.searchParams.keys()].some(k=>!endpoint.searchParams.has(k)&&!['page','after','before'].includes(k)))throw new MemberGap('unsafe membership continuation')
    const reply=await client.get(url.href)
    if(reply.status!==200)throw new MemberGap('GitHub answered '+reply.status)
    if(!Array.isArray(reply.body)||!reply.body.every(v=>record(v)&&natural(v.id)&&v.id>0&&typeof v.login==='string'&&/^[A-Za-z0-9-]{1,100}$/.test(v.login)&&['User','Bot'].includes(String(v.type))))throw new MemberGap('schema drift: organization members')

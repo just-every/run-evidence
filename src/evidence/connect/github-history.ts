@@ -15,10 +15,10 @@ const str = (v: unknown, max = 200): v is string => typeof v === 'string' && v.l
 const sha = (v: unknown): v is string => typeof v === 'string' && /^[a-f0-9]{40,64}$/i.test(v)
 const date = (v: unknown): v is string => typeof v === 'string' && /^\d{4}-\d\d-\d\dT/.test(v) && Number.isFinite(Date.parse(v))
 const actor = (v: unknown): string => { if (!record(v) || !natural(v.id) || !str(v.login)) throw new HistoryGap('schema drift: source actor'); return v.login }
-export interface ReviewFact { id:number; actor:string; state:string; commit:string; submitted_at:string }
+export interface ReviewFact { id:number; actor:string; state:string; commit:string|null; submitted_at:string|null }
 export interface CheckFact { name:string; state:string; conclusion:string|null; completed_at:string|null; revision:string }
 export interface ChangeFact { number:number; merged_at:string; source_revision:string; merge_revision:string; base:string; reviews:ReviewFact[]|null; checks:CheckFact[]|null; statuses:{context:string;state:string;created_at:string}[]|null }
-export interface DeploymentFact { id:number; revision:string; environment:string; production:boolean; created_at:string; statuses:{state:string;created_at:string}[]|null; change_numbers:number[] }
+export interface DeploymentFact { id:number; revision:string; environment:string; production:boolean|null; created_at:string; statuses:{state:string;created_at:string}[]|null; change_numbers:number[] }
 export interface GithubHistory { changes:ChangeFact[]|null; deployments:DeploymentFact[]|null; dependencies:Dependencies|null; gaps:string[]; note:string }
 export async function readGithubHistory(client:Client,base:string,name:string):Promise<GithubHistory> {
  const root='/repos/'+name.split('/').map(encodeURIComponent).join('/'), gaps:string[]=[]
@@ -26,7 +26,7 @@ export async function readGithubHistory(client:Client,base:string,name:string):P
   const endpoint=new URL(base+path)
   return readPageStream('github-history:'+name+':'+path,path,async cursor=>{
    const url=new URL(cursor.startsWith('http')?cursor:base+cursor)
-   if(url.origin!==endpoint.origin||url.pathname!==endpoint.pathname||url.username||url.password||url.hash)throw new HistoryGap('pagination incomplete: unsafe history continuation')
+   if(url.origin!==endpoint.origin||url.pathname!==endpoint.pathname||url.username||url.password||url.hash||[...endpoint.searchParams].some(([k,v])=>k!=='page'&&url.searchParams.get(k)!==v)||[...url.searchParams.keys()].some(k=>!endpoint.searchParams.has(k)&&!['page','after','before'].includes(k)))throw new HistoryGap('pagination incomplete: unsafe history continuation')
    const reply=await client.get(url.href), rows=property&&record(reply.body)?reply.body[property]:reply.body
    if(reply.status!==200)throw new HistoryGap('history unreadable: GitHub answered '+reply.status)
    if(!Array.isArray(rows))throw new HistoryGap('schema drift: history array')

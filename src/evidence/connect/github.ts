@@ -30,7 +30,7 @@ export function githubClient(base: string, token: string, now: () => number, pro
   while (url && pages < limit) {
    let target: URL
    try { target = new URL(url.startsWith('http') ? url : base + url) } catch { return invalid('pagination incomplete: invalid continuation') }
-   if (target.origin !== endpoint.origin || target.pathname !== endpoint.pathname || target.username || target.password || target.hash || seen.has(target.href)) return invalid('pagination incomplete: unsafe or repeated continuation')
+   if (target.origin !== endpoint.origin || target.pathname !== endpoint.pathname || target.username || target.password || target.hash || [...endpoint.searchParams].some(([k,v]) => k !== 'page' && target.searchParams.get(k) !== v) || [...target.searchParams.keys()].some(k => !endpoint.searchParams.has(k) && !['page','after','before'].includes(k)) || seen.has(target.href)) return invalid('pagination incomplete: unsafe or repeated continuation')
    const snapshot = (next: string | null, complete: boolean): AlertCursor => ({ numbers: items.map(i => Number(i.number)), next, complete, seen: [...seen] })
    // Persist the next request before the network edge. A lost response resumes
    // that page; completed earlier pages are not requested or counted again.

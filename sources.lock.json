@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "2f0123f3c1c264e63986ad5fe303a2d5a469fc0e10144baeca60b9a355d2fb35",
+  "manifest": "c7f70976c6a2b4a2320f60bee31564e8afdb2132b1a9225cd35d7ea941192eba",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2614,6 +2614,7 @@
           "src/evidence/connect/custody.ts",
           "src/evidence/connect/event-context.ts",
           "src/evidence/connect/events.ts",
+          "src/evidence/connect/github-dependencies.ts",
           "src/evidence/connect/github-history.ts",
           "src/evidence/connect/github-members.ts",
           "src/evidence/connect/github-schema.ts",
@@ -2938,6 +2939,7 @@
           "tests/helpers/framework-browser.mjs",
           "tests/helpers/framework-fixture.mjs",
           "tests/helpers/framework-journey.mjs",
+          "tests/helpers/github-dependencies-journey.mjs",
           "tests/helpers/github-fixture.mjs",
           "tests/helpers/github-history-journey.mjs",
           "tests/helpers/github-members-journey.mjs",
@@ -3124,7 +3126,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "2f0123f3c1c264e63986ad5fe303a2d5a469fc0e10144baeca60b9a355d2fb35",
+      "sha256": "c7f70976c6a2b4a2320f60bee31564e8afdb2132b1a9225cd35d7ea941192eba",
       "executable": false
     },
     "LICENSE": {
@@ -3804,7 +3806,7 @@
       "executable": false
     },
     "scripts/library-check.mjs": {
-      "sha256": "333013a5ea4ed1ccca07cfa2920e55bd1116103287e6e00f1dbe026f602829ab",
+      "sha256": "66ca1872b5043ec783417a7ffa9bf068e84abfdf128f1505a4eeebab02d0e8e5",
       "executable": false
     },
     "scripts/operations-config.mjs": {
@@ -4256,7 +4258,7 @@
       "executable": false
     },
     "src/evidence/connect/collect.ts": {
-      "sha256": "b37055a0868ad02e0956d13a38e86b6bd99f761cc9aad65de158c96cb752934c",
+      "sha256": "b251633220c62bbde77c2300c3451b48ff5fce0bba807bee14dc95be4187182c",
       "executable": false
     },
     "src/evidence/connect/custody.ts": {
@@ -4272,15 +4274,15 @@
       "executable": false
     },
     "src/evidence/connect/github-dependencies.ts": {
-      "sha256": "d2f7192aaf72e83b6e0d5ad5a0490190e696557ea37f8f0afd11c7c616c7ca11",
+      "sha256": "2d39f4b780c9596f663300dc931a08ae8a321715bc64e5d101a72f7d4d7f49b3",
       "executable": false
     },
     "src/evidence/connect/github-history.ts": {
-      "sha256": "6ea8d2fec55d1fbd9656c2ee4a342737164485e0ff775bfcfe6f0e2481b02aca",
+      "sha256": "347f71d60bf876ebfdd8a0b0e5c7ecd239fac2930bbbcbcde11c0df95ca2666c",
       "executable": false
     },
     "src/evidence/connect/github-members.ts": {
-      "sha256": "23d2b8210004d2328d9ed825b3333f01d183dec6fab550fceda373ef57306af1",
+      "sha256": "b54fc5670eff2a96e8127204803c7d875f51878e59c3103d5a320aba684f254d",
       "executable": false
     },
     "src/evidence/connect/github-schema.ts": {
@@ -4288,11 +4290,23 @@
       "executable": false
     },
     "src/evidence/connect/github.ts": {
-      "sha256": "4887d8a91915af16a35bf0d7a9c79ed2c9fac02d0b9ea2ba596bdcb3406c7430",
+      "sha256": "49046305c14cc89333e1af6b80b418799b7c4c82a2e678690554ff42358d874c",
+      "executable": false
+    },
+    "src/evidence/connect/gitlab-catalogue.ts": {
+      "sha256": "8293b3d4069f1b6e1a270bd7f352bd3917f84e140d57dbb8e11a246e65148d99",
+      "executable": false
+    },
+    "src/evidence/connect/gitlab-collect.ts": {
+      "sha256": "51dbaea61fa82bd27bbad8f9475c461821fdd997a61d3ad8b3caba90bc4043dd",
+      "executable": false
+    },
+    "src/evidence/connect/gitlab.ts": {
+      "sha256": "e75660022ba12a731342d81f42a84ee77084e7c972e1935553e3e813c069b8d8",
       "executable": false
     },
     "src/evidence/connect/http.ts": {
-      "sha256": "29180894dbe59c373acfc1f9fb4b52360cac4a9a5c4fc72fe7b395627b72864a",
+      "sha256": "bfbc8e4f3f97223c9cda3a4ef97df403565d92772188822a7974092a5593bc01",
       "executable": false
     },
     "src/evidence/connect/interval.ts": {
@@ -4300,11 +4314,11 @@
       "executable": false
     },
     "src/evidence/connect/pages.ts": {
-      "sha256": "481c4b538745b3d24256f2bf6b978120b53e40a66488db4feb15ba424ae54821",
+      "sha256": "9d09c9f7b1a81bac5ab1ab446fe9db7142afc5154f44d28b8c569b1c05ab2240",
       "executable": false
     },
     "src/evidence/connect/report.ts": {
-      "sha256": "6f9a24303587fffe5a54dc419d437075996a77dfd769d12aa44af2e0fc1a6f58",
+      "sha256": "4197697e018bcc1e11abf43655fd6998fb4241921f6b37c8c74b54461115a212",
       "executable": false
     },
     "src/evidence/connect/run-context.ts": {
@@ -4320,11 +4334,11 @@
       "executable": false
     },
     "src/evidence/connect/storage.ts": {
-      "sha256": "b018b1f60b51f774eb704d4fe2a0ae24dbbd014f97f9110e825ad53c21d394a6",
+      "sha256": "8b1b540ed803687431fc7e4aeba94c88a06d12c3b5d5643c943b46703dba0769",
       "executable": false
     },
     "src/evidence/connect/view.ts": {
-      "sha256": "10de4f82366d3f4def15b8bc83a5fd3ab70568a69c5bfca444a9dbd1cfc29818",
+      "sha256": "9fac8feffcd8476b74605e4f6a97556898e1ca83619a51ef30390da525a85d96",
       "executable": false
     },
     "src/evidence/control-definition/storage.ts": {
@@ -5612,7 +5626,7 @@
       "executable": false
     },
     "src/evidence/tests/catalogue.ts": {
-      "sha256": "2eb9854bb3711ab6ad09fabcc0c871ecae693d572f9039097a583f85589b742f",
+      "sha256": "9e66e451dbd55c27d780c4ade073716b00c4763f44e1b8953df8817cd29ef216",
       "executable": false
     },
     "src/evidence/tests/criteria.ts": {
@@ -6856,7 +6870,7 @@
       "executable": false
     },
     "tests/github.mjs": {
-      "sha256": "91b29411f292de4d1c2c5aa79120c2472f3246fbd873d15e301296e948af4ea2",
+      "sha256": "d9cede8eb54cc6403438819388ad958420cf4f9fd2da2855938d2b57862a4688",
       "executable": false
     },
     "tests/handover.mjs": {
@@ -6937,6 +6951,14 @@
     },
     "tests/helpers/github-members-journey.mjs": {
       "sha256": "7b9ca60b2a94842084d7a1d540125dbfe75c72cced97cfe604a13350d9bd5810",
+      "executable": false
+    },
+    "tests/helpers/gitlab-fixture.mjs": {
+      "sha256": "8b0358e17e4859325157618fbbd7fcca362d5e9f4f003cd0313cebf03223f4f2",
+      "executable": false
+    },
+    "tests/helpers/gitlab-journey.mjs": {
+      "sha256": "9daf797cd605106044059fa91b7c9a09fa3e7f36824f0de3a4471a18ab95d8b2",
       "executable": false
     },
     "tests/helpers/inventory-fixture.mjs": {

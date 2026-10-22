@@ -51,7 +51,7 @@ for (const connector of new Set(catalogue.flatMap(entry => entry.providers))) {
 const families = {
  cloud: { connectors: ['aws', 'gcp', 'azure'], classes: ['IAM and MFA', 'Public storage', 'Encryption at rest', 'Encryption in transit', 'Logging and monitoring', 'Backup', 'Network configuration'] },
  identity: { connectors: ['okta', 'google', 'entra', 'jumpcloud'], classes: ['MFA', 'Privileged roles', 'Inactive users', 'Departed users'] },
- code: { connectors: ['github'], classes: ['Branch protection', 'Required review', 'Required checks', 'Membership and MFA', 'Repository privacy', 'Dependency alerts', 'Secret alerts'] },
+ code: { connectors: ['github','gitlab'], classes: ['Branch protection', 'Required review', 'Required checks', 'Membership and MFA', 'Repository privacy', 'Dependency alerts', 'Secret alerts'] },
 }
 const ownSources = ['policies', 'attestations', 'training']
 let classes = 0

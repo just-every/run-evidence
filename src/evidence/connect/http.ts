@@ -1,3 +1,4 @@
+import {connectGitlab} from './gitlab-collect'
 import { eventHistory, grantEvents } from './events'
 import { collectionReport, collectionReportPage } from './report'
 import { done, json, ownerRoutes, readInput, uuid, type Route } from '../door'
@@ -22,6 +23,7 @@ export function connectHandler(clock: () => Date) {
    const input = await readInput(c.request)
    if (typeof input.provider === 'string' && isDirectory(input.provider)) { const created = await connectDirectory(c.env, c.actor, input, c.now); return done(c, '/app/connections/' + created.id + '#runs-title', created, 201) }
    if (typeof input.provider === 'string' && isScopedCloud(input.provider)) { const created = await connectScoped(c.env, c.actor, input.provider, scopedClouds[input.provider], input, c.now); return done(c, '/app/connections/' + created.id + '#runs-title', created, 201) }
+   if (input.provider === 'gitlab') {const created=await connectGitlab(c.env,c.actor,input,c.now);return done(c,'/app/connections/'+created.id+'#repos-title',created,201)}
    if (input.provider === 'knowbe4') { const created = await connectKnowBe4(c.env, c.actor, input, c.now); return done(c, '/app/connections/' + created.id + '#runs-title', created, 201) }
    if (input.provider === 'aws') { const created = await connectAws(c.env, c.actor, input, c.now); return done(c, '/app/connections/' + created.id + '#runs-title', created, 201) }
    const created = await connectGithub(c.env, c.actor, input, c.now); return done(c, '/app/connections/' + created.id + '#repos-title', created, 201)

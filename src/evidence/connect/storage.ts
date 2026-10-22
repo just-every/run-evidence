@@ -1,3 +1,4 @@
+import {rotateGitlab} from './gitlab-collect'
 import type { Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
 import { auditStatement, list, text, type Actor, type Input } from '../door'
@@ -48,6 +49,7 @@ export async function connectGithub(env: Bindings, actor: Actor, input: Input, n
 export async function rotateCredential(env: Bindings, actor: Actor, id: string, input: Input, now: Date) {
  const row = await requireConnection(env, id)
  if (row.provider === 'private-git') throw new Refusal('Use the collector token rotation door.', 409)
+ if (row.provider === 'gitlab') return rotateGitlab(env,actor,row,input,now)
  if (row.provider === 'aws') return rotateAws(env, actor, row, input, now)
  if (row.provider === 'knowbe4') return rotateKnowBe4(env, actor, row, input, now)
  if (isDirectory(row.provider)) return rotateDirectory(env, actor, row, input, now)
