@@ -4307,7 +4307,7 @@
       "executable": false
     },
     "src/evidence/connect/gitlab-collect.ts": {
-      "sha256": "a9c214bbb8b21db8b6637a437c2dac33c5fabe3516c80518ceecd082d4870090",
+      "sha256": "c6daeca9e7c853c46d4bf727c0ad3e32b8f696dbaef0abbbf0cacf79e99be66e",
       "executable": false
     },
     "src/evidence/connect/gitlab.ts": {
@@ -6967,7 +6967,7 @@
       "executable": false
     },
     "tests/helpers/gitlab-journey.mjs": {
-      "sha256": "f1b16b3c1b31bcb6a4952e7f2c5ef7c5fbf29f5f98c247725d3943840795ce8a",
+      "sha256": "152076900bc65f42f3d0313bbd5e9f1f410808f67a113681576b4196236fe0ad",
       "executable": false
     },
     "tests/helpers/inventory-fixture.mjs": {

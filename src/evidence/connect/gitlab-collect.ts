@@ -22,14 +22,16 @@ export async function connectGitlab(env:Bindings,actor:Actor,input:Input,now:Dat
  if(await env.DB.prepare("SELECT 1 FROM connections WHERE provider='gitlab' AND account=? AND api_base=? AND status!='revoked'").bind(account,base).first())throw new Refusal('This group is already connected; rotate or revoke it.',409)
  const checked=await verify(base,account,token,now),id=crypto.randomUUID(),sealed=await seal(env,token,id)
  await env.DB.batch([
-  env.DB.prepare("INSERT INTO connections(id,provider,label,account,api_base,secret_ciphertext,secret_iv,granted_scopes,status,created_by,created_name,created_at) VALUES(?,'gitlab',?,?,?,?,?,?,'active',?,?,?)").bind(id,text(input,'label',120,true)||'GitLab '+account,account,base,sealed.ciphertext,sealed.iv,JSON.stringify(gitlabPermissions),actor.id,actor.name,now.toISOString()),
+  env.DB.prepare("INSERT INTO connections(id,provider,label,account,api_base,secret_ciphertext,secret_iv,granted_scopes,status,created_by,created_name,created_at,config_json) VALUES(?,'gitlab',?,?,?,?,?,?,'active',?,?,?,?)").bind(id,text(input,'label',120,true)||'GitLab '+account,account,base,sealed.ciphertext,sealed.iv,JSON.stringify(gitlabPermissions),actor.id,actor.name,now.toISOString(),JSON.stringify({group_id:checked.group.id})),
   ...checked.projects.map(p=>env.DB.prepare('INSERT INTO connection_repositories(connection_id,full_name,selected) VALUES(?,?,0)').bind(id,p.name)),
   ...await catalogueStatements(env,'gitlab',actor,now),auditStatement(env,actor,'connection.authorized','connection:'+id,now,'succeeded','gitlab '+account),
  ])
  return {id,repositories:checked.projects.map(p=>p.name)}
 }
 export async function rotateGitlab(env:Bindings,actor:Actor,c:Connection,input:Input,now:Date){
- const token=text(input,'token',4000),checked=await verify(c.api_base,c.account,token,now),sealed=await seal(env,token,c.id)
+ const token=text(input,'token',4000),checked=await verify(c.api_base,c.account,token,now)
+ if(checked.group.id!==JSON.parse(c.config_json).group_id)throw new Refusal('The authorized GitLab group identity changed. Revoke this connection and explicitly authorize the new group.',409)
+ const sealed=await seal(env,token,c.id)
  await env.DB.batch([env.DB.prepare("UPDATE connections SET secret_ciphertext=?,secret_iv=?,status='active',rotated_at=?,revoked_at=NULL,last_error='',backoff_seconds=0,next_attempt_at=NULL WHERE id=?").bind(sealed.ciphertext,sealed.iv,now.toISOString(),c.id),...checked.projects.map(p=>env.DB.prepare('INSERT OR IGNORE INTO connection_repositories(connection_id,full_name,selected) VALUES(?,?,0)').bind(c.id,p.name)),auditStatement(env,actor,c.status==='active'?'connection.rotated':'connection.reconnected','connection:'+c.id,now)])
 }
 export async function runGitlab(env:Bindings,c:Connection,trigger:'schedule'|'manual',now:Date){
@@ -46,7 +48,7 @@ export async function runGitlab(env:Bindings,c:Connection,trigger:'schedule'|'ma
  const rows:{uniqueId:string;displayName:string;attributes:Record<string,unknown>}[]=[],packages:typeof rows=[],source={kind:'source-observed' as const,ref:'gitlab:'+c.id,label:'GitLab '+c.account+' via '+c.label},dependencySource={...source,ref:'gitlab-dependencies:'+c.id}
  let org:Record<string,unknown>={login:c.account,two_factor_requirement_enabled:null,readable:false},dependenciesComplete=true
  try{
-  try{org={...await gitlabGroup(client,c.account),readable:true};delete org.id;coverage.organization='read'}catch(e){if(!(e instanceof GitlabFailure)||e.kind!=='gap')throw e;coverage.gaps.push({asset:c.account,reason:e.message})}
+  try{const group=await gitlabGroup(client,c.account);if(group.id!==JSON.parse(c.config_json).group_id)throw new GitlabFailure('Authorized GitLab group identity changed','unauthorized');org={...group,readable:true};delete org.id;coverage.organization='read'}catch(e){if(!(e instanceof GitlabFailure)||e.kind!=='gap')throw e;coverage.gaps.push({asset:c.account,reason:e.message})}
   const members=await gitlabMembers(env,c,client,now);coverage.source_members=members;org.departed_members=members.departed_members;coverage.gaps.push(...members.gaps.map(reason=>({asset:c.account,reason})))
   for(const name of selected){
    try{
