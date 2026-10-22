@@ -28,13 +28,15 @@ export interface ScopedCloud {
 export async function cloudCall(url: string, token: string, label: string, init: RequestInit = {}) {
  let response: Response
  try { response = await scopedFetch(url, { ...init, headers: { authorization: 'Bearer ' + token, accept: 'application/json', ...(init.body ? { 'content-type': 'application/json' } : {}) }, redirect: 'manual', signal: AbortSignal.timeout(20000) }) } catch { throw new CloudFailure('unavailable', `${label} could not be reached`) }
- const body = await response.json().catch(() => ({})) as Record<string, unknown>
+ const body: unknown = await response.json().catch(() => null)
+ const errorBody = body && typeof body === 'object' ? body as Record<string, unknown> : {}
  if (response.status === 401) throw new CloudFailure('unauthorized', `${label} rejected the credential`)
- if (response.status === 403) { const detail = JSON.stringify(body.error ?? ''); throw new CloudFailure(/accessNotConfigured|SERVICE_DISABLED|MissingSubscriptionRegistration/.test(detail) ? 'disabled' : 'denied', `${label} refused the read (403)`) }
+ if (response.status === 403) { const detail = JSON.stringify(errorBody.error ?? ''); throw new CloudFailure(/accessNotConfigured|SERVICE_DISABLED|MissingSubscriptionRegistration/.test(detail) ? 'disabled' : 'denied', `${label} refused the read (403)`) }
  if (response.status === 429) throw new CloudFailure('throttled', `${label} is rate limiting this credential`)
  if (response.status === 404) return null
  if (response.status !== 200) throw new CloudFailure('unavailable', `${label} answered ${response.status}`)
- return body
+ if (!body || typeof body !== 'object' || Array.isArray(body)) throw new CloudFailure('unavailable', `${label} schema drift: expected a JSON object`)
+ return body as Record<string, unknown>
 }
 export const scopedConfig = (c: Pick<Connection, 'config_json'>): Record<string, string> => { try { return JSON.parse(c.config_json) } catch { return {} } }
 function parseConfig(cloud: ScopedCloud, input: Input) {
