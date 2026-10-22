@@ -8,7 +8,7 @@ import assert from 'node:assert/strict'
 import { runtime } from './helpers/runtime.mjs'
 const TEAMS = 'https://prod-07.westus.logic.azure.com/workflows/1f2e/triggers/manual/paths/invoke?api-version=2016-06-01&sig=teams-signature-secret'
 const JIRA = 'https://northstar.atlassian.net', jiraAuth = 'Basic ' + Buffer.from('it@northstar.test:jira_token').toString('base64')
-const slack = { token: 'xoxb-good', posts: [], users: { 'ana@northstar.test': 'U0ANA' }, failNext: null }, teams = { posts: [] }, jira = { issues: new Map(), count: 0 }
+const slack = { token: 'synthetic-evidence-1', posts: [], users: { 'ana@northstar.test': 'U0ANA' }, failNext: null }, teams = { posts: [] }, jira = { issues: new Map(), count: 0 }
 const reply = (status, body) => new Response(body === undefined ? null : JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
 async function fake(request) {
  const url = new URL(request.url)

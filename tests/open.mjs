@@ -68,7 +68,7 @@ try {
    assert.ok(content, section)
    for (const provider of providers) disclosure(content[1], provider)
   }
-  const connection = await post('/api/connections', { account: 'northstar', token: 'github_pat_test', label: 'Northstar repositories' })
+  const connection = await post('/api/connections', { account: 'northstar', token: 'synthetic-evidence-1', label: 'Northstar repositories' })
   const response = await app.fetch('/api/connections/' + connection.id)
   assert.equal(response.status, 200)
   assert.equal((await response.json()).connection.status, 'active')

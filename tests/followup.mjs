@@ -6,7 +6,7 @@ process.env.RER_SERVER_JOURNEY = '1'
 import assert from 'node:assert/strict'
 import { runtime } from './helpers/runtime.mjs'
 const TEAMS = 'https://prod-07.westus.logic.azure.com/workflows/1f2e/triggers/manual/paths/invoke?api-version=2016-06-01&sig=teams-signature-secret'
-const slack = { token: 'xoxb-good', posts: [], users: { 'ana@northstar.test': 'U0ANA' }, failNext: null }, teams = { posts: [] }
+const slack = { token: 'synthetic-evidence-1', posts: [], users: { 'ana@northstar.test': 'U0ANA' }, failNext: null }, teams = { posts: [] }
 async function fakeChannels(request) {
  const url = new URL(request.url)
  if (url.hostname === 'slack.com') {
@@ -39,7 +39,7 @@ let push
 try {
  await scenario('Slack and Teams are kept only after a real check, each person is reached on the channel they chose, and credentials never appear', async () => {
   await app.clock('2026-10-30T16:00:00Z'); await app.signin()
-  await owner('/api/followups/channels', { kind: 'slack', secret: 'xoxb-wrong' }, 400)
+  await owner('/api/followups/channels', { kind: 'slack', secret: 'synthetic-evidence-99' }, 400)
   await owner('/api/followups/channels', { kind: 'teams', secret: 'https://hooks.example.com/teams?sig=x' }, 400)
   const slackChannel = await owner('/api/followups/channels', { kind: 'slack', secret: slack.token, target: 'C0SECURITY' })
   await owner('/api/followups/channels', { kind: 'teams', secret: TEAMS })
@@ -92,8 +92,8 @@ try {
   assert.equal((await rows('ana')).find(f => f.cycle_key === '1:r5').state, 'failed')
   const channel = (await get('/api/followups')).channels.find(c => c.kind === 'slack')
   assert.equal(channel.status, 'needs reconnect'); assert.match(channel.last_error, /token_revoked/)
-  slack.token = 'xoxb-rotated'
-  await owner(`/api/followups/channels/${channel.id}/rotate`, { secret: 'xoxb-rotated' }, 200)
+  slack.token = 'synthetic-evidence-2'
+  await owner(`/api/followups/channels/${channel.id}/rotate`, { secret: 'synthetic-evidence-2' }, 200)
   await at('2026-11-06T16:05:00Z')
   assert.equal((await rows('ana')).find(f => f.cycle_key === '1:r6').state, 'accepted')
  })

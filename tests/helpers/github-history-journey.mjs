@@ -41,8 +41,8 @@ export async function githubHistoryJourney(){
   assert.match(runs[0].coverage_json,/does not match the reviewed source revision/);assert.deepEqual(runs.find(r=>r.id===original.id),original)
   // Pause page two, restart real storage and retry precisely the saved cursor.
   github.overrides.set(checks,{body:{check_runs:[]}})
-  github.overrides.set(page2,{status:429,body:{message:'rate limited'},headers:{'x-ratelimit-reset':String(Date.parse('2026-10-11T14:10:00Z')/1000)}})
-  await at('2026-10-11T14:00:00Z');await app.tick()
+  github.overrides.set(page2,{status:429,body:{message:'rate limited'},headers:{'x-ratelimit-reset':String(Date.parse('2026-10-11T14:15:00Z')/1000)}})
+  await at('2026-10-11T14:05:00Z');await app.tick()
   const paused=(await get(path)).runs[0];assert.equal(paused.outcome,'throttled');assert.ok(JSON.parse(paused.coverage_json).resume_pages.pending)
   const firstReads=github.requests.filter(p=>p===reviews).length,secondReads=github.requests.filter(p=>p===page2).length
   github.overrides.set(page2,{body:[]})
@@ -60,6 +60,6 @@ export async function githubHistoryJourney(){
   const restore=await target.fetch('/api/archive/restore',{method:'POST',headers:{origin:target.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:bytes})
   assert.equal(restore.status,200,await restore.clone().text());assert.deepEqual(await target.db.prepare('SELECT coverage_json FROM collection_runs WHERE id=?').bind(original.id).first(),{coverage_json:original.coverage_json})
   assert.equal((await target.db.prepare('SELECT status FROM connections WHERE id=?').bind(c.id).first()).status,'inactive after restore')
-  await collectionScheduleBrowser(app,[(await get(path)).connection],{suffix:'-code-history',reportExpected:['Change #14','Deployment 7']})
+  await collectionScheduleBrowser(app,[(await get(path)).connection],{suffix:'-code-history',expandHistory:true,reportExpected:['Change #14','Deployment 7']})
  }finally{await app.close();await target.close()}
 }
