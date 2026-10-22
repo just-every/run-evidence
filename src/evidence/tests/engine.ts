@@ -1,3 +1,5 @@
+import {collectionReceiptTime} from '../connect/clock'
+import {sourceAuthorities,sourceAuthorityGap} from '../connect/source-authority'
 import { runDefinitions } from '../control-definition/storage'
 import type { Bindings } from '../../auth.server'
 import type { Resource } from '../resources'
@@ -14,6 +16,7 @@ export async function runTest(env: Bindings, testId: string, trigger: Trigger, n
  const criteria = parseCriteria(revision.criteria_json), excluded = exclusions(revision.excluded_json)
  const selected = typeof only === 'string' ? [only] : only
  const population = (await env.DB.prepare('SELECT * FROM resources WHERE type=? AND removed_at IS NULL' + (selected ? ' AND id IN (SELECT value FROM json_each(?))' : '') + ' ORDER BY unique_id').bind(...(selected ? [row.resource_type, JSON.stringify(selected)] : [row.resource_type])).all<Resource>()).results
+ const authorities=population.some(r=>r.source_kind==='source-observed')?await sourceAuthorities(env):[]
  const exceptions = (await activeExceptions(env, now)).filter(e => e.test_id === testId)
  const run = crypto.randomUUID(), at = now.toISOString(), observations: Observation[] = []
  const previous = (await env.DB.prepare('SELECT MAX(started_at) AS at FROM test_runs WHERE test_id=?').bind(testId).first<{ at: string | null }>())?.at ?? null
@@ -21,7 +24,8 @@ export async function runTest(env: Bindings, testId: string, trigger: Trigger, n
   const exclusion = excluded.find(e => e.resource_id === resource.id)
   // A collector read older than the cadence allows is stale: unknown, never carried forward.
   const stale = resource.source_kind === 'source-observed' && (!resource.observed_at || now.getTime() - Date.parse(resource.observed_at) > CADENCE_MS[row.cadence] * 1.5 + 3600000)
-  const evaluated = exclusion ? { result: 'not applicable' as const, actual: {}, reason: 'Out of scope: ' + exclusion.rationale } : stale ? { result: 'unknown' as const, actual: {}, reason: `No successful source read since ${resource.observed_at ?? 'connection'}; the last read is stale` } : evaluate(criteria, JSON.parse(resource.attributes_json))
+  const authority=resource.source_kind==='source-observed'?sourceAuthorityGap(resource.source_ref,authorities):null
+  const evaluated = exclusion ? { result: 'not applicable' as const, actual: {}, reason: 'Out of scope: ' + exclusion.rationale } : stale ? { result: 'unknown' as const, actual: {}, reason: `No successful source read since ${resource.observed_at ?? 'connection'}; the last read is stale` } : authority ? {result:'unknown' as const,actual:{},reason:authority} : evaluate(criteria, JSON.parse(resource.attributes_json))
   const exception = exceptions.find(e => e.resource_id === resource.id || e.resource_id === null)
   observations.push({ id: crypto.randomUUID(), run_id: run, test_id: testId, revision: revision.revision, resource_id: resource.id, result: evaluated.result, expected_json: revision.criteria_json, actual_json: JSON.stringify(evaluated.actual), reason: evaluated.reason, source_kind: resource.source_kind, source_ref: resource.source_ref, observed_at: at, exception_id: exception?.id ?? null, interval_from: previous })
  }
@@ -44,7 +48,15 @@ export async function runDueTests(env: Bindings, now: Date, limit = 25) {
 }
 // A source change re-runs the tests that read that resource type.
 export async function runForType(env: Bindings, type: string, now: Date) {
+ now=collectionReceiptTime(now)
  const { results } = await env.DB.prepare('SELECT id FROM tests WHERE enabled=1 AND resource_type=?').bind(type).all<{ id: string }>()
  for (const t of results) await runTest(env, t.id, 'source-change', now)
  return results.length
+}
+
+// Withdrawal and credential rejection append unknown evaluations without
+// rewriting original receipts, resources, test runs or source snapshots.
+export async function runForConnection(env:Bindings,id:string,now:Date){
+ const types=(await env.DB.prepare("SELECT DISTINCT type FROM resources WHERE source_kind='source-observed' AND removed_at IS NULL AND (source_ref=? OR substr(source_ref,-length(?)-1)=':'||?)").bind(id,id,id).all<{type:string}>()).results
+ for(const row of types)await runForType(env,row.type,now)
 }
