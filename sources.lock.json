@@ -7030,7 +7030,7 @@
       "executable": false
     },
     "tests/helpers/github-findings-journey.mjs": {
-      "sha256": "f97b92a9fbec7497d6246e38e59c2523ce93af27327560c327512b440c91936c",
+      "sha256": "1aa5045f8a06f38c59e3953b4cd91eef7ebdba60561ab4259b8c9a5739feb77a",
       "executable": false
     },
     "tests/helpers/github-fixture.mjs": {

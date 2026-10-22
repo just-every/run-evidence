@@ -33,12 +33,12 @@ export async function githubFindingsJourney(){
   assert.ok((await get('/api/vulnerabilities/source-findings')).findings.every(r=>r.current_state==='unknown'),'a failed whole-source attempt withdraws current finding coverage')
   github.throttleUntil=0;await at('2026-10-11T13:35:00Z');await post(path+'/collect',{},201)
   github.overrides.set(dep,{body:[{...dependency,number:32},{...dependency,number:'not a source number'}]})
-  await at('2026-10-11T14:20:00Z');await app.tick();rows=(await get('/api/vulnerabilities/source-findings')).findings
+  await at('2026-10-11T14:45:00Z');await app.tick();rows=(await get('/api/vulnerabilities/source-findings')).findings
   assert.equal(rows.length,2,'malformed source class admits no earlier valid subset');assert.equal(rows.find(r=>r.kind==='dependabot').current_state,'unknown');assert.match((await get(path)).runs[0].coverage_json,/schema drift: finding identity/)
-  github.overrides.set(dep,{body:[]});await at('2026-10-11T15:30:00Z');await app.tick()
+  github.overrides.set(dep,{body:[]});await at('2026-10-11T15:55:00Z');await app.tick()
   assert.equal((await get('/api/vulnerabilities/source-findings')).findings.find(r=>r.kind==='dependabot').current_state,'unknown','absence cannot verify closure')
-  github.overrides.set(dep,{body:[dependency]});await at('2026-10-11T16:40:00Z');await app.tick();assert.deepEqual((await get(path)).runs.find(r=>r.id===original.id),original)
-  const bytes=Buffer.from(await(await app.fetch('/api/archive/export')).arrayBuffer());await target.signin();await target.clock('2026-10-11T16:40:00Z')
+  github.overrides.set(dep,{body:[dependency]});await at('2026-10-11T17:05:00Z');await app.tick();assert.deepEqual((await get(path)).runs.find(r=>r.id===original.id),original)
+  const bytes=Buffer.from(await(await app.fetch('/api/archive/export')).arrayBuffer());await target.signin();await target.clock('2026-10-11T17:05:00Z')
   const restored=await target.fetch('/api/archive/restore',{method:'POST',headers:{origin:target.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:bytes});assert.equal(restored.status,200,await restored.clone().text())
   for(const table of ['resources','resource_versions','collection_runs'])assert.deepEqual((await target.db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all()).results,(await app.db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all()).results)
   const inactive=await(await target.fetch('/api/vulnerabilities/source-findings')).json();assert.equal(inactive.findings.length,2);assert.ok(inactive.findings.every(r=>r.current_state==='unknown'&&!r.readable))
