@@ -7,7 +7,9 @@ export const readPermissions = ['Metadata: read', 'Administration: read (branch 
 export class Throttled extends Error { constructor(public resetAt: number) { super('GitHub rate limit reached') } }
 export class Unauthorized extends Error {}
 interface Reply { status: number; body: unknown; message: string; next: string | null; scopes: string | null }
-export function githubClient(base: string, token: string, now: () => number) {
+export interface AlertCursor { numbers: number[]; next: string | null; complete: boolean; seen: string[] }
+export interface AlertProgress { load(path: string): AlertCursor | undefined; save(path: string, cursor: AlertCursor | null): Promise<boolean> }
+export function githubClient(base: string, token: string, now: () => number, progress?: AlertProgress) {
  async function get(path: string): Promise<Reply> {
   const response = await scopedFetch(path.startsWith('http') ? path : base + path, { headers: { authorization: 'Bearer ' + token, accept: 'application/vnd.github+json', 'x-github-api-version': '2022-11-28', 'user-agent': 'evidence-collector' } })
   const remaining = response.headers.get('x-ratelimit-remaining'), reset = Number(response.headers.get('x-ratelimit-reset') ?? 0) * 1000
@@ -16,12 +18,34 @@ export function githubClient(base: string, token: string, now: () => number) {
   let body: unknown = null
   try { body = await response.json() } catch { body = null }
   const link = response.headers.get('link') ?? '', next = /<([^>]+)>;\s*rel="next"/.exec(link)?.[1] ?? null
-  return { status: response.status, body, message: body && typeof body === 'object' && 'message' in body ? String((body as { message: unknown }).message) : '', next: next && next.startsWith(base) ? next : null, scopes: response.headers.get('x-oauth-scopes') }
+  return { status: response.status, body, message: body && typeof body === 'object' && 'message' in body ? String((body as { message: unknown }).message) : '', next, scopes: response.headers.get('x-oauth-scopes') }
  }
  async function all(path: string, limit = 20) {
-  const items: Record<string, unknown>[] = []; let url: string | null = path, pages = 0
-  while (url && pages < limit) { const reply = await get(url); if (reply.status !== 200 || !Array.isArray(reply.body)) return { items: null, status: reply.status, complete: false, reason: reply.status === 200 ? 'schema drift: expected an array' : `GitHub answered ${reply.status}` }; items.push(...reply.body as Record<string, unknown>[]); url = reply.next; pages++ }
-  return { items, status: 200, complete: !url, reason: url ? 'pagination incomplete: page limit reached' : '' }
+  const tracked = !!progress && /\/(dependabot|secret-scanning)\/alerts\?/.test(path), saved = tracked ? progress!.load(path) : undefined
+  const items: Record<string, unknown>[] = saved ? saved.numbers.map(number => ({ number })) : []
+  if (saved?.complete) return { items, status: 200, complete: true, reason: '' }
+  const seen = new Set(saved?.seen ?? []), endpoint = new URL(base + path)
+  let url: string | null = saved?.next ?? path, pages = 0
+  const invalid = async (reason: string, status = 200) => { if (tracked) await progress!.save(path,null); return { items: null, status, complete: false, reason } }
+  while (url && pages < limit) {
+   let target: URL
+   try { target = new URL(url.startsWith('http') ? url : base + url) } catch { return invalid('pagination incomplete: invalid continuation') }
+   if (target.origin !== endpoint.origin || target.pathname !== endpoint.pathname || target.username || target.password || target.hash || seen.has(target.href)) return invalid('pagination incomplete: unsafe or repeated continuation')
+   const snapshot = (next: string | null, complete: boolean): AlertCursor => ({ numbers: items.map(i => Number(i.number)), next, complete, seen: [...seen] })
+   // Persist the next request before the network edge. A lost response resumes
+   // that page; completed earlier pages are not requested or counted again.
+   if (tracked && !await progress!.save(path,snapshot(target.href,false))) return invalid('pagination incomplete: durable cursor exceeds 64 KiB; narrow repository scope')
+   const reply = await get(target.href)
+   if (reply.status !== 200 || !Array.isArray(reply.body)) return invalid(reply.status === 200 ? 'schema drift: expected an array' : `GitHub answered ${reply.status}`, reply.status)
+   if (tracked && !reply.body.every(i => record(i) && natural(i.number) && i.number > 0)) return invalid('schema drift: alert entries')
+   if (tracked) {
+    const numbers = new Set(items.map(i => i.number))
+    for (const item of reply.body as {number:number}[]) if (!numbers.has(item.number)) { items.push({number:item.number}); numbers.add(item.number) }
+   } else items.push(...reply.body as Record<string, unknown>[])
+   seen.add(target.href); url = reply.next; pages++
+   if (tracked && !await progress!.save(path,snapshot(url,!url))) return invalid('pagination incomplete: durable cursor exceeds 64 KiB; narrow repository scope')
+  }
+  return { items, status: 200, complete: !url, reason: url ? 'pagination incomplete: page limit reached; durable cursor retained' : '' }
  }
  return { get, all }
 }
