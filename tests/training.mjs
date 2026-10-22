@@ -7,6 +7,7 @@ import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 import { randomBytes } from 'node:crypto'
 import { runtime } from './helpers/runtime.mjs'
+import { collectionScheduleBrowser } from './helpers/collection-schedule-browser.mjs'
 import { collectionScheduleJourney } from './helpers/collection-schedule-journey.mjs'
 const require = createRequire(import.meta.url)
 const { build } = createRequire(require.resolve('wrangler/package.json'))('esbuild')
@@ -17,11 +18,13 @@ const knowbe4 = [
  { enrollment_id: 501, module_name: '2026 Security Awareness Training', user: { email: 'kim@northstar.test' }, completion_date: '2026-10-11T12:15:00Z', status: 'Passed' },
  { enrollment_id: 502, module_name: '2026 Security Awareness Training', user: { email: 'omar@northstar.test' }, completion_date: null, status: 'In Progress' },
 ]
+let enrollmentResponse = null
 async function fakeKnowBe4(request) {
  const url = new URL(request.url)
  if (url.hostname !== 'us.api.knowbe4.com') return null
  if (request.headers.get('authorization') !== 'Bearer ' + key) return Response.json({ message: 'Unauthorized' }, { status: 401 })
  if (url.pathname === '/v1/account') return Response.json({ name: 'Northstar' })
+ if (url.pathname === '/v1/training/enrollments' && enrollmentResponse) return enrollmentResponse(Number(url.searchParams.get('page')))
  if (url.pathname === '/v1/training/enrollments') return Response.json(url.searchParams.get('page') === '1' ? knowbe4 : [])
  return null
 }
@@ -108,6 +111,35 @@ try {
   assert.match(csv, /source-reported by KnowBe4/); assert.match(csv, /manual: approved internal course/)
   const exported = await get('/api/training/export')
   assert.deepEqual([...new Set(exported.completions.map(c => c.source))].sort(), ['evidence', 'internal', 'knowbe4'])
+ })
+ await scenario('COLLECTION-001: KnowBe4 malformed completion facts, repeated or exhausted pages and throttling never admit a partial completion set; recovery deduplicates originals', async () => {
+  const connection = (await get('/api/connections')).connections.find(c => c.provider === 'knowbe4'), path = '/api/connections/' + connection.id
+  let time = Date.parse((await get(path)).runs[0].started_at)
+  const collect = async () => { time += 60000; await app.clock(new Date(time).toISOString()); return post(path + '/collect', {}) }
+  const original = (await get('/api/training')).completions
+  const failures = []
+  for (const body of [null, {}, [null], [{ ...knowbe4[0], enrollment_id: '501' }], [{ ...knowbe4[0], user: {} }], [{ ...knowbe4[0], completion_date: 'not a timestamp' }], [{ ...knowbe4[0], completion_date: null }], [{ ...knowbe4[0], status: 'Not Completed' }]]) {
+   enrollmentResponse = () => Response.json(body)
+   assert.equal((await collect()).outcome,'partial')
+   const run = (await get(path)).runs[0]; failures.push(run); assert.match(run.coverage_json,/schema drift/)
+   assert.deepEqual((await get('/api/training')).completions,original)
+  }
+  enrollmentResponse = page => Response.json(Array.from({ length: 500 }, (_,i) => ({ ...knowbe4[0], enrollment_id: i + 1000 })))
+  assert.equal((await collect()).outcome,'partial')
+  failures.push((await get(path)).runs[0]); assert.match(failures.at(-1).coverage_json,/repeated enrollment/)
+  assert.deepEqual((await get('/api/training')).completions,original)
+  enrollmentResponse = page => Response.json(Array.from({ length: 500 }, (_,i) => ({ ...knowbe4[0], enrollment_id: page * 500 + i + 1000 })))
+  assert.equal((await collect()).outcome,'partial')
+  failures.push((await get(path)).runs[0]); assert.match(failures.at(-1).coverage_json,/50 full pages/)
+  assert.deepEqual((await get('/api/training')).completions,original)
+  enrollmentResponse = () => Response.json({}, { status:429 })
+  assert.equal((await collect()).outcome,'throttled')
+  failures.push((await get(path)).runs[0]); assert.ok((await get(path)).connection.next_attempt_at > new Date(time).toISOString())
+  enrollmentResponse = null
+  assert.equal((await collect()).outcome,'complete'); assert.deepEqual((await get('/api/training')).completions,original)
+  const history = (await get(path)).runs
+  for (const run of failures) assert.deepEqual(history.find(r=>r.id===run.id),run)
+  await collectionScheduleBrowser(app, [(await get(path)).connection], { suffix:'-knowbe4-schema' })
  })
  await scenario('COLLECTION-001: hosted collector schedules through owner doors, Cron, browser and restore', () => collectionScheduleJourney(app))
  console.log(`${passed} training public-door scenarios passed with Base invitations and member sign-in.`)

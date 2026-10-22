@@ -173,7 +173,8 @@ try {
   ]
   const failures = new Map(Object.keys(conn).map(provider => [provider, []]))
   const mfa = (await get('/api/tests')).tests.find(t => t.catalogue_id === 'idp.mfa').id
-  const observations = async provider => (await get('/api/tests/' + mfa)).latest.filter(o => o.source_ref === 'directory:' + conn[provider].id)
+  const sourceLabels = { okta: 'Okta ', google: 'Google Workspace ', entra: 'Microsoft Entra ID ', jumpcloud: 'JumpCloud ' }
+  const observations = async provider => (await get('/api/tests/' + mfa)).latest.filter(o => o.source_label.startsWith(sourceLabels[provider]))
   for (const [provider, raw, field, change] of fixtures) {
    const url = new URL(raw).href
    const headers = provider === 'okta' ? { authorization: 'SSWS ' + secrets.okta } : provider === 'google' ? { authorization: 'Bearer google-access' } : provider === 'entra' ? { authorization: 'Bearer graph-access' } : { 'x-api-key': secrets.jumpcloud }
