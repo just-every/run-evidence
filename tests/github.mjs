@@ -1,3 +1,4 @@
+import {bitbucketScopeJourney,bitbucketHistoryJourney,bitbucketPagingJourney} from './helpers/bitbucket-journey.mjs'
 import {gitlabScopeJourney,gitlabHistoryJourney,gitlabPagingJourney,gitlabMembersJourney} from './helpers/gitlab-journey.mjs'
 // GitHub connection custody, scheduled collection and catalogue tests through
 // the owner's doors and the Cron Trigger. GitHub itself is the only fake: a
@@ -230,5 +231,8 @@ try {
  await scenario('CODE-001: GitLab owner authorization, scoped privacy and protection tests, source fixes, lost access, credential rotation and revocation',gitlabScopeJourney)
  await scenario('CODE-001: GitLab source reviews, exact-head pipelines, deployments and dependency inventory retain unknown event times, earlier failures and custody',gitlabHistoryJourney)
  await scenario('CODE-001 / COLLECTION-001: GitLab resumes the saved page after restart, refuses query-filter changes and inherits schedules, events and inactive restore',gitlabPagingJourney)
+ await scenario('CODE-001: Bitbucket requires audited admin-scope consent, reads only selected repositories, preserves unknown membership attributes and compares reviewed departures',bitbucketScopeJourney)
+ await scenario('CODE-001: Bitbucket real merge activity, exact-revision statuses and Pipelines readback preserve precise times, contradictory outcomes, owner production classification and custody',bitbucketHistoryJourney)
+ await scenario('CODE-001 / COLLECTION-001: Bitbucket resumes the interrupted restriction page, rejects altered filters and inherits schedules, events and inactive restore',bitbucketPagingJourney)
  console.log(`${passed} code connection public-door scenarios passed; providers are faked only at the network edge.`)
 } finally { await app.close() }

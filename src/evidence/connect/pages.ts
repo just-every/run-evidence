@@ -28,7 +28,7 @@ async function unpacked(data:string) {
 export async function withPages<T>(env:Bindings,connection:Connection,now:Date,work:()=>Promise<T>):Promise<T> {
  if(connection.provider==='private-git'||connection.status!=='active')return work()
  const context=await collectionContext(env,connection)
- const selected=['github','gitlab'].includes(connection.provider) ? (await env.DB.prepare('SELECT full_name FROM connection_repositories WHERE connection_id=? AND selected=1 ORDER BY full_name').bind(connection.id).all()).results : []
+ const selected=['github','gitlab','bitbucket'].includes(connection.provider) ? (await env.DB.prepare('SELECT full_name FROM connection_repositories WHERE connection_id=? AND selected=1 ORDER BY full_name').bind(connection.id).all()).results : []
  const authority=await digest(JSON.stringify([selected,connection.id,connection.provider,connection.secret_ciphertext,connection.secret_iv,connection.config_json,context]))
  const prior=await env.DB.prepare('SELECT coverage_json FROM collection_runs WHERE connection_id=? ORDER BY started_at DESC,rowid DESC LIMIT 1').bind(connection.id).first<{coverage_json:string}>()
  const saved=prior ? JSON.parse(prior.coverage_json).resume_pages as Snapshot|undefined : undefined
