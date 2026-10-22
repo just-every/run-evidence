@@ -55,6 +55,14 @@ export async function collectionScheduleBrowser(app, connections, { suffix = '',
     }
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'collection report overflow at ' + width)
     await page.screenshot({ path: join(output, `${width}-${c.provider}${suffix}-period-report.png`), fullPage: true })
+    const detail = await (await app.fetch('/api/connections/' + c.id)).json()
+    const linked = detail.runs.map(r => JSON.parse(r.coverage_json).context?.controls ?? []).flat()[0]
+    if (linked) {
+     await page.goto(origin + '/app/controls/' + linked.control_id + '/report?from=2026-10-01&to=2026-11-01')
+     await page.getByRole('heading', { name: 'Source collection history', exact: true }).waitFor()
+     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'control collection report overflow at ' + width)
+     await page.screenshot({ path: join(output, `${width}-${c.provider}${suffix}-control-report.png`), fullPage: true })
+    }
     console.log(`PASS COLLECTION-001: ${c.provider} schedule saved and reloaded at ${width}`)
    }
    await context.close()
