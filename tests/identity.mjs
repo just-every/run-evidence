@@ -248,6 +248,7 @@ try {
    assert.equal(dir.requests.slice(before).filter(url=>url===second).length,2,provider+' retries only the throttled page')
    assert.deepEqual((await get(path)).runs.find(r=>r.id===failed.id),failed)
    dir.overrides.clear()
+   await collectionScheduleBrowser(app,[(await get(path)).connection],{suffix:'-resume-'+provider,reportExpected:[provider==='okta'?'after=3':provider==='jumpcloud'?'jumpcloud:systemusers':'synthetic-page-2']})
   }
  })
  await scenario('COLLECTION-001: hosted collector schedules through owner doors, Cron, browser and restore', () => collectionScheduleJourney(app))

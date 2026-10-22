@@ -5,7 +5,7 @@ import { resolve, extname, join } from 'node:path'
 import { chromium } from 'playwright'
 // COLLECTION-001: existing schedule form, shipped styling and real owner HTTP
 // handlers. The loopback bridge retains this harness's authenticated owner.
-export async function collectionScheduleBrowser(app, connections, { suffix = '', expected = [] } = {}) {
+export async function collectionScheduleBrowser(app, connections, { suffix = '', expected = [], reportExpected = [] } = {}) {
  const output = resolve(process.env.EVIDENCE_BROWSER_OUTPUT ?? '.cache/browser/collection-schedules')
  let server, browser, origin
  try {
@@ -61,6 +61,7 @@ export async function collectionScheduleBrowser(app, connections, { suffix = '',
      await summaries.first().click()
      assert.match(await summaries.first().locator('..').innerText(), /Library revision/)
     }
+    for(const text of reportExpected){const entry=page.locator('details').filter({hasText:text}).first();assert.ok(await entry.count(),text+' retained in period report');if(!await entry.evaluate(e=>e.open))await entry.locator('summary').click();assert.ok((await entry.innerText()).includes(text))}
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'collection report overflow at ' + width)
     await page.screenshot({ path: join(output, `${width}-${c.provider}${suffix}-period-report.png`), fullPage: true })
     const detail = await (await app.fetch('/api/connections/' + c.id)).json()

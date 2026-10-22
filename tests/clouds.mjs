@@ -369,6 +369,7 @@ try {
    assert.equal(c.calls.slice(before).filter(url=>url===c.second).length,2,'only the throttled page retries')
    assert.deepEqual((await get(path)).runs.find(r=>r.id===interrupted.id),interrupted)
    c.responses.clear();c.statuses.clear()
+   await collectionScheduleBrowser(app,[(await get(path)).connection],{suffix:'-resume-'+c.provider,reportExpected:['synthetic-resume-2']})
   }
  })
  await scenario('COLLECTION-001: hosted collector schedules through owner doors, Cron, browser and restore', () => collectionScheduleJourney(app))
