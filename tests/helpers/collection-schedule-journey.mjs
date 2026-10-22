@@ -68,7 +68,7 @@ export async function collectionScheduleJourney(app, at = time => app.clock(time
  const grant = await issue(['resource-push']), readOnly = await issue(['read'])
  const event = async (c,id,status=202,token=grant.token) => {const r=await app.fetch(`/v1/connections/${c.id}/events`,{method:'POST',headers:{authorization:'Bearer '+token,'content-type':'application/json'},body:JSON.stringify({event_id:id,reported_at:'2026-11-01T16:00:00Z',attributes:{mfa_enrolled:true,private:true}})});assert.equal(r.status,status,await r.clone().text());return r.json()}
  const permit = async (c,tokens,headers={},status=200) => {const r=await app.fetch(`/api/connections/${c.id}/events/permissions`,{method:'POST',headers:{origin:app.origin,'content-type':'application/json',...headers},body:JSON.stringify({event_tokens:tokens,reason:'Allow only our explicitly reviewed event forwarder'})});assert.equal(r.status,status,await r.clone().text())}
- const sourceFacts = async () => (await get('/api/inventory')).records.filter(r=>connections.some(c=>r.source_ref.endsWith(':'+c.id))).map(r=>({key:r.source_key,attributes:r.attributes})).sort((a,b)=>a.key.localeCompare(b.key))
+ const sourceFacts = async () => (await get('/api/inventory')).records.filter(r=>typeof r.source_ref==='string' && connections.some(c=>r.source_ref.endsWith(':'+c.id))).map(r=>({key:r.source_key,attributes:r.attributes})).sort((a,b)=>a.key.localeCompare(b.key))
  const actualFacts=await sourceFacts()
  const beforeEvents = new Map(await Promise.all(connections.map(async c=>[c.id,(await history(c)).length])))
  const receipts=new Map()
