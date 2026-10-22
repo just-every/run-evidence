@@ -28,6 +28,7 @@ export async function collectionScheduleBrowser(app, connections, { suffix = '',
    for (const c of connections) {
     await page.goto(origin + '/app/connections/' + c.id)
     await page.getByRole('heading', { name: 'Collection schedule', exact: true }).waitFor()
+    await page.getByRole('heading',{name:'Source-event collection',exact:true}).waitFor()
     const interval = page.getByRole('spinbutton', { name: 'Interval in minutes', exact: true })
     assert.equal(await interval.inputValue(), '60')
     await interval.fill('30'); await page.getByRole('button', { name: 'Save collection schedule', exact: true }).click()
@@ -35,6 +36,13 @@ export async function collectionScheduleBrowser(app, connections, { suffix = '',
     assert.equal(await interval.inputValue(), '30')
     assert.match(await page.locator('main').innerText(), /every 30 minutes after the last attempt/)
     for (const text of expected) assert.ok((await page.locator('main').innerText()).includes(text), text + ' at ' + width)
+    const eventToken=page.getByRole('checkbox',{name:/Source-event forwarder/}).first()
+    if(await eventToken.count()) {
+     await eventToken.uncheck();await page.getByLabel('Reason for changing event access').fill('Review event access in the owner browser')
+     await page.getByRole('button',{name:'Save source-event access',exact:true}).click();await page.waitForURL('**#source-events');await page.reload();assert.equal(await eventToken.isChecked(),false)
+     await eventToken.check();await page.getByLabel('Reason for changing event access').fill('Approve our named event forwarder in the owner browser')
+     await page.getByRole('button',{name:'Save source-event access',exact:true}).click();await page.waitForURL('**#source-events');await page.reload();assert.equal(await eventToken.isChecked(),true)
+    }
     await page.evaluate(() => document.fonts.ready)
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), c.provider + ' overflow at ' + width)
     await page.screenshot({ path: join(output, `${width}-${c.provider}${suffix}-saved.png`), fullPage: true })

@@ -2604,6 +2604,8 @@
           "src/evidence/collector/view.ts",
           "src/evidence/connect/collect.ts",
           "src/evidence/connect/custody.ts",
+          "src/evidence/connect/event-context.ts",
+          "src/evidence/connect/events.ts",
           "src/evidence/connect/github-schema.ts",
           "src/evidence/connect/github.ts",
           "src/evidence/connect/http.ts",

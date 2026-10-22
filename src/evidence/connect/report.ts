@@ -44,6 +44,7 @@ export function collectionDetails(raw: string) {
   ['Attempt started', escape(cov.attempt_started_at ?? 'Not captured')],
   ['Source read started', escape(cov.source_read_started_at ?? 'No successful read recorded')],
   ['Source event time', escape(cov.source_event_at ?? 'Unknown; polling cannot establish a source change time')],
+  ['Source-event hint', cov.source_event ? escape('Received '+cov.source_event.received_at+'; reported time '+(cov.source_event.reported_at ?? 'not supplied')+' (unverified)') : 'No event signal recorded'],
   ['Receipt time', escape(cov.received_at ?? 'Not captured')],
   ['Interval', escape(cov.interval_minutes === undefined ? 'Not captured' : cov.interval_minutes + ' minutes')],
   ['Cursor', escape(cov.cursor === null || cov.cursor === undefined ? 'Not captured / no resumable cursor' : JSON.stringify(cov.cursor))],

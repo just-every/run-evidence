@@ -1,3 +1,5 @@
+import { collectEvents } from './events'
+import { requireConnection } from './storage'
 import { digest } from '../api/tokens'
 import type { AlertCursor } from './github'
 import { collectionMinutes } from './interval'
@@ -99,8 +101,9 @@ export async function runCollection(env: Bindings, connection: Connection, trigg
 // Every hosted collector uses its owner-set elapsed interval.
 // Backoff is a lower bound even when a shorter schedule becomes due.
 export async function collectDue(env: Bindings, now: Date) {
+ const events=await collectEvents(env,now,async (scoped,id,clock)=>runCollection(scoped,await requireConnection(scoped,id),'manual',clock))
  const { results } = await env.DB.prepare("SELECT * FROM connections WHERE status='active' AND provider!='private-git' AND (next_attempt_at IS NULL OR next_attempt_at<=?)").bind(now.toISOString()).all<Connection>()
  const due = results.filter(connection => !connection.last_attempt_at || Date.parse(connection.last_attempt_at) + collectionMinutes(connection) * 60000 <= now.getTime())
  for (const connection of due) await runCollection(env, connection, 'schedule', now)
- return due.length
+ return due.length + events
 }

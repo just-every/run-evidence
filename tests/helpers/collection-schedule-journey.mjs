@@ -62,7 +62,45 @@ export async function collectionScheduleJourney(app, at = time => app.clock(time
   assert.equal(JSON.parse(runs.find(r => r.id === first.get(c.id).id).coverage_json).interval_minutes, 15, 'historical interval is immutable')
   assert.ok((await get('/api/audit')).entries.some(e => e.action === 'connection.schedule' && e.subject === 'connection:' + c.id && /60 minutes; previous 15 minutes/.test(e.detail)))
  }
+ // Every current hosted source accepts events only after an audited owner
+ // grant to an expiring token. Event bodies never become source observations.
+ const issue = async scopes => { const r=await app.fetch('/api/api-tokens',{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify({name:'Source-event forwarder',scopes,expires_at:'2027-04-01'})}); assert.equal(r.status,201,await r.clone().text()); return r.json() }
+ const grant = await issue(['resource-push']), readOnly = await issue(['read'])
+ const event = async (c,id,status=202,token=grant.token) => {const r=await app.fetch(`/v1/connections/${c.id}/events`,{method:'POST',headers:{authorization:'Bearer '+token,'content-type':'application/json'},body:JSON.stringify({event_id:id,reported_at:'2026-11-01T16:00:00Z',attributes:{mfa_enrolled:true,private:true}})});assert.equal(r.status,status,await r.clone().text());return r.json()}
+ const permit = async (c,tokens,headers={},status=200) => {const r=await app.fetch(`/api/connections/${c.id}/events/permissions`,{method:'POST',headers:{origin:app.origin,'content-type':'application/json',...headers},body:JSON.stringify({event_tokens:tokens,reason:'Allow only our explicitly reviewed event forwarder'})});assert.equal(r.status,status,await r.clone().text())}
+ const sourceFacts = async () => (await get('/api/inventory')).records.filter(r=>connections.some(c=>r.source_ref.endsWith(':'+c.id))).map(r=>({key:r.source_key,attributes:r.attributes})).sort((a,b)=>a.key.localeCompare(b.key))
+ const actualFacts=await sourceFacts()
+ const beforeEvents = new Map(await Promise.all(connections.map(async c=>[c.id,(await history(c)).length])))
+ const receipts=new Map()
+ for (const [index,c] of connections.entries()) {
+  await event(c,'synthetic-evidence-'+index,403)
+  await permit(c,[readOnly.grant.id],{},400)
+  await permit(c,[grant.grant.id],{origin:'https://foreign.test'},403)
+  await permit(c,[grant.grant.id],{cookie:''},401)
+  await permit(c,[grant.grant.id])
+  const received=await event(c,'synthetic-evidence-'+index)
+  assert.equal((await event(c,'synthetic-evidence-'+index)).receipt,received.receipt,'duplicate signals share one durable receipt')
+  receipts.set(c.id,received.receipt)
+  assert.equal((await history(c)).length,beforeEvents.get(c.id),'queue acceptance performs no source read')
+ }
+ await step(245)
+ for(const c of connections) {
+  const run=(await history(c))[0],cov=JSON.parse(run.coverage_json)
+  assert.equal((await history(c)).length,beforeEvents.get(c.id)+1,'one actual read on the next tick, before the elapsed schedule is due')
+  assert.equal(cov.source_event.id,receipts.get(c.id));assert.equal(cov.source_event.reported_at,'2026-11-01T16:00:00.000Z');assert.equal(cov.source_event_at,null,'a reported event time never becomes a verified source time')
+  assert.equal((await get('/api/connections/'+c.id)).source_events.find(e=>e.id===receipts.get(c.id)).outcome,run.outcome)
+ }
+ assert.deepEqual(await sourceFacts(),actualFacts,'event payloads cannot supply or change source facts')
+ await step(245)
+ for(const [index,c] of connections.entries()) {
+  await event(c,'synthetic-evidence-'+index)
+  assert.equal((await history(c)).length,beforeEvents.get(c.id)+1,'worker restart or replay never repeats a completed event read')
+ }
+ const audit=await get('/api/audit')
+ assert.ok(audit.entries.some(e=>e.action==='connection.event-permissions' && e.reason==='Allow only our explicitly reviewed event forwarder'))
+ assert.ok(!JSON.stringify(audit).includes(grant.token));assert.ok(!JSON.stringify(audit).includes('synthetic-evidence-0'),'event ids are fingerprints, not retained payloads')
  await collectionScheduleBrowser(app, connections)
+ for(const [index,c] of connections.entries()) await event(c,'synthetic-evidence-pending-'+index)
  const target = await runtime()
  try {
   await target.signin()
@@ -71,7 +109,7 @@ export async function collectionScheduleJourney(app, at = time => app.clock(time
   for (const c of connections) {
    const copy = await (await target.fetch('/api/connections/' + c.id)).json(), source = await get('/api/connections/' + c.id)
    assert.equal(copy.connection.status, 'inactive after restore'); assert.equal(copy.connection.config_json, source.connection.config_json)
-   assert.deepEqual(copy.runs, source.runs)
+   assert.deepEqual(copy.runs, source.runs); assert.deepEqual(copy.source_events,source.source_events)
   }
   await target.clock('2026-11-02T16:00:00Z'); await target.tick()
   for (const c of connections) assert.deepEqual((await (await target.fetch('/api/connections/' + c.id)).json()).runs, await history(c), 'restore never resumes provider authority')

@@ -1,3 +1,4 @@
+import { eventHistory, grantEvents } from './events'
 import { collectionReport, collectionReportPage } from './report'
 import { done, json, ownerRoutes, readInput, uuid, type Route } from '../door'
 import { apiTokens, issueApiToken, revokeApiToken } from '../api/tokens'
@@ -25,9 +26,10 @@ export function connectHandler(clock: () => Date) {
    if (input.provider === 'aws') { const created = await connectAws(c.env, c.actor, input, c.now); return done(c, '/app/connections/' + created.id + '#runs-title', created, 201) }
    const created = await connectGithub(c.env, c.actor, input, c.now); return done(c, '/app/connections/' + created.id + '#repos-title', created, 201)
   } },
-  { method: 'GET', pattern: both(`/connections/${id}`), run: async (c, m) => { const row = await requireConnection(c.env, m[1]), repos = await repositories(c.env, row.id), history = await runs(c.env, row.id); return c.isApi ? json({ connection: safe(row), repositories: repos, runs: history }) : connectionPage(row, repos, history, c.actor.name) } },
+  { method: 'GET', pattern: both(`/connections/${id}`), run: async (c, m) => { const row = await requireConnection(c.env, m[1]), repos = await repositories(c.env, row.id), history = await runs(c.env, row.id); return c.isApi ? json({ connection: safe(row), repositories: repos, runs: history, source_events:await eventHistory(c.env,row.id) }) : connectionPage(row, repos, history, c.actor.name, await apiTokens(c.env), await eventHistory(c.env,row.id)) } },
   { method: 'GET', pattern: both(`/connections/${id}/report`), run: async (c, m) => { const report = await collectionReport(c.env, m[1], c.url.searchParams.get('from') ?? '', c.url.searchParams.get('to') ?? '', c.now); return c.isApi ? json(report) : collectionReportPage(report, c.actor.name) } },
   { method: 'POST', pattern: both(`/connections/${id}/repositories`), run: async (c, m) => { await selectRepositories(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/connections/' + m[1], { saved: true }) } },
+  { method: 'POST', pattern: both(`/connections/${id}/events/permissions`), run: async (c,m)=>done(c,'/app/connections/'+m[1]+'#source-events',await grantEvents(c.env,c.actor,m[1],await readInput(c.request),c.now)) },
   { method: 'POST', pattern: both(`/connections/${id}/schedule`), run: async (c, m) => done(c, '/app/connections/' + m[1] + '#schedule-title', await saveCollectionSchedule(c.env, c.actor, m[1], await readInput(c.request), c.now), 200) },
   { method: 'POST', pattern: both(`/connections/${id}/collect`), run: async (c, m) => done(c, '/app/connections/' + m[1] + '#runs-title', await runCollection(c.env, await requireConnection(c.env, m[1]), 'manual', c.now), 201) },
   { method: 'POST', pattern: both(`/connections/${id}/rotate`), run: async (c, m) => { await rotateCredential(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/connections/' + m[1], { rotated: true }) } },
