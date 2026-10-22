@@ -1,3 +1,4 @@
+import { githubDependencies, DependencyGap, type Dependencies } from './github-dependencies'
 import type { Client } from './github'
 import { natural, record } from './github-schema'
 import { readPageStream } from './pages'
@@ -18,7 +19,7 @@ export interface ReviewFact { id:number; actor:string; state:string; commit:stri
 export interface CheckFact { name:string; state:string; conclusion:string|null; completed_at:string|null; revision:string }
 export interface ChangeFact { number:number; merged_at:string; source_revision:string; merge_revision:string; base:string; reviews:ReviewFact[]|null; checks:CheckFact[]|null; statuses:{context:string;state:string;created_at:string}[]|null }
 export interface DeploymentFact { id:number; revision:string; environment:string; production:boolean; created_at:string; statuses:{state:string;created_at:string}[]|null; change_numbers:number[] }
-export interface GithubHistory { changes:ChangeFact[]|null; deployments:DeploymentFact[]|null; gaps:string[]; note:string }
+export interface GithubHistory { changes:ChangeFact[]|null; deployments:DeploymentFact[]|null; dependencies:Dependencies|null; gaps:string[]; note:string }
 export async function readGithubHistory(client:Client,base:string,name:string):Promise<GithubHistory> {
  const root='/repos/'+name.split('/').map(encodeURIComponent).join('/'), gaps:string[]=[]
  async function list<T>(path:string,normalize:(row:unknown)=>T,property?:string):Promise<T[]> {
@@ -72,11 +73,14 @@ export async function readGithubHistory(client:Client,base:string,name:string):P
     if(!record(value)||!['error','failure','inactive','pending','success','queued','in_progress'].includes(String(value.state))||!date(value.created_at))throw new HistoryGap('schema drift: deployment status')
     return {state:String(value.state),created_at:value.created_at}
    }))
-   result.push({...row,statuses,change_numbers:(changes??[]).filter(c=>c.merge_revision===row.revision&&c.merged_at<=row.created_at).map(c=>c.number)})
+   result.push({...row,statuses,change_numbers:(changes??[]).filter(c=>c.merge_revision===row.revision&&Date.parse(c.merged_at)<=Date.parse(row.created_at)).map(c=>c.number)})
   }
   return result
  })
- const result:GithubHistory={changes,deployments,gaps,note:'Source metadata at read time; reviews retain their own commit and time. Current check results are not proof of their state before a merge. Deployment links require the exact merge revision and chronological order. Unmatched deployments and unavailable history remain unknown; empty history does not prove no changes occurred.'}
- if(new TextEncoder().encode(JSON.stringify(result)).length>50000)return {changes:null,deployments:null,gaps:['history exceeds the 50,000-byte per-repository metadata bound; history incomplete'],note:result.note}
+ const dependencies=await attempt('dependency export',async()=>{
+  try{return await githubDependencies(client,name)}catch(e){if(e instanceof DependencyGap)throw new HistoryGap(e.message);throw e}
+ })
+ const result:GithubHistory={changes,deployments,dependencies,gaps,note:'Source metadata at read time; reviews retain their own commit and time. Current check results are not proof of their state before a merge. Deployment links require the exact merge revision and chronological order. Unmatched deployments and unavailable history remain unknown; empty history does not prove no changes occurred.'}
+ if(new TextEncoder().encode(JSON.stringify(result)).length>50000)return {changes:null,deployments:null,dependencies:null,gaps:['history exceeds the 50,000-byte per-repository metadata bound; history incomplete'],note:result.note}
  return result
 }

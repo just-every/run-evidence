@@ -15,7 +15,7 @@ import { isDirectory, runDirectoryCollection } from '../identity/collect'
 import { isScopedCloud, scopedClouds } from '../cloud/clouds'
 import { runScopedCollection } from '../cloud/scoped'
 import { runKnowBe4 } from '../training/knowbe4'
-import { upsertResources, type ResourceSchema } from '../resources'
+import { upsertResources, upsertRegister, type ResourceSchema } from '../resources'
 import { runForType } from '../tests/engine'
 import { unseal } from './custody'
 import { connectorRevision, githubClient, readOrganization, readRepository, Throttled, Unauthorized } from './github'
@@ -60,6 +60,9 @@ async function collectConnection(env: Bindings, connection: Connection, trigger:
   },
  })
  const source = { kind: 'source-observed' as const, ref: 'github:' + connection.id, label: `GitHub ${connection.account} via ${connection.label}` }
+ const dependencies:{uniqueId:string;displayName:string;attributes:Record<string,unknown>}[]=[]
+ const dependencySource={kind:'source-observed' as const,ref:'github-dependencies:'+connection.id,label:`GitHub ${connection.account} dependency export via ${connection.label}`}
+ let dependencyComplete=true
  const repos: { uniqueId: string; displayName: string; attributes: Record<string, unknown> }[] = []
  let organization: { uniqueId: string; displayName: string; attributes: Record<string, unknown> } | null = null
  try {
@@ -77,9 +80,10 @@ async function collectConnection(env: Bindings, connection: Connection, trigger:
     const history=await readGithubHistory(client,connection.api_base,name)
     if(new TextEncoder().encode(JSON.stringify({...coverage.code_history,[name]:history})).length<=80000)coverage.code_history[name]=history
     else history.gaps.push('total change history exceeds 80,000 bytes; repository history not retained')
+    if(history.dependencies){for(const pkg of history.dependencies.packages)dependencies.push({uniqueId:await digest(name+':'+pkg.id),displayName:pkg.name,attributes:{repository:name,name:pkg.name,version:pkg.version,generated_at:history.dependencies.generated_at,source_revision:null,readable:true}})}else dependencyComplete=false
     coverage.gaps.push(...history.gaps.map(reason=>({asset:name,reason})))
    }
-   else { coverage.gaps.push({ asset: name, reason: read.reason }); coverage.unreadable.push({ repository: name, reason: read.reason }); repos.push({ uniqueId: name, displayName: name, attributes: { readable: false } }) }
+   else { dependencyComplete=false;coverage.gaps.push({ asset: name, reason: read.reason }); coverage.unreadable.push({ repository: name, reason: read.reason }); repos.push({ uniqueId: name, displayName: name, attributes: { readable: false } }) }
   }
  } catch (error) {
   if (error instanceof Throttled) {
@@ -88,6 +92,13 @@ async function collectConnection(env: Bindings, connection: Connection, trigger:
   if (error instanceof Unauthorized) return finish('failed', coverage, 'credential rejected by GitHub', reconnectUpdate(env, connection, 'GitHub rejected the credential (revoked or expired); reconnect with a new one.', now))
   return finish('failed', coverage, 'transport failure', env.DB.prepare('UPDATE connections SET last_attempt_at=?,last_error=? WHERE id=?').bind(at, 'GitHub could not be reached.', connection.id))
  }
+ const dependencySchema:ResourceSchema={fields:{repository:'string',name:'string',version:'string',generated_at:'string',source_revision:'string',readable:'boolean'},required:[]}
+ if(dependencyComplete)await upsertRegister(env,'github.dependency',dependencySchema,dependencies,dependencySource,now)
+ else {
+  const known=(await env.DB.prepare("SELECT unique_id,display_name FROM resources WHERE type='github.dependency' AND source_ref=? AND removed_at IS NULL").bind(dependencySource.ref).all<{unique_id:string;display_name:string}>()).results
+  for(let i=0;i<known.length;i+=200)await upsertResources(env,'github.dependency',dependencySchema,known.slice(i,i+200).map(d=>({uniqueId:d.unique_id,displayName:d.display_name,attributes:{readable:false}})),dependencySource,false,now)
+ }
+ if(dependencyComplete)await env.DB.prepare("UPDATE resources SET observed_at=? WHERE type='github.dependency' AND source_ref=? AND removed_at IS NULL").bind(resume.started_at,dependencySource.ref).run()
  // Unread repositories stay in the denominator with readable=false: their tests are unknown.
  await upsertResources(env, 'github.organization', organizationSchema, organization ? [organization] : [], source, false, now)
  const written = await upsertResources(env, 'github.repository', repositorySchema, repos, source, 'source', now)
