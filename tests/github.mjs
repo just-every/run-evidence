@@ -5,6 +5,7 @@
 process.env.RER_SERVER_JOURNEY = '1'
 import assert from 'node:assert/strict'
 import { runtime } from './helpers/runtime.mjs'
+import { githubMembersJourney } from './helpers/github-members-journey.mjs'
 import { githubHistoryJourney } from './helpers/github-history-journey.mjs'
 import { collectionJourney } from './helpers/collection-journey.mjs'
 import { githubFixture } from './helpers/github-fixture.mjs'
@@ -31,8 +32,8 @@ try {
   assert.ok(stored.secret_ciphertext && !stored.secret_ciphertext.includes('synthetic-evidence-1'))
   for (const text of [JSON.stringify(await get('/api/connections')), JSON.stringify(await get('/api/connections/' + connection.id)), JSON.stringify((await app.db.prepare('SELECT * FROM product_audit').all()).results), await (await app.fetch('/app/connections/' + connection.id)).text()]) assert.ok(!text.includes('synthetic-evidence-1') && !text.includes(stored.secret_ciphertext))
   const tests = (await get('/api/tests')).tests.filter(t => t.origin === 'catalogue')
-  assert.deepEqual(tests.map(t => t.catalogue_id).sort(), ['github.branch-protection', 'github.dependabot-critical', 'github.org-two-factor', 'github.repository-private', 'github.required-checks', 'github.required-review', 'github.secret-scanning-open'])
-  assert.ok((await get('/api/tests')).catalogue.find(e => e.id === 'github.departed-members').manualRequirement)
+  assert.deepEqual(tests.map(t => t.catalogue_id).sort(), ['github.branch-protection', 'github.departed-members', 'github.dependabot-critical', 'github.org-two-factor', 'github.repository-private', 'github.required-checks', 'github.required-review', 'github.secret-scanning-open'])
+  assert.deepEqual((await get('/api/tests')).catalogue.find(e => e.id === 'github.departed-members').criteria, [{attribute:'departed_members',op:'max',value:0}])
  })
  await scenario('CONNECT-001: The scheduler reads only selected repositories and catalogue tests fail with per-provider remediation steps', async () => {
   await owner(`/api/connections/${connection.id}/repositories`, { repositories: ['northstar/web', 'northstar/site'] }, 200)
@@ -92,6 +93,7 @@ try {
   const latest = (await get('/api/tests/' + (await testByCatalogue('github.branch-protection')).id)).latest
   assert.ok(latest.every(o => /stale/.test(o.reason)))
  })
+ await scenario('CODE-001: GitHub membership, MFA and owner-reviewed People matches preserve departed accounts, denied scope and source removal without merging people', githubMembersJourney)
  await scenario('CODE-001: GitHub merged change reviews, exact-revision checks and deployments retain source times, gaps, cursor recovery and immutable period history', githubHistoryJourney)
  await scenario('COLLECTION-001: configurable elapsed schedules retain schema and pagination gaps, recover only on fresh reads, and survive restart and restore', collectionJourney)
  await scenario('PORTABLE-001 / CONNECT-001: a custody archive carries every program record; restored tokens and connections hold no authority', async () => {

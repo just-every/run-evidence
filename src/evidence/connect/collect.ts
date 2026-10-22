@@ -1,3 +1,4 @@
+import { collectGithubMembers } from './github-members'
 import { readGithubHistory } from './github-history'
 import { withPages } from './pages'
 import { collectEvents } from './events'
@@ -23,7 +24,7 @@ import type { Connection } from './storage'
 // connector revision, timestamps and a terminal outcome. Only a successful
 // authorized read issues source-observed facts; unread items become gaps.
 const repositorySchema: ResourceSchema = { fields: { private: 'boolean', archived: 'boolean', default_branch: 'string', branch_protection: 'boolean', required_reviews: 'number', required_status_checks: 'number', enforce_admins: 'boolean', open_critical_dependabot_alerts: 'number', open_secret_scanning_alerts: 'number', readable: 'boolean' }, required: [] }
-const organizationSchema: ResourceSchema = { fields: { login: 'string', two_factor_requirement_enabled: 'boolean', readable: 'boolean' }, required: [] }
+const organizationSchema: ResourceSchema = { fields: { login: 'string', two_factor_requirement_enabled: 'boolean', departed_members: 'number', readable: 'boolean' }, required: [] }
 async function collectConnection(env: Bindings, connection: Connection, trigger: 'schedule' | 'manual', now: Date): Promise<{ run: string | null; outcome: string }> {
  if (!await capabilityAllowed(env,'collections',connection.id)) return {run:null,outcome:'inactive after restore'}
  if (connection.provider === 'private-git') throw new Refusal('Run the installed read-only collector on its private computer.', 409)
@@ -39,7 +40,7 @@ async function collectConnection(env: Bindings, connection: Connection, trigger:
  try { token = await unseal(env, connection.secret_ciphertext, connection.secret_iv, connection.id) }
  catch { return finish('failed', {}, 'credential unreadable under this installation key', reconnectUpdate(env, connection, 'Stored credential cannot be decrypted; reconnect.', now)) }
  const selected = (await env.DB.prepare('SELECT full_name FROM connection_repositories WHERE connection_id=? AND selected=1 ORDER BY full_name').bind(connection.id).all<{ full_name: string }>()).results.map(r => r.full_name)
- const coverage: { organization: string; repositories_selected: number; repositories_read: string[]; unreadable: { repository: string; reason: string }[]; gaps: { asset: string; reason: string }[]; interval_minutes: number; code_history:Record<string,unknown> } = { organization: 'unread', repositories_selected: selected.length, repositories_read: [], unreadable: [], gaps: [], interval_minutes: collectionMinutes(connection), code_history:{} }
+ const coverage: { organization: string; repositories_selected: number; repositories_read: string[]; unreadable: { repository: string; reason: string }[]; gaps: { asset: string; reason: string }[]; interval_minutes: number; code_history:Record<string,unknown>; github_members?:unknown } = { organization: 'unread', repositories_selected: selected.length, repositories_read: [], unreadable: [], gaps: [], interval_minutes: collectionMinutes(connection), code_history:{} }
  const authority = await digest(JSON.stringify([connection.secret_ciphertext,connection.secret_iv,connection.rotated_at,connection.config_json,selected,connectorRevision,started.context]))
  type Resume = { authority: string; started_at: string; streams: Record<string,AlertCursor> }
  const previous = await env.DB.prepare('SELECT coverage_json FROM collection_runs WHERE connection_id=? AND id!=? ORDER BY started_at DESC,rowid DESC LIMIT 1').bind(connection.id,started.run).first<{coverage_json:string}>()
@@ -66,6 +67,10 @@ async function collectConnection(env: Bindings, connection: Connection, trigger:
   organization = { uniqueId: connection.account, displayName: connection.account + ' (organization)', attributes: org.readable ? { ...org.attributes, readable: true } : { login: connection.account, two_factor_requirement_enabled: null, readable: false } }
   coverage.organization = org.readable ? 'read' : `unreadable (${org.status})`
   coverage.gaps.push(...(org.readable ? org.gaps : [org.reason ?? `organization unreadable: GitHub answered ${org.status}`]).map(reason => ({ asset: connection.account, reason })))
+  const members=await collectGithubMembers(env,connection,client,now)
+  coverage.github_members=members
+  coverage.gaps.push(...members.gaps.map(reason=>({asset:connection.account,reason})))
+  organization.attributes.departed_members=members.departed_members
   for (const name of selected) {
    const read = await readRepository(client, name)
    if (read.readable) { coverage.gaps.push(...read.gaps.map(reason => ({ asset: name, reason }))); repos.push({ uniqueId: name, displayName: name, attributes: { ...read.attributes, readable: true } }); coverage.repositories_read.push(name)
@@ -103,6 +108,7 @@ async function collectConnection(env: Bindings, connection: Connection, trigger:
  const result = await finish(outcome, coverage, '', env.DB.prepare("UPDATE connections SET last_attempt_at=?,last_success_at=?,next_attempt_at=NULL,backoff_seconds=0,last_error=? WHERE id=?").bind(at, at, outcome === 'partial' ? `${coverage.unreadable.length} repositories unreadable; ${coverage.gaps.length} evidence gaps` : '', connection.id))
  await runForType(env, 'github.repository', now)
  await runForType(env, 'github.organization', now)
+ await runForType(env, 'identity.account', now)
  return result
 }
 export const runCollection=(env:Bindings,connection:Connection,trigger:'schedule'|'manual',now:Date)=>withPages(env,connection,now,()=>collectConnection(env,connection,trigger,now))

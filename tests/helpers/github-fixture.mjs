@@ -18,6 +18,7 @@ const reply = (status, body, headers = {}) => new Response(JSON.stringify(body),
  if (github.throttleUntil > now) return reply(403, { message: 'API rate limit exceeded' }, { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': String(Math.floor(github.throttleUntil / 1000)) })
  if (!github.tokens.has((request.headers.get('authorization') ?? '').replace('Bearer ', ''))) return reply(401, { message: 'Bad credentials' })
  const path = url.pathname
+ if (path === '/orgs/northstar/members') return reply(200, [])
  if (path === '/orgs/northstar') return reply(200, github.org)
  if (path === '/orgs/northstar/repos') {
   const names = Object.keys(github.repos), page = Number(url.searchParams.get('page') ?? 1), slice = names.slice((page - 1) * 2, page * 2)

@@ -49,6 +49,7 @@ export function collectionDetails(raw: string, title = 'Account, gaps, timestamp
   ['Interval', escape(cov.interval_minutes === undefined ? 'Not captured' : cov.interval_minutes + ' minutes')],
   ['Cursor', escape(cov.cursor || cov.resume_pages?.cursors ? JSON.stringify(cov.cursor ?? cov.resume_pages.cursors) : 'Not captured / no resumable cursor')],
   ['Gaps', list(cov.gaps ?? [])],
+  ['GitHub membership and departure coverage', cov.github_members ? list([cov.github_members]) : 'Not captured'],
   ['Controls', context ? (context.controls as { control_id: string; name: string; revision: number }[]).map(c => `<a href="/app/controls/${escape(c.control_id)}">${escape(c.name)}</a> · revision ${escape(c.revision)}`).join('<br>') || 'No linked controls' : 'Not captured'],
   ['Tests', context ? (context.tests as { id: string; revision: number }[]).map(t => `<a href="/app/tests/${escape(t.id)}">Test revision ${escape(t.revision)}</a>`).join(' · ') || 'No enabled source tests' : 'Not captured'],
   ['Audit periods', context ? (context.audit_periods as { id: string; name: string; audit_from: string; audit_to: string; revision: number }[]).map(p => `<a href="/app/programs/${escape(p.id)}">${escape(p.name)}</a> · ${escape(p.audit_from)} to ${escape(p.audit_to)} · revision ${escape(p.revision ?? 'not captured')}`).join('<br>') || 'No programs at collection time' : 'Not captured'],
