@@ -107,7 +107,7 @@ try{
   // A refused owner write is recorded with the door it reached, never its body.
   assert.equal((await app.fetch('/api/programs',{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify({framework:'none',note:'synthetic-secret-body'})})).status,400)
   const refused=(await trail('?action=door.refused')).at(0)
-  assert.deepEqual([refused.subject,refused.outcome,refused.actor_name],['POST /api/programs','refused','Evidence owner']);assert.match(refused.detail,/^400: Choose SOC 2/);assert.doesNotMatch(JSON.stringify(refused),/synthetic-secret-body/)
+  assert.deepEqual([refused.subject,refused.outcome,refused.actor_name],['POST /api/programs','refused','Evidence owner']);assert.match(refused.detail,/^400: Choose a listed framework/);assert.doesNotMatch(JSON.stringify(refused),/synthetic-secret-body/)
   await app.clock('2026-10-11T12:05:00Z')
   assert.deepEqual(await trail('?action=import.'),imports)
   // Restore into an empty installation keeps every entry, attributable and unchanged.

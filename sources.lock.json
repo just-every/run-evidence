@@ -7016,7 +7016,7 @@
       "executable": false
     },
     "tests/import.mjs": {
-      "sha256": "61526921cef43b08e54ed61ae4a0d250b14b814cec5787640ad37bf85e32e67e",
+      "sha256": "0a3a8f423d1bb5207952bae7aab35563c1b3ef6d55d99c8e8be8f329f1d3c3ec",
       "executable": false
     },
     "tests/inventory-browser.mjs": {
