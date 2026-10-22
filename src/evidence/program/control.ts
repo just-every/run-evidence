@@ -81,5 +81,7 @@ export async function periodReport(env: Bindings, id: string, from: string, to: 
  const receipts = (await env.DB.prepare('SELECT r.id,r.origin,r.covered_from,r.covered_to,r.added_at,q.name AS requirement FROM receipts r JOIN requirements q ON q.id=r.requirement_id WHERE q.control_id=? AND r.covered_to>=? AND r.covered_from<=? ORDER BY r.covered_from').bind(id, from, to).all()).results
  const definitions = (await env.DB.prepare('SELECT * FROM control_revisions WHERE control_id=? AND effective_at<=? ORDER BY revision').bind(id,end).all()).results
  const evaluated = (await env.DB.prepare(`SELECT d.control_revision,d.snapshot_json,r.id AS run_id,r.test_id,r.revision AS test_revision,r.started_at,o.id AS observation_id,o.result,o.expected_json,o.actual_json,o.reason FROM run_control_definitions d JOIN test_runs r ON r.id=d.run_id LEFT JOIN observations o ON o.run_id=r.id WHERE d.control_id=? AND r.started_at>=? AND r.started_at<=? ORDER BY r.started_at,r.id,o.id`).bind(id,start,end).all()).results
- return { control_id: id, from, to, segments, changes, receipts, definitions, evaluated }
+ const collections = (await env.DB.prepare(`SELECT r.*,c.label AS connection_label FROM collection_runs r JOIN connections c ON c.id=r.connection_id WHERE r.started_at>=? AND r.started_at<=? AND EXISTS (SELECT 1 FROM json_each(r.coverage_json,'$.context.controls') d WHERE d.value->>'control_id'=?) ORDER BY r.started_at,r.id LIMIT 10001`).bind(start,end,id).all()).results
+ if (collections.length > 10000) throw new Refusal('More than 10,000 collection attempts; choose a narrower audit period.',409)
+ return { control_id: id, from, to, segments, changes, receipts, definitions, evaluated, collections }
 }

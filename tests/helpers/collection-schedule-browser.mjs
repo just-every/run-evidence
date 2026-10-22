@@ -42,6 +42,18 @@ export async function collectionScheduleBrowser(app, connections, { suffix = '',
     await page.waitForURL('**/app/connections/' + c.id + '#schedule-title'); await page.reload()
     assert.equal(await interval.inputValue(), '60')
     await page.screenshot({ path: join(output, `${width}-${c.provider}${suffix}-restored.png`), fullPage: true })
+    await page.getByLabel('Report from', { exact: true }).fill('2026-10-01')
+    await page.getByLabel('Report to', { exact: true }).fill('2026-11-01')
+    await page.getByRole('button', { name: 'View collection period', exact: true }).click()
+    await page.getByRole('heading', { name: 'Collection period report', exact: true }).waitFor()
+    await page.getByRole('heading', { name: 'Missing coverage', exact: true }).waitFor()
+    await page.getByRole('heading', { name: 'Collection attempts and retained revisions', exact: true }).waitFor()
+    if (await page.locator('details').count()) {
+     await page.locator('details').first().locator('summary').click()
+     assert.match(await page.locator('details').first().innerText(), /context/)
+    }
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'collection report overflow at ' + width)
+    await page.screenshot({ path: join(output, `${width}-${c.provider}${suffix}-period-report.png`), fullPage: true })
     console.log(`PASS COLLECTION-001: ${c.provider} schedule saved and reloaded at ${width}`)
    }
    await context.close()
