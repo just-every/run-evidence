@@ -18,7 +18,7 @@ export async function startRun(env: Bindings, connection: Connection, revision: 
  attachPages(async()=>{const resume_pages=await pageSnapshot();await env.DB.prepare('UPDATE collection_runs SET coverage_json=json_patch(coverage_json,?) WHERE id=? AND finished_at IS NULL').bind(JSON.stringify({resume_pages}),run).run()})
  const finish = async (outcome: RunOutcome, coverage: Record<string, unknown>, error = '', connectionUpdate?: D1PreparedStatement) => {
   await env.DB.batch([
-   env.DB.prepare('UPDATE collection_runs SET finished_at=?,outcome=?,coverage_json=?,error_code=? WHERE id=?').bind(now.toISOString(), outcome, JSON.stringify({ ...metadata, ...coverage, ...(pageContext()?{resume_pages:await pageSnapshot()}:{}), source_read_started_at: outcome === 'complete' || outcome === 'partial' ? coverage.source_read_started_at ?? sourceReadTime(now) : null, received_at: now.toISOString() }), error, run),
+   env.DB.prepare('UPDATE collection_runs SET finished_at=?,outcome=?,coverage_json=?,error_code=? WHERE id=?').bind(now.toISOString(), outcome, JSON.stringify({ ...metadata, ...coverage, ...(pageContext()?{resume_pages:await pageSnapshot()}:{}), source_read_started_at: outcome === 'complete' || outcome === 'partial' ? coverage.source_read_started_at ?? sourceReadTime(now) : null, received_at: coverage.received_at ?? now.toISOString() }), error, run),
    ...(connectionUpdate ? [connectionUpdate] : []),
    auditStatement(env, system, 'collection.' + outcome, 'connection:' + connection.id, now, outcome === 'failed' ? 'failed' : 'succeeded', error),
   ])
