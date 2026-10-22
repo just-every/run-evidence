@@ -33,6 +33,9 @@ export async function gitlabScopeJourney(){
   await at('2026-10-11T15:00:00Z');await app.tick();assert.equal((await get(path)).connection.status,'needs reconnect')
   await post(path+'/rotate',{token:'synthetic-evidence-1'},400);await post(path+'/rotate',{token:edge.token})
   assert.equal((await post(path+'/collect',{},201)).outcome,'complete')
+  edge.group.id=99;await at('2026-10-11T16:10:00Z');await app.tick();assert.equal((await get(path)).connection.status,'needs reconnect')
+  await post(path+'/rotate',{token:edge.token},409)
+  edge.group.id=1;await post(path+'/rotate',{token:edge.token})
   await post(path+'/revoke',{});assert.equal((await get(path)).connection.status,'revoked');assert.equal((await app.db.prepare('SELECT secret_ciphertext FROM connections WHERE id=?').bind(c.id).first()).secret_ciphertext,null)
   assert.ok(edge.requests.every(r=>r.method==='GET'))
  }finally{await app.close()}
