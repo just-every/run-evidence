@@ -11,7 +11,7 @@ const output=resolve(process.env.EVIDENCE_BROWSER_OUTPUT??'.cache/browser/ops')
 let browser,server,origin
 try {
  const cookie=await app.signin()
- const connect=await app.fetch('/api/connections',{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify({account:'northstar',token:'github_pat_good',label:'Northstar production repositories'})})
+ const connect=await app.fetch('/api/connections',{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify({account:'northstar',token:'synthetic-evidence-1',label:'Northstar production repositories'})})
  assert.equal(connect.status,201);await app.tick()
  app.setCookie('')
  server=createServer(async(req,res)=>{

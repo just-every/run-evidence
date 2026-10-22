@@ -2,7 +2,7 @@
 // Shapes: https://docs.github.com/en/rest/repos/repos#get-a-repository
 // https://docs.github.com/en/rest/branches/branch-protection#get-branch-protection
 export function githubFixture(apiBase = 'https://api.github.com') {
- const github = { tokens: new Set(['github_pat_good']), throttleUntil: 0, methods: [], requests: [], overrides: new Map(), hidden: new Set(), org: { login: 'northstar', two_factor_requirement_enabled: false }, repos: {
+ const github = { tokens: new Set(['synthetic-evidence-1']), throttleUntil: 0, methods: [], requests: [], overrides: new Map(), hidden: new Set(), org: { login: 'northstar', two_factor_requirement_enabled: false }, repos: {
  'northstar/web': { private: true, protection: { reviews: 1, checks: ['ci'] }, dependabot: 0, secrets: 0 },
  'northstar/site': { private: false, protection: null, dependabot: 2, secrets: 0 },
  'northstar/tools': { private: true, protection: null, dependabot: 0, secrets: 0 },

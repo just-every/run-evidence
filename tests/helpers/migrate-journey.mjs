@@ -82,7 +82,7 @@ export async function migrateVanta() {
   const csv = await app.fetch('/app/import/' + review.id + '/export.csv'); assert.equal(csv.status, 200); assert.equal((await csv.text()).trim().split('\r\n').length, 36)
   assert.deepEqual((await get(app, '/api/audit?action=import.exported')).entries.map(e => e.detail).sort(), ['csv', 'json'])
   // Reconnect an actual source: fresh observations stay source-observed and separate from the imported Vanta history.
-  const connection = await json(app, '/api/connections', { account: 'northstar', token: 'github_pat_good', label: 'GitHub production' }, 201)
+  const connection = await json(app, '/api/connections', { account: 'northstar', token: 'synthetic-evidence-1', label: 'GitHub production' }, 201)
   await json(app, `/api/connections/${connection.id}/repositories`, { repositories: ['northstar/web', 'northstar/site'] })
   await app.tick()
   const fresh = (await get(app, '/api/tests')).tests.find(t => t.catalogue_id === 'github.branch-protection'), detailTest = await get(app, '/api/tests/' + fresh.id)

@@ -15,7 +15,7 @@ export async function collectionJourney() {
  const at = async time => { github.clock = time; await app.clock(time) }
  try {
   const cookie = await app.signin(); github.clock = '2026-10-11T12:00:00Z'
-  const connection = await send('/api/connections', { account: 'northstar', token: 'github_pat_good', label: 'Production repositories', api_base: apiBase }, 201), path = '/api/connections/' + connection.id
+  const connection = await send('/api/connections', { account: 'northstar', token: 'synthetic-evidence-1', label: 'Production repositories', api_base: apiBase }, 201), path = '/api/connections/' + connection.id
   await send(path + '/repositories', { repositories: ['northstar/web'] })
   const program = await send('/api/programs', { framework: 'soc2', name: 'Source period', legal_entity: 'Northstar', report_type: 'Type II', audit_from: '2026-10-01', audit_to: '2026-10-31' }, 201)
   const mapped = (await app.db.prepare("SELECT c.* FROM controls c JOIN test_controls tc ON tc.control_id=c.id JOIN tests t ON t.id=tc.test_id WHERE t.catalogue_id='github.branch-protection' ORDER BY c.id LIMIT 1").first())
