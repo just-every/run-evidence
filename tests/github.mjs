@@ -5,6 +5,7 @@
 process.env.RER_SERVER_JOURNEY = '1'
 import assert from 'node:assert/strict'
 import { runtime } from './helpers/runtime.mjs'
+import { githubHistoryJourney } from './helpers/github-history-journey.mjs'
 import { collectionJourney } from './helpers/collection-journey.mjs'
 import { githubFixture } from './helpers/github-fixture.mjs'
 const { github, outbound: fakeGitHub } = githubFixture()
@@ -21,7 +22,7 @@ let connection
 try {
  await scenario('CONNECT-001: a GitHub credential is kept only after a real read check, encrypted, and never shown again', async () => {
   await app.signin()
-  await owner('/api/connections', { account: 'northstar', token: 'github_pat_wrong' }, 400)
+  await owner('/api/connections', { account: 'northstar', token: 'synthetic-evidence-99' }, 400)
   for (const api_base of ['https://169.254.169.254', 'https://ghe.internal', 'http://ghe.example.test/api/v3']) await owner('/api/connections', { account: 'northstar', token: 'synthetic-evidence-1', api_base }, 400)
   assert.equal((await app.db.prepare('SELECT COUNT(*) AS n FROM connections').first()).n, 0)
   connection = await owner('/api/connections', { account: 'northstar', token: 'synthetic-evidence-1', label: 'GitHub production' })
@@ -91,6 +92,7 @@ try {
   const latest = (await get('/api/tests/' + (await testByCatalogue('github.branch-protection')).id)).latest
   assert.ok(latest.every(o => /stale/.test(o.reason)))
  })
+ await scenario('CODE-001: GitHub merged change reviews, exact-revision checks and deployments retain source times, gaps, cursor recovery and immutable period history', githubHistoryJourney)
  await scenario('COLLECTION-001: configurable elapsed schedules retain schema and pagination gaps, recover only on fresh reads, and survive restart and restore', collectionJourney)
  await scenario('PORTABLE-001 / CONNECT-001: a custody archive carries every program record; restored tokens and connections hold no authority', async () => {
   const program = await owner('/api/programs', { framework: 'soc2', name: 'SOC 2', legal_entity: 'Northstar', report_type: 'Type I', audit_from: '2026-10-01', audit_to: '2026-10-01' })
