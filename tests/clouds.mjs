@@ -15,6 +15,7 @@ const SA = 'evidence-reader@ops-host.example.test', TENANT = '0e5f1c2a-2222-4333
 const gcpKey = JSON.stringify({ client_email: SA, private_key: privateKey })
 const ago = days => new Date(Date.parse('2026-10-11T12:00:00Z') - days * 86400000).toISOString()
 const g = {
+ responses: new Map(),
  projects: ['northstar-prod', 'northstar-sandbox'], denied: new Set(['northstar-sandbox:iam']), disabled: new Set(['northstar-sandbox:compute']),
  iam: { 'northstar-prod': { bindings: [{ role: 'roles/viewer', members: ['allUsers'] }, { role: 'roles/owner', members: ['user:ana@northstar.test'] }], auditConfigs: [{ service: 'allServices', auditLogConfigs: [{ logType: 'DATA_READ' }, { logType: 'DATA_WRITE' }] }] } },
  buckets: { 'northstar-prod': [{ name: 'prod-assets', prevention: 'inherited', members: ['allUsers'] }, { name: 'prod-logs', prevention: 'enforced', members: [] }], 'northstar-sandbox': [] },
@@ -41,6 +42,7 @@ async function fakeClouds(request) {
   return ok ? json({ access_token: 'gcp-access' }) : json({ error: 'invalid_grant' }, 400)
  }
  if (url.hostname.endsWith('.googleapis.com')) {
+  if (g.responses.has(url.href)) return json(g.responses.get(url.href))
   if (auth !== 'Bearer gcp-access') return json({ error: { code: 401 } }, 401)
   const project = /projects\/([a-z0-9-]+)/.exec(url.pathname)?.[1] ?? url.searchParams.get('project')
   if (url.hostname === 'cloudresourcemanager.googleapis.com' && url.pathname === '/v1/projects') return json({ projects: g.projects.map(p => ({ projectId: p, name: p.replace('northstar-', 'Northstar '), lifecycleState: 'ACTIVE' })) })
@@ -306,6 +308,39 @@ try {
   for (const run of failed) assert.deepEqual(history.find(r => r.id === run.id), run, 'later source reads retain the original gap')
   await collectionScheduleBrowser(app, [(await get(path)).connection], { suffix: '-azure-storage-sql', expected: ['Storage accounts', 'Azure SQL', 'Azure schema drift', 'Azure SQL coverage incomplete'] })
   az.responses.clear()
+ })
+ await scenario('COLLECTION-001: Google Cloud schema and continuation gaps preserve class denominators, source timestamps and original failures through recovery', async () => {
+  const path = '/api/connections/' + conn.gcp.id, project = 'northstar-prod'
+  const collect = async () => { await app.clock(new Date(Date.parse((await get(path)).runs[0].started_at) + 60000).toISOString()); await owner(path + '/collect', {}); return (await get(path)).runs[0] }
+  const checks = [
+   ['https://storage.googleapis.com/storage/v1/b?project=' + project + '&maxResults=1000', [{ items: {} }, { items: [null] }, { items: [{ name: 'prod-assets', iamConfiguration: { publicAccessPrevention: true } }] }, { items: [], nextPageToken: 3 }], 'gcp.bucket-public', 'Cloud Storage'],
+   ['https://storage.googleapis.com/storage/v1/b/prod-assets/iam', [{ bindings: [{ role: 'roles/storage.objectViewer', members: 'allUsers' }] }, { bindings: [null] }], 'gcp.bucket-public', 'Cloud Storage'],
+   ['https://cloudresourcemanager.googleapis.com/v1/projects/' + project + ':getIamPolicy', [{ bindings: {} }, { bindings: [{ role: 'roles/viewer', members: true }] }, { bindings: [], auditConfigs: [{ service: 'allServices', auditLogConfigs: [{ logType: true }] }] }], 'gcp.public-iam', 'IAM policy and audit logging'],
+   ['https://iam.googleapis.com/v1/projects/' + project + '/serviceAccounts?pageSize=100', [{ accounts: [{ name: 'projects/another-project/serviceAccounts/wrong', email: 'reader@example.test' }] }, { accounts: [{ name: null, email: 'reader@example.test' }] }], 'gcp.sa-key-age', 'Service account keys'],
+   ['https://sqladmin.googleapis.com/v1/projects/' + project + '/instances', [{ items: [{ name: 'prod-db', settings: {} }] }, { items: [{ name: 'prod-db', settings: { backupConfiguration: { enabled: 'true' }, ipConfiguration: { ipv4Enabled: true, requireSsl: true } } }] }], 'gcp.sql-ssl', 'Cloud SQL'],
+   ['https://compute.googleapis.com/compute/v1/projects/' + project + '/global/firewalls', [{ items: [{ name: 'allow-ssh', direction: 'INGRESS', network: 'default', sourceRanges: '0.0.0.0/0' }] }, { items: [{ name: 'allow-ssh', direction: 'INGRESS', network: 'default', sourceRanges: ['0.0.0.0/0'], allowed: [{ IPProtocol: 'tcp', ports: 22 }] }] }], 'gcp.firewall-admin-ports', 'Firewall rules'],
+  ]
+  const originals = []
+  for (const [url, bodies, catalogue, evidenceClass] of checks) for (const body of bodies) {
+   const before = await results(catalogue), keys = Object.keys(before).filter(k => k.includes(project))
+   assert.ok(keys.length, catalogue + ' needs a known denominator')
+   g.responses.set(url, body)
+   const run = await collect(); originals.push(run)
+   assert.equal(run.outcome, 'partial'); assert.ok(JSON.parse(run.coverage_json).gaps.some(gap => gap.class === evidenceClass && /schema drift/.test(gap.reason)))
+   const after = await results(catalogue)
+   for (const key of keys) assert.equal(after[key], 'unknown', key)
+   g.responses.delete(url)
+   await collect()
+   assert.deepEqual(await results(catalogue), before, 'only a later authorized fresh read recovers the source facts')
+  }
+  const url = 'https://storage.googleapis.com/storage/v1/b?project=' + project + '&maxResults=1000'
+  g.responses.set(url, { items: [], nextPageToken: 'repeated' }); g.responses.set(url + '&pageToken=repeated', { items: [], nextPageToken: 'repeated' })
+  const repeated = await collect(); originals.push(repeated)
+  assert.equal(repeated.outcome, 'partial'); assert.match(repeated.coverage_json, /pagination incomplete: repeated page token/)
+  g.responses.clear(); await collect()
+  const history = (await get(path)).runs
+  for (const original of originals) assert.deepEqual(history.find(r => r.id === original.id), original)
+  await collectionScheduleBrowser(app, [(await get(path)).connection], { suffix: '-gcp-schema', expected: ['Google Cloud schema drift', 'Google Cloud pagination incomplete'] })
  })
  await scenario('COLLECTION-001: hosted collector schedules through owner doors, Cron, browser and restore', () => collectionScheduleJourney(app))
  console.log(`${passed} Google Cloud and Azure public-door scenarios passed; the clouds are faked only at the network edge.`)
