@@ -1,11 +1,9 @@
-// VENDOR-001 shipped questionnaire: the Cloud Security Alliance CAIQ v4 as
-// structured by the CCM v4 domains and control ids, one question per control.
-// The wording is Evidence's own one-line form of each control title, not the
-// CSA workbook text; import the official workbook as an owner-built template
-// for its full question set. SIG Lite and SIG Core are Shared Assessments
-// licensed content and are never shipped: import your licensed copy instead.
-export interface Question { id: string; domain: string; text: string }
-export interface Template { id: string; name: string; revision: number; source: string; questions: Question[]; owner_built?: boolean }
+// Evidence's own CCM questionnaire. Licensed SIG and CAIQ text is import-only.
+export type TemplateKind = 'owner' | 'ccm' | 'sig-lite' | 'sig-core' | 'caiq-v4'
+export interface Question { id: string; domain: string; text: string; scope_rule?: string; in_scope?: boolean; template_type?: TemplateKind; edition?: string; source_row?: Record<string, string>; workbook?: WorkbookMeta }
+export interface WorkbookMeta { type: TemplateKind; edition: string; licensee: string; confirmed_by: string; confirmed_at: string; sha256: string; sheet: string; header_row: number; columns: Record<string, string>; headers: string[] }
+export interface TemplateData { questions: Question[]; workbook?: WorkbookMeta }
+export interface Template { id: string; name: string; revision: number; source: string; questions: Question[]; owner_built?: boolean; type?: TemplateKind; workbook?: WorkbookMeta; import_required?: boolean }
 const domains: [string, string, string[]][] = [
  ['A&A', 'Audit & Assurance', ['Audit and Assurance Policy and Procedures', 'Independent Assessments', 'Risk Based Planning Assessment', 'Requirements Compliance', 'Audit Management Process', 'Remediation']],
  ['AIS', 'Application & Interface Security', ['Application and Interface Security Policy and Procedures', 'Application Security Baseline Requirements', 'Application Security Metrics', 'Secure Application Design and Development', 'Automated Application Security Testing', 'Automated Secure Application Deployment', 'Application Vulnerability Remediation']],
@@ -29,8 +27,9 @@ const wording = (title: string) => /Policy and Procedures$/.test(title)
  ? `Are ${title.replace(/ Policy and Procedures$/, '').toLowerCase()} policies and procedures established, documented, approved, communicated, applied, evaluated and maintained?`
  : `Is ${title.toLowerCase()} implemented, evaluated and maintained for the service?`
 export const caiq: Template = {
- id: 'caiq-v4', name: 'CSA CAIQ v4', revision: 1,
- source: 'Cloud Security Alliance Consensus Assessments Initiative Questionnaire v4, CCM v4 domains and control ids; one Evidence-worded question per control (CSA publishes CAIQ under its own terms).',
+ id: 'ccm-v4-evidence', name: 'CCM v4 control questionnaire (Evidence wording)', revision: 1,
+ source: 'Evidence wording, organized by CCM v4 control ids and domains; not the CSA CAIQ questionnaire.', type: 'ccm',
  questions: domains.flatMap(([code, domain, titles]) => titles.map((title, i) => ({ id: `${code}-${String(i + 1).padStart(2, '0')}.1`, domain, text: wording(title) }))),
 }
-export const shipped: Template[] = [caiq]
+export const licensedTypes = [{ id: 'sig-lite', name: 'SIG Lite' }, { id: 'sig-core', name: 'SIG Core' }, { id: 'caiq-v4', name: 'CSA CAIQ v4' }] as const
+export const shipped: Template[] = [caiq, ...licensedTypes.map(t => ({ ...t, type: t.id, revision: 1, source: 'Import your licensed workbook before sending', questions: [], import_required: true }))]

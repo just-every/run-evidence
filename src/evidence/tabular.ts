@@ -20,11 +20,12 @@ export function parseCsv(text: string): Table {
 }
 const xmlText = (value: string) => value.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n))).replace(/&amp;/g, '&')
 const column = (ref: string) => [...ref.replace(/\d+$/, '')].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0) - 1
-export function parseXlsx(bytes: Uint8Array): Table {
+export function parseXlsx(bytes: Uint8Array, options: { sheet?: string; headerRow?: number; maxRows?: number } = {}): Table {
  const files = unzip(bytes), read = (path: string) => { const f = files.get(path); return f ? new TextDecoder().decode(f) : null }
  const workbook = read('xl/workbook.xml'), rels = read('xl/_rels/workbook.xml.rels')
  if (!workbook || !rels) throw new Refusal('This is not an XLSX workbook.')
- const first = /<sheet\b[^>]*\br:id="([^"]+)"/.exec(workbook)?.[1], target = first ? new RegExp(`<Relationship\\b[^>]*Id="${first}"[^>]*Target="([^"]+)"`).exec(rels)?.[1] ?? new RegExp(`<Relationship\\b[^>]*Target="([^"]+)"[^>]*Id="${first}"`).exec(rels)?.[1] : null
+ const sheets = [...workbook.matchAll(/<sheet\b([^>]*)\/?>/g)].map(m => ({ id: /\br:id="([^"]+)"/.exec(m[1])?.[1], name: xmlText(/\bname="([^"]+)"/.exec(m[1])?.[1] ?? '') }))
+ const first = (options.sheet ? sheets.find(s => s.name === options.sheet) : sheets[0])?.id, target = first ? new RegExp(`<Relationship\\b[^>]*Id="${first}"[^>]*Target="([^"]+)"`).exec(rels)?.[1] ?? new RegExp(`<Relationship\\b[^>]*Target="([^"]+)"[^>]*Id="${first}"`).exec(rels)?.[1] : null
  const sheet = target ? read(target.startsWith('/') ? target.slice(1) : 'xl/' + target.replace(/^\.\//, '')) : null
  if (!sheet) throw new Refusal('The workbook has no readable first worksheet.')
  const shared = [...(read('xl/sharedStrings.xml') ?? '').matchAll(/<si>([\s\S]*?)<\/si>/g)].map(m => xmlText([...m[1].matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/g)].map(t => t[1]).join('')))
@@ -37,15 +38,16 @@ export function parseXlsx(bytes: Uint8Array): Table {
    const text = type === 's' ? shared[Number(value)] ?? '' : type === 'inlineStr' ? xmlText(inline) : type === 'b' ? (value === '1' ? 'TRUE' : 'FALSE') : xmlText(value)
    cells[ref ? column(ref) : cells.length] = text
   }
-  records.push(Array.from(cells, c => c ?? ''))
+  const number = Number(/\br="(\d+)"/.exec(row[0])?.[1] ?? records.length + 1)
+  if (number >= (options.headerRow ?? 1)) records.push(Array.from(cells, c => c ?? ''))
  }
- return table(records.filter(r => r.some(cell => cell.trim() !== '')))
+ return table(records.filter(r => r.some(cell => cell.trim() !== '')), options.maxRows)
 }
-function table(records: string[][]): Table {
+function table(records: string[][], maxRows = MAX_ROWS): Table {
  if (!records.length) throw new Refusal('The file has no header row.')
  const headers = records[0].map(h => h.trim())
  if (headers.some(h => !h) || new Set(headers.map(h => h.toLowerCase())).size !== headers.length) throw new Refusal('Every column needs a unique header.')
- if (records.length - 1 > MAX_ROWS) throw new Refusal(`Import at most ${MAX_ROWS} rows at a time.`, 413)
+ if (records.length - 1 > maxRows) throw new Refusal(`Import at most ${maxRows} rows at a time.`, 413)
  return { headers, rows: records.slice(1).map(r => Object.fromEntries(headers.map((h, i) => [h, (r[i] ?? '').trim()]))) }
 }
 export function parseTable(filename: string, bytes: Uint8Array): Table {

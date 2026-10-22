@@ -5,6 +5,11 @@ import { people } from '../program/people'
 import { addAssertion, addOwnerDocument, addSubprocessor, documentBytes, documents, onboardVendor, profileOf, removeSubprocessor, requireVendor, reviewDocument, updateProfile, verifyAssertion, type DocumentRow } from './storage'
 import { answersOf, approvalsOf, approve, closeCondition, closeLink, closeRequest, createTemplate, decideFinding, findingsOf, issueRequests, linkEvents, linksOf, needs, recordFinding, reminderLog, requestsOf, standing, templates } from './diligence'
 import { compare, vendorPage, vendorsPage, type VendorRow } from './view'
+import { importWorkbook } from './workbook'
+async function workbookForm(request: Request) {
+ try { return await new Response(await boundedBody(request, MAX_FILE + 65536), { headers: { 'content-type': request.headers.get('content-type')! } }).formData() }
+ catch (error) { if (error instanceof Refusal) throw error; throw new Refusal('Invalid workbook upload form.') }
+}
 const id = `(${uuid})`
 const both = (path: string) => new RegExp(`^/(?:app|api)${path}$`)
 export const vendorList = async (env: Bindings) => (await env.DB.prepare('SELECT v.id,v.name,v.criticality,v.data_access,v.review_due,p.name AS owner_name,(SELECT departed_at FROM people_departures d WHERE d.person_id=v.owner_person_id) AS owner_left_at FROM vendors v LEFT JOIN people p ON p.id=v.owner_person_id ORDER BY v.name').all<Omit<VendorRow, 'risk_tier' | 'approval' | 'reassessment' | 'missing'>>()).results
@@ -32,8 +37,8 @@ export function vendorHandler(clock: () => Date) {
  const routes: Route[] = [
   { method: 'GET', pattern: both('/vendors'), run: async c => c.isApi ? json({ vendors: await register(c.env, c.now) }) : vendorsPage(await register(c.env, c.now), await people(c.env), await templates(c.env), c.actor.name) },
   { method: 'POST', pattern: both('/vendors'), run: async c => { const created = await onboardVendor(c.env, c.actor, await readInput(c.request), c.now); return done(c, back(created.id), created, 201) } },
-  { method: 'GET', pattern: both('/vendor-templates'), run: async c => json({ templates: (await templates(c.env)).map(t => ({ id: t.id, name: t.name, revision: t.revision, source: t.source, owner_built: t.owner_built, questions: t.questions })) }) },
-  { method: 'POST', pattern: both('/vendor-templates'), run: async c => done(c, '/app/vendors', await createTemplate(c.env, c.actor, await readInput(c.request), c.now), 201) },
+  { method: 'GET', pattern: both('/vendor-templates'), run: async c => json({ templates: (await templates(c.env)).map(t => ({ id: t.id, name: t.name, revision: t.revision, source: t.source, owner_built: t.owner_built, type: t.type ?? t.workbook?.type, workbook: t.workbook, import_required: t.import_required ?? false, questions: t.questions })) }) },
+  { method: 'POST', pattern: both('/vendor-templates'), run: async c => done(c, '/app/vendors', await (c.request.headers.get('content-type')?.startsWith('multipart/form-data;') ? importWorkbook(c.env, c.actor, await workbookForm(c.request), c.now) : createTemplate(c.env, c.actor, await readInput(c.request), c.now)), 201) },
   { method: 'GET', pattern: both(`/vendors/${id}`), run: async (c, m) => { const d = await detail(c.env, m[1], c.now); return c.isApi ? json({ ...d, documents: d.documents.map(x => ({ ...x, comparison: compare(x, d.documents) })), templates: d.templates.map(t => ({ id: t.id, name: t.name, questions: t.questions.length })) }) : vendorPage(d, await people(c.env), c.now, c.actor.name, null) } },
   { method: 'POST', pattern: both(`/vendors/${id}`), run: async (c, m) => done(c, back(m[1]), await updateProfile(c.env, c.actor, m[1], await readInput(c.request), c.now)) },
   { method: 'POST', pattern: both(`/vendors/${id}/subprocessors`), run: async (c, m) => done(c, back(m[1]), { id: await addSubprocessor(c.env, c.actor, m[1], await readInput(c.request), c.now) }, 201) },

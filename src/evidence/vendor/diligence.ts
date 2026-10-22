@@ -6,7 +6,8 @@ import { auditStatement, oneOf, text, type Actor, type Input } from '../door'
 import { requirePerson } from '../program/people'
 import { sendFollowup, sent } from '../followup/send'
 import { tokenDigest } from '../review/storage'
-import { shipped, type Question, type Template } from './caiq'
+import { shipped, type Question, type Template, type TemplateData } from './caiq'
+import { decodeAnswer } from './workbook'
 import { documentKinds, kindLabels, profileOf, requireVendor, type DocumentRow } from './storage'
 // VENDOR-001 diligence: requests sent through expiring supplier links, owner-built
 // templates, findings, approvals with expiring conditions and reassessment.
@@ -23,13 +24,14 @@ export async function createTemplate(env: Bindings, actor: Actor, input: Input, 
  const name = text(input, 'name', 200), questions = parseQuestions(typeof input.questions === 'string' ? input.questions : ''), id = crypto.randomUUID()
  if (shipped.some(t => t.name.toLowerCase() === name.toLowerCase())) throw new Refusal('Choose a name that differs from a shipped template.')
  const licensed = input.licensed_copy === 'yes'
- if (/\bSIG\b|shared assessments/i.test(name) && !licensed) throw new Refusal('SIG content is licensed by Shared Assessments. Confirm you hold a licence for the copy you are importing.')
+ if (!licensed) throw new Refusal('Confirm that you own this wording or hold a licence for all imported content, whatever the template name.')
  await env.DB.batch([env.DB.prepare('INSERT INTO vendor_templates(id,name,questions_json,created_by,created_at) VALUES(?,?,?,?,?)').bind(id, name, JSON.stringify(questions), actor.name, now.toISOString()), auditStatement(env, actor, 'vendor.template-created', 'vendor-template:' + id, now, 'succeeded', `${questions.length} questions${licensed ? ', owner confirmed a licensed copy' : ''}`, { revision: id })])
  return { id, questions: questions.length }
 }
+export const templateData = (raw: string): TemplateData => { const value = JSON.parse(raw); return Array.isArray(value) ? { questions: value } : value }
 export async function templates(env: Bindings): Promise<Template[]> {
  const own = (await env.DB.prepare('SELECT id,name,questions_json FROM vendor_templates ORDER BY created_at,rowid').all<{ id: string; name: string; questions_json: string }>()).results
- return [...shipped.map(t => ({ ...t, owner_built: false })), ...own.map(t => ({ id: t.id, name: t.name, revision: 1, source: 'Owner-built template', questions: JSON.parse(t.questions_json) as Question[], owner_built: true }))]
+ return [...shipped.map(t => ({ ...t, owner_built: false })), ...own.map(t => ({ id: t.id, name: t.name, revision: 1, source: 'Owner-built template', ...templateData(t.questions_json), owner_built: true }))]
 }
 export interface LinkRow { id: string; vendor_id: string; contact_email: string; expires_at: string; created_by: string; created_at: string; closed_at: string | null; emailed_at: string | null }
 const linkColumns = 'id,vendor_id,contact_email,expires_at,created_by,created_at,closed_at,emailed_at'
@@ -57,8 +59,8 @@ export async function issueRequests(env: Bindings, actor: Actor, vendorId: strin
   if (!(requestKinds as readonly string[]).includes(kind)) throw new Refusal(`Unknown request kind ${kind}.`)
   const rid = crypto.randomUUID(); ids.push(rid)
   let template: Template | undefined
-  if (kind === 'questionnaire') { template = all.find(t => t.id === (typeof input.template_id === 'string' && input.template_id ? input.template_id : 'caiq-v4')); if (!template) throw new Refusal('Choose a shipped or owner-built questionnaire template.') }
-  statements.push(env.DB.prepare('INSERT INTO vendor_requests(id,vendor_id,kind,label,template_id,template_name,questions_json,due_date,created_by,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)').bind(rid, vendorId, kind, template ? `${template.name} (revision ${template.revision})` : kindLabels[kind], template?.id ?? null, template?.name ?? null, template ? JSON.stringify(template.questions) : null, due, actor.name, at))
+  if (kind === 'questionnaire') { template = all.find(t => t.id === (typeof input.template_id === 'string' && input.template_id ? input.template_id : 'ccm-v4-evidence')); if (!template) throw new Refusal('Choose a shipped or owner-built questionnaire template.'); if (template.import_required || !template.questions.length) throw new Refusal('Import and confirm your licensed workbook before sending this template type.') }
+  statements.push(env.DB.prepare('INSERT INTO vendor_requests(id,vendor_id,kind,label,template_id,template_name,questions_json,due_date,created_by,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)').bind(rid, vendorId, kind, template ? `${template.name} (revision ${template.revision}${template.workbook ? ', ' + template.workbook.edition : ''})` : kindLabels[kind], template?.id ?? null, template?.name ?? null, template ? JSON.stringify(template.questions) : null, due, actor.name, at))
  }
  for (const rid of existing) {
   const open = await env.DB.prepare("SELECT 1 FROM vendor_requests WHERE id=? AND vendor_id=? AND closed_at IS NULL").bind(rid, vendorId).first()
@@ -94,7 +96,7 @@ export const requestsOf = async (env: Bindings, vendor: string) => (await env.DB
 export const requestState = (r: RequestRow) => r.kind === 'questionnaire' ? (r.submitted_at ? 'received' : r.closed_at ? 'closed' : 'open') : r.received_documents ? 'received' : r.closed_at ? 'closed' : 'open'
 export const linksOf = async (env: Bindings, vendor: string) => (await env.DB.prepare(`SELECT ${linkColumns},(SELECT COUNT(*) FROM vendor_link_requests q WHERE q.link_id=vendor_links.id) AS requests FROM vendor_links WHERE vendor_id=? ORDER BY created_at,rowid`).bind(vendor).all<LinkRow & { requests: number }>()).results
 export const linkEvents = async (env: Bindings, vendor: string) => (await env.DB.prepare('SELECT id,link_id,action,outcome,at FROM vendor_link_events WHERE vendor_id=? ORDER BY at DESC,rowid DESC LIMIT 50').bind(vendor).all<{ id: string; link_id: string | null; action: string; outcome: string; at: string }>()).results
-export const answersOf = async (env: Bindings, request: string) => (await env.DB.prepare('SELECT a.question_id,a.answer,a.comment,a.answered_at,a.link_id FROM vendor_answers a WHERE a.request_id=? ORDER BY a.rowid').bind(request).all<{ question_id: string; answer: string; comment: string; answered_at: string; link_id: string }>()).results
+export const answersOf = async (env: Bindings, request: string) => (await env.DB.prepare('SELECT a.question_id,a.answer,a.comment,a.answered_at,a.link_id FROM vendor_answers a WHERE a.request_id=? ORDER BY a.rowid').bind(request).all<{ question_id: string; answer: string; comment: string; answered_at: string; link_id: string }>()).results.map(a => ({ ...a, ...decodeAnswer(a.comment) }))
 // Findings
 export async function recordFinding(env: Bindings, actor: Actor, vendor: string, input: Input, now: Date) {
  await requireVendor(env, vendor)

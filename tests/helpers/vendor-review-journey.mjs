@@ -76,7 +76,7 @@ export async function vendorReviewJourney() {
   await post(`/api/vendors/${vendor.id}/documents/${unreadable.id}/reviews`,{},422)
   // Native questionnaire responses have a lossless original JSON transcript,
   // one cited source page per question, and no findings before exact approval.
-  const template=await post('/api/vendor-templates',{name:'Synthetic supplier controls',questions:'MFA: Is MFA enforced?\nENC: Is customer data encrypted?\nPHI: Is this service used for PHI?'})
+  const template=await post('/api/vendor-templates',{name:'Synthetic supplier controls',licensed_copy:'yes',questions:'MFA: Is MFA enforced?\nENC: Is customer data encrypted?\nPHI: Is this service used for PHI?'})
   const issued=await post(`/api/vendors/${vendor.id}/requests`,{kinds:['questionnaire'],template_id:template.id,expires_at:'2026-11-09'}),request=issued.request_ids[0],nativePath=`/api/vendors/${vendor.id}/requests/${request}/reviews`
   await post(nativePath,{},409)
   const submitted=await app.fetch(new URL(issued.url).pathname+`/requests/${request}/answers`,{method:'POST',headers:{cookie:'',origin:'null',accept:'application/json','content-type':'application/json'},body:JSON.stringify({answers:{MFA:{answer:'no',comment:'Röle-based MFA is planned.'},ENC:{answer:'yes',comment:'Encrypted at rest.'},PHI:{answer:'na',comment:'No clinical data in scope.'}},submit:true,respondent_name:'Sam Rivera',respondent_email:'supplier@northstar.test'})});assert.equal(submitted.status,201,await submitted.clone().text())

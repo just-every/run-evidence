@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
+import { xlsx } from './xlsx.mjs'
 import { decodeArchive } from './portable-format.mjs'
 // VENDOR-001 through the owner doors, the supplier link door and the Cron
 // Trigger. Only the mail edge is faked; D1, R2 and sessions are real.
@@ -22,16 +23,57 @@ export async function vendorJourney(app, owner, get, person, runtime) {
  assert.match(page, /\$48,000 USD/); assert.match(page, /business associate agreement[^<]*before ePHI[^<]*<em>\(not verified by Evidence\)/i)
  let detail = await get(`/api/vendors/${acme.id}`)
  assert.equal(detail.profile.risk_tier, 'high'); assert.deepEqual(detail.needs.filter(n => n.state === 'missing').map(n => n.key).sort(), ['baa', 'dpa', 'questionnaire', 'soc2'])
- // 2. Request a SOC 2 report, the BAA and the shipped CAIQ v4; the link is shown once and emailed only on request.
- const templates = (await get('/api/vendor-templates')).templates, caiq = templates.find(t => t.id === 'caiq-v4')
+ // Licensed template types retain workbook ids, domains, scope and edition, independent of the file/name.
+ const imported = []
+ const headers = ['Ref', 'Area', 'Prompt', 'Rule', 'Included', 'Reply', 'Notes', 'SSRM', 'Description']
+ const rowsFor = n => Array.from({ length: n }, (_, i) => [`A&A-01.${i + 1}`, 'Audit & Assurance', `synthetic-evidence-${i + 1}`, i === 1 ? 'Only when customer data is hosted' : '', i === 1 ? 'no' : 'yes', '', '', '', ''])
+ const workbook = async (type, edition, n, confirmation, status = 201) => {
+  const form = new FormData(); form.set('file', new File([xlsx([headers, ...rowsFor(n)])], 'ordinary.xlsx'))
+  for (const [k, v] of Object.entries({ name: 'ordinary ' + type, template_type: type, edition, licensee: 'Northstar synthetic licensee', ...(confirmation ? { licensed_copy: 'yes' } : {}), ...Object.fromEntries(['id', 'domain', 'question', 'scope', 'in_scope', 'answer', 'comment', 'ownership', 'implementation'].map((k, i) => ['column_' + k, headers[i]])) })) form.set(k, v)
+  const r = await app.fetch('/api/vendor-templates', { method: 'POST', headers: { origin: app.origin }, body: form })
+  assert.equal(r.status, status, await r.clone().text()); return r.json()
+ }
+ for (const [type, edition, n] of [['caiq-v4', '4.0.3', 3], ['sig-lite', '2026', 3], ['sig-core', '2026', 1200]]) {
+  await workbook(type, edition, n, false, 400)
+  await owner(`/api/vendors/${acme.id}/requests`, { kinds: ['questionnaire'], template_id: type, expires_at: '2026-11-09' }, 400)
+  const t = await workbook(type, edition, n, true)
+  assert.equal(t.questions, n); assert.equal(t.in_scope, n - 1); assert.equal(t.workbook.edition, edition); assert.equal(t.workbook.confirmed_by, 'Evidence owner'); assert.ok(t.workbook.confirmed_at)
+  const saved = (await get('/api/vendor-templates')).templates.find(x => x.id === t.id)
+  assert.equal(saved.questions[1].scope_rule, 'Only when customer data is hosted'); assert.equal(saved.questions[1].in_scope, false); assert.equal(saved.questions[0].domain, 'Audit & Assurance')
+  const issued = await owner(`/api/vendors/${acme.id}/requests`, { kinds: ['questionnaire'], template_id: t.id, expires_at: '2026-11-09' })
+  const path = new URL(issued.url).pathname + '/requests/' + issued.request_ids[0]
+  const response = await supplier(path)
+  assert.equal(response.headers.get('cache-control'), 'no-store'); assert.equal(response.headers.get('referrer-policy'), 'no-referrer')
+  const html = await response.text(); assert.ok(html.includes(edition)); assert.ok(!html.includes('name="answer.A&amp;A-01.2"'))
+  if (type === 'caiq-v4') {
+   assert.match(html, /SSRM control ownership/); assert.match(html, /Implementation description/)
+   await sjson(path + '/answers', { answers: { 'A&A-01.1': { answer: 'yes' } } }, 400)
+  }
+  const completed = rowsFor(n).map((row, i) => [...row.slice(0, 5), i === 1 ? '' : i === 2 ? 'not applicable' : 'yes', 'Unverified supplier statement', type === 'caiq-v4' ? 'CSP-owned' : '', type === 'caiq-v4' ? 'synthetic-evidence-implementation' : ''])
+  const receive = async (rows, ed = edition, status = 201) => {
+   const f = new FormData(); f.set('file', new File([xlsx([headers, ...rows])], 'completed.xlsx')); f.set('edition', ed); f.set('respondent_name', 'Synthetic supplier'); f.set('respondent_email', 'supplier@synthetic-evidence.test')
+   const r = await supplier(path + '/workbook', { method: 'POST', headers: { accept: 'application/json' }, body: f }); assert.equal(r.status, status, await r.clone().text())
+  }
+  await receive(completed, 'wrong edition', 400)
+  const altered = completed.map(r => [...r]); altered[0][0] = 'unknown-id'; await receive(altered, edition, 400)
+  await receive(completed)
+  const got = (await get(`/api/vendors/${acme.id}`)).answers[issued.request_ids[0]]
+  assert.equal(new Set(got.map(a => a.question_id)).size, n - 1)
+  assert.equal(got.find(a => a.question_id === 'A&A-01.3').answer, 'na')
+  if (type === 'caiq-v4') { assert.equal(got[0].ownership, 'CSP-owned'); assert.equal(got[0].implementation, 'synthetic-evidence-implementation') }
+  imported.push(t.id)
+ }
+ await owner('/api/vendor-templates', { name: 'ordinary', questions: 'Q1: synthetic-evidence-1' }, 400)
+ // 2. Request a SOC 2 report, the BAA and the shipped CCM v4 control questionnaire; the link is shown once and emailed only on request.
+ const templates = (await get('/api/vendor-templates')).templates, caiq = templates.find(t => t.id === 'ccm-v4-evidence')
  assert.ok(caiq.questions.length >= 150 && new Set(caiq.questions.map(q => q.domain)).size === 17 && /^A&A-01\.1$/.test(caiq.questions[0].id))
  await owner(`/api/vendors/${acme.id}/requests`, { kinds: ['soc2'], expires_at: '2027-03-01' }, 400)
  await owner(`/api/vendors/${acme.id}/requests`, { kinds: ['soc2'], expires_at: '2026-11-01' }, 400)
- const sent = await owner(`/api/vendors/${acme.id}/requests`, { kinds: ['soc2', 'baa', 'questionnaire', 'pentest'], template_id: 'caiq-v4', expires_at: '2026-11-09', due_date: '2026-11-06', send_email: 'yes' })
+ const sent = await owner(`/api/vendors/${acme.id}/requests`, { kinds: ['soc2', 'baa', 'questionnaire', 'pentest'], template_id: 'ccm-v4-evidence', expires_at: '2026-11-09', due_date: '2026-11-06', send_email: 'yes' })
  assert.equal(sent.emailed, true); assert.match(sent.url, /\/supplier\/[a-f0-9]{64}$/)
  assert.ok(app.messages.some(m => /Security information request/.test(m.subject) && m.to.includes('security@acme-notes.example') && (m.text ?? m.html).includes(sent.url)))
  const token = sent.url.split('/').at(-1)
- for (const table of ['vendor_links', 'vendor_requests', 'product_audit', 'followups']) assert.equal(JSON.stringify((await app.db.prepare(`SELECT * FROM ${table}`).all()).results).includes(token), false, table + ' never stores the bearer token')
+ for (const table of ['vendor_links', 'vendor_requests', 'product_audit', 'oa_auth_audit', 'vendor_link_events', 'followups']) assert.equal(JSON.stringify((await app.db.prepare(`SELECT * FROM ${table}`).all()).results).includes(token), false, table + ' never stores the bearer token')
  page = await (await app.fetch(`/app/vendors/${acme.id}`)).text(); assert.ok(!page.includes(token))
  // 3. The supplier answers per question and sends documents through the expiring link.
  let view = await (await sget(new URL(sent.url).pathname)).json()
@@ -43,6 +85,14 @@ export async function vendorJourney(app, owner, get, person, runtime) {
  await upload(sent.url, ids.baa, 'acme-baa-signed.pdf', Buffer.from('Signed BAA'), { effective_on: '2026-10-15' })
  await upload(sent.url, ids.soc2, 'empty.pdf', Buffer.alloc(0), {}, 400)
  await upload(sent.url, ids.questionnaire, 'x.pdf', Buffer.from('x'), {}, 404)
+ // A cross-site attempt is refused before any audit, event, document or answer write.
+ for (const path of [base, `${base}/requests/${ids.questionnaire}`]) {
+  const page = await supplier(path); assert.equal(page.headers.get('cache-control'), 'no-store'); assert.equal(page.headers.get('referrer-policy'), 'no-referrer')
+ }
+ const counts = async () => Promise.all(['vendor_answers', 'vendor_documents', 'vendor_link_events', 'product_audit', 'oa_auth_audit'].map(async t => [t, (await app.db.prepare(`SELECT COUNT(*) AS n FROM ${t}`).first()).n]))
+ const unchanged = await counts()
+ assert.equal((await supplier(`${base}/requests/${ids.questionnaire}/answers`, { method: 'POST', headers: { 'sec-fetch-site': 'cross-site', 'content-type': 'application/json' }, body: JSON.stringify({ answers: { 'A&A-01.1': { answer: 'yes' } } }) })).status, 404)
+ assert.deepEqual(await counts(), unchanged)
  const questionnaire = await (await sget(`${base}/requests/${ids.questionnaire}`)).json()
  assert.equal(questionnaire.questions.length, caiq.questions.length)
  const partial = Object.fromEntries(questionnaire.questions.slice(0, 40).map((q, i) => [q.id, { answer: i % 7 === 0 ? 'no' : 'yes', comment: i % 7 === 0 ? 'Planned for Q1' : '' }]))
@@ -149,6 +199,7 @@ export async function vendorJourney(app, owner, get, person, runtime) {
   assert.equal(restored.status, 200, await restored.text())
   const copy = await (await target.fetch(`/api/vendors/${acme.id}`)).json()
   for (const key of ['profile', 'documents', 'requests', 'findings', 'approvals', 'assertions', 'subprocessors', 'answers']) assert.deepEqual(copy[key], before[key], key)
+  for (const id of imported) assert.deepEqual((await (await target.fetch('/api/vendor-templates')).json()).templates.find(t => t.id === id), (await get('/api/vendor-templates')).templates.find(t => t.id === id))
   assert.equal(copy.links.length, before.links.length); assert.ok(copy.links.every(l => l.closed_at))
   assert.equal(sha(Buffer.from(await (await target.fetch(`/app/vendors/${acme.id}/documents/${soc2Row.id}/download`)).arrayBuffer())), sha(soc2v1))
   assert.equal((await target.fetch(base, { headers: { cookie: '' } })).status, 404)

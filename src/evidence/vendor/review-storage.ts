@@ -33,12 +33,12 @@ export async function prepareQuestionnaireReview(env:Bindings,vendor:string,requ
  const req=(await requestsOf(env,vendor)).find(r=>r.id===request&&r.kind==='questionnaire')
  if(!req)throw new Refusal('Questionnaire request not found.',404)
  if(!req.submitted_at)throw new Refusal('The supplier must submit the complete questionnaire before it can be reviewed.',409)
- const questions=JSON.parse(req.questions_json??'[]') as {id:string;text:string}[],latest=new Map((await answersOf(env,request)).map(a=>[a.question_id,a]))
+ const questions=(JSON.parse(req.questions_json??'[]') as {id:string;text:string;in_scope?:boolean}[]).filter(q=>q.in_scope!==false),latest=new Map((await answersOf(env,request)).map(a=>[a.question_id,a]))
  if(!questions.length||questions.some(q=>!latest.has(q.id)))throw new Refusal('The submitted questionnaire is incomplete.',409)
  const entries=questions.map(q=>({...latest.get(q.id)!,question:q.text})),source={kind:'Evidence supplier questionnaire transcript',request_id:request,submitted_at:req.submitted_at,respondent_name:req.respondent_name,entries}
  const file=new File([JSON.stringify(source,null,2)],`questionnaire-response-${request}.json`,{type:'application/json'})
  const doc=await storeDocument(env,actor,{vendor,request,kind:'other',file,origin:'owner',providedBy:'Owner snapshot of immutable supplier submission; supplier statements are unverified',link:null,effective:null,expires:null},now)
- const pages=entries.map(e=>`Question ${e.question_id}\n${e.question}\nSupplier answer: ${e.answer}\nComment: ${e.comment}\nAnswered: ${e.answered_at}`),fields:Extraction['fields']=[],unresolved:string[]=[]
+ const pages=entries.map(e=>`Question ${e.question_id}\n${e.question}\nSupplier answer: ${e.answer}\nComment: ${e.comment}\nSSRM ownership: ${e.ownership ?? 'not recorded'}\nImplementation: ${e.implementation ?? 'not recorded'}\nAnswered: ${e.answered_at}`),fields:Extraction['fields']=[],unresolved:string[]=[]
  for(const [i,e]of entries.entries()){
   if(e.answer==='no'||e.answer==='na')fields.push({id:'field-'+(fields.length+1),kind:'finding',value:e.answer==='no'?`Supplier answered no to ${e.question_id}: ${e.question}`:`Applicability requires review for ${e.question_id}: ${e.question}`,page:i+1,quote:pages[i]})
  }
