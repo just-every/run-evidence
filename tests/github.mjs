@@ -230,5 +230,5 @@ try {
  await scenario('CODE-001: GitLab owner authorization, scoped privacy and protection tests, source fixes, lost access, credential rotation and revocation',gitlabScopeJourney)
  await scenario('CODE-001: GitLab source reviews, exact-head pipelines, deployments and dependency inventory retain unknown event times, earlier failures and custody',gitlabHistoryJourney)
  await scenario('CODE-001 / COLLECTION-001: GitLab resumes the saved page after restart, refuses query-filter changes and inherits schedules, events and inactive restore',gitlabPagingJourney)
- console.log(`${passed} code connection public-door scenarios passed; GitHub is faked only at the network edge.`)
+ console.log(`${passed} code connection public-door scenarios passed; providers are faked only at the network edge.`)
 } finally { await app.close() }
