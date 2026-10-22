@@ -10,8 +10,8 @@ const current = new AsyncLocalStorage<Job>()
 const MAX_RAW = 8 * 1024 * 1024
 const encode = (bytes:Uint8Array) => { let text=''; for(let i=0;i<bytes.length;i+=8192)text+=String.fromCharCode(...bytes.subarray(i,i+8192)); return btoa(text) }
 async function packed(streams:Record<string,Stream>) {
- const raw=JSON.stringify(streams)
- if(raw.length>MAX_RAW)throw Error('Durable source cursor exceeds the 8 MiB decoded bound')
+ const raw=new TextEncoder().encode(JSON.stringify(streams))
+ if(raw.byteLength>MAX_RAW)throw Error('Durable source cursor exceeds the 8 MiB decoded bound')
  const bytes=await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer()
  return encode(new Uint8Array(bytes))
 }
