@@ -1,7 +1,8 @@
 # Fonts
 
 Four families, each self-hosted under the SIL Open Font License 1.1 with its licence beside the files.
-`fonts.css` declares them; `/rer-theme.css` imports it.
+`/rer-theme.css` declares them beside the theme tokens, the only two things rer's theme reader takes, so the
+installer serves them too. `fonts.css` holds the rest of the look, and every page that links the theme links it.
 
 | Family | Use | Files | Licence | Upstream |
 | --- | --- | --- | --- | --- |

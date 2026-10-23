@@ -26,6 +26,7 @@ export function siteDocument(title: string, description: string, body: ReactElem
       <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       <link rel="preload" href="/fonts/schibsted-grotesk/schibsted-grotesk-latin-wght-normal.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
       <link rel="preload" href="/fonts/onest/onest-latin-wght-normal.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+      {identity.fonts && <link rel="stylesheet" href={identity.fonts} />}
       <link rel="stylesheet" href={identity.theme} />
       {styles.map(href => <link key={href} rel="stylesheet" href={href} />)}
     </head>

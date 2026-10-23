@@ -1,8 +1,103 @@
-/* Schibsted Grotesk (headings and the wordmark), Onest (body), JetBrains Mono (code and the
-   terminal) and Caveat (the handwritten note on the run site's evidence board). All four are under
-   the SIL Open Font License 1.1 and self-hosted from public/fonts/; pages make no third-party request. */
-@font-face { font-family: 'Schibsted Grotesk'; font-style: normal; font-weight: 400 900; font-display: swap; src: url('/fonts/schibsted-grotesk/schibsted-grotesk-latin-wght-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-@font-face { font-family: 'Schibsted Grotesk'; font-style: normal; font-weight: 400 900; font-display: swap; src: url('/fonts/schibsted-grotesk/schibsted-grotesk-latin-ext-wght-normal.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
-@font-face { font-family: Onest; font-style: normal; font-weight: 100 900; font-display: swap; src: url('/fonts/onest/onest-latin-wght-normal.woff2') format('woff2'); }
-@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 100 800; font-display: swap; src: url('/fonts/jetbrains-mono/jetbrains-mono-latin-wght-normal.woff2') format('woff2'); }
-@font-face { font-family: Caveat; font-style: normal; font-weight: 600; font-display: swap; src: url('/fonts/caveat/caveat-latin-600-normal.woff2') format('woff2'); }
+/* Evidence's look beyond its theme. /rer-theme.css holds only what rer's theme reader takes (the --rer-* theme
+   tokens and the faces), so everything else Evidence's pages wear is here: its palette, Base's other --rer-* names
+   and the rules that dress Base's pages. The root document, /setup, the signed-out page, the app and the public
+   review pages (src/base/font-head.ts), the Lobby and Base's Run, contract and not-found pages (the edition
+   identity's fonts) and the run site's own pages (src/site/document.tsx) link this file before the theme; the
+   sign-in pages (src/auth.server.ts) and the development sign-in and hand-off pages (src/server.dev.ts) add it
+   after their own style. It declares no face (the theme does): rer's demo host inlines this path and the theme
+   into the hosted demo's gate, and no other file. */
+
+/* One palette, defined once, shared by the run site, the app and Base's frames. */
+:root {
+  color-scheme: light;
+  /* The run site's palette, sampled from the approved desk pages (16 Oct 2026). */
+  --site-paper: #f4f9fe;
+  --site-sky: #e4f0fc;
+  --site-surface: #ffffff;
+  --site-ink: #080c1a;
+  --site-body: #5c667e;
+  --site-soft: #8691a6;
+  --site-line: #e5ebf2;
+  --site-eyebrow: #2d55e6;
+  --site-link: #2563e0;
+  --site-cta: #061729;
+  --site-green: #22a862;
+  --site-green-tint: #e9f8f0;
+  --site-red: #ef3b3f;
+  --site-red-tint: #fdeced;
+  --site-amber: #f2a516;
+  --site-amber-tint: #fff4dc;
+  --site-tile: #e6f1fd;
+  --site-violet: #6d5ce8;
+  --site-violet-tint: #efedfd;
+  --site-note: #fbf4d9;
+  --site-term: #101721;
+  --site-term-bar: #1d2430;
+  --site-accent: linear-gradient(92deg, #1650f0 0%, #0aa6ea 100%);
+  /* The app's materials from the owner-picked Tests screen (17 Oct 2026): a pale
+     sky wash, frosted white panels with hairlines, thin quiet fields. */
+  --app-wash: radial-gradient(ellipse 70% 420px at 46% -120px, #e3f3ff 0, transparent 100%), linear-gradient(110deg, #ffffff, #f7fbff 75%, #ffffff);
+  --app-panel: rgba(255, 255, 255, .78);
+  --app-hairline: #e3ebf4;
+  --app-field: #d4deea;
+  --app-row: #edf2f8;
+  --app-label: #72809b;
+  --app-text: #304262;
+  --app-alert-wash: linear-gradient(100deg, #fff0f1, #fff4f5);
+  --app-cobalt-wash: linear-gradient(100deg, #eef6ff, #e8f3ff);
+  --app-shadow: 0 1px 2px rgba(16, 28, 52, .04), 0 12px 32px -18px rgba(16, 28, 52, .18);
+  /* The mark's own colours (public/brand/mark.svg). */
+  --mark-ink: #020d1c;
+  --mark-red: #fc2f24;
+  --mark-blue: #00a4fd;
+  --font-head: 'Schibsted Grotesk', Onest, Arial, sans-serif;
+  --font-body: Onest, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-hand: Caveat, 'Segoe Print', cursive;
+  /* Base's other --rer-* names, which Base reads beside the theme's tokens: the mono stack and the wordmark. */
+  --rer-font-mono: var(--font-mono);
+  --rer-wordmark-tracking: -.03em;
+}
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Base's sign-in and first-run setup keep their forms, markup and security policy;
+   they wear the app's wash, one white panel and the black pill. */
+html body:has(> main > :is(.brand, .rer-brand)) {
+  display: grid; align-content: center; justify-items: center; align-items: start; grid-template-rows: auto auto;
+  min-height: 100dvh; padding: 64px 16px;
+  background: var(--app-wash); color: var(--site-ink); font: 16px/1.5 var(--font-body);
+}
+html body > main:has(> :is(.brand, .rer-brand)) {
+  position: relative; align-self: center; width: 100%; max-width: 460px; padding: 36px 36px 32px;
+  border: 1px solid var(--app-hairline); border-radius: 16px; background: var(--site-surface); box-shadow: var(--app-shadow);
+}
+html body > main:has(> :is(.brand, .rer-brand)) :is(.brand, .rer-brand) {
+  justify-content: flex-start; gap: 10px; margin: 0 0 28px; color: var(--site-ink); font-family: var(--font-head); font-size: 24px; font-weight: 700; letter-spacing: -.03em;
+}
+html body > main:has(> :is(.brand, .rer-brand)) :is(.brand, .rer-brand)::before, html body > main > .brand img { width: 34px; height: 34px; }
+html body > main:has(> .rer-brand) > .rer-brand { padding-bottom: 24px; border-bottom: 1px solid var(--app-hairline); }
+html body > main:has(> :is(.brand, .rer-brand)) h1 { margin: 0 0 12px; font-family: var(--font-head); font-size: 32px; font-weight: 800; line-height: 1.1; letter-spacing: -.03em; text-align: left; }
+html body > main:has(> :is(.brand, .rer-brand)) p { color: var(--site-body); font-size: 15px; }
+html body > main:has(> :is(.brand, .rer-brand)) label { color: var(--site-ink); font-size: 14px; font-weight: 500; }
+html body > main:has(> :is(.brand, .rer-brand)) input:not([type=checkbox]):not([type=hidden]) { min-height: 46px; padding: 10px 14px; border: 1px solid var(--app-field); border-radius: 10px; color: var(--site-ink); background: var(--site-surface); font-size: 15px; }
+html body > main:has(> :is(.brand, .rer-brand)) input:not([type=checkbox]):not([type=hidden]):focus-visible { outline: 2px solid var(--site-link); outline-offset: 1px; border-color: var(--site-link); }
+html body > main:has(> :is(.brand, .rer-brand)) input[type=checkbox] { accent-color: var(--site-ink); }
+html body > main:has(> :is(.brand, .rer-brand)) button { min-height: 46px; border-radius: 999px; background: var(--site-ink); color: #fff; font-size: 15px; font-weight: 600; box-shadow: 0 6px 14px -8px rgba(8, 12, 26, .6); }
+html body > main:has(> :is(.brand, .rer-brand)) button:hover { background: #1b2336; }
+html body > main:has(> .rer-brand) dl { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 0; margin: 0 0 20px; border: 1px solid var(--app-hairline); border-radius: 12px; overflow: hidden; }
+html body > main:has(> .rer-brand) dt { padding: 12px 14px; color: var(--app-label); font-size: 14px; font-weight: 400; background: #f8fbfe; border-bottom: 1px solid var(--app-hairline); }
+html body > main:has(> .rer-brand) dd { margin: 0; padding: 12px 14px; color: var(--site-ink); font-size: 15px; border-bottom: 1px solid var(--app-hairline); }
+html body > main:has(> .rer-brand) :is(dt, dd):nth-last-child(-n + 2) { border-bottom: 0; }
+html body > main:has(> .rer-brand) label:has(input[type=checkbox]) { font-weight: 400; font-size: 15px; }
+html.rer-themed #rer-dev-badge { position: static; width: fit-content; max-width: calc(100% - 32px); margin: 16px auto; }
+@media (max-width: 600px) {
+  html body:has(> main > :is(.brand, .rer-brand)) { padding: 40px 16px; }
+  html body > main:has(> :is(.brand, .rer-brand)) { padding: 28px 20px 24px; }
+  html body > main:has(> :is(.brand, .rer-brand)) :is(.brand, .rer-brand) { font-size: 22px; }
+  html body > main:has(> :is(.brand, .rer-brand)) h1 { font-size: 28px; }
+}
+
+/* Base's Run and not-found pages on the run site: the homepage's heavy headline face. */
+body > header.bar + main h1 { font-weight: 800; letter-spacing: -.045em; word-spacing: .05em; }
+body > header.bar + main .step h2 { font-weight: 700; letter-spacing: -.03em; }
+body > header.bar .brand { font-weight: 600; }
