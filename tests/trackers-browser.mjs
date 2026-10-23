@@ -124,6 +124,7 @@ try {
    await history.getByRole('link',{name:'Open source'}).focus()
    assert.equal(await history.getByRole('link',{name:'Open source'}).evaluate(el=>el===document.activeElement),true)
    await capture(provider+'-comment-source')
+   await page.screenshot({path:join(output,`${width}-${provider}-comment-source-viewport.png`),fullPage:false})
    await page.goto(origin+'/app/trackers/'+dest[provider].id)
 
    if(provider==='github')await deadlineBrowser({page,app,edge,cookie,destination:dest[provider],width,capture,provider})

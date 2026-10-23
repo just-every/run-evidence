@@ -6932,7 +6932,7 @@
       "executable": false
     },
     "tests/extended-programs-browser.mjs": {
-      "sha256": "157ed1cc09da766f0fb9c1492b0be351175dbdcde90d2186b0975299cd4c0542",
+      "sha256": "2c5d7653b51564cc78d5d4521d3c9d8f8d13040be7700e27c2f458f678a2631b",
       "executable": false
     },
     "tests/failure-notices.mjs": {
@@ -7292,7 +7292,7 @@
       "executable": false
     },
     "tests/trackers-browser.mjs": {
-      "sha256": "d52e3d480e65f90d614c8e0c74dd7a309f3e1c33fa86ccbc968168b94dce94a4",
+      "sha256": "2a30e3d42f7a723f5e318edb98a891d85de256c49dcf1eb61c05cdca294a966b",
       "executable": false
     },
     "tests/trackers.mjs": {
