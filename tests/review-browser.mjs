@@ -1,3 +1,4 @@
+import './engagement-browser.mjs'
 import {decodeArchive} from './helpers/portable-format.mjs'
 // Real dev, two clean installations, independent owner/reviewer contexts.
 process.env.RER_SERVER_JOURNEY='1'

@@ -1,3 +1,6 @@
+import { engagementHandler } from './evidence/review/engagement/http'
+import { auditIdentity } from './evidence/review/engagement/storage'
+import { operatorAuth } from './auth.server'
 import {withCollectionClock} from './evidence/connect/clock'
 import { tailoringHandler } from './evidence/agent/tailoring-http'
 import { answerHandler } from './evidence/answer/http'
@@ -51,6 +54,7 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
  const agents = agentHandler(clock)
  const imports = importHandler(clock)
  const evidence = evidenceHandler(clock)
+ const engagements = engagementHandler(clock)
  const review = reviewHandler(clock)
  const supplier = supplierHandler(clock)
  const archive = archiveHandler(clock)
@@ -78,6 +82,17 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
   if (lobby) return lobby
   const auth = await authResponse(request,env,clock)
   if (auth) return auth
+  const engagementResponse = await engagements(request,env)
+  if (engagementResponse) return engagementResponse
+  // Dedicated auditors cannot inherit employee tasks or any owner product door.
+  if (/^\/(?:app|api|me)(?:\/|$)/.test(path)) {
+   const url = new URL(request.url)
+   if (url.origin !== installed.AUTH_ORIGIN || request.headers.has('host') && request.headers.get('host')?.toLowerCase() !== url.host.toLowerCase() || request.headers.get('sec-fetch-site') === 'cross-site' || request.headers.has('origin') && request.headers.get('origin') !== url.origin) return Response.json({error:'Same-origin request required.'},{status:403,headers:{'cache-control':'no-store'}})
+   try {
+    const session = await operatorAuth(installed).getSession(request)
+    if (session && session.operator.role !== 'owner' && await auditIdentity(installed,session.operator.email.toLowerCase())) return Response.json({error:'Use the authorized auditor engagement API.'},{status:403,headers:{'cache-control':'no-store'}})
+   } catch { return Response.json({error:'Product authorization unavailable.'},{status:503,headers:{'cache-control':'no-store'}}) }
+  }
   const prepared = await agents(request,env)
   if (prepared) return prepared
   const imported = await imports(request,env)

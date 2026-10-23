@@ -1,3 +1,4 @@
+import { engagementJourney } from './helpers/engagement-journey.mjs'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { runtime } from './helpers/runtime.mjs'
@@ -188,5 +189,6 @@ try {
   assert.equal((await viewer('/api/folders/events',{headers:{'sec-fetch-site':'same-origin'}})).status,401)
   assert.deepEqual(await denial(secondFolder.path+'/events'),expected404)
  })
+ await scenario('AUDIT-001 native auditor authorization, exact submissions and retained decisions',engagementJourney)
  console.log(`${passed} review public-door scenarios passed; independent cookie-free workerd requests, real D1/R2 and native owner sessions.`)
 } catch (error) { console.error('FAIL review scenario: '+active);console.error(String(error.stack||'').split('\n').filter(line=>/^\s+at /.test(line)).join('\n'));process.exitCode=1 } finally {await app.close()}
