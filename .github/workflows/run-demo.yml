@@ -30,12 +30,13 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .node-version
-      - run: corepack enable && pnpm install --frozen-lockfile
-        env:
-          COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
       - name: Scope the test host
         if: inputs.test_only
         # The domain moves under test.<domain>, and so does every setting that names the
