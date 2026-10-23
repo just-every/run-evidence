@@ -4403,7 +4403,7 @@
       "executable": false
     },
     "src/evidence/connect/manifest-read.ts": {
-      "sha256": "0eb80979bd3e2148c90a5668bd473313b14614f359736abbe6eb78fce2e87fa7",
+      "sha256": "86278344085828562a6e7ba9cdbda490be5738a623c47f00d507ac0c47c7ca90",
       "executable": false
     },
     "src/evidence/connect/manifest-schema.ts": {
@@ -7031,7 +7031,7 @@
       "executable": false
     },
     "tests/helpers/code-manifests-journey.mjs": {
-      "sha256": "7977470e9e896d7b7f807ce2210636ea7152e7b4605b76a588ee18392d20198e",
+      "sha256": "181953efbd817fc61bdee1a25f8072cc5f6cf9e8607c77997a145017a0179aee",
       "executable": false
     },
     "tests/helpers/collection-journey.mjs": {

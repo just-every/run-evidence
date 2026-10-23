@@ -33,9 +33,9 @@ export function checkManifest(bytes: Uint8Array, path: string, token: string) {
 // are never followed, and a branch is resolved once before immutable file reads.
 export async function manifestReader(c: Connection, token: string, repository: string, assertAuthority: () => Promise<void>) {
  const headers = { authorization: c.provider === 'azuredevops' ? 'Basic ' + btoa(':' + token) : 'Bearer ' + token, accept: 'application/json' }
- const request = async (path: string) => {
+ const request = async (path: string, accept = 'application/json') => {
   await assertAuthority()
-  const response = await scopedFetch(c.api_base + path, { method: 'GET', headers, redirect: 'manual' })
+  const response = await scopedFetch(c.api_base + path, { method: 'GET', headers: { ...headers, accept }, redirect: 'manual' })
   if ([401, 403].includes(response.status)) throw new ManifestGap('Source file permission denied (' + response.status + ').')
   if (response.status === 404) return null
   if (!response.ok) throw new ManifestGap('Source file read did not complete (' + response.status + ').')
@@ -90,14 +90,14 @@ export async function manifestReader(c: Connection, token: string, repository: s
     }
     source = web + pinned + '/' + enc(path)
    } else if (c.provider === 'bitbucket') {
-    const response = await request(root + '/src/' + pinned + '/' + enc(path)); if (!response) return null
+    const response = await request(root + '/src/' + pinned + '/' + enc(path), 'application/octet-stream'); if (!response) return null
     bytes = await manifestBytes(response); source = web + pinned + '/' + enc(path)
    } else {
     const query = '?path=' + enc('/' + path) + '&versionDescriptor.versionType=commit&versionDescriptor.version=' + pinned + '&api-version=7.1'
     const metadata = await request(root + '/items' + query); if (!metadata) return null
     let item: any; try { item = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(await manifestBytes(metadata, 256 * 1024))) } catch { throw new ManifestGap('Source manifest metadata is malformed or oversized.') }
     if (item.commitId !== pinned || item.path !== '/' + path || item.isFolder === true || !revision(item.objectId)) throw new ManifestGap('Source manifest commit or path does not match.')
-    const response = await request(root + '/items' + query + '&download=true'); if (!response) return null
+    const response = await request(root + '/items' + query + '&download=true', 'application/octet-stream'); if (!response) return null
     bytes = await manifestBytes(response)
     const prefix = new TextEncoder().encode('blob ' + bytes.length + '\0'), object = new Uint8Array(prefix.length + bytes.length); object.set(prefix); object.set(bytes, prefix.length)
     if (hex(await crypto.subtle.digest('SHA-1', object)) !== item.objectId) throw new ManifestGap('Source Git blob digest does not match.')

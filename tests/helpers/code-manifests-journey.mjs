@@ -46,6 +46,7 @@ export async function codeManifestsJourney() {
     return reply({id:root[2],project:{id:root[1]},defaultBranch:'refs/heads/main'})
    }
    if(branch)return provider==='github'?reply({name:'main',commit:{sha:state.head}}):provider==='gitlab'?reply({name:'main',commit:{id:state.head}}):provider==='bitbucket'?reply({name:'main',target:{hash:state.head}}):reply({value:[{name:'refs/heads/main',objectId:state.head}]})
+   assert.equal(request.headers.get('accept'),provider==='bitbucket'||(provider==='azuredevops'&&u.searchParams.has('download'))?'application/octet-stream':'application/json','source content negotiation distinguishes originals from metadata')
    if(duringRead){const action=duringRead;duringRead=null;await action()}
    const path=decodeURIComponent(provider==='azuredevops'?u.searchParams.get('path').slice(1):p.split('/').at(-1)),commit=provider==='github'||provider==='gitlab'?u.searchParams.get('ref'):provider==='bitbucket'?p.split('/src/')[1].split('/')[0]:u.searchParams.get('versionDescriptor.version')
    assert.ok(commit===hash('synthetic-evidence-revision-1','sha1')||commit===second,'all file reads use an immutable commit')
