@@ -6,7 +6,7 @@ export async function originalWebhookJourney({app,edge,provider,dest,remote,deta
  const sign=(key,value)=>createHmac('sha256',key).update(value).digest('hex')
  let body,headers
  if(provider==='vector') {
-  body=JSON.stringify({identifier:remote.id})
+  body=JSON.stringify({identifier:'FLW-'+remote.id})
   const timestamp=String(Math.floor(Date.parse(edge.state.clock)/1000)),id=randomUUID()
   headers={'webhook-id':id,'webhook-tenant':'ws-1','webhook-destination':'dst-1','webhook-event':'issue.updated','webhook-timestamp':timestamp,'webhook-signature':'v1='+sign(Buffer.from('ab'.repeat(32),'hex'),JSON.stringify(['integrations.webhook.v1','ws-1','dst-1','issue.updated',id,timestamp,body]))}
  } else if(provider==='jira') {

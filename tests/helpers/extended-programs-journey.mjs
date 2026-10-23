@@ -75,6 +75,46 @@ export async function extendedProgramsJourney({ app, post, get, upload, libraryR
  assert.equal(inScope('CA.ACCESS').state, 'included'); assert.equal(inScope('TX.DELETE').state, 'included'); assert.equal(inScope('MT.ACCESS').state, 'excluded')
  assert.match(inScope('MT.ACCESS').rationale, /50,000 consumers[^]*30,000 Montana consumers[^]*\$40,000,000/); assert.match(inScope('VA.ACCESS').rationale, /0 Virginia consumers/)
  assert.match(inScope('CA.ACCESS').section, /California Consumer Privacy Act.*effective 2020-01-01/)
+ // The owner's readiness and exported program carry the actual duty section,
+ // not only the act's opening section, including phased provision dates.
+ const citationExamples = [
+  ['CA.ACCESS', 'Cal. Civ. Code §§ 1798.110, 1798.115', '2020-01-01'],
+  ['VA.PROCESSOR', 'Va. Code § 59.1-579', '2023-01-01'],
+  ['CO.UOOS', 'C.R.S. § 6-1-1306(1)(a)(IV)', '2024-07-01'],
+  ['CT.ASSESSMENT', 'Conn. Gen. Stat. § 42-522', '2023-07-01'],
+  ['UT.ACCESS', 'Utah Code § 13-61-201', '2023-12-31'],
+  ['TX.UOOS', 'Tex. Bus. & Com. Code § 541.055(e), (f)', '2026-01-01'],
+  ['OR.PROCESSOR', 'ORS 646A.580', '2024-07-01'],
+  ['MT.UOOS', 'Mont. Code Ann. § 30-14-2809(3)', '2025-01-01'],
+  ['IA.OPTOUT-TARGETED', 'Iowa Code § 715D.4(6)', '2025-01-01'],
+  ['DE.ASSESSMENT', '6 Del. C. § 12D-108', '2025-01-01'],
+  ['NH.APPEAL', 'RSA 507-H:4, IV', '2025-01-01'],
+  ['NJ.UOOS', 'N.J.S.A. 56:8-166.11(b)', '2025-07-15'],
+  ['NE.NOTICE', 'Neb. Rev. Stat. § 87-1113', '2025-01-01'],
+  ['TN.ACCESS', 'Tenn. Code Ann. § 47-18-3304', '2025-07-01'],
+  ['MN.ASSESSMENT', 'Minn. Stat. § 325M.18', '2025-07-31'],
+  ['MD.SENSITIVE', 'Md. Code, Com. Law § 14-4607', '2025-10-01'],
+  ['IN.PROCESSOR', 'Ind. Code § 24-15-5-1', '2026-01-01'],
+  ['KY.ACCESS', 'Ky. Rev. Stat. § 367.3615', '2026-01-01'],
+  ['RI.ASSESSMENT', 'R.I. Gen. Laws § 6-48.1-7(e)', '2026-01-01'],
+ ]
+ const citationExport = await get(`/api/programs/${usdp}/export`)
+ for (const r of first.requirements) {
+  assert.match(r.section, /; .+\(effective \d{4}-\d{2}-\d{2}\)/, r.ref + ' must cite its duty section and date')
+  assert.equal(citationExport.requirements.find(x => x.ref === r.ref).section, r.section, r.ref + ' export loses citation')
+ }
+ for (const [ref, section, effective] of citationExamples) {
+  assert.ok(inScope(ref).section.includes(section), ref + ' must cite ' + section)
+  assert.ok(inScope(ref).section.includes('(effective ' + effective + ')'), ref + ' provision date')
+ }
+ assert.match(inScope('CA.CORRECT').section, /effective 2023-01-01/)
+ assert.match(inScope('CA.OPTOUT-PROFILING').section, /rulemaking authority.*phased compliance dates/)
+ assert.match(inScope('UT.SENSITIVE').section, /not a general adult opt-in consent rule/)
+ assert.match(inScope('MD.SENSITIVE').section, /sale is prohibited.*Consent alone does not replace/)
+ for (const ref of ['IA.MINIMIZE', 'RI.MINIMIZE']) {
+  assert.match(inScope(ref).section, /no general controller minimization.*broader checklist practice is retained/)
+  assert.ok(inScope(ref).controls.length > 0, ref + ' existing checklist must stay mapped')
+ }
  const ids = r => first.requirements.filter(x => x.ref.startsWith(r)).length; assert.ok(ids('CA.') > 0 && ids('MT.') > 0 && ids('RI.') > 0)
 
  // The self-attestation and the program's required records are versioned program documents.
@@ -140,7 +180,7 @@ const rights = await generate(usdp, 'usdp-rights-requests'); await post(`${docUr
   await target.signin()
   const restored = await target.fetch('/api/archive/restore', { method: 'POST', headers: { origin: target.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore', 'x-evidence-erasure-history': 'unverified acknowledged' }, body: archive }); assert.equal(restored.status, 200, await restored.clone().text())
   const there = await (await target.fetch(`/api/programs/${usdp}`)).json(), here = (await get(`/api/programs/${usdp}`))
-  assert.equal(there.program.framework, 'usdp'); assert.deepEqual(there.readiness.requirements.map(r => [r.ref, r.state, r.rationale]), here.readiness.requirements.map(r => [r.ref, r.state, r.rationale])); assert.deepEqual(there.readiness.usdp.figures, here.readiness.usdp.figures)
+  assert.equal(there.program.framework, 'usdp'); assert.deepEqual(there.readiness.requirements.map(r => [r.ref, r.state, r.rationale, r.section]), here.readiness.requirements.map(r => [r.ref, r.state, r.rationale, r.section])); assert.deepEqual(there.readiness.usdp.figures, here.readiness.usdp.figures)
   assert.equal((await (await target.fetch(docUrl(usdp, 'usdp-self-attestation'))).json()).revision.revision, await tip(usdp, 'usdp-self-attestation'))
   assert.equal((await (await target.fetch(`/api/programs/${programs['cmmc:level-2']}`)).json()).readiness.sprs.qualifiers.mfa, 'privileged-remote')
  } finally { await target.close() }

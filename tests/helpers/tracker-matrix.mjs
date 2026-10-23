@@ -20,7 +20,7 @@ export function trackerFixture() {
  const matching=(p,path,b)=>{
   if(p==='linear')return edge.find(p,String(b?.variables?.id??b?.variables?.input?.issueId))
   if(p==='monday')return edge.find(p,String(b?.variables?.item??b?.variables?.ids?.[0]))
-  return edge.find(p,path.match(/\/(\d+)(?:\/transitions|\/completion)?(?:\.json)?$/)?.[1])
+  return edge.find(p,path.match(/\/(?:FLW-)?(\d+)(?:\/transitions|\/completion)?(?:\.json)?$/)?.[1])
  }
  edge.fieldCalls=fieldCalls
  edge.fieldState=(p,i)=>({status_id:status(p,i),assignee_ids:ids(p,i).sort()})
@@ -64,7 +64,7 @@ export function trackerFixture() {
    const isRead=method==='GET'||['linear','monday'].includes(p)&&!b?.query?.includes('mutation')
    if(i&&!i.deleted&&isRead&&data) {
     const a=ids(p,i)[0],s=status(p,i)
-    if(p==='vector'&&/^\/api\/v1\/issues\/\d+$/.test(path)){data.status.id=s;if(data.assignee)data.assignee.id=a}
+    if(p==='vector'&&/^\/api\/v1\/issues\/(?:FLW-)?\d+$/.test(path)){data.status.id=s;if(data.assignee)data.assignee.id=a}
     if(p==='jira'&&/^\/rest\/api\/3\/issue\/\d+$/.test(path)){data.fields.status.id=s;if(data.fields.assignee)data.fields.assignee.accountId=a}
     if(p==='linear'&&data.data?.issue){data.data.issue.state.id=s;if(data.data.issue.assignee)data.data.issue.assignee.id=a}
     if(p==='github'&&/^\/repos\/northstar\/web\/issues\/\d+$/.test(path))data.assignees=a?[{login:a}]:[]

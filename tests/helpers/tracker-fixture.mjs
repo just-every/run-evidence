@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict'
 import { originalTrackerReply } from './original-tracker-fixture.mjs'
 export const configs = {
- vector: { base:'https://vector.example.com',project:'01K0000000000000000000TEAM',priority:'high',noCommentText:true },
+ vector: { base:'https://vector.example.com',project:'01K0000000000000000000TEAM',priority:'high' },
  jira: { base:'https://northstar.atlassian.net',project:'SEC',priority:'High',account:'dana@northstar.test' },
  linear: { base:'https://api.linear.app',project:'team-lin',priority:'2' },
  github: { base:'https://api.github.com',project:'northstar/web',priority:'priority: high',textDue:true },
@@ -21,14 +21,14 @@ const reply=(status,body)=>new Response(body===undefined?null:JSON.stringify(bod
 const columns=[{id:'tags1',title:'Tags',type:'tags',settings_str:'{}'},{id:'description1',title:'Description',type:'long_text',settings_str:'{}'},{id:'date1',title:'Due date',type:'date',settings_str:'{}'},{id:'person1',title:'Owner',type:'people',settings_str:'{}'},{id:'status1',title:'Status',type:'status',settings_str:JSON.stringify({labels:{0:'Working',1:'Done'},done_colors:[1]})},{id:'priority1',title:'Priority',type:'status',settings_str:'{}'}]
 export function trackerFixture() {
  let seq=0
- const issues=new Map(),keys=Object.fromEntries(Object.keys(configs).map(p=>[p,'test-only-'+p])),calls=[]
+ const issues=new Map(),keys=Object.fromEntries(Object.keys(configs).map((p,index)=>[p,'synthetic-evidence-'+(index+1)])),calls=[]
  const state={rejectCreate:null,clock:'2026-10-11T12:00:00Z',handshake:null,rejectRegistration:false,rejectComments:false}
  const create=(p,fields)=>{const i={id:String(++seq),provider:p,title:'',description:'',due:null,assignee:null,status:'Open',closed:false,comments:[],labels:[],...fields};issues.set(p+':'+i.id,i);return i}
- const note=(i,body)=>{const c={id:'c'+ ++seq,body,author:'Evidence owner',at:state.clock};i.comments.push(c);return c}
+ const note=(i,body)=>{const c={id:i.provider==='vector'?String(++seq).padStart(26,'0'):'c'+ ++seq,body,author:'Evidence owner',at:state.clock};i.comments.push(c);return c}
  const basecampHooks=new Map()
  state.basecampHooks=basecampHooks
  const board={id:'42',name:'Security',columns}
- const find=(p,n)=>issues.get(p+':'+n)
+ const find=(p,n)=>issues.get(p+':'+(p==='vector'?String(n).replace(/^FLW-/, ''):n))
  const date=n=>n==null?null:new Date(Number(n)).toISOString().slice(0,10)
  const strip=v=>String(v??'').replaceAll('<br>','\n').replaceAll('&lt;','<').replaceAll('&amp;','&')
  async function outbound(request) {
@@ -40,7 +40,7 @@ export function trackerFixture() {
   if(request.headers.get(p==='shortcut'?'shortcut-token':'authorization')!==expected)return p==='monday'?reply(200,{errors:[{message:'Not authenticated',extensions:{code:'NOT_AUTHENTICATED'}}]}):reply(401,{message:'Credential revoked'})
   const creating=method==='POST' && (path==='/projects/42/issues'||path==='/Security/_apis/wit/workitems/$Task'||path==='/stories'||path==='/list/42/task'||p==='monday'&&body.query.includes('create_item(')||path==='/100/buckets/200/todolists/300/todos.json'||path==='/tickets'||path==='/issues'||path==='/tasks'||p==='linear'&&body?.query.includes('issueCreate')||path==='/api/v1/issues'||path==='/rest/api/3/issue'||path==='/repos/northstar/web/issues')
   if(state.rejectCreate===p&&creating)return p==='monday'?reply(200,{errors:[{message:'Column mapping is not valid'}]}):reply(422,{message:'Field mapping is not valid'})
-  const original=originalTrackerReply({p,path,method,body,c,state,create,find,note});if(original)return original
+  const original=originalTrackerReply({p,path,method,body,c,state,create,find,note,url:u});if(original)return original
   if(p==='gitlab') {
    if(path==='/projects/42')return reply(200,{id:42,name:'Security',namespace:{full_path:'northstar'},path_with_namespace:'northstar/security'})
    if(path==='/projects/42/issues'&&method==='POST') {if(body.labels.includes('invalid-priority'))return reply(422,{message:'Invalid priority label'});assert.ok(body.title);const i=create(p,{title:body.title,description:body.description,labels:body.labels.split(','),priority:body.labels.split(',').at(-1),due:body.due_date,assignee:body.assignee_ids?.length?'Dana Lee':null});return reply(201,{iid:Number(i.id),web_url:`https://gitlab.com/northstar/security/-/issues/${i.id}`})}

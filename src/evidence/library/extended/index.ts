@@ -9,14 +9,15 @@ import { iso42001 } from './iso42001-data'
 import { sp80053 } from './nist80053-data'
 import { fedramp } from './fedramp-data'
 import { obligations, states } from './usdp-data'
+import { usdpSection } from './usdp-citations'
 // The extended and regulated programs (PROGRAM-004). They run on the same versioned program, library and readiness model as the core programs:
 // each ships requirements, a pre-mapped set of library controls (the core controls it shares plus the privacy, AI and CUI controls), and names the
 // external assessment it depends on. Licensed text is not shipped; NIST text is public.
 const uniq = <T,>(a: T[]) => [...new Set(a)]
 const req = (ref: string, title: string, section: string, extra: Partial<FrameworkRequirement> = {}): FrameworkRequirement => ({ ref, title, section, ...extra })
-const usdpRequirements: FrameworkRequirement[] = states.flatMap(s => obligations.filter(o => o.states.includes(s.code)).map(o => req(`${s.code}.${o.id}`, `${s.name} · ${o.title}`, `${s.name}: ${s.act} (effective ${s.effective})`, { optional: s.code })))
+const usdpRequirements: FrameworkRequirement[] = states.flatMap(s => obligations.filter(o => o.states.includes(s.code)).map(o => req(`${s.code}.${o.id}`, `${s.name} · ${o.title}`, usdpSection(s, o.id), { optional: s.code })))
 export const extendedFrameworks: Partial<Record<FrameworkId, Framework>> = {
- usdp: { id: 'usdp', name: 'US Data Privacy (USDP)', licence: 'Statutes are public law. Evidence names each state\'s act and effective date; counsel confirms section-level citations and which states apply.', assessor: 'Self-attested by the business; counsel confirms which state laws apply. No certification exists.', categories: states.map(s => s.code), editions: [{ id: '2026-10', label: 'USDP · state laws enacted by 22 October 2026', requirements: usdpRequirements }] },
+ usdp: { id: 'usdp', name: 'US Data Privacy (USDP)', licence: 'Statutes are public law. Evidence supplies section references and effective dates with short checklist summaries; counsel confirms applicability, exceptions and phased duties against the source law.', assessor: 'Self-attested by the business; counsel confirms which state laws apply. No certification exists.', categories: states.map(s => s.code), editions: [{ id: '2026-10', label: 'USDP · state laws enacted by 22 October 2026', requirements: usdpRequirements }] },
  iso27701: { id: 'iso27701', name: 'ISO/IEC 27701', licence: 'Reference ids with short summaries only. The standard is ISO material; buy it from ISO or your national standards body.', assessor: 'An accredited certification body decides ISO/IEC 27701 certification (with an ISO/IEC 27001 audit for the 2019 extension; standalone for the 2025 edition).', categories: ['controller', 'processor'], editions: [
   { id: '2025', label: 'ISO/IEC 27701:2025 (standalone privacy information management system)', requirements: iso27701v2025.map(([ref, title, section, role]) => req(ref, title, section, role === 'both' ? {} : { optional: role })) },
   // The 2019 extension maps through its 2025 successors, so an edition change is a reviewable mapping change like ISO/IEC 27001:2013.

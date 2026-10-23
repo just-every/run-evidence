@@ -22,6 +22,7 @@ const tick=async()=>assert.equal((await app.tick()).outcome,'ok','Cron must comp
 const v1=async(token,method,path,body)=>{const r=await app.fetch(path,{method,headers:{cookie:'',authorization:'Bearer '+token,'content-type':'application/json'},body:JSON.stringify(body)});const text=await r.text();assert.ok([200,201].includes(r.status),text);return JSON.parse(text)}
 const hook=(id,body,headers={})=>app.fetch('/hooks/trackers/'+id,{method:'POST',headers:{cookie:'','content-type':'application/json',...headers},body})
 const sign=(secret,body)=>createHmac('sha256',secret).update(body).digest('hex')
+const commentObligations=[]
 let passed=0
 const scenario=async(name,fn)=>{await fn();passed++;console.log('PASS WORK-001: '+name)}
 try {
@@ -78,7 +79,11 @@ try {
    if(provider==='github')remote.description+='\n\nTracker context that must survive date updates.'
    await owner(`/api/remediation/${ob.id}/comments`,{body:'Fixing the source.'})
    assert.ok(remote.comments.some(c=>/Evidence owner in Evidence: Fixing the source/.test(c.body)))
-   remote.comments.push({id:'remote-note',author:'Dana Lee',body:'Source fix in progress.',at:edge.state.clock})
+   const sourceTime='2026-10-10T10:13:00Z', sourceId=provider==='vector'?'00000000000000000000000001':'remote-note'
+   remote.comments.push({id:sourceId,author:'Dana Lee',body:'Source fix in progress.',at:sourceTime})
+   const longId=provider==='vector'?'00000000000000000000000002':'remote-long-note', longBody='Owner-only source comment. '.repeat(100)+'End of source comment.'
+   remote.comments.push({id:longId,author:'Lena Ortiz',body:longBody,at:sourceTime})
+   if(provider==='vector')edge.state.vectorPageSize=1
    if(provider==='freshservice')remote.comments.push({id:'requester-note',author:'Requester',body:'Requester question.',at:edge.state.clock})
    remote.assignee='Lena Ortiz';remote.status=provider==='monday'?'Working':'In Progress'
    if(provider==='azure-boards')remote.dueInstant='2026-12-02T01:00:00+02:00' // UTC calendar day is still December 1.
@@ -107,7 +112,44 @@ try {
     remote.due='2026-12-01';await owner('/api/tickets/'+ticket.id+'/sync',{},200)
     assert.equal((await detail()).tickets.find(t=>t.id===ticket.id).sync_state,'linked')
    }
-   assert.equal(view.events.filter(e=>e.kind==='tracker comment'&&(c.noCommentText?/Commented in Vector/.test(e.body):e.body==='Source fix in progress.')).length,1)
+   const sourceEvents=view.events.filter(e=>e.kind==='tracker comment'&&e.body==='Source fix in progress.')
+   assert.equal(sourceEvents.length,1)
+   assert.deepEqual(sourceEvents[0].tracker_comment,{id:sourceId,author:'Dana Lee',created_at:new Date(sourceTime).toISOString(),url:row.remote_url,truncated:false,received_characters:'Source fix in progress.'.length})
+   assert.match(sourceEvents[0].actor_name,/Dana Lee in /)
+   assert.notEqual(sourceEvents[0].at,sourceTime,'source time and read time remain distinct')
+   const longEvent=view.events.find(e=>e.tracker_comment?.id===longId)
+   assert.equal(longEvent.body,longBody.slice(0,2000));assert.equal(longEvent.tracker_comment.truncated,true)
+   assert.equal(longEvent.tracker_comment.received_characters,longBody.length);assert.equal(longEvent.tracker_comment.url,row.remote_url)
+   commentObligations.push(ob.id)
+   for(const path of ['/api/remediation/'+ob.id,'/app/remediation/'+ob.id]) {
+    assert.equal((await app.fetch(path,{headers:{cookie:''}})).status,401,'tracker comments remain private')
+    assert.equal((await app.fetch(path,{headers:{cookie:'',authorization:'Bearer '+push.token}})).status,403,'source-read token grants no owner-history access')
+   }
+   if(provider==='vector') {
+    const calls=native.calls.filter(c=>c.url.pathname==='/api/v1/comments'&&c.url.searchParams.get('issue')===row.remote_key)
+    assert.ok(calls.some(c=>c.url.searchParams.has('cursor')),'all comment pages must be read')
+    assert.ok(calls.every(c=>c.url.searchParams.get('limit')==='100'))
+    const pendingId='00000000000000000000000003'
+    remote.comments.push({id:pendingId,author:'Dana Lee',body:'Admit only after the complete read.',at:sourceTime})
+    for(const [flag,error] of [['vectorMalformedComment',/incomplete|malformed/],['vectorForeignComment',/foreign/],['vectorUnsafeLink',/foreign/],['vectorCursorLoop',/duplicate|pagination/]]) {
+     edge.state[flag]=true;await owner('/api/tickets/'+ticket.id+'/sync',{},200)
+     const failed=await detail();assert.equal(failed.tickets.find(t=>t.id===ticket.id).sync_state,'sync failed')
+     assert.match(failed.tickets.find(t=>t.id===ticket.id).sync_error,error)
+     assert.ok(!failed.events.some(e=>e.tracker_comment?.id===pendingId),'partial/foreign pages cannot publish a comment')
+     edge.state[flag]=false
+    }
+    edge.state.vectorCommentsDenied=true;await owner('/api/tickets/'+ticket.id+'/sync',{},200)
+    assert.equal((await detail()).tickets.find(t=>t.id===ticket.id).sync_state,'authorization lost')
+    assert.ok(!(await detail()).events.some(e=>e.tracker_comment?.id===pendingId))
+    edge.state.vectorCommentsDenied=false;await owner('/api/trackers/'+dest.id+'/rotate',{token:edge.keys.vector},200)
+    await Promise.all([owner('/api/tickets/'+ticket.id+'/sync',{},200),owner('/api/tickets/'+ticket.id+'/sync',{},200)])
+    const admitted=(await detail()).events.filter(e=>e.tracker_comment?.id===pendingId)
+    assert.equal(admitted.length,1,'competing reads commit one comment and one source attribution')
+    assert.equal(admitted[0].body,'Admit only after the complete read.')
+    assert.ok(!JSON.stringify(await detail()).includes('synthetic-evidence-unrequested-field'),'unrequested source fields never enter owner history')
+    await at(edge.state.clock);assert.deepEqual((await detail()).events.filter(e=>e.tracker_comment?.id===pendingId),admitted)
+    delete edge.state.vectorPageSize
+   }
    if(provider==='freshservice')assert.ok(view.events.some(e=>e.kind==='tracker comment'&&e.body==='Requester question.'&&e.actor_name.includes('Freshservice user 99')))
    assert.equal(view.events.filter(e=>e.kind==='tracker comment'&&/Fixing the source/.test(e.body)).length,0)
    const events=async()=> (await detail()).events
@@ -252,6 +294,10 @@ try {
    const r=await target.fetch('/api/archive/restore',{method:'POST',headers:{origin:target.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:bytes})
    assert.equal(r.status,200,await r.clone().text())
    for(const table of ['tickets','ticket_events','ticket_comments','tracker_deliveries','ticket_groups'])assert.deepEqual((await target.db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all()).results,(await app.db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all()).results,table)
+   for(const id of commentObligations) {
+    const restored=await target.fetch('/api/remediation/'+id);assert.equal(restored.status,200)
+    assert.deepEqual((await restored.json()).events.filter(e=>e.tracker_comment),(await get('/api/remediation/'+id)).events.filter(e=>e.tracker_comment),'comment source custody through the owner door')
+   }
    const destinations=(await target.db.prepare('SELECT provider,status,secret_ciphertext,hook_ciphertext FROM tracker_destinations').all()).results
    for(const d of destinations){assert.equal(d.status,'inactive after restore');assert.equal(d.secret_ciphertext,null);assert.equal(d.hook_ciphertext,null)}
    const azure=(await target.db.prepare("SELECT mapping_json FROM tracker_destinations WHERE provider='azure-boards'").first()).mapping_json

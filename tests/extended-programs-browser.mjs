@@ -39,7 +39,10 @@ try {
   const context = await browser.newContext({ viewport: { width, height: 1000 } }), errors = []
   await context.addCookies(cookie.split('; ').map(pair => { const i = pair.indexOf('='); return { name: pair.slice(0, i), value: pair.slice(i + 1), url: origin } }))
   const page = await context.newPage(); page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error') errors.push(m.text()) })
-  const capture = async name => { assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), name + ' overflows at ' + width); await page.screenshot({ path: join(output, `${width}-${name}.png`), fullPage: true }) }
+  const capture = async name => {
+   const iconOnly = await page.locator('a, button, summary, [role=button]').evaluateAll(nodes => nodes.filter(el => el.getClientRects().length && !el.innerText.trim() && el.querySelector('svg, img')).map(el => el.outerHTML))
+   assert.deepEqual(iconOnly, [], name + ': all controls have visible words; an icon-only addition needs hover/focus tooltips')
+   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), name + ' overflows at ' + width); await page.screenshot({ path: join(output, `${width}-${name}.png`), fullPage: true }) }
   const { usdp, cmmc, pims } = programs[width]
   await page.goto(origin + '/app/programs'); await page.getByLabel('Framework and edition').selectOption('usdp|2026-10'); await page.getByRole('heading', { name: 'Start a program' }).waitFor(); await capture('start-program')
   await page.goto(`${origin}/app/programs/${usdp.id}`)
@@ -52,6 +55,11 @@ try {
   await page.locator('form[action$="/state-changes"] input[name="reason"]').fill('Counsel confirmed Montana applies'); await page.getByRole('button', { name: 'Accept: add obligations' }).click()
   await page.getByRole('heading', { name: 'State applicability' }).waitFor(); assert.equal(await page.getByRole('button', { name: 'Accept: add obligations' }).count(), 0)
   await page.goto(`${origin}/app/programs/${usdp.id}?show=included#requirements`); assert.match(await page.locator('#requirements').innerText(), /MT\.ACCESS/); await capture('usdp-accepted')
+  const accessRow = ref => page.getByRole('row').filter({ has: page.getByRole('cell', { name: ref, exact: true }) })
+  assert.match(await accessRow('CA.ACCESS').innerText(), /Cal\. Civ\. Code §§ 1798\.110, 1798\.115.*effective 2020-01-01/s)
+  assert.match(await accessRow('MT.UOOS').innerText(), /30-14-2809\(3\).*effective 2025-01-01/s)
+  assert.match(await accessRow('TX.UOOS').innerText(), /541\.055\(e\), \(f\).*effective 2026-01-01/s)
+  await capture('usdp-duty-citations')
   await page.goto(`${origin}/app/programs/${cmmc.id}`); await page.getByRole('heading', { name: 'SPRS score worksheet' }).waitFor()
   assert.match(await page.locator('#sprs-title').locator('..').innerText(), /Computed score -203 of 110/); await capture('cmmc-sprs')
   await page.goto(`${origin}/app/programs/${pims.id}`); await page.getByRole('heading', { name: 'Controller and processor controls' }).waitFor(); await page.getByRole('heading', { name: 'Evidence reused from your other programs' }).waitFor(); await capture('pims-roles-reuse')

@@ -4,6 +4,7 @@ import { auditStatement, type Actor } from '../door'
 import { obligations, requireObligation, type QueueRow } from '../remedy/storage'
 import { catalogueEntry } from '../tests/catalogue'
 import { testControls, type Severity } from '../tests/storage'
+import { commentStatements } from './comment-source'
 import { TrackerFailure, type Remote, type TicketRef } from './client'
 import { adapters, reference, requireDestination, requireTicket, secretOf, type DestinationRow, type TicketRow } from './storage'
 // WORK-001 synchronization. Every inbound change is read back from the tracker
@@ -110,7 +111,9 @@ export async function syncTicket(env: Bindings, ticket: TicketRow, trigger: stri
   }
  }
  const mirrored = new Set((await env.DB.prepare('SELECT remote_comment_id FROM ticket_comments WHERE ticket_id=?').bind(ticket.id).all<{ remote_comment_id: string }>()).results.map(c => c.remote_comment_id))
- for (const c of remote.comments.filter(c => !mirrored.has(c.id))) statements.push(env.DB.prepare("INSERT INTO ticket_comments(ticket_id,remote_comment_id,direction,at) VALUES(?,?,'in',?) ON CONFLICT DO NOTHING").bind(ticket.id, c.id, at), obligationEvent(env, ticket.obligation_id, 'tracker comment', { id: 'tracker', name: `${c.author} in ${adapter.name}` }, at, adapter.commentText ? c.body : `Commented in ${name} at ${c.at} (${adapter.name}'s API does not expose comment text)`))
+ try {
+ for (const c of remote.comments.filter(c => !mirrored.has(c.id))) statements.push(...commentStatements(env, ticket, c, adapter.name, trigger, at))
+ } catch (error) { if (error instanceof TrackerFailure) return failure(env, ticket, destination, error, trigger, at); throw error }
  statements.push(env.DB.prepare('UPDATE tickets SET sync_state=?,sync_error=?,remote_status=?,remote_closed=?,remote_assignee=?,remote_due=?,synced_due=?,last_synced_at=?,last_attempt_at=? WHERE id=?').bind(state, '', remote.status, remote.closed ? 1 : 0, remote.assignee, remote.due, syncedDue, at, at, ticket.id),
   env.DB.prepare('UPDATE tracker_destinations SET last_success_at=?,last_error=? WHERE id=?').bind(at, '', destination.id))
  await env.DB.batch(statements)

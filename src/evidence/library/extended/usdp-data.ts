@@ -1,5 +1,5 @@
 // US Data Privacy (USDP): the comprehensive state privacy laws enacted as of 22 October 2026, their effective dates and applicability thresholds, and the
-// consolidated obligations they share. Citations name each state's act; counsel confirms section-level citations and which states apply.
+// consolidated obligations they share. usdp-citations.ts supplies obligation-level sections and effective dates; counsel confirms which states apply.
 export interface Figures { annual_revenue_usd: number; small_business: boolean; sale_revenue_percent: number; sensitive_data: boolean; consumers: Record<string, number> }
 export interface StateLaw { code: string; name: string; act: string; effective: string; threshold: string; applies: (f: Figures, consumers: number) => boolean }
 const n = (v: number) => v.toLocaleString('en-US')

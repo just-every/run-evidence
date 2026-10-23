@@ -1,3 +1,4 @@
+import { commentSources, type TrackerCommentSource } from '../work/comment-source'
 import type { Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
 import { auditStatement, type Actor } from '../door'
@@ -111,7 +112,12 @@ export async function obligations(env: Bindings, now: Date) {
  const exceptions = await allExceptions(env)
  return rows.map(o => ({ ...o, sla: slaStatus(o, exceptions, now) }))
 }
-export const obligationEvents = async (env: Bindings, id: string) => (await env.DB.prepare('SELECT kind,actor_name,body,observation_id,at FROM obligation_events WHERE obligation_id=? ORDER BY at,rowid').bind(id).all<{ kind: string; actor_name: string; body: string; observation_id: string | null; at: string }>()).results
+export interface ObligationEvent { kind: string; actor_name: string; body: string; observation_id: string | null; at: string; tracker_comment?: TrackerCommentSource }
+export async function obligationEvents(env: Bindings, id: string): Promise<ObligationEvent[]> {
+ const rows = (await env.DB.prepare('SELECT id,kind,actor_name,body,observation_id,at FROM obligation_events WHERE obligation_id=? ORDER BY at,rowid').bind(id).all<ObligationEvent & { id: string }>()).results
+ const sources = await commentSources(env, id)
+ return rows.map(({ id, ...event }) => ({ ...event, ...(sources.has(id) ? { tracker_comment: sources.get(id)! } : {}) }))
+}
 // Automatic re-tests: queued by closed work, run within one scheduler tick.
 export async function runRetests(env: Bindings, now: Date, run: (testId: string, resourceIds: string[]) => Promise<{ run: string }>) {
  const { results } = await env.DB.prepare('SELECT q.id,o.test_id,o.resource_id FROM retests q JOIN obligations o ON o.id=q.obligation_id WHERE q.done_at IS NULL ORDER BY q.queued_at,q.rowid').all<{ id: string; test_id: string; resource_id: string }>()

@@ -102,7 +102,7 @@ registration can be retried after one hour. See the official
 
 ## Acceptance boundaries
 
-WORK-001 remains partial. `tests/trackers.mjs` names the clause for all thirteen
+WORK-001 is done for the current built doors under the ct 19 October official-schema-fake acceptance ruling. `tests/trackers.mjs` names the clause for all thirteen
 providers, including native field requests, deadlines/conflicts, failure recovery,
 source re-tests and credential-free restore. New authenticated webhook journeys
 cover Azure Boards, monday, Freshservice and YouTrack. Mapped Evidence-origin tracker assignee/status writes now use the live human owner
@@ -112,9 +112,29 @@ UTC time in Sync history; a fresh read and explicit new decision are required.
 Unknown identities refuse writes. A read-before-write check cannot lock concurrent
 provider edits after the read. Unconfirmed writes remain uncertain.
 Separate Evidence owner/state edits do not satisfy those writes.
-Remaining: the Vector API-003 comment-read receiver contract and inbound comment
-text with author/time/stable-ID/link/truncation/privacy proof; the current API
-returns activity metadata only.
+Vector now reads comment bodies through the published [API-003 Comment schema](https://github.com/just-every/run-vector/blob/main/schema/api-v1.json)
+and [cursor protocol](https://github.com/just-every/run-vector/blob/main/docs/API.md).
+Its token needs `comments:read` in addition to `issues:read`, `issues:write`,
+`comments:write` and `metadata:read`. Reconnect or rotate a token without that
+scope; refused reads stay visible and retain the earlier history.
+
+Every tracker comment retains its first observed text, source display author,
+stable ID, original time normalized to UTC separately from the receipt time,
+and a source link. Where the provider does not expose a comment permalink, the
+link opens its ticket. History shows the first 2,000 UTF-16 code units and labels
+truncation; open the source for the rest. This is a retained observation, so later
+source edits do not rewrite it. Source HTML is shown as inert text. The existing
+owner-only session gates apply to the page and API; source API tokens do not
+admit this private history. Missing source times or links stay explicitly
+unavailable. Source metadata travels in the existing custody archive records.
+
+Vector pages with the linked issue filter and an unchanged limit, admits only
+matching issue comments and safe source URLs, and refuses malformed, denied,
+incomplete or looping pages without publishing a partial comment list. A read
+beyond 201 pages fails visibly. Competing syncs commit one history event and one
+source-attribution record per comment. The same matrix asserts these cases and
+all thirteen trackers' source attribution, truncation, privacy and restore.
+`tests/trackers-browser.mjs` shows those histories at 1440 and 390.
 Basecamp registration, callback replay/boundaries, hourly deactivation, polling
 backstop and secret-free restore are covered by WORK-001 journeys. Each tracker has the live Gap
 **not yet run against a live account**; no provider verification is claimed.

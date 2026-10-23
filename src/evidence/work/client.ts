@@ -9,7 +9,7 @@ export class TrackerFailure extends Error { constructor(public kind: FailureKind
 export interface Mapping { issue_type: string; due_field: string; labels: string[]; priorities: Record<Severity, string>; assignees: Record<string, string>; statuses?: Record<string, string> }
 export interface DestinationRef { provider: Provider; api_base: string; account: string; project: string; mapping: Mapping }
 export interface Draft { title: string; description: string; priority: string; due: string | null; labels: string[]; assignee: string | null }
-export interface RemoteComment { id: string; author: string; body: string; at: string }
+export interface RemoteComment { id: string; author: string; body: string; at: string; url?: string; truncated?: boolean }
 // Native identities are separate from display labels. Null means the provider did
 // not supply an identity; [] means explicitly unassigned. Never guess a write's
 // conflict baseline from a display name (multiple people can share one).

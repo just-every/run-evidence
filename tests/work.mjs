@@ -1,3 +1,4 @@
+import { vectorCommentPage } from './helpers/original-tracker-fixture.mjs'
 // Remediation tickets in Vector, Jira Cloud, Linear, GitHub Issues and Asana
 // through the owner's doors, signed tracker webhooks and the Cron Trigger. The
 // trackers are the only fakes: network-edge stand-ins answering each tracker's
@@ -7,7 +8,7 @@ import assert from 'node:assert/strict'
 import { createHmac } from 'node:crypto'
 import { runtime } from './helpers/runtime.mjs'
 const VECTOR = 'https://vector.example.com', JIRA = 'https://northstar.atlassian.net', TEAM = '01K0000000000000000000TEAM'
-const tracker = { clock: '2026-10-11T12:00:00Z', tokens: { vector: 'vec_token', jira: 'jira_token', linear: 'lin_key', github: 'ghp_issues', asana: 'asana_pat' }, issues: new Map(), calls: [] }
+const tracker = { clock: '2026-10-11T12:00:00Z', tokens: { vector: 'synthetic-evidence-1', jira: 'synthetic-evidence-2', linear: 'synthetic-evidence-3', github: 'synthetic-evidence-4', asana: 'synthetic-evidence-5' }, issues: new Map(), calls: [] }
 const reply = (status, body) => new Response(body === undefined ? null : JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
 let sequence = 0
 const issue = (provider, fields) => { const n = ++sequence, item = { provider, n, status: 'open', closed: false, assignee: null, due: null, comments: [], version: 1, ...fields }; tracker.issues.set(provider + ':' + item.id, item); return item }
@@ -18,10 +19,11 @@ async function fakeTrackers(request) {
  if (url.origin === VECTOR) {
   if (auth !== 'Bearer ' + tracker.tokens.vector) return reply(401, { error: 'invalid_token' })
   if (url.pathname === '/api/v1/metadata') return reply(200, { workspace: { name: 'Northstar' }, teams: [{ id: TEAM, name: 'Platform' }], labels:[{id:'01K00000000000000000LABEL1',name:'evidence'},{id:'01K00000000000000000LABEL2',name:'compliance'}] })
+  if (url.pathname === '/api/v1/comments') return vectorCommentPage(url,VECTOR,find('vector',url.searchParams.get('issue')),tracker)
   if (url.pathname === '/api/v1/issues' && request.method === 'POST') { const id = 'FLW-' + (sequence + 1), i = issue('vector', { id, title: body.title, description: body.description, priority: body.priority, due: body.dueDate, status: 'Backlog (backlog)' }); return reply(201, { id: 'ulid' + i.n, identifier: id, version: 1 }) }
   const m = /^\/api\/v1\/issues\/(FLW-\d+)(\/comments)?$/.exec(url.pathname), i = m && find('vector', m[1])
   if (!i || i.deleted) return reply(404, { error: 'issue_not_found' })
-  if (m[2]) { const id = 'cmt' + (++sequence); i.comments.push({ id, author: 'Evidence API', body: body.body, at: tracker.clock }); return reply(201, { id }) }
+  if (m[2]) { const id = String(++sequence).padStart(26,'0'); i.comments.push({ id, author: 'Evidence API', body: body.body, at: tracker.clock }); return reply(201, { id }) }
   if (request.method === 'PATCH') { if (body.expectedVersion !== i.version) return reply(409, { error: 'stale_version' }); i.due = body.dueDate; i.version++; return reply(200, {}) }
   const [name, category] = /^(.*) \((\w+)\)$/.exec(i.status).slice(1)
   return reply(200, { identifier: i.id, version: i.version, status: { name, category }, assignee: i.assignee ? { name: i.assignee } : null, dueDate: i.due, activity: i.comments.map((c, k) => ({ id: 'act' + k, kind: 'comment.created', at: c.at, actor: c.author, nextValue: { id: c.id } })) })
