@@ -1,8 +1,10 @@
+import { validateManifestArchive } from '../connect/manifest-archive'
 import { sha,fail } from './format'
 import { pages,staged,type Store } from './registry'
 import { validateExtraction } from '../vendor/review-model'
 import { choiceValues } from '../answer/format'
 export async function validateFeatureRecords(env:Store,id:string) {
+ await validateManifestArchive(env,id)
  const t=(name:string)=>staged(id,name)
  for(const table of ['privacy_requests','vendor_document_reviews','questionnaire_drafts','tailoring_proposals'])for await(const rows of pages(env,table,t(table)))for(const r of rows){
   if(typeof r.snapshot_json!=='string'||await sha(new TextEncoder().encode(r.snapshot_json))!==r.snapshot_hash)fail('Retained review fingerprint does not match.')

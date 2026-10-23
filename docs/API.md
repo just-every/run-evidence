@@ -74,3 +74,9 @@ Follow `next_cursor` until it is `null`.
 
 Breaking changes ship as `/v2`. A deprecated version keeps working for at least
 12 months after its successor ships.
+
+## Owner-only original source files
+
+The separate authenticated owner API for revision-bound dependency originals is
+documented in [CODE-MANIFESTS.md](CODE-MANIFESTS.md). Its grants and private downloads
+are unavailable to v1 API tokens. CODE-001 remains partial for the documented gaps.

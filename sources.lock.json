@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "4f85241c442444e0d051e195ac7d2ccfc526837d85d23fb0a8d19472981dbddf",
+  "manifest": "f80dedee960a15b3e1269fdfa27c32fc57596c746d7583485723fc81b0dda7a2",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2362,6 +2362,7 @@
           "docs/AGENT-COMMANDS.md",
           "docs/API.md",
           "docs/BACKUP-RESTORE.md",
+          "docs/CODE-MANIFESTS.md",
           "docs/DRATA-IMPORT.md",
           "docs/GETTING-STARTED.md",
           "docs/MAIN-FLOWS.md",
@@ -2433,6 +2434,7 @@
           "migrations/core/0056_tailoring.sql",
           "migrations/core/0057_questionnaire_labels.sql",
           "migrations/core/0058_extended_programs.sql",
+          "migrations/core/0059_code_manifests.sql",
           "package.json",
           "pnpm-lock.yaml",
           "public/apple-touch-icon.png",
@@ -2635,6 +2637,10 @@
           "src/evidence/connect/gitlab.ts",
           "src/evidence/connect/http.ts",
           "src/evidence/connect/interval.ts",
+          "src/evidence/connect/manifest-archive.ts",
+          "src/evidence/connect/manifest-read.ts",
+          "src/evidence/connect/manifest-schema.ts",
+          "src/evidence/connect/manifests.ts",
           "src/evidence/connect/pages.ts",
           "src/evidence/connect/report.ts",
           "src/evidence/connect/run-context.ts",
@@ -2951,6 +2957,7 @@
           "tests/helpers/basecamp-webhook-journey.mjs",
           "tests/helpers/bitbucket-fixture.mjs",
           "tests/helpers/bitbucket-journey.mjs",
+          "tests/helpers/code-manifests-journey.mjs",
           "tests/helpers/collection-journey.mjs",
           "tests/helpers/collection-schedule-browser.mjs",
           "tests/helpers/collection-schedule-journey.mjs",
@@ -3060,7 +3067,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "8cc8ba70f3c7af018584d7ba10614992cfab17ef5046f028a43eb9e59450b295",
+      "sha256": "98159d79993585638191f2bbabca7c8a32575031fab90c875800a4611f45622a",
       "executable": false
     },
     "AGENTS.md": {
@@ -3076,7 +3083,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "f055d051efaa5df882d81418d29b1522b1083b9a3edf586e30db11f786d84c18",
+      "sha256": "d7369df5d61e3fec1dc75a2da2d56a7ed22e2ab685c8e74db48937c9fde51f03",
       "executable": false
     },
     "DEMO.md": {
@@ -3100,11 +3107,15 @@
       "executable": false
     },
     "docs/API.md": {
-      "sha256": "bb7e3a00f9f2c9f0ae55c230fde592f8b8d6509b91439da74a63306d20876045",
+      "sha256": "e4b3e7b22a462c73bf826cde98932e20cb3ec7976ae743442b40264dbdeac089",
       "executable": false
     },
     "docs/BACKUP-RESTORE.md": {
       "sha256": "77fc92f4b6094919a0c5bc3ba31b85194e772260c78fd4e98ed6762125433544",
+      "executable": false
+    },
+    "docs/CODE-MANIFESTS.md": {
+      "sha256": "77430a3dca9c16e61c28344791790793dc61d36c0f88994edce9ad68a60d93da",
       "executable": false
     },
     "docs/DRATA-IMPORT.md": {
@@ -3156,7 +3167,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "4f85241c442444e0d051e195ac7d2ccfc526837d85d23fb0a8d19472981dbddf",
+      "sha256": "f80dedee960a15b3e1269fdfa27c32fc57596c746d7583485723fc81b0dda7a2",
       "executable": false
     },
     "LICENSE": {
@@ -3397,6 +3408,10 @@
     },
     "migrations/core/0058_extended_programs.sql": {
       "sha256": "d3762cb93b8d1e45d8ef0855b253b0357439d43217c003b6d656c492ad88d9a9",
+      "executable": false
+    },
+    "migrations/core/0059_code_manifests.sql": {
+      "sha256": "4c7bdca1fe9efabbb29f33fa98d9df6dc78beb7a629d1b2f40d5594cb517cc51",
       "executable": false
     },
     "ONBOARDING.md": {
@@ -4108,11 +4123,11 @@
       "executable": false
     },
     "src/evidence/archive/feature-records.ts": {
-      "sha256": "7d951d24259f75bc87ce67b502e7e71e64a7f1ba1c9a0d60353ec095fbeb9d7a",
+      "sha256": "a1ef4c812258f9c78be2a9f202d4ddafb5ba002e5c5850606fedaa3d6b5cd20f",
       "executable": false
     },
     "src/evidence/archive/files.ts": {
-      "sha256": "7211016d8789582c8dedff725f6c428b42c66804fa78232e6537fb7b01d16b49",
+      "sha256": "b995e7f54f0912bff8ea3941cac36ae58a096d37b51dc9dbd39c27751d1122fb",
       "executable": false
     },
     "src/evidence/archive/format.ts": {
@@ -4152,7 +4167,7 @@
       "executable": false
     },
     "src/evidence/archive/portable-restore.ts": {
-      "sha256": "8fbba886fceff698d3e1fc997aae63612b86bb03a34874319ef648ff7be48ebe",
+      "sha256": "db3edd06258cf55326927d9a67d889e7f707c46b52f122de6f7daf86b1fcfa00",
       "executable": false
     },
     "src/evidence/archive/program.ts": {
@@ -4160,7 +4175,7 @@
       "executable": false
     },
     "src/evidence/archive/registry.ts": {
-      "sha256": "c6bf7511bcce732ae6cf17ed83bb1d982483b700a8182d0153babeebae7c3c89",
+      "sha256": "c7efe83c5b48dbee65d1f73fc0fc4f2b11257742f5e27d0055d1c94517371b13",
       "executable": false
     },
     "src/evidence/archive/relationships.ts": {
@@ -4172,7 +4187,7 @@
       "executable": false
     },
     "src/evidence/archive/schema.json": {
-      "sha256": "0ba3d626d7d5b180cd9d4b7869ba2b4c8b32beb2797a956ba8827d9acc77a18a",
+      "sha256": "d75dcbcacf375a05513f8f4582317fcb09ed6547096580fb25829969938b86b4",
       "executable": false
     },
     "src/evidence/archive/service.ts": {
@@ -4376,11 +4391,27 @@
       "executable": false
     },
     "src/evidence/connect/http.ts": {
-      "sha256": "a5b5a0247d23f776924315052bcc7317cecf6ce78b2c2f2272a56b234fffb775",
+      "sha256": "605325a2c700a837e3f18ec9ce347c85a68d72774ad786bd1a1590106dd8030e",
       "executable": false
     },
     "src/evidence/connect/interval.ts": {
       "sha256": "5421a418c7d2a50fe332068edece5ecbcad6cb524a6cc84e389d07f31544d061",
+      "executable": false
+    },
+    "src/evidence/connect/manifest-archive.ts": {
+      "sha256": "32c81a345bf4ff3874dfff84f18e1f439d3d7646265b168a10cce9f5fe8381e0",
+      "executable": false
+    },
+    "src/evidence/connect/manifest-read.ts": {
+      "sha256": "0eb80979bd3e2148c90a5668bd473313b14614f359736abbe6eb78fce2e87fa7",
+      "executable": false
+    },
+    "src/evidence/connect/manifest-schema.ts": {
+      "sha256": "c4acdc9cb597279c345bfca72deaf9c7f913433f3af9bd2cfd956c61d533118c",
+      "executable": false
+    },
+    "src/evidence/connect/manifests.ts": {
+      "sha256": "9e5df52f0812fcac191ac34029761a8c77b4af0b4f65d970c1e9e0add3816f3c",
       "executable": false
     },
     "src/evidence/connect/pages.ts": {
@@ -6999,6 +7030,10 @@
       "sha256": "b075e997ea8e591c2869d1cd80e833b2821261e9ff97b3c01ceadb351c231f6b",
       "executable": false
     },
+    "tests/helpers/code-manifests-journey.mjs": {
+      "sha256": "7977470e9e896d7b7f807ce2210636ea7152e7b4605b76a588ee18392d20198e",
+      "executable": false
+    },
     "tests/helpers/collection-journey.mjs": {
       "sha256": "4b8088f22553f40107a76b2819882ec5b4910ff311aac12b6c80e86e2e2870d1",
       "executable": false
@@ -7044,7 +7079,7 @@
       "executable": false
     },
     "tests/helpers/github-dependencies-journey.mjs": {
-      "sha256": "3232891d185d313cbd6629552fb71a135f2956d3fb3023d67bcdd70c68cb4183",
+      "sha256": "c2943782956d67a70a4748439117bccc9cae2bd284ce3753713e14aedd647261",
       "executable": false
     },
     "tests/helpers/github-findings-journey.mjs": {
@@ -7128,7 +7163,7 @@
       "executable": false
     },
     "tests/helpers/portable-format.mjs": {
-      "sha256": "e99482185e032710a851fce1eda0074a4382337207604ab12370a3b6fac4a246",
+      "sha256": "be7e4099f3ccff3753a52e222c390f1f77bac32475d4cc27d2294433720a710f",
       "executable": false
     },
     "tests/helpers/portable-journey.mjs": {

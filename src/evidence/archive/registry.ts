@@ -1,3 +1,4 @@
+import { codeManifestColumns } from '../connect/manifest-schema'
 import { tailoringColumns } from '../agent/tailoring-archive'
 import { answerColumns } from '../answer/archive'
 import { privacyColumns } from '../erase/archive'
@@ -13,7 +14,7 @@ import type { Bindings } from '../../auth.server'
 export type Store = Pick<Bindings,'DB'|'EXHIBITS'> & {ARCHIVE_COPY?:(source:string,key:string,size:number,session:string)=>Promise<boolean>}
 type Definition = {columns:{name:string;type:string;pk:number}[];foreignKeys:{id:number;seq:number;table:string;from:string;to:string}[];sql:string}
 export const schema = schemaData as Record<string,Definition>
-export const registry:Record<string,readonly string[]> = {...columns,...agentColumns,...importTableColumns,...programColumns,...libraryColumns,period_investigations:['id','control_id','period_from','period_to','snapshot_json','snapshot_hash','created_by','created_name','created_at'],period_investigation_decisions:['investigation_id','action','snapshot_hash','reason','actor_id','actor_name','decided_at'],...vendorColumns,...documentColumns,...privacyColumns,...vendorReviewColumns,...answerColumns,...tailoringColumns,tests:[...programColumns.tests,'remediation'],product_audit:[...programColumns.product_audit,'reason','revision'],operation_steps:['id','step','scheduled_at','lease_until','finished_at','outcome','processed_count','detail']}
+export const registry:Record<string,readonly string[]> = {...columns,...agentColumns,...importTableColumns,...programColumns,...libraryColumns,period_investigations:['id','control_id','period_from','period_to','snapshot_json','snapshot_hash','created_by','created_name','created_at'],period_investigation_decisions:['investigation_id','action','snapshot_hash','reason','actor_id','actor_name','decided_at'],...vendorColumns,...documentColumns,...privacyColumns,...vendorReviewColumns,...answerColumns,...tailoringColumns,...codeManifestColumns,tests:[...programColumns.tests,'remediation'],product_audit:[...programColumns.product_audit,'reason','revision'],operation_steps:['id','step','scheduled_at','lease_until','finished_at','outcome','processed_count','detail']}
 // LOG-001: v10 archives written before audit reasons and revisions list
 // product_audit without them; their entries restore with both empty.
 export const auditColumnsBefore:readonly string[] = programColumns.product_audit

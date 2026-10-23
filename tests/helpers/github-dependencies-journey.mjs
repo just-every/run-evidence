@@ -1,3 +1,4 @@
+import { codeManifestsJourney } from './code-manifests-journey.mjs'
 import assert from 'node:assert/strict'
 import {runtime} from './runtime.mjs'
 import {githubFixture} from './github-fixture.mjs'
@@ -38,4 +39,5 @@ export async function githubDependenciesJourney(){
   for(const table of ['resources','resource_versions'])assert.deepEqual((await target.db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all()).results,(await app.db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all()).results)
   await collectionScheduleBrowser(app,[(await get(path)).connection],{suffix:'-dependencies',reportExpected:['openai','GitHub-generated SPDX'],extraScreens:[{path:'/app/inventory',heading:'Inventory',key:'inventory',text:['openai','react']}]})
  }finally{await app.close();await target.close()}
+ await codeManifestsJourney()
 }
