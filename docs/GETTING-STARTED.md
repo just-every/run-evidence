@@ -4,17 +4,17 @@ Evidence keeps audit evidence for one business. You write the controls, add proo
 
 ## Run Evidence on your computer
 
-Install Git. These commands work on macOS, Linux or Windows with WSL2.
+These commands work on macOS, Linux or Windows with WSL2.
 
-One line installs the shared Run Edit Run command, gets Evidence and starts it:
+One line installs the shared Run Edit Run command, clones Evidence into `run-evidence` and starts it:
 
 ```sh
-npx -y @runeditrun/rer dev just-every/run-evidence
+curl -fsSL https://runeditrun.com/install.sh | sh -s -- dev just-every/run-evidence
 ```
 
-Without Node, `curl -fsSL https://runeditrun.com/install.sh | sh -s -- dev just-every/run-evidence` brings its own and does the same.
+Git is required; rer brings Node and pnpm. Already have Node 22 or later? `npx -y @runeditrun/rer dev just-every/run-evidence` does the same. If the installer prints a line that puts `rer` on your PATH, run that line too.
 
-To start it again later, run `cd run-evidence && rer dev`.
+To start it again later, run the same line from the same folder, or `cd run-evidence && rer dev`.
 
 `rer dev` installs the pinned dependencies, selects the required Node version, applies local migrations, prepares a local owner and starts the app. Open the private `RER_OPEN` link it prints on this computer. Keep this link private: it signs you in as the local owner.
 
