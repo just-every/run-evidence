@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "8a3f2f8730f2905f8b819e1daf25fba082f30278b87e0fb902b4d0420a7202f8",
+  "manifest": "64dd70508e146f31626c4ace293c505d409d9959020757d1ae8c2ae04baffc30",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
-    "sha256": "c52b4ddbfad26af8c28cdcad563e101f44d5a455a4f8133ca7235408c752a844"
+    "sha256": "e251ecb6d2b0545ff2e0c5fd3fd5b46c99a95b137586b0b6f0711fa04854a2b4"
   },
   "components": [
     {
@@ -19,11 +19,41 @@
           "LICENSE",
           "RUN-LOCALLY.md",
           "SEED-COMMAND-CONTRACT.md",
+          "scripts/delivery/base/artifact.mjs",
+          "scripts/delivery/base/bindings.mjs",
+          "scripts/delivery/base/capabilities.mjs",
+          "scripts/delivery/base/cli.mjs",
+          "scripts/delivery/base/declarations.mjs",
+          "scripts/delivery/base/export.mjs",
+          "scripts/delivery/base/generators/integration.mjs",
+          "scripts/delivery/base/generators/managed.mjs",
+          "scripts/delivery/base/generators/project.mjs",
+          "scripts/delivery/base/generators/validation.mjs",
+          "scripts/delivery/base/mail.mjs",
+          "scripts/delivery/base/migrations.mjs",
+          "scripts/delivery/base/native-export.mjs",
+          "scripts/delivery/base/package.mjs",
+          "scripts/delivery/base/paths.mjs",
+          "scripts/delivery/base/payloads.mjs",
+          "scripts/delivery/base/schema/SETUP.schema.json",
+          "scripts/delivery/base/schema/business-field-inputs.mjs",
+          "scripts/delivery/base/schema/dependencies.mjs",
+          "scripts/delivery/base/schema/json-schema.mjs",
+          "scripts/delivery/base/schema/setup-validation.mjs",
+          "scripts/delivery/base/setup-manifest.mjs",
+          "scripts/delivery/base/sign-in.mjs",
+          "scripts/delivery/base/spec.mjs",
+          "scripts/delivery/base/sql-statements.mjs",
           "scripts/edition-authoring/README.md",
+          "scripts/edition-authoring/adopt.mjs",
+          "scripts/edition-authoring/base-acknowledgements.mjs",
           "scripts/edition-authoring/base-copies.mjs",
           "scripts/edition-authoring/cli.mjs",
+          "scripts/edition-authoring/copy-checkout.mjs",
           "scripts/edition-authoring/files.mjs",
+          "scripts/edition-authoring/lock.mjs",
           "scripts/edition-authoring/manifest.mjs",
+          "scripts/edition-authoring/offline-git.mjs",
           "scripts/edition-authoring/parent-comparison.mjs",
           "scripts/edition-authoring/projection-lock.mjs",
           "scripts/edition-authoring/release.mjs",
@@ -61,6 +91,7 @@
           "src/evidence/import/base/LICENSE",
           "src/evidence/import/base/d1/README.md",
           "src/evidence/import/base/d1/apply.ts",
+          "src/evidence/import/base/d1/atomic-prefix.ts",
           "src/evidence/import/base/d1/budget.ts",
           "src/evidence/import/base/d1/compressed-plan.ts",
           "src/evidence/import/base/d1/creation.ts",
@@ -128,6 +159,7 @@
           "src/evidence/import/base/d1/preparation-steps-schema.ts",
           "src/evidence/import/base/d1/preparation-steps.ts",
           "src/evidence/import/base/d1/preparations.ts",
+          "src/evidence/import/base/d1/preserved-preview.ts",
           "src/evidence/import/base/d1/preserved-reverse.ts",
           "src/evidence/import/base/d1/provenance-set.ts",
           "src/evidence/import/base/d1/publication-fence.ts",
@@ -146,11 +178,16 @@
           "src/evidence/import/base/d1/retirement-steps.ts",
           "src/evidence/import/base/d1/retirement-tally.ts",
           "src/evidence/import/base/d1/retirement.ts",
+          "src/evidence/import/base/d1/reversal-conversion-record.ts",
+          "src/evidence/import/base/d1/reversal-conversion-schema.ts",
+          "src/evidence/import/base/d1/reversal-conversion.ts",
           "src/evidence/import/base/d1/reversal-fence-schema.ts",
           "src/evidence/import/base/d1/reversal-fence.ts",
+          "src/evidence/import/base/d1/reversal-journal.ts",
           "src/evidence/import/base/d1/reverse.ts",
           "src/evidence/import/base/d1/reviewed-source.ts",
           "src/evidence/import/base/d1/sets.ts",
+          "src/evidence/import/base/d1/staged-creation.ts",
           "src/evidence/import/base/d1/staging-admission.ts",
           "src/evidence/import/base/d1/staging-control.ts",
           "src/evidence/import/base/d1/staging-erasure.ts",
@@ -186,6 +223,7 @@
           "src/evidence/import/base/d1/undo-snapshot.ts",
           "src/evidence/import/base/d1/undo-state.ts",
           "src/evidence/import/base/d1/undo-types.ts",
+          "src/evidence/import/base/d1/verified-plan.ts",
           "src/evidence/import/base/journal/authority.ts",
           "src/evidence/import/base/journal/boundary.ts",
           "src/evidence/import/base/journal/jobs.ts",
@@ -195,6 +233,7 @@
           "src/evidence/import/base/plan/size.ts",
           "src/evidence/import/base/provenance/canonical-hash.ts",
           "src/evidence/import/base/provenance/canonical-stream.ts",
+          "src/evidence/import/base/provenance/credential-names.ts",
           "src/evidence/import/base/provenance/credentials.ts",
           "src/evidence/import/base/provenance/identity.ts",
           "src/evidence/import/base/provenance/json-snapshot.ts",
@@ -210,12 +249,16 @@
           "src/evidence/import/base/types.ts",
           "src/mail.server.d.mts",
           "src/modules/demo/README.md",
+          "src/modules/demo/declaration.mjs",
           "src/modules/demo/effects.mjs",
           "src/modules/demo/index.d.mts",
           "src/modules/demo/index.mjs",
+          "src/modules/demo/input-path.mjs",
           "src/modules/demo/label.d.mts",
           "src/modules/demo/label.mjs",
+          "src/modules/demo/navigation.mjs",
           "src/modules/demo/responses.mjs",
+          "src/modules/demo/run-url.mjs",
           "src/modules/demo/sockets.mjs",
           "src/modules/demo/vite.d.mts",
           "src/modules/demo/vite.mjs",
@@ -224,6 +267,7 @@
           "src/modules/dependencies/auth.mjs",
           "src/modules/dependencies/authority.mjs",
           "src/modules/dependencies/crypto.mjs",
+          "src/modules/dependencies/custody.mjs",
           "src/modules/dependencies/index.d.mts",
           "src/modules/dependencies/index.mjs",
           "src/modules/dependencies/logout.mjs",
@@ -231,6 +275,8 @@
           "src/modules/dependencies/protocol.mjs",
           "src/modules/dependencies/schema/approval-attempt.sql",
           "src/modules/dependencies/schema/dependencies.sql",
+          "src/modules/dependencies/schema/keys-sealed.sql",
+          "src/modules/dependencies/sealing.mjs",
           "src/modules/dependencies/store.mjs",
           "src/modules/mail/.gitignore",
           "src/modules/mail/LICENSE",
@@ -295,6 +341,7 @@
           "src/modules/mail/src/sendgrid-email/index.mjs",
           "src/modules/mail/src/unsubscribe/index.mjs",
           "src/modules/operator-auth/README.md",
+          "src/modules/operator-auth/SCHEDULED-POLICY.md",
           "src/modules/operator-auth/accounts/adapter.mjs",
           "src/modules/operator-auth/accounts/admin.mjs",
           "src/modules/operator-auth/accounts/credentials.mjs",
@@ -310,16 +357,21 @@
           "src/modules/operator-auth/accounts/owner-signin.mjs",
           "src/modules/operator-auth/accounts/provider-control.mjs",
           "src/modules/operator-auth/accounts/provider-pin.mjs",
+          "src/modules/operator-auth/accounts/provider-setup.mjs",
           "src/modules/operator-auth/accounts/roles.mjs",
           "src/modules/operator-auth/accounts/schema/dependency-setup.sql",
           "src/modules/operator-auth/accounts/schema/dev-sessions.sql",
           "src/modules/operator-auth/accounts/schema/domain-rules-step-up.sql",
           "src/modules/operator-auth/accounts/schema/invitation-cancellation.sql",
+          "src/modules/operator-auth/accounts/schema/last-signin.sql",
           "src/modules/operator-auth/accounts/schema/operator-auth.sql",
           "src/modules/operator-auth/accounts/schema/owner-signin.sql",
           "src/modules/operator-auth/accounts/schema/provider-control.sql",
           "src/modules/operator-auth/accounts/schema/provider-pins.sql",
+          "src/modules/operator-auth/accounts/schema/scheduled-policy-hardening.sql",
+          "src/modules/operator-auth/accounts/schema/scheduled-policy.sql",
           "src/modules/operator-auth/accounts/settings-page.mjs",
+          "src/modules/operator-auth/accounts/status.mjs",
           "src/modules/operator-auth/accounts/store.mjs",
           "src/modules/operator-auth/branding.mjs",
           "src/modules/operator-auth/config.mjs",
@@ -336,6 +388,7 @@
           "src/modules/operator-auth/dev/index.d.mts",
           "src/modules/operator-auth/dev/index.mjs",
           "src/modules/operator-auth/dev/personas.mjs",
+          "src/modules/operator-auth/dev/refusal.mjs",
           "src/modules/operator-auth/dev/sign-in-as.d.mts",
           "src/modules/operator-auth/dev/sign-in-as.mjs",
           "src/modules/operator-auth/docs/README.md",
@@ -356,6 +409,7 @@
           "src/modules/operator-auth/identity/index.d.mts",
           "src/modules/operator-auth/identity/index.mjs",
           "src/modules/operator-auth/identity/oidc/README.md",
+          "src/modules/operator-auth/identity/oidc/aes-gcm.mjs",
           "src/modules/operator-auth/identity/oidc/client-auth.mjs",
           "src/modules/operator-auth/identity/oidc/config.mjs",
           "src/modules/operator-auth/identity/oidc/crypto.mjs",
@@ -378,7 +432,15 @@
           "src/modules/operator-auth/policy.d.mts",
           "src/modules/operator-auth/policy.mjs",
           "src/modules/operator-auth/rejected-response.mjs",
+          "src/modules/operator-auth/representation.mjs",
           "src/modules/operator-auth/routes.mjs",
+          "src/modules/operator-auth/scheduled/definition.mjs",
+          "src/modules/operator-auth/scheduled/expiry.mjs",
+          "src/modules/operator-auth/scheduled/fence.mjs",
+          "src/modules/operator-auth/scheduled/history.mjs",
+          "src/modules/operator-auth/scheduled/index.d.mts",
+          "src/modules/operator-auth/scheduled/index.mjs",
+          "src/modules/operator-auth/scheduled/runner.mjs",
           "src/modules/operator-auth/service.mjs",
           "src/modules/operator-auth/signin/index.d.mts",
           "src/modules/operator-auth/signin/index.mjs",
@@ -397,7 +459,7 @@
         ],
         "origin": {
           "repository": "https://github.com/runeditrun/base.git",
-          "revision": "9d371985250abd531495a9d8752e1c291a778308",
+          "revision": "11f94fec479228d71ba6d7dd6ea7796c0d42c544",
           "path": ".",
           "paths": [
             "LICENSE",
@@ -405,10 +467,15 @@
             "default-seed/scripts/installer/ui/background.svg",
             "default-seed/src/router.tsx",
             "edition-authoring/README.md",
+            "edition-authoring/adopt.mjs",
+            "edition-authoring/base-acknowledgements.mjs",
             "edition-authoring/base-copies.mjs",
             "edition-authoring/cli.mjs",
+            "edition-authoring/copy-checkout.mjs",
             "edition-authoring/files.mjs",
+            "edition-authoring/lock.mjs",
             "edition-authoring/manifest.mjs",
+            "edition-authoring/offline-git.mjs",
             "edition-authoring/parent-comparison.mjs",
             "edition-authoring/projection-lock.mjs",
             "edition-authoring/release.mjs",
@@ -446,13 +513,37 @@
             "foundation/template/src/mail.server.d.mts",
             "modules/d1-transport/index.d.mts",
             "modules/d1-transport/index.mjs",
+            "modules/delivery-producer/artifact.mjs",
+            "modules/delivery-producer/bindings.mjs",
+            "modules/delivery-producer/capabilities.mjs",
+            "modules/delivery-producer/cli.mjs",
+            "modules/delivery-producer/declarations.mjs",
+            "modules/delivery-producer/export.mjs",
+            "modules/delivery-producer/generators/integration.mjs",
+            "modules/delivery-producer/generators/managed.mjs",
+            "modules/delivery-producer/generators/project.mjs",
+            "modules/delivery-producer/generators/validation.mjs",
+            "modules/delivery-producer/mail.mjs",
+            "modules/delivery-producer/migrations.mjs",
+            "modules/delivery-producer/native-export.mjs",
+            "modules/delivery-producer/package.mjs",
+            "modules/delivery-producer/paths.mjs",
+            "modules/delivery-producer/payloads.mjs",
+            "modules/delivery-producer/setup-manifest.mjs",
+            "modules/delivery-producer/sign-in.mjs",
+            "modules/delivery-producer/spec.mjs",
+            "modules/delivery-producer/sql-statements.mjs",
             "modules/demo/README.md",
+            "modules/demo/declaration.mjs",
             "modules/demo/effects.mjs",
             "modules/demo/index.d.mts",
             "modules/demo/index.mjs",
+            "modules/demo/input-path.mjs",
             "modules/demo/label.d.mts",
             "modules/demo/label.mjs",
+            "modules/demo/navigation.mjs",
             "modules/demo/responses.mjs",
+            "modules/demo/run-url.mjs",
             "modules/demo/sockets.mjs",
             "modules/demo/vite.d.mts",
             "modules/demo/vite.mjs",
@@ -461,6 +552,7 @@
             "modules/dependencies/auth.mjs",
             "modules/dependencies/authority.mjs",
             "modules/dependencies/crypto.mjs",
+            "modules/dependencies/custody.mjs",
             "modules/dependencies/index.d.mts",
             "modules/dependencies/index.mjs",
             "modules/dependencies/logout.mjs",
@@ -468,9 +560,12 @@
             "modules/dependencies/protocol.mjs",
             "modules/dependencies/schema/approval-attempt.sql",
             "modules/dependencies/schema/dependencies.sql",
+            "modules/dependencies/schema/keys-sealed.sql",
+            "modules/dependencies/sealing.mjs",
             "modules/dependencies/store.mjs",
             "modules/import-kit/src/d1/README.md",
             "modules/import-kit/src/d1/apply.ts",
+            "modules/import-kit/src/d1/atomic-prefix.ts",
             "modules/import-kit/src/d1/budget.ts",
             "modules/import-kit/src/d1/compressed-plan.ts",
             "modules/import-kit/src/d1/creation.ts",
@@ -538,6 +633,7 @@
             "modules/import-kit/src/d1/preparation-steps-schema.ts",
             "modules/import-kit/src/d1/preparation-steps.ts",
             "modules/import-kit/src/d1/preparations.ts",
+            "modules/import-kit/src/d1/preserved-preview.ts",
             "modules/import-kit/src/d1/preserved-reverse.ts",
             "modules/import-kit/src/d1/provenance-set.ts",
             "modules/import-kit/src/d1/publication-fence.ts",
@@ -556,11 +652,16 @@
             "modules/import-kit/src/d1/retirement-steps.ts",
             "modules/import-kit/src/d1/retirement-tally.ts",
             "modules/import-kit/src/d1/retirement.ts",
+            "modules/import-kit/src/d1/reversal-conversion-record.ts",
+            "modules/import-kit/src/d1/reversal-conversion-schema.ts",
+            "modules/import-kit/src/d1/reversal-conversion.ts",
             "modules/import-kit/src/d1/reversal-fence-schema.ts",
             "modules/import-kit/src/d1/reversal-fence.ts",
+            "modules/import-kit/src/d1/reversal-journal.ts",
             "modules/import-kit/src/d1/reverse.ts",
             "modules/import-kit/src/d1/reviewed-source.ts",
             "modules/import-kit/src/d1/sets.ts",
+            "modules/import-kit/src/d1/staged-creation.ts",
             "modules/import-kit/src/d1/staging-admission.ts",
             "modules/import-kit/src/d1/staging-control.ts",
             "modules/import-kit/src/d1/staging-erasure.ts",
@@ -596,6 +697,7 @@
             "modules/import-kit/src/d1/undo-snapshot.ts",
             "modules/import-kit/src/d1/undo-state.ts",
             "modules/import-kit/src/d1/undo-types.ts",
+            "modules/import-kit/src/d1/verified-plan.ts",
             "modules/import-kit/src/journal/authority.ts",
             "modules/import-kit/src/journal/boundary.ts",
             "modules/import-kit/src/journal/jobs.ts",
@@ -605,6 +707,7 @@
             "modules/import-kit/src/plan/size.ts",
             "modules/import-kit/src/provenance/canonical-hash.ts",
             "modules/import-kit/src/provenance/canonical-stream.ts",
+            "modules/import-kit/src/provenance/credential-names.ts",
             "modules/import-kit/src/provenance/credentials.ts",
             "modules/import-kit/src/provenance/identity.ts",
             "modules/import-kit/src/provenance/json-snapshot.ts",
@@ -681,6 +784,7 @@
             "modules/mail/src/sendgrid-email/index.mjs",
             "modules/mail/src/unsubscribe/index.mjs",
             "modules/operator-auth/README.md",
+            "modules/operator-auth/SCHEDULED-POLICY.md",
             "modules/operator-auth/accounts/adapter.mjs",
             "modules/operator-auth/accounts/admin.mjs",
             "modules/operator-auth/accounts/credentials.mjs",
@@ -696,16 +800,21 @@
             "modules/operator-auth/accounts/owner-signin.mjs",
             "modules/operator-auth/accounts/provider-control.mjs",
             "modules/operator-auth/accounts/provider-pin.mjs",
+            "modules/operator-auth/accounts/provider-setup.mjs",
             "modules/operator-auth/accounts/roles.mjs",
             "modules/operator-auth/accounts/schema/dependency-setup.sql",
             "modules/operator-auth/accounts/schema/dev-sessions.sql",
             "modules/operator-auth/accounts/schema/domain-rules-step-up.sql",
             "modules/operator-auth/accounts/schema/invitation-cancellation.sql",
+            "modules/operator-auth/accounts/schema/last-signin.sql",
             "modules/operator-auth/accounts/schema/operator-auth.sql",
             "modules/operator-auth/accounts/schema/owner-signin.sql",
             "modules/operator-auth/accounts/schema/provider-control.sql",
             "modules/operator-auth/accounts/schema/provider-pins.sql",
+            "modules/operator-auth/accounts/schema/scheduled-policy-hardening.sql",
+            "modules/operator-auth/accounts/schema/scheduled-policy.sql",
             "modules/operator-auth/accounts/settings-page.mjs",
+            "modules/operator-auth/accounts/status.mjs",
             "modules/operator-auth/accounts/store.mjs",
             "modules/operator-auth/branding.mjs",
             "modules/operator-auth/config.mjs",
@@ -722,6 +831,7 @@
             "modules/operator-auth/dev/index.d.mts",
             "modules/operator-auth/dev/index.mjs",
             "modules/operator-auth/dev/personas.mjs",
+            "modules/operator-auth/dev/refusal.mjs",
             "modules/operator-auth/dev/sign-in-as.d.mts",
             "modules/operator-auth/dev/sign-in-as.mjs",
             "modules/operator-auth/docs/README.md",
@@ -742,6 +852,7 @@
             "modules/operator-auth/identity/index.d.mts",
             "modules/operator-auth/identity/index.mjs",
             "modules/operator-auth/identity/oidc/README.md",
+            "modules/operator-auth/identity/oidc/aes-gcm.mjs",
             "modules/operator-auth/identity/oidc/client-auth.mjs",
             "modules/operator-auth/identity/oidc/config.mjs",
             "modules/operator-auth/identity/oidc/crypto.mjs",
@@ -764,7 +875,15 @@
             "modules/operator-auth/policy.d.mts",
             "modules/operator-auth/policy.mjs",
             "modules/operator-auth/rejected-response.mjs",
+            "modules/operator-auth/representation.mjs",
             "modules/operator-auth/routes.mjs",
+            "modules/operator-auth/scheduled/definition.mjs",
+            "modules/operator-auth/scheduled/expiry.mjs",
+            "modules/operator-auth/scheduled/fence.mjs",
+            "modules/operator-auth/scheduled/history.mjs",
+            "modules/operator-auth/scheduled/index.d.mts",
+            "modules/operator-auth/scheduled/index.mjs",
+            "modules/operator-auth/scheduled/runner.mjs",
             "modules/operator-auth/service.mjs",
             "modules/operator-auth/signin/index.d.mts",
             "modules/operator-auth/signin/index.mjs",
@@ -778,7 +897,12 @@
             "modules/owner-claim/schema/owner-claim.sql",
             "modules/owner-claim/transaction.mjs",
             "modules/owner-claim/verify.d.mts",
-            "modules/owner-claim/verify.mjs"
+            "modules/owner-claim/verify.mjs",
+            "schema/SETUP.schema.json",
+            "schema/business-field-inputs.mjs",
+            "schema/dependencies.mjs",
+            "schema/json-schema.mjs",
+            "schema/setup-validation.mjs"
           ]
         },
         "mappings": [
@@ -799,6 +923,114 @@
             "originPath": "export/RUN-LOCALLY.md"
           },
           {
+            "path": "scripts/delivery/base/artifact.mjs",
+            "originPath": "modules/delivery-producer/artifact.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/bindings.mjs",
+            "originPath": "modules/delivery-producer/bindings.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/capabilities.mjs",
+            "originPath": "modules/delivery-producer/capabilities.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/cli.mjs",
+            "originPath": "modules/delivery-producer/cli.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/declarations.mjs",
+            "originPath": "modules/delivery-producer/declarations.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/export.mjs",
+            "originPath": "modules/delivery-producer/export.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/generators/integration.mjs",
+            "originPath": "modules/delivery-producer/generators/integration.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/generators/managed.mjs",
+            "originPath": "modules/delivery-producer/generators/managed.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/generators/project.mjs",
+            "originPath": "modules/delivery-producer/generators/project.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/generators/validation.mjs",
+            "originPath": "modules/delivery-producer/generators/validation.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/mail.mjs",
+            "originPath": "modules/delivery-producer/mail.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/migrations.mjs",
+            "originPath": "modules/delivery-producer/migrations.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/native-export.mjs",
+            "originPath": "modules/delivery-producer/native-export.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/package.mjs",
+            "originPath": "modules/delivery-producer/package.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/paths.mjs",
+            "originPath": "modules/delivery-producer/paths.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/payloads.mjs",
+            "originPath": "modules/delivery-producer/payloads.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/schema/business-field-inputs.mjs",
+            "originPath": "schema/business-field-inputs.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/schema/dependencies.mjs",
+            "originPath": "schema/dependencies.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/schema/json-schema.mjs",
+            "originPath": "schema/json-schema.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/schema/setup-validation.mjs",
+            "originPath": "schema/setup-validation.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/schema/SETUP.schema.json",
+            "originPath": "schema/SETUP.schema.json"
+          },
+          {
+            "path": "scripts/delivery/base/setup-manifest.mjs",
+            "originPath": "modules/delivery-producer/setup-manifest.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/sign-in.mjs",
+            "originPath": "modules/delivery-producer/sign-in.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/spec.mjs",
+            "originPath": "modules/delivery-producer/spec.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/sql-statements.mjs",
+            "originPath": "modules/delivery-producer/sql-statements.mjs"
+          },
+          {
+            "path": "scripts/edition-authoring/adopt.mjs",
+            "originPath": "edition-authoring/adopt.mjs"
+          },
+          {
+            "path": "scripts/edition-authoring/base-acknowledgements.mjs",
+            "originPath": "edition-authoring/base-acknowledgements.mjs"
+          },
+          {
             "path": "scripts/edition-authoring/base-copies.mjs",
             "originPath": "edition-authoring/base-copies.mjs"
           },
@@ -807,12 +1039,24 @@
             "originPath": "edition-authoring/cli.mjs"
           },
           {
+            "path": "scripts/edition-authoring/copy-checkout.mjs",
+            "originPath": "edition-authoring/copy-checkout.mjs"
+          },
+          {
             "path": "scripts/edition-authoring/files.mjs",
             "originPath": "edition-authoring/files.mjs"
           },
           {
+            "path": "scripts/edition-authoring/lock.mjs",
+            "originPath": "edition-authoring/lock.mjs"
+          },
+          {
             "path": "scripts/edition-authoring/manifest.mjs",
             "originPath": "edition-authoring/manifest.mjs"
+          },
+          {
+            "path": "scripts/edition-authoring/offline-git.mjs",
+            "originPath": "edition-authoring/offline-git.mjs"
           },
           {
             "path": "scripts/edition-authoring/parent-comparison.mjs",
@@ -961,6 +1205,10 @@
           {
             "path": "src/evidence/import/base/d1/apply.ts",
             "originPath": "modules/import-kit/src/d1/apply.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/atomic-prefix.ts",
+            "originPath": "modules/import-kit/src/d1/atomic-prefix.ts"
           },
           {
             "path": "src/evidence/import/base/d1/budget.ts",
@@ -1231,6 +1479,10 @@
             "originPath": "modules/import-kit/src/d1/preparations.ts"
           },
           {
+            "path": "src/evidence/import/base/d1/preserved-preview.ts",
+            "originPath": "modules/import-kit/src/d1/preserved-preview.ts"
+          },
+          {
             "path": "src/evidence/import/base/d1/preserved-reverse.ts",
             "originPath": "modules/import-kit/src/d1/preserved-reverse.ts"
           },
@@ -1307,12 +1559,28 @@
             "originPath": "modules/import-kit/src/d1/retirement.ts"
           },
           {
+            "path": "src/evidence/import/base/d1/reversal-conversion-record.ts",
+            "originPath": "modules/import-kit/src/d1/reversal-conversion-record.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/reversal-conversion-schema.ts",
+            "originPath": "modules/import-kit/src/d1/reversal-conversion-schema.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/reversal-conversion.ts",
+            "originPath": "modules/import-kit/src/d1/reversal-conversion.ts"
+          },
+          {
             "path": "src/evidence/import/base/d1/reversal-fence-schema.ts",
             "originPath": "modules/import-kit/src/d1/reversal-fence-schema.ts"
           },
           {
             "path": "src/evidence/import/base/d1/reversal-fence.ts",
             "originPath": "modules/import-kit/src/d1/reversal-fence.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/reversal-journal.ts",
+            "originPath": "modules/import-kit/src/d1/reversal-journal.ts"
           },
           {
             "path": "src/evidence/import/base/d1/reverse.ts",
@@ -1325,6 +1593,10 @@
           {
             "path": "src/evidence/import/base/d1/sets.ts",
             "originPath": "modules/import-kit/src/d1/sets.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/staged-creation.ts",
+            "originPath": "modules/import-kit/src/d1/staged-creation.ts"
           },
           {
             "path": "src/evidence/import/base/d1/staging-admission.ts",
@@ -1467,6 +1739,10 @@
             "originPath": "modules/import-kit/src/d1/undo-types.ts"
           },
           {
+            "path": "src/evidence/import/base/d1/verified-plan.ts",
+            "originPath": "modules/import-kit/src/d1/verified-plan.ts"
+          },
+          {
             "path": "src/evidence/import/base/journal/authority.ts",
             "originPath": "modules/import-kit/src/journal/authority.ts"
           },
@@ -1505,6 +1781,10 @@
           {
             "path": "src/evidence/import/base/provenance/canonical-stream.ts",
             "originPath": "modules/import-kit/src/provenance/canonical-stream.ts"
+          },
+          {
+            "path": "src/evidence/import/base/provenance/credential-names.ts",
+            "originPath": "modules/import-kit/src/provenance/credential-names.ts"
           },
           {
             "path": "src/evidence/import/base/provenance/credentials.ts",
@@ -1563,6 +1843,10 @@
             "originPath": "foundation/template/src/mail.server.d.mts"
           },
           {
+            "path": "src/modules/demo/declaration.mjs",
+            "originPath": "modules/demo/declaration.mjs"
+          },
+          {
             "path": "src/modules/demo/effects.mjs",
             "originPath": "modules/demo/effects.mjs"
           },
@@ -1575,6 +1859,10 @@
             "originPath": "modules/demo/index.mjs"
           },
           {
+            "path": "src/modules/demo/input-path.mjs",
+            "originPath": "modules/demo/input-path.mjs"
+          },
+          {
             "path": "src/modules/demo/label.d.mts",
             "originPath": "modules/demo/label.d.mts"
           },
@@ -1583,12 +1871,20 @@
             "originPath": "modules/demo/label.mjs"
           },
           {
+            "path": "src/modules/demo/navigation.mjs",
+            "originPath": "modules/demo/navigation.mjs"
+          },
+          {
             "path": "src/modules/demo/README.md",
             "originPath": "modules/demo/README.md"
           },
           {
             "path": "src/modules/demo/responses.mjs",
             "originPath": "modules/demo/responses.mjs"
+          },
+          {
+            "path": "src/modules/demo/run-url.mjs",
+            "originPath": "modules/demo/run-url.mjs"
           },
           {
             "path": "src/modules/demo/sockets.mjs",
@@ -1617,6 +1913,10 @@
           {
             "path": "src/modules/dependencies/crypto.mjs",
             "originPath": "modules/dependencies/crypto.mjs"
+          },
+          {
+            "path": "src/modules/dependencies/custody.mjs",
+            "originPath": "modules/dependencies/custody.mjs"
           },
           {
             "path": "src/modules/dependencies/index.d.mts",
@@ -1649,6 +1949,14 @@
           {
             "path": "src/modules/dependencies/schema/dependencies.sql",
             "originPath": "modules/dependencies/schema/dependencies.sql"
+          },
+          {
+            "path": "src/modules/dependencies/schema/keys-sealed.sql",
+            "originPath": "modules/dependencies/schema/keys-sealed.sql"
+          },
+          {
+            "path": "src/modules/dependencies/sealing.mjs",
+            "originPath": "modules/dependencies/sealing.mjs"
           },
           {
             "path": "src/modules/dependencies/store.mjs",
@@ -1963,6 +2271,10 @@
             "originPath": "modules/operator-auth/accounts/provider-pin.mjs"
           },
           {
+            "path": "src/modules/operator-auth/accounts/provider-setup.mjs",
+            "originPath": "modules/operator-auth/accounts/provider-setup.mjs"
+          },
+          {
             "path": "src/modules/operator-auth/accounts/roles.mjs",
             "originPath": "modules/operator-auth/accounts/roles.mjs"
           },
@@ -1983,6 +2295,10 @@
             "originPath": "modules/operator-auth/accounts/schema/invitation-cancellation.sql"
           },
           {
+            "path": "src/modules/operator-auth/accounts/schema/last-signin.sql",
+            "originPath": "modules/operator-auth/accounts/schema/last-signin.sql"
+          },
+          {
             "path": "src/modules/operator-auth/accounts/schema/operator-auth.sql",
             "originPath": "modules/operator-auth/accounts/schema/operator-auth.sql"
           },
@@ -1999,8 +2315,20 @@
             "originPath": "modules/operator-auth/accounts/schema/provider-pins.sql"
           },
           {
+            "path": "src/modules/operator-auth/accounts/schema/scheduled-policy-hardening.sql",
+            "originPath": "modules/operator-auth/accounts/schema/scheduled-policy-hardening.sql"
+          },
+          {
+            "path": "src/modules/operator-auth/accounts/schema/scheduled-policy.sql",
+            "originPath": "modules/operator-auth/accounts/schema/scheduled-policy.sql"
+          },
+          {
             "path": "src/modules/operator-auth/accounts/settings-page.mjs",
             "originPath": "modules/operator-auth/accounts/settings-page.mjs"
+          },
+          {
+            "path": "src/modules/operator-auth/accounts/status.mjs",
+            "originPath": "modules/operator-auth/accounts/status.mjs"
           },
           {
             "path": "src/modules/operator-auth/accounts/store.mjs",
@@ -2065,6 +2393,10 @@
           {
             "path": "src/modules/operator-auth/dev/personas.mjs",
             "originPath": "modules/operator-auth/dev/personas.mjs"
+          },
+          {
+            "path": "src/modules/operator-auth/dev/refusal.mjs",
+            "originPath": "modules/operator-auth/dev/refusal.mjs"
           },
           {
             "path": "src/modules/operator-auth/dev/sign-in-as.d.mts",
@@ -2141,6 +2473,10 @@
           {
             "path": "src/modules/operator-auth/identity/index.mjs",
             "originPath": "modules/operator-auth/identity/index.mjs"
+          },
+          {
+            "path": "src/modules/operator-auth/identity/oidc/aes-gcm.mjs",
+            "originPath": "modules/operator-auth/identity/oidc/aes-gcm.mjs"
           },
           {
             "path": "src/modules/operator-auth/identity/oidc/client-auth.mjs",
@@ -2239,8 +2575,44 @@
             "originPath": "modules/operator-auth/rejected-response.mjs"
           },
           {
+            "path": "src/modules/operator-auth/representation.mjs",
+            "originPath": "modules/operator-auth/representation.mjs"
+          },
+          {
             "path": "src/modules/operator-auth/routes.mjs",
             "originPath": "modules/operator-auth/routes.mjs"
+          },
+          {
+            "path": "src/modules/operator-auth/SCHEDULED-POLICY.md",
+            "originPath": "modules/operator-auth/SCHEDULED-POLICY.md"
+          },
+          {
+            "path": "src/modules/operator-auth/scheduled/definition.mjs",
+            "originPath": "modules/operator-auth/scheduled/definition.mjs"
+          },
+          {
+            "path": "src/modules/operator-auth/scheduled/expiry.mjs",
+            "originPath": "modules/operator-auth/scheduled/expiry.mjs"
+          },
+          {
+            "path": "src/modules/operator-auth/scheduled/fence.mjs",
+            "originPath": "modules/operator-auth/scheduled/fence.mjs"
+          },
+          {
+            "path": "src/modules/operator-auth/scheduled/history.mjs",
+            "originPath": "modules/operator-auth/scheduled/history.mjs"
+          },
+          {
+            "path": "src/modules/operator-auth/scheduled/index.d.mts",
+            "originPath": "modules/operator-auth/scheduled/index.d.mts"
+          },
+          {
+            "path": "src/modules/operator-auth/scheduled/index.mjs",
+            "originPath": "modules/operator-auth/scheduled/index.mjs"
+          },
+          {
+            "path": "src/modules/operator-auth/scheduled/runner.mjs",
+            "originPath": "modules/operator-auth/scheduled/runner.mjs"
           },
           {
             "path": "src/modules/operator-auth/service.mjs",
@@ -2305,9 +2677,9 @@
         ]
       },
       "baseline": {
-        "key": "2330e4b2fdd14034adee31bfeea9597151c6b4f56129051af8044f40e5ba4a69",
-        "digest": "24f0e612d5cc9ea992932e86938e9ec20ac8da8bd8296745259f5bd6b8f77244",
-        "sha256": "a4ae4126d5eb0d2a35bee7e9fc4dfd2e803b5a6ef1b9ddb8626f5151d2ce870a"
+        "key": "0e2a20bf23ff6f2c24b49e2943cf2aacfa3d433eafc60e1db56f25ba096d013d",
+        "digest": "b04a2e44b3ab04a88db6ce8de14bfcef6685e770d189a90a0867f1e7e4c16b85",
+        "sha256": "6eafac8ae272e48bea63ddc1fc7f5efd89cb02b6ee203dcbf9cc5e05c079e2b7"
       }
     },
     {
@@ -2343,6 +2715,7 @@
       "source": {
         "kind": "local",
         "paths": [
+          ".github/workflows/rer-managed.yml",
           ".github/workflows/run-site.yml",
           ".github/workflows/verify.yml",
           ".gitignore",
@@ -2355,6 +2728,7 @@
           "OPERATIONS.json",
           "OPERATIONS.md",
           "README.md",
+          "RELEASE.json",
           "base-copies.json",
           "deploy-demo.json",
           "deploy-site.json",
@@ -2376,6 +2750,7 @@
           "docs/SAQ-WORKSHEETS.md",
           "docs/TRACKERS.md",
           "docs/USDP-CITATIONS.md",
+          "management/integration/deployment-spec.json",
           "migrations/core/0001_owner.sql",
           "migrations/core/0002_outbox.sql",
           "migrations/core/0003_portability.sql",
@@ -2439,6 +2814,7 @@
           "migrations/core/0060_audit_engagements.sql",
           "migrations/core/0061_audit_sharing.sql",
           "package.json",
+          "packaging.json",
           "pnpm-lock.yaml",
           "public/apple-touch-icon.png",
           "public/archive.css",
@@ -2523,6 +2899,8 @@
           "rer-project.json",
           "rer-setup.json",
           "scripts/archive.mjs",
+          "scripts/build-deployment-spec.mjs",
+          "scripts/delivery/base/packaging.json",
           "scripts/evidence-agent.mjs",
           "scripts/evidence-archive/local.mjs",
           "scripts/evidence-archive/storage-worker.mjs",
@@ -3059,6 +3437,10 @@
     }
   ],
   "files": {
+    ".github/workflows/rer-managed.yml": {
+      "sha256": "272fc0a0722e4c60f99ef911340bfe5944b1afbb1730e2a6810f6262fdc5d656",
+      "executable": false
+    },
     ".github/workflows/run-demo.yml": {
       "sha256": "e0253c479d01f559859e5bf729d42eb3fe8ab926dceaa43a687508837b688f2a",
       "executable": false
@@ -3072,7 +3454,7 @@
       "executable": false
     },
     ".gitignore": {
-      "sha256": "a37f8e9cd7aafa522744a849df9eb0303d55cc0cdd5666d64c90a728b34fe2e2",
+      "sha256": "d2f251b09cc1d6fb6ca68017a5cdee948acdba320d4f3ebf62d8dab2397a000e",
       "executable": false
     },
     ".node-version": {
@@ -3088,7 +3470,7 @@
       "executable": false
     },
     "base-copies.json": {
-      "sha256": "ffff56971443fd191683f2e28ead85e6397979f3c3bdbc603fce87fc09aed342",
+      "sha256": "7a3ddf8d2f0dfd4d517a120198501495fae447eab9eb1d42cac6bd129e6bbca4",
       "executable": false
     },
     "CHANGELOG.md": {
@@ -3096,7 +3478,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "151fef1ec6d1cc6243025b29f9e5f147ca12579e7d658a16a99021d4e20bbb94",
+      "sha256": "f1dc2b12a8b6d414815f0f6dc94ae943428fa2bd5949a2ad48a19ad93eb25473",
       "executable": false
     },
     "DEMO.md": {
@@ -3112,7 +3494,7 @@
       "executable": false
     },
     "deploy.json": {
-      "sha256": "ec308bdb55934c8b95ba90780b2a056631d8d37cc1489f6d08f30315c41ced87",
+      "sha256": "18ba5cf2acf4098dc5d1476bc1ccfd01650e36353bf4971055ce739f6b93f893",
       "executable": false
     },
     "docs/AGENT-COMMANDS.md": {
@@ -3184,11 +3566,15 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "8a3f2f8730f2905f8b819e1daf25fba082f30278b87e0fb902b4d0420a7202f8",
+      "sha256": "64dd70508e146f31626c4ace293c505d409d9959020757d1ae8c2ae04baffc30",
       "executable": false
     },
     "LICENSE": {
       "sha256": "2f5076ef027045b9e0e72df8aa61ca8551e54b1877d531656d6e7985b2c32324",
+      "executable": false
+    },
+    "management/integration/deployment-spec.json": {
+      "sha256": "3b1c9cc5cde47dd763a66b674ce8046a75a3bebbe916e7928eb441c499bc49fd",
       "executable": false
     },
     "migrations/core/0001_owner.sql": {
@@ -3448,15 +3834,19 @@
       "executable": false
     },
     "OPERATIONS.md": {
-      "sha256": "256814b0d6016579040daacf333e7738e353a2be11a2b275cafb0f8a95c1f483",
+      "sha256": "8b90b374c4df3f2d51bf1d9a99cae1939773c65fa248cd1c3d507861faaa1363",
       "executable": false
     },
     "package.json": {
-      "sha256": "59b9ddf0b81d071f279d6131ff48d26a8ea2948fa36d8b43c3f30dca7c5bd9fe",
+      "sha256": "2c9a8f31dc6cb571e34e62345e9790a9ccd81b15d46a014a2a5852f9b82ca6d1",
+      "executable": false
+    },
+    "packaging.json": {
+      "sha256": "30ad92074270816316a0abd81dbc51c33bac8410af798e5c55863888f15edff5",
       "executable": false
     },
     "pnpm-lock.yaml": {
-      "sha256": "ef857a9863ce8355355e1984fab18ffd2e8e2357200f274872b8af682bf9e88c",
+      "sha256": "5f6bbe37c16f348661785d346e65324d08bd218a8ebb129ca11e7c32c99010ae",
       "executable": false
     },
     "public/apple-touch-icon.png": {
@@ -3780,39 +4170,171 @@
       "executable": false
     },
     "README.md": {
-      "sha256": "b9f1a4552d2dc2ff70f0edeae0ef1af64433e1fc4f444e8c55779e6423b6fe8e",
+      "sha256": "3450b8ccdf44af9ca49ea62a4f758224898c104a3eab1d3b9151d7155abd15a9",
+      "executable": false
+    },
+    "RELEASE.json": {
+      "sha256": "b791179f8f83fcfa79027aef179df97b88b929d6da2479a4d3b4e8bd41707fe6",
       "executable": false
     },
     "rer-project.json": {
-      "sha256": "4296f52cefab4b061fc2a1808b039dc592bb3373beaba7af93547d362b15f1dc",
+      "sha256": "e79b6839f92bd29385680149a0e2ea8653eebdecd584a2aaea2bb709e5ad1ea5",
       "executable": false
     },
     "rer-setup.json": {
-      "sha256": "34ad826a2e0dd58bef2745994f8c95422fd35dbca8d148fbdfdad88e8d2946e0",
+      "sha256": "12a9e8927e5277e6b9e203de61b786d5d0cd3cb7622ea3db8c9e38fda3f78ccc",
       "executable": false
     },
     "RUN-LOCALLY.md": {
-      "sha256": "1ce93af02bde11aaf18cfe6e07efee7a9fa68a7f50b412b0cfaf043dbc4dd37d",
+      "sha256": "d6a16b0b428d79742bf01c34795028cc795cdc101bbdf0675a21cc0ad549989d",
       "executable": false
     },
     "scripts/archive.mjs": {
       "sha256": "120953f0cf0ab5ffd35739967d2b2566d3e43daead0be756513f7f38ba67a423",
       "executable": false
     },
+    "scripts/build-deployment-spec.mjs": {
+      "sha256": "58f31dcfdd18377c8984337312f78bb08700f2f3051f38e2f88c668e838fa2ab",
+      "executable": false
+    },
+    "scripts/delivery/base/artifact.mjs": {
+      "sha256": "129f210f1556e816ba94ffe74359ac553cd26466aaf8c6c299765e9cea29aa07",
+      "executable": false
+    },
+    "scripts/delivery/base/bindings.mjs": {
+      "sha256": "5548f71b7bb32c6e6c75442f0e6cf0af9da3226aebcaf964c7702ea549e48392",
+      "executable": false
+    },
+    "scripts/delivery/base/capabilities.mjs": {
+      "sha256": "c09cbfd74f1497b038676e1f886eb8f7b05dc67741dd7ed08ac348ef92a11934",
+      "executable": false
+    },
+    "scripts/delivery/base/cli.mjs": {
+      "sha256": "5d60954f6b03216613d17ec0d19464c339ce3a8a441c7972bf3f80ceea4f7ad5",
+      "executable": false
+    },
+    "scripts/delivery/base/declarations.mjs": {
+      "sha256": "bf63076ba1c203c948fe57f41f28fe6ad06ec1e057eecf2b55aab5aeee7c5e2c",
+      "executable": false
+    },
+    "scripts/delivery/base/export.mjs": {
+      "sha256": "fbf9c22198f3fb07015f486cf80d0fbaefe087b60b628a50e6c6d74c687890b2",
+      "executable": false
+    },
+    "scripts/delivery/base/generators/integration.mjs": {
+      "sha256": "ec9689f03b339466ee20c4a77da5227ba39789cc3de52d33687127148d4889f3",
+      "executable": false
+    },
+    "scripts/delivery/base/generators/managed.mjs": {
+      "sha256": "275131025f7b1810b7757053caa7439f9cd8119bfec94512c4fa4cf1ee1a5c60",
+      "executable": false
+    },
+    "scripts/delivery/base/generators/project.mjs": {
+      "sha256": "29540e3e2d9ef0529a07c04ed70eb3e7fe0f73906fe826e53c55678ad8a364de",
+      "executable": false
+    },
+    "scripts/delivery/base/generators/validation.mjs": {
+      "sha256": "9b96d656af0d8e6344207b8a075e81d3b8de56fd14eee01f35e017b1d2c3c30d",
+      "executable": false
+    },
+    "scripts/delivery/base/mail.mjs": {
+      "sha256": "2323205c7cbc1aea81ec85509d597df2e486abfc9443981ceaee04950db913a4",
+      "executable": false
+    },
+    "scripts/delivery/base/migrations.mjs": {
+      "sha256": "41650d5f2c22c0dbf8c4d8640bc89d872907828b558df4af89c4f70059d4878f",
+      "executable": false
+    },
+    "scripts/delivery/base/native-export.mjs": {
+      "sha256": "5c0f90e688f5242dbc2f62416259cbb3074647298df8daa431a7022aa10d1a41",
+      "executable": false
+    },
+    "scripts/delivery/base/package.mjs": {
+      "sha256": "5a32dec3274b66474e12d5141e973542248ceeecf0f8464f6e9da87d60228cb4",
+      "executable": false
+    },
+    "scripts/delivery/base/packaging.json": {
+      "sha256": "30ad92074270816316a0abd81dbc51c33bac8410af798e5c55863888f15edff5",
+      "executable": false
+    },
+    "scripts/delivery/base/paths.mjs": {
+      "sha256": "32af2ee0d6e8ce048d04978e2d70f476bdc2a690b1a270d580056641f87a1731",
+      "executable": false
+    },
+    "scripts/delivery/base/payloads.mjs": {
+      "sha256": "7d45913a406dee21619f407aec32fbcf4b1c078ac0fd759868ff8eb6fe8ed914",
+      "executable": false
+    },
+    "scripts/delivery/base/schema/business-field-inputs.mjs": {
+      "sha256": "02ec0a4f21bfff9008c306b7a2fa6dea9fe0ea6584f13da7978e5ef45a054e60",
+      "executable": false
+    },
+    "scripts/delivery/base/schema/dependencies.mjs": {
+      "sha256": "4bfc30fa75029db2727a9d1fb095d4969dc756c5317ac55ce768202bb869e2b7",
+      "executable": false
+    },
+    "scripts/delivery/base/schema/json-schema.mjs": {
+      "sha256": "f964a1f8bab23bfad0c8b6552d8e717091619fa438e0d6e65a9801e1d97782bc",
+      "executable": false
+    },
+    "scripts/delivery/base/schema/setup-validation.mjs": {
+      "sha256": "339797a913d8bf0899ae8a5d0ce861a370101a2349b2bbfbee301db658d14ca7",
+      "executable": false
+    },
+    "scripts/delivery/base/schema/SETUP.schema.json": {
+      "sha256": "2aa43379cfd4bb29b3b5ee42cff9d938085560c68be2a12f3883408987641195",
+      "executable": false
+    },
+    "scripts/delivery/base/setup-manifest.mjs": {
+      "sha256": "cb8a88fc712f5f102c2a00454a6d46b0ca0b9ec15bd79bf4370358375ad7a009",
+      "executable": false
+    },
+    "scripts/delivery/base/sign-in.mjs": {
+      "sha256": "951aada2c00131ab7c808974827654b0fda20bcaeed1f2f97194b25441c03aff",
+      "executable": false
+    },
+    "scripts/delivery/base/spec.mjs": {
+      "sha256": "65179ca5222485513260e8d58aaae6740ae6fe1b27065e96f0d95d197fc6d3f0",
+      "executable": false
+    },
+    "scripts/delivery/base/sql-statements.mjs": {
+      "sha256": "afc15f607f3afc9a954aa024aaae5a0c76917ed1b7c84d425a525f2ebc370c93",
+      "executable": false
+    },
+    "scripts/edition-authoring/adopt.mjs": {
+      "sha256": "afe8568e3c7e9cb307e4924a2cd815b2543b75e1af901b7ecb6c65a51c9512a0",
+      "executable": false
+    },
+    "scripts/edition-authoring/base-acknowledgements.mjs": {
+      "sha256": "fd486d607c019f2ff162830149ef717063bcae9ba995ec7f18f14fd3f2cb4b32",
+      "executable": false
+    },
     "scripts/edition-authoring/base-copies.mjs": {
-      "sha256": "ca2e3b86aec67aaa5cb28d1a8311612a905fbd2116fac999a34185fa776cf876",
+      "sha256": "bcd240ebbe52adfdd58255b34ee27ab3ff118bc24bdfe7b1803c1a883ce85279",
       "executable": false
     },
     "scripts/edition-authoring/cli.mjs": {
-      "sha256": "d9bc25b361c056ec4bebe2b8e506baff95fdd06ec4d4f54a63f20d873025a89b",
+      "sha256": "ea39cb9b8c101a446d6fdf023866bb2c86965926f316f6030a0394f1cffeaf17",
+      "executable": false
+    },
+    "scripts/edition-authoring/copy-checkout.mjs": {
+      "sha256": "7b7fff83e2cc90f4b7a1f83673ea1d77d02704377ada4e13164d9ec74e83ba00",
       "executable": false
     },
     "scripts/edition-authoring/files.mjs": {
-      "sha256": "eb0b8a0b9958c4ed84735d85f5298f3d1307ef60ddee1c2a3329c6ed7af0902e",
+      "sha256": "9dfb5940c9b793cca5ddf9556b756c81046a371a16a10c5b869487172a6c25ae",
+      "executable": false
+    },
+    "scripts/edition-authoring/lock.mjs": {
+      "sha256": "8d86371c5c120c9ede3051d2ee4a145bc6badc850e22c6ea716deca7b3bd3e90",
       "executable": false
     },
     "scripts/edition-authoring/manifest.mjs": {
       "sha256": "0c93bd39b1dd869b23a9d2727671fe8f9c933a9d56c7a3df1ba83c4a6f816e7b",
+      "executable": false
+    },
+    "scripts/edition-authoring/offline-git.mjs": {
+      "sha256": "ef86d89a1c7df9fef306b24032629c2e8e60b589376ccddbe9b4e3c91d11543c",
       "executable": false
     },
     "scripts/edition-authoring/parent-comparison.mjs": {
@@ -3824,7 +4346,7 @@
       "executable": false
     },
     "scripts/edition-authoring/README.md": {
-      "sha256": "26988b6b5d0426377ee85fa7d61cbbaa29ad2ad93744159a842ab448b60a6c3a",
+      "sha256": "11fca1ba9bbdbdd9a9924618b9e75f1ec9ba7394f7bd66e8f2ffb18a2b64a230",
       "executable": false
     },
     "scripts/edition-authoring/release.mjs": {
@@ -3852,7 +4374,7 @@
       "executable": false
     },
     "scripts/generate-edition.mjs": {
-      "sha256": "0b00c4be65ca9626bf890a567aa01859f086a759d47b3980af972c81e4d184bc",
+      "sha256": "e4efa1d0809d9d244cb2fc22bb7282b659aa89aed6c0dab4a350b53ea9d43a6f",
       "executable": false
     },
     "scripts/install.mjs": {
@@ -3896,7 +4418,7 @@
       "executable": false
     },
     "SEED-COMMAND-CONTRACT.md": {
-      "sha256": "056389258bdc0503267bb8d9fd8082f517e572bdcfb0a2140064965aaedb7578",
+      "sha256": "25cd2aaeb68698380bc49ac264a86320c1fb8a157feda03b95553f332748929d",
       "executable": false
     },
     "seed.json": {
@@ -3908,7 +4430,7 @@
       "executable": false
     },
     "src/auth.server.ts": {
-      "sha256": "8e87b2553570a10fb28e0bf5d3b6cfb2ac0a41b1f46a61bde110b193c6169483",
+      "sha256": "5a3128ff9b26c7ec6530031071359b9c52765222895a679129b6b762e71dabec",
       "executable": false
     },
     "src/base/contract-filter.ts": {
@@ -3916,11 +4438,11 @@
       "executable": false
     },
     "src/base/contract-page.ts": {
-      "sha256": "8fff886df5869401818c0a3422a9a9cb73f3f1c4cb100d46f2a315176102b64f",
+      "sha256": "7304a6ff58dc2fa11f1b8aaf47013b4a0fc8793ecae61a85b2602bb8443962ac",
       "executable": false
     },
     "src/base/contract-style.ts": {
-      "sha256": "4325f4eeabac2bef722808576605d7b657858b918729097c3412393fc6e4941f",
+      "sha256": "915ec4aeb742e883cb5c041fffb96b156a6a07ce37d19402a47742beb2efeb37",
       "executable": false
     },
     "src/base/deployment-health.ts": {
@@ -3964,7 +4486,7 @@
       "executable": false
     },
     "src/base/lobby.ts": {
-      "sha256": "13282c598498bbf3ef5c5551525a2cb2faeeb6516360e54243f0d7a59723abd8",
+      "sha256": "ca827c50f357a110153d94d5afa5116c99303abf2c2b5a292d4467636f134b07",
       "executable": false
     },
     "src/base/page-style.ts": {
@@ -3976,7 +4498,7 @@
       "executable": false
     },
     "src/base/run-site.ts": {
-      "sha256": "578ae4cbe9afbe8b02248d84d7332979c9a1e6823e2c8724aa372e3a73d3546a",
+      "sha256": "882ae74d0ec50bcbf13a2ac722420ba8e7d464c7619ad592fe02f987877e0aa2",
       "executable": false
     },
     "src/base/seed-contract.d.mts": {
@@ -4492,7 +5014,7 @@
       "executable": false
     },
     "src/evidence/d1-transport/index.mjs": {
-      "sha256": "a8a79a0c2673536e221facd892e688000bfae71485d864b4fff9801eb7aaf4a9",
+      "sha256": "f3de81d8dc2726fca11d401a73edfad6a5f9efc42aa6cd3d63bd3b25be26d2a6",
       "executable": false
     },
     "src/evidence/door.ts": {
@@ -4632,19 +5154,23 @@
       "executable": false
     },
     "src/evidence/import/base/d1/apply.ts": {
-      "sha256": "68ef23214fa11ca8fed729e4ef38661be5a7d3d14415c04cd6ab7d271839ce52",
+      "sha256": "a5c73e9fc45d03d1fabb02796e7154dc3e0f903d04578ddc7babad4aad66d76a",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/atomic-prefix.ts": {
+      "sha256": "eb558b7887fd51cf9d84d0f6984e93646ac5c04b67417f9a2002da7737a66b10",
       "executable": false
     },
     "src/evidence/import/base/d1/budget.ts": {
-      "sha256": "b555798bf820bafbbe1e1162f8fb4432dcd9f7037304f0fe63aa5cd12443410b",
+      "sha256": "1c9b901688227f2dddfd341e959f324ad0762c5e9df2154c0a5334bf86b4fab4",
       "executable": false
     },
     "src/evidence/import/base/d1/compressed-plan.ts": {
-      "sha256": "b96a798a51902178361933ac2509a7ccb549c932a778a7c3662b604f3b7a1430",
+      "sha256": "c99ab903f40fd0a8b1ed722adfa9a072610ca369f21007d86e372fddd15c2812",
       "executable": false
     },
     "src/evidence/import/base/d1/creation.ts": {
-      "sha256": "8f860e99f638efa3bb450da9ad1c8b975808034927639412e4a90f94d2864a7c",
+      "sha256": "022381b439e034cd994d2264711dc9ab45b6303a265c3ab326e1888b040683e7",
       "executable": false
     },
     "src/evidence/import/base/d1/custody-fence.ts": {
@@ -4656,7 +5182,7 @@
       "executable": false
     },
     "src/evidence/import/base/d1/database.ts": {
-      "sha256": "a21b6602f1727a016febdcf1adbc5c758b558dacb571b6f8dc8fc84f04d8e484",
+      "sha256": "b082fc258c00f02913787363da88b996b8e47a6fd2af094d2121673c2bb9d4e0",
       "executable": false
     },
     "src/evidence/import/base/d1/entry-locator.ts": {
@@ -4764,7 +5290,7 @@
       "executable": false
     },
     "src/evidence/import/base/d1/expected-state.ts": {
-      "sha256": "bd5b5bc97ee20b910646161186717418951da673a4c294e09e75653c98892df0",
+      "sha256": "d7089d28f22ddba823e6edd682d6caca3d025372d8d735976c36fd2066725725",
       "executable": false
     },
     "src/evidence/import/base/d1/field-redaction.ts": {
@@ -4776,15 +5302,15 @@
       "executable": false
     },
     "src/evidence/import/base/d1/history.ts": {
-      "sha256": "004b6b72a3c33b33de05196ccaa7ee09777c9a3253bac8128f3cf4ebeb66aea9",
+      "sha256": "6d4e90a5fa63146a8ad1ee968d4f2e5f5584af7740ec05fb45d1c2c701aebcf4",
       "executable": false
     },
     "src/evidence/import/base/d1/index.ts": {
-      "sha256": "700b2a694780cce4b4aa87a48a69fe13f5d7bdae5b712a8783d45c4e7c343f11",
+      "sha256": "ce9ad37e046ddd6fc67a21950c0950ab357f8d9fedf2823bb1876771e266d66c",
       "executable": false
     },
     "src/evidence/import/base/d1/integrity.ts": {
-      "sha256": "bca91ca3bf5d9a1b868a8f53a9989dee12ddfa69c1b6edee10a9ee84d51c6b14",
+      "sha256": "3f06bf5e3b759bad974088bd41d4667d82adae6e558c69b9c56593f56a9a93ba",
       "executable": false
     },
     "src/evidence/import/base/d1/inventory-snapshot.ts": {
@@ -4792,7 +5318,7 @@
       "executable": false
     },
     "src/evidence/import/base/d1/jobs.ts": {
-      "sha256": "2823ebd50ea2d2adbaaf52394a6c8a4f414e051241eb716e77bdcbe7344cdc07",
+      "sha256": "16829dafad31d6a6efcc538ceeb3f2f75f18f9b8f6d6bf7206ca9447cd1dd14f",
       "executable": false
     },
     "src/evidence/import/base/d1/native-set.ts": {
@@ -4840,11 +5366,11 @@
       "executable": false
     },
     "src/evidence/import/base/d1/original-storage.ts": {
-      "sha256": "48838aef6291fdf3a6b9108bd4ea80664c157064209e5aadccad6b6d65df968e",
+      "sha256": "affe636899b54d99cd5e383d7b3d6a55f3469f1808de3dc14788df43c6d10387",
       "executable": false
     },
     "src/evidence/import/base/d1/originals.ts": {
-      "sha256": "a28d07b21afba1f50bb272d709b540db1bbde728559a6c441d1e7540860af8a1",
+      "sha256": "2419e873aec0f9ff8556e91caeccc321b37456d28474ee1225a703d671772ef7",
       "executable": false
     },
     "src/evidence/import/base/d1/plan-dictionary.ts": {
@@ -4852,7 +5378,7 @@
       "executable": false
     },
     "src/evidence/import/base/d1/plans.ts": {
-      "sha256": "9c1ffe0aac6c699ef8db2a56372a79451291a6057a82f1d86123d4fbbd42ceb1",
+      "sha256": "3338241f200ebf1921e133030c61372e397b37f38322b13880b7bfa7d0363312",
       "executable": false
     },
     "src/evidence/import/base/d1/preparation-fingerprint.ts": {
@@ -4903,12 +5429,16 @@
       "sha256": "3e674caf01c9f104df6bc038563018dfcbac4f25c0e1fe87ddafd7ac94f7d4d2",
       "executable": false
     },
+    "src/evidence/import/base/d1/preserved-preview.ts": {
+      "sha256": "8ee7999f369bd062aefe57bf3992c0865a3982b6224643fd03e1e30014aa654c",
+      "executable": false
+    },
     "src/evidence/import/base/d1/preserved-reverse.ts": {
-      "sha256": "8283befaf15dc5edf67f091808f1f182f1eb2038f4bf8f28351e0240ce3aebe4",
+      "sha256": "72ea2770b1d7cddb292f50bb2715d02c2edef94be118a1724367545822732170",
       "executable": false
     },
     "src/evidence/import/base/d1/provenance-set.ts": {
-      "sha256": "c769e025887b695b0a7c766319f8dd7a4fb50d234fffde630ed614fcb2ebdb92",
+      "sha256": "4962d7241e93f7ea297a265db91715faf7c25eecb068bf90d6c9a53eeb7e9364",
       "executable": false
     },
     "src/evidence/import/base/d1/publication-fence.ts": {
@@ -4932,7 +5462,7 @@
       "executable": false
     },
     "src/evidence/import/base/d1/README.md": {
-      "sha256": "38906f769776a6e047e9a8443315476d451d2eb0999a8ef408591a2834ce10ba",
+      "sha256": "b8ae1554fec294fc0cf67e7811662b049c63ac6b7ac9365b684bc83e46456419",
       "executable": false
     },
     "src/evidence/import/base/d1/redacted-custody.ts": {
@@ -4944,7 +5474,7 @@
       "executable": false
     },
     "src/evidence/import/base/d1/referenced-plans.ts": {
-      "sha256": "71db1440bd8e8e14e5a1802915893de71c994d6ef51be17d807b80b2f3256b68",
+      "sha256": "4f170e199c2b2fed2794b85f216404622931706a1949bdcbc8cb0eca363b2f4a",
       "executable": false
     },
     "src/evidence/import/base/d1/retained-values.ts": {
@@ -4956,7 +5486,7 @@
       "executable": false
     },
     "src/evidence/import/base/d1/retirement-door.ts": {
-      "sha256": "6c3dcb4331f69fbcdf67de7ec2beada6540a240a94bb1c7935a85c9d490497bf",
+      "sha256": "970ddc2810e275a1be9c578868ee4293b97da4a67878c3afb9303238361ba4f9",
       "executable": false
     },
     "src/evidence/import/base/d1/retirement-schema.ts": {
@@ -4972,11 +5502,23 @@
       "executable": false
     },
     "src/evidence/import/base/d1/retirement-tally.ts": {
-      "sha256": "d932ac7c67207ccbb53cc9956ed78ad48ad9e9814e3d32aa31b1758d42e47cbb",
+      "sha256": "30904f97a6c38955c10148d820bb077099590fce1422bbaf717a2ad736684985",
       "executable": false
     },
     "src/evidence/import/base/d1/retirement.ts": {
       "sha256": "8dea57607323dcb6c3896c53bb7d9ddd6706eb6782325f4db47201e553147015",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/reversal-conversion-record.ts": {
+      "sha256": "32da3b3f2ef0c0c5a91ef1a93c67679c34617f2cfb1f7da8de6a257241685462",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/reversal-conversion-schema.ts": {
+      "sha256": "936d3fad4c297fab616e8ada464f738a56c0046dc08ef78a846915496429dabc",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/reversal-conversion.ts": {
+      "sha256": "37e97dcb3be5ddaa838b8b18424d94190e7bbdc0f08702c7ed6261666bca7a72",
       "executable": false
     },
     "src/evidence/import/base/d1/reversal-fence-schema.ts": {
@@ -4985,6 +5527,10 @@
     },
     "src/evidence/import/base/d1/reversal-fence.ts": {
       "sha256": "fbc9dcde629b75cf19c14f9f97cb18a8c0f040417016170c5cc7cf3d161457d4",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/reversal-journal.ts": {
+      "sha256": "821935278e59fd1d399b31473b8179ae1ae223794ec9dd6804506e36080a97bc",
       "executable": false
     },
     "src/evidence/import/base/d1/reverse.ts": {
@@ -4997,6 +5543,10 @@
     },
     "src/evidence/import/base/d1/sets.ts": {
       "sha256": "f1a6572f8a5701fd3d72cf5793dcb0302dc05e7ef6f33c941636562291d179bd",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/staged-creation.ts": {
+      "sha256": "69430dfb9a34f555c53e229b789c7919f6a73805540d17df16595c403f2e1796",
       "executable": false
     },
     "src/evidence/import/base/d1/staging-admission.ts": {
@@ -5124,7 +5674,7 @@
       "executable": false
     },
     "src/evidence/import/base/d1/undo-report.ts": {
-      "sha256": "10776e6240f7090e59023aa2e9ed212ead66b37c2c696ec0d44dba424be34b71",
+      "sha256": "2cb8e87b505fc70cd6e3327bf376bafceedd0db6883b51a479ef7a0a250a13d2",
       "executable": false
     },
     "src/evidence/import/base/d1/undo-snapshot.ts": {
@@ -5132,11 +5682,15 @@
       "executable": false
     },
     "src/evidence/import/base/d1/undo-state.ts": {
-      "sha256": "3f225c8220357ef67ac5bcb30a8bcec851f824f2d167bb75f774d539df6c2390",
+      "sha256": "640737644d3c5136dd0580b1a9a668f64f7e7ab0e6502307e119b5b632e9723e",
       "executable": false
     },
     "src/evidence/import/base/d1/undo-types.ts": {
-      "sha256": "39a110602c82019bf19bccd13316d590ee3e6f3fbc7171b5aa35d982e6158b50",
+      "sha256": "7fca5fc80bd8d73e04009a8237e5e6e02c5c1edf074aa3e38447bd78200bba6e",
+      "executable": false
+    },
+    "src/evidence/import/base/d1/verified-plan.ts": {
+      "sha256": "182e14d710ad7aeb869d7c437023c5481d665165b4f632570f364646f7e52e9c",
       "executable": false
     },
     "src/evidence/import/base/journal/authority.ts": {
@@ -5164,7 +5718,7 @@
       "executable": false
     },
     "src/evidence/import/base/plan/index.ts": {
-      "sha256": "5f4e545df75190be885c79524e51d5ccb8d3abf3698a6b22beee16a7f11a0d4e",
+      "sha256": "f8ae35ef3b15d8f4e7be257a02af767d4ba16d10cc2aa77390c9d24647f179a7",
       "executable": false
     },
     "src/evidence/import/base/plan/size.ts": {
@@ -5179,8 +5733,12 @@
       "sha256": "94b9bef088d1d907edd4de44b74132ba257fa488a1ca447ad2cceb0f1d049890",
       "executable": false
     },
+    "src/evidence/import/base/provenance/credential-names.ts": {
+      "sha256": "51c836f11d6c8a938c724a9ceb07746dfbbdd8f1474627ece80fbd917634f01f",
+      "executable": false
+    },
     "src/evidence/import/base/provenance/credentials.ts": {
-      "sha256": "2103f268a6b40afba8cc455e11157a8e9ce742e44944b504011f78f9b2f6a81f",
+      "sha256": "6e8323f1371708b9cf3d80d6340640bc192fb08e9f59e73cbfd811a8842b5c22",
       "executable": false
     },
     "src/evidence/import/base/provenance/identity.ts": {
@@ -5216,7 +5774,7 @@
       "executable": false
     },
     "src/evidence/import/base/storage/originals.ts": {
-      "sha256": "4d72a139b6de26cdda9b4f46091ec1323b62af3ff26ea00a5e842e6586e42ad1",
+      "sha256": "66a12da0328088340c4791454c2689a3b536faeb2058273fa7f478ba34700041",
       "executable": false
     },
     "src/evidence/import/base/storage/provenance.ts": {
@@ -5232,7 +5790,7 @@
       "executable": false
     },
     "src/evidence/import/base/types.ts": {
-      "sha256": "ece4ba2269831421ec40e2b36cca39ba729977bc8c21a62a50cd6e1dee6dddfd",
+      "sha256": "ce31b0bae06aca21b3350c86344c981d53022e4fa502f1423e0027cd6bc1bc3c",
       "executable": false
     },
     "src/evidence/import/bundle/check.ts": {
@@ -5464,11 +6022,11 @@
       "executable": false
     },
     "src/evidence/ops/mail-configuration.d.mts": {
-      "sha256": "d2121b511053e94daf474402072ba16473432e29c68271914be74156a9bd425e",
+      "sha256": "d57ab865629ed9b744e21aae9b2dcf7e270e380c39caab4c668753bfea3573ea",
       "executable": false
     },
     "src/evidence/ops/mail-configuration.mjs": {
-      "sha256": "71a1d8ce765f596947319c670393d00f1935b17fbdb51a99797a3a751ca27d43",
+      "sha256": "44faf0ad350b5708905390bdb456e2fe9e8cd2e9237459d6780b4b38e312982a",
       "executable": false
     },
     "src/evidence/ops/outcomes.ts": {
@@ -6048,7 +6606,11 @@
       "executable": false
     },
     "src/mail.server.mjs": {
-      "sha256": "7c8d16796a8e19d4cb5ae88f3448bf3119d0e55e9419d2b74401c2024bda3331",
+      "sha256": "5ce15f06c7df38dd852c1ca19c2e9f280100e769664554d6fda1dae54bf74090",
+      "executable": false
+    },
+    "src/modules/demo/declaration.mjs": {
+      "sha256": "cb482eeecf701747b215ad8f0e54c824ce327bb2a7f71f5fadfdfc852c39efd9",
       "executable": false
     },
     "src/modules/demo/effects.mjs": {
@@ -6063,20 +6625,32 @@
       "sha256": "a90f58afaf7d7d54121f1e49746a51631c1b12c603e44edba81b1570eaa68d96",
       "executable": false
     },
+    "src/modules/demo/input-path.mjs": {
+      "sha256": "8af0b0ef529dfd70ac9f8152c55719776a718ccf2a6501603d852b627cfcca5a",
+      "executable": false
+    },
     "src/modules/demo/label.d.mts": {
-      "sha256": "96a4692d568cfb6fd5593c9d7d4296bced338e0f54c2d17f80ae1da105287285",
+      "sha256": "f6f859527d589be2104a82348adfce8bfc8f59076e49e5e545c4274be6af4918",
       "executable": false
     },
     "src/modules/demo/label.mjs": {
-      "sha256": "5a879dba78bcebfa5f12ce79856998ac1f54706955a0346b94babed7da5a8cf5",
+      "sha256": "7ca757507f3d3495a8777f3058dfa55d946b1656d6e31bec1c9c774dde1f3fb3",
+      "executable": false
+    },
+    "src/modules/demo/navigation.mjs": {
+      "sha256": "c6016948383d61875bd62de1607878fa99ba57aa223bdf6aab1e773c6813781c",
       "executable": false
     },
     "src/modules/demo/README.md": {
-      "sha256": "8fb9b98295fa59c8d4bdd6bd0d0b9940dc1113bb4a6d01813e76b5c878a445fc",
+      "sha256": "5d6dbd49a11d39876075d82c5e7b6a0ca9135de3bcc7bc6f52ecd080a9b84b82",
       "executable": false
     },
     "src/modules/demo/responses.mjs": {
       "sha256": "f91b6cb14dfde5c30750e6d248820f7218a855353e43e2defbc10fcc25fedc5d",
+      "executable": false
+    },
+    "src/modules/demo/run-url.mjs": {
+      "sha256": "b8726c289cb528cde1b885133d138113884ef445358b3a7a1659864e67caa561",
       "executable": false
     },
     "src/modules/demo/sockets.mjs": {
@@ -6084,11 +6658,11 @@
       "executable": false
     },
     "src/modules/demo/vite.d.mts": {
-      "sha256": "f43b152b4a993feaf96afdbc276922bfa20d64725ea0150a12ec6ec805a7c7b3",
+      "sha256": "6dc5833ed7bd9b1f60813bde8735cdc73d375afdeca4979105f1608ecba403b7",
       "executable": false
     },
     "src/modules/demo/vite.mjs": {
-      "sha256": "e38556e50c954814ee8e12278babd627d5cdd051a7ea2c242a61d6c5d84d12f8",
+      "sha256": "e9d55fc14de56dd3fdc5a3c3aee4db4b4f29b1fc5b6bbefbab882f0233dc605f",
       "executable": false
     },
     "src/modules/dependencies/approval.mjs": {
@@ -6096,7 +6670,7 @@
       "executable": false
     },
     "src/modules/dependencies/auth.mjs": {
-      "sha256": "c1e864461c204731395555b0235a9cb058a8979fde84ae58abce559053ba27f0",
+      "sha256": "6dd0ee20fff4a25af3d5657a1c139af184b92f18776a21fac8906b99ee60957b",
       "executable": false
     },
     "src/modules/dependencies/authority.mjs": {
@@ -6104,15 +6678,19 @@
       "executable": false
     },
     "src/modules/dependencies/crypto.mjs": {
-      "sha256": "8dc3397e90b6f8ec1dad81ba68da6e1a5e966ddd8c1b9ace943e964098fea950",
+      "sha256": "2df5bdc44e90b067e8c44514d32e4a67672765a9641d345ebe99cb520dc05040",
+      "executable": false
+    },
+    "src/modules/dependencies/custody.mjs": {
+      "sha256": "281acc20689432729a07bb4b9dc8633c839b9088dbbe2897a2133da664e182f0",
       "executable": false
     },
     "src/modules/dependencies/index.d.mts": {
-      "sha256": "667f8fd42fb7319b5d43c5cced539ad0ad13bfca46887c45b52c1bee19ef7a22",
+      "sha256": "0528c460eb7f012bae6853bf2d9464aa381e8e1c66d0bd93cb41998eb063198d",
       "executable": false
     },
     "src/modules/dependencies/index.mjs": {
-      "sha256": "6ce61db101b89b60fd69ea1eaa62da4226b18fcea5dd1ec46e42a73282309e89",
+      "sha256": "27a0aa745fdacac6deae5a58b35744e1db4db6ca3765bc95adffa21e1afa11ab",
       "executable": false
     },
     "src/modules/dependencies/logout.mjs": {
@@ -6128,7 +6706,7 @@
       "executable": false
     },
     "src/modules/dependencies/README.md": {
-      "sha256": "ff06f55a151d4757615fee4db858f531eb99d76fa0b6f068fe9e29c575d4dce3",
+      "sha256": "dc7c4d047c2ddb5ffcf34abe9b22010ccea2dcec4ef75ff0a784e4b80412e604",
       "executable": false
     },
     "src/modules/dependencies/schema/approval-attempt.sql": {
@@ -6139,8 +6717,16 @@
       "sha256": "3481d8aef870a9eda153a1617e99bb71a408e61a25dea92bb132efa7dd1c2526",
       "executable": false
     },
+    "src/modules/dependencies/schema/keys-sealed.sql": {
+      "sha256": "9c8fa5f94c48a230f326cd4d666cbc2bd1e7d5a18327b89e65b339ac6a533d9a",
+      "executable": false
+    },
+    "src/modules/dependencies/sealing.mjs": {
+      "sha256": "e5a476e91bf2a46e224ca81763219091d002e6892a1b6800bb52986aabf39c60",
+      "executable": false
+    },
     "src/modules/dependencies/store.mjs": {
-      "sha256": "1d102b080d60634fe28da383c80d32a191b9b99cd94600168d6071ac25f0a606",
+      "sha256": "ae64596fa06961a92275db0490eb905a7dbaf628501200706085ca6df7a7d73d",
       "executable": false
     },
     "src/modules/mail/.gitignore": {
@@ -6164,7 +6750,7 @@
       "executable": false
     },
     "src/modules/mail/README.md": {
-      "sha256": "7a041dddfa7161acfb2d53c7fd4522551c5e0c8a6061a8001eefaf9d0539be33",
+      "sha256": "d551371533cff8c966d239d65636e8c7776b202750777b16b56a0086e24dc77e",
       "executable": false
     },
     "src/modules/mail/src/adapters/cloudflare/headers.mjs": {
@@ -6396,7 +6982,7 @@
       "executable": false
     },
     "src/modules/operator-auth/accounts/admin.mjs": {
-      "sha256": "ad164e6b03136b67407e6f0b9ac7089dbcad505f65c07ac05c991705e17c69b1",
+      "sha256": "0231d669036f8e85a7e75623b297e717d3ab30d6c3ae02382ea0970d83297aae",
       "executable": false
     },
     "src/modules/operator-auth/accounts/credentials.mjs": {
@@ -6428,7 +7014,7 @@
       "executable": false
     },
     "src/modules/operator-auth/accounts/native.mjs": {
-      "sha256": "e1f15e6ef75b90c343af0a491ff45d342fe46ce027fb370eb045e80bf43947ef",
+      "sha256": "e5b05cdac03d401a9c1660c9100969780d1f5bcf30eb4e9a0024ad2182d1ea7d",
       "executable": false
     },
     "src/modules/operator-auth/accounts/oa.mjs": {
@@ -6444,11 +7030,15 @@
       "executable": false
     },
     "src/modules/operator-auth/accounts/provider-control.mjs": {
-      "sha256": "2fcd981aff97943e71d29a10ab09dfa879dc4707261df9953c7b25a0f22b9650",
+      "sha256": "4bb01cf08c3d7ebeb7eeb4068f11ba10d0c55e3f3bb7aeb336dfbf2b90e50efe",
       "executable": false
     },
     "src/modules/operator-auth/accounts/provider-pin.mjs": {
       "sha256": "ebc398d4c8dc573fdc724c3d1a7d790b9b9fbb7e18043eafdc4400ffce84aac6",
+      "executable": false
+    },
+    "src/modules/operator-auth/accounts/provider-setup.mjs": {
+      "sha256": "ea40b86f6698e75f32e85d3ef14ff722b7c6b5e09c48c43b0bd2bf6f4193fdc7",
       "executable": false
     },
     "src/modules/operator-auth/accounts/roles.mjs": {
@@ -6471,8 +7061,12 @@
       "sha256": "2130793483660155aaa1851b6111e51a7aeaf1f8ceb86d467d42ba684c35b562",
       "executable": false
     },
+    "src/modules/operator-auth/accounts/schema/last-signin.sql": {
+      "sha256": "289f99fd90e5263e9bb421f14887b0540e0686f7c7aa72110dd1ad20374bc945",
+      "executable": false
+    },
     "src/modules/operator-auth/accounts/schema/operator-auth.sql": {
-      "sha256": "389e6fc3201a73ab5e7280bbe4fdb793b652b84f157e444bab48cc3c25eb8c41",
+      "sha256": "e4cf66f7258c5b85876c16f18fb78fe3c9bd998244634ee267bb921403d01912",
       "executable": false
     },
     "src/modules/operator-auth/accounts/schema/owner-signin.sql": {
@@ -6487,16 +7081,28 @@
       "sha256": "f0cfb6b3740869fd098ee449efb25807f8b1ef51c353fd07bafeb00ce38aeb63",
       "executable": false
     },
+    "src/modules/operator-auth/accounts/schema/scheduled-policy-hardening.sql": {
+      "sha256": "71726d5009fd671101a49a0071982f710e429b976779fb10ce3d57fe2cb6750f",
+      "executable": false
+    },
+    "src/modules/operator-auth/accounts/schema/scheduled-policy.sql": {
+      "sha256": "377fa07ed05a95b64385af865b66d695c127a1086c0d85fe093c3eb5bebf3ebe",
+      "executable": false
+    },
     "src/modules/operator-auth/accounts/settings-page.mjs": {
-      "sha256": "1f7bfcbceb4c7fbc95a42b23fb62f869aaf02e0b5590ce75419c14235b48af8d",
+      "sha256": "63d7214adcdd9d706794f1eed57d79a143b1081aa61ce125e00593574a3fe544",
+      "executable": false
+    },
+    "src/modules/operator-auth/accounts/status.mjs": {
+      "sha256": "911b30e05f2a143b6b761f664e9cccd1f1d41d9348f7c0c932f60619a7253784",
       "executable": false
     },
     "src/modules/operator-auth/accounts/store.mjs": {
-      "sha256": "3492051e3675c69bbccf2bed483ee7d4a068d78bbc114abc33edcd5b94eb2b4f",
+      "sha256": "8a803003117ef61edbf4d2dd342ded1b1efa0f18c6767c253768222d748e55ec",
       "executable": false
     },
     "src/modules/operator-auth/branding.mjs": {
-      "sha256": "fc88270b035fcf5a44bbc8383a1939d89742189c4d410c1ca825d9af3e2f85cb",
+      "sha256": "a5d229f160df1fa4e7a7caba123856e649866b22f536ec23b7bc69746ace96ba",
       "executable": false
     },
     "src/modules/operator-auth/config.mjs": {
@@ -6504,19 +7110,19 @@
       "executable": false
     },
     "src/modules/operator-auth/conformance/index.d.mts": {
-      "sha256": "b8e9b4a51bf2b0f9c20eaf5c01902d763f6ea652adc5c7c600da69d2542e7055",
+      "sha256": "46bf3dace091c27d2308629d53116cf45021979b1aa6e18cd4c9da3d46735a71",
       "executable": false
     },
     "src/modules/operator-auth/conformance/index.mjs": {
-      "sha256": "b744282e573caa1a45748f92b76ccfdb608bda506eafb6bda276cc7ad12a4d99",
+      "sha256": "60e925f31c3c927889aae0dfeb82809e3f325cb572d4c31efe591d5ddc0a5010",
       "executable": false
     },
     "src/modules/operator-auth/conformance/presentation.mjs": {
-      "sha256": "5b6bb34b9b4c3a7791a54dd302248780b2a345183affb57fed6c5d31be49064b",
+      "sha256": "d4751f564d40b748919d8a7d87ecfaa98e97bc652f53e32a2bc8eed7d81d21dc",
       "executable": false
     },
     "src/modules/operator-auth/conformance/README.md": {
-      "sha256": "62b9e2dea277cd62ba0ddfd0ec9246bab7347de0d6c367971af209dae03163e6",
+      "sha256": "e8701354df0890f30629c6f4d965ba2503f6a4ef9cc696f37f93038608d7cd26",
       "executable": false
     },
     "src/modules/operator-auth/crypto.mjs": {
@@ -6536,7 +7142,7 @@
       "executable": false
     },
     "src/modules/operator-auth/dev-gate.mjs": {
-      "sha256": "c51e890a64226af10b3d672a5a79905ec6452e4355819923f6d20bbc241864e1",
+      "sha256": "e92f9db391137f4860e7e9483bcfb8b837e2ed3548cffb85810c08f5b8d31b77",
       "executable": false
     },
     "src/modules/operator-auth/dev/cli-session.mjs": {
@@ -6548,11 +7154,15 @@
       "executable": false
     },
     "src/modules/operator-auth/dev/index.mjs": {
-      "sha256": "cdfd59ec19f6e5b8cf0d85add580c17540a160501010a6d4eeb514b0d2d8b1a9",
+      "sha256": "fdf32e07f34130fd1a16ab0870bf8c73fb85c63575397e17d65a9761f9a8e2e3",
       "executable": false
     },
     "src/modules/operator-auth/dev/personas.mjs": {
       "sha256": "888afa951b9520376cd1b0cdbe13e75b002213c368be26652e514eca0ca2e485",
+      "executable": false
+    },
+    "src/modules/operator-auth/dev/refusal.mjs": {
+      "sha256": "8769e0122454322bc3ab1854d053b26f5ef82a3eb5576108955d30f571e34eed",
       "executable": false
     },
     "src/modules/operator-auth/dev/sign-in-as.d.mts": {
@@ -6564,19 +7174,19 @@
       "executable": false
     },
     "src/modules/operator-auth/docs/native-accounts.md": {
-      "sha256": "068f1c664d3e6ac55942f2ea0db5791dd9656b3607b456aacb69c8c8480d701c",
+      "sha256": "9aca0b540aff3f134cef296d48267e4dd1536e5631119c5c49b4dc59e6ba6df0",
       "executable": false
     },
     "src/modules/operator-auth/docs/README.md": {
-      "sha256": "098a5dfc2f761b962a0dae818a6130931789efe34376cc4efbd92cfc50d6fb2e",
+      "sha256": "fb67546feb7e63ef53608e88bf8a937abb3db31d497291734c5e7c99ac70e649",
       "executable": false
     },
     "src/modules/operator-auth/docs/tanstack-start.md": {
-      "sha256": "52557d15e2c9840fc92d0ef148d9f7f67ba7f5d718eabd5b7dbb80ab8dbff9e1",
+      "sha256": "d4ab9098ba759feb75a81ee76829af2e66a0b08cf0ef96a6f13aa6fd5e964f35",
       "executable": false
     },
     "src/modules/operator-auth/docs/vite-spa.md": {
-      "sha256": "ba684430f1a5adeae8bb7c28d02ca11a95a666242048a33256ab427d8fbce781",
+      "sha256": "37e2d7aab9fd1987c7c381c7c0a91724109e2e1a6c0af7f4fbbb528e2b603f3b",
       "executable": false
     },
     "src/modules/operator-auth/errors.mjs": {
@@ -6631,6 +7241,10 @@
       "sha256": "0b68a78d59ecf553a1cacc182e280071f9554b37271249cfc037afcbf2d54cfb",
       "executable": false
     },
+    "src/modules/operator-auth/identity/oidc/aes-gcm.mjs": {
+      "sha256": "afe49eda22b936c7582c2db203c529861f16492fd96267fe6daca91683aee103",
+      "executable": false
+    },
     "src/modules/operator-auth/identity/oidc/client-auth.mjs": {
       "sha256": "061ac35699976c075b120891f7eacb4b1c893b9081faff1e5b3bd0a5834d97ef",
       "executable": false
@@ -6640,7 +7254,7 @@
       "executable": false
     },
     "src/modules/operator-auth/identity/oidc/crypto.mjs": {
-      "sha256": "968787aa4d88b2d5323ef55dce0755d50e32502a6753505eaf3f6a0298078ff8",
+      "sha256": "51fa925f5467544784514f727ab4d27797e2486533c9edca896623566da93db2",
       "executable": false
     },
     "src/modules/operator-auth/identity/oidc/errors.mjs": {
@@ -6684,7 +7298,7 @@
       "executable": false
     },
     "src/modules/operator-auth/index.d.mts": {
-      "sha256": "cf3ba368871ed4db7b4966b64876bed9116db7dc00d462e8d64cbcf985a717aa",
+      "sha256": "2415587207b4e96e8d815cdeb16b8d0152e6d05247365a66f147e9f2a114c1e9",
       "executable": false
     },
     "src/modules/operator-auth/index.mjs": {
@@ -6708,7 +7322,7 @@
       "executable": false
     },
     "src/modules/operator-auth/page.mjs": {
-      "sha256": "3fa120d55b8ff80c613e53d4df3fb4a249cadf508b2b3144f94fd89afbdd22e4",
+      "sha256": "546ff9279dcd282c7d4f2444e48297961634cfb03d7a2c0416fd63f15d342a42",
       "executable": false
     },
     "src/modules/operator-auth/policy.d.mts": {
@@ -6720,19 +7334,55 @@
       "executable": false
     },
     "src/modules/operator-auth/README.md": {
-      "sha256": "90f6818bc40771777e020c11bec516039fe534bcf885c27461069fb9ed0d3e7c",
+      "sha256": "ce65e011c97d7c234c00e1363f1ac43a6137b88c00f8dcfcda6675db55a8310c",
       "executable": false
     },
     "src/modules/operator-auth/rejected-response.mjs": {
       "sha256": "38c4e7621901173d0bca9bc62587486951ce24d2e0e31e97f26e1dfe406c9726",
       "executable": false
     },
+    "src/modules/operator-auth/representation.mjs": {
+      "sha256": "206c3ae542e00687c2ee6c09a2e3466827c7eb58a97d10779cbeca1af945dcb3",
+      "executable": false
+    },
     "src/modules/operator-auth/routes.mjs": {
-      "sha256": "2e37eee6b45e5a85b3625b36ec390f9383784301c811bcefb1d60158be32875f",
+      "sha256": "e7544cc70c2f6e933630d6848af102b957002bdec9cf112227f2c163b96e10fd",
+      "executable": false
+    },
+    "src/modules/operator-auth/SCHEDULED-POLICY.md": {
+      "sha256": "59c8fb08ab84dbcb720086fce458ef07b94933737c5777e07b79909d95b27862",
+      "executable": false
+    },
+    "src/modules/operator-auth/scheduled/definition.mjs": {
+      "sha256": "36330a77503bbcf8281fa36347a8d9e9f82a02e8c48ea9b2602b6a51f8249d18",
+      "executable": false
+    },
+    "src/modules/operator-auth/scheduled/expiry.mjs": {
+      "sha256": "48cd273ca4db3cb170b3bf73ad3096f41f7e082ad8f6ac471320a22d76796db0",
+      "executable": false
+    },
+    "src/modules/operator-auth/scheduled/fence.mjs": {
+      "sha256": "5b1e9b260c7f8207afebd0dfff4af206a97755bba0632f878b7e9af0b474e272",
+      "executable": false
+    },
+    "src/modules/operator-auth/scheduled/history.mjs": {
+      "sha256": "b1428a3aef4a357211a465f6a662482d1bd9897c6f1f171b59709cb1aac2b856",
+      "executable": false
+    },
+    "src/modules/operator-auth/scheduled/index.d.mts": {
+      "sha256": "a67bccea082655647aade78a09787b7996c5d3a8a6a0c78edfbcdf8f8396195a",
+      "executable": false
+    },
+    "src/modules/operator-auth/scheduled/index.mjs": {
+      "sha256": "e5ed6721a8726c1393904da78c350875d317c3fbce6a6a24de9adc9410775926",
+      "executable": false
+    },
+    "src/modules/operator-auth/scheduled/runner.mjs": {
+      "sha256": "d44cf0c25910197b6881697b450d804c4bcd7dc9de8a8245dfd63795a343c3be",
       "executable": false
     },
     "src/modules/operator-auth/service.mjs": {
-      "sha256": "1d535e605731b0edddcf0cdcc8fd84559a2069b95d98bff821676a1dea5f28a7",
+      "sha256": "5049fb59d66af8108519dcd2ef20997469eeb70dafd28bc8a3a51a76cad2cf6a",
       "executable": false
     },
     "src/modules/operator-auth/signin/index.d.mts": {
@@ -6740,11 +7390,11 @@
       "executable": false
     },
     "src/modules/operator-auth/signin/index.mjs": {
-      "sha256": "65731ce39d042a57301692773180878ebb76fff89e30fcb5d86253d9c138b9e7",
+      "sha256": "6830071822ad747f16e50622c0f77424d2e2f0d9c4d1a6b42f4ea41fb08e72de",
       "executable": false
     },
     "src/modules/operator-auth/signin/one-click.mjs": {
-      "sha256": "5fcd0e2432314f5910b3bd55e1226f0d3a5402639896a88bf9faf130369f30b3",
+      "sha256": "afb305c3055eb395e0d575f72c8c332dc56b2247848ba9940886dc1615eead40",
       "executable": false
     },
     "src/modules/owner-claim/idp.mjs": {
@@ -7004,7 +7654,7 @@
       "executable": false
     },
     "tests/email-link.mjs": {
-      "sha256": "c0786ab90953b57f7b98f4a99a5750b94f667d0682fbe0c2f1b54777bad76bb7",
+      "sha256": "05f8cd33bc364744abded337a88c55750d34f8361126bbfaabbbe7d64bdcb44c",
       "executable": false
     },
     "tests/engagement-browser.mjs": {
@@ -7424,7 +8074,7 @@
       "executable": false
     },
     "wrangler.jsonc": {
-      "sha256": "13f6cf3e3989e7a9252135ce6041fcdcc61e73adba357bc8421fdc66487e6d6d",
+      "sha256": "d74b46276a231f38e5124fdd426e4cfae0555d03d8f8ec7b4d0584a401ebc08f",
       "executable": false
     }
   }

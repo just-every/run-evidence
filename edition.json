@@ -19,11 +19,41 @@
           "LICENSE",
           "RUN-LOCALLY.md",
           "SEED-COMMAND-CONTRACT.md",
+          "scripts/delivery/base/artifact.mjs",
+          "scripts/delivery/base/bindings.mjs",
+          "scripts/delivery/base/capabilities.mjs",
+          "scripts/delivery/base/cli.mjs",
+          "scripts/delivery/base/declarations.mjs",
+          "scripts/delivery/base/export.mjs",
+          "scripts/delivery/base/generators/integration.mjs",
+          "scripts/delivery/base/generators/managed.mjs",
+          "scripts/delivery/base/generators/project.mjs",
+          "scripts/delivery/base/generators/validation.mjs",
+          "scripts/delivery/base/mail.mjs",
+          "scripts/delivery/base/migrations.mjs",
+          "scripts/delivery/base/native-export.mjs",
+          "scripts/delivery/base/package.mjs",
+          "scripts/delivery/base/paths.mjs",
+          "scripts/delivery/base/payloads.mjs",
+          "scripts/delivery/base/schema/SETUP.schema.json",
+          "scripts/delivery/base/schema/business-field-inputs.mjs",
+          "scripts/delivery/base/schema/dependencies.mjs",
+          "scripts/delivery/base/schema/json-schema.mjs",
+          "scripts/delivery/base/schema/setup-validation.mjs",
+          "scripts/delivery/base/setup-manifest.mjs",
+          "scripts/delivery/base/sign-in.mjs",
+          "scripts/delivery/base/spec.mjs",
+          "scripts/delivery/base/sql-statements.mjs",
           "scripts/edition-authoring/README.md",
+          "scripts/edition-authoring/adopt.mjs",
+          "scripts/edition-authoring/base-acknowledgements.mjs",
           "scripts/edition-authoring/base-copies.mjs",
           "scripts/edition-authoring/cli.mjs",
+          "scripts/edition-authoring/copy-checkout.mjs",
           "scripts/edition-authoring/files.mjs",
+          "scripts/edition-authoring/lock.mjs",
           "scripts/edition-authoring/manifest.mjs",
+          "scripts/edition-authoring/offline-git.mjs",
           "scripts/edition-authoring/parent-comparison.mjs",
           "scripts/edition-authoring/projection-lock.mjs",
           "scripts/edition-authoring/release.mjs",
@@ -61,6 +91,7 @@
           "src/evidence/import/base/LICENSE",
           "src/evidence/import/base/d1/README.md",
           "src/evidence/import/base/d1/apply.ts",
+          "src/evidence/import/base/d1/atomic-prefix.ts",
           "src/evidence/import/base/d1/budget.ts",
           "src/evidence/import/base/d1/compressed-plan.ts",
           "src/evidence/import/base/d1/creation.ts",
@@ -128,6 +159,7 @@
           "src/evidence/import/base/d1/preparation-steps-schema.ts",
           "src/evidence/import/base/d1/preparation-steps.ts",
           "src/evidence/import/base/d1/preparations.ts",
+          "src/evidence/import/base/d1/preserved-preview.ts",
           "src/evidence/import/base/d1/preserved-reverse.ts",
           "src/evidence/import/base/d1/provenance-set.ts",
           "src/evidence/import/base/d1/publication-fence.ts",
@@ -146,11 +178,16 @@
           "src/evidence/import/base/d1/retirement-steps.ts",
           "src/evidence/import/base/d1/retirement-tally.ts",
           "src/evidence/import/base/d1/retirement.ts",
+          "src/evidence/import/base/d1/reversal-conversion-record.ts",
+          "src/evidence/import/base/d1/reversal-conversion-schema.ts",
+          "src/evidence/import/base/d1/reversal-conversion.ts",
           "src/evidence/import/base/d1/reversal-fence-schema.ts",
           "src/evidence/import/base/d1/reversal-fence.ts",
+          "src/evidence/import/base/d1/reversal-journal.ts",
           "src/evidence/import/base/d1/reverse.ts",
           "src/evidence/import/base/d1/reviewed-source.ts",
           "src/evidence/import/base/d1/sets.ts",
+          "src/evidence/import/base/d1/staged-creation.ts",
           "src/evidence/import/base/d1/staging-admission.ts",
           "src/evidence/import/base/d1/staging-control.ts",
           "src/evidence/import/base/d1/staging-erasure.ts",
@@ -186,6 +223,7 @@
           "src/evidence/import/base/d1/undo-snapshot.ts",
           "src/evidence/import/base/d1/undo-state.ts",
           "src/evidence/import/base/d1/undo-types.ts",
+          "src/evidence/import/base/d1/verified-plan.ts",
           "src/evidence/import/base/journal/authority.ts",
           "src/evidence/import/base/journal/boundary.ts",
           "src/evidence/import/base/journal/jobs.ts",
@@ -195,6 +233,7 @@
           "src/evidence/import/base/plan/size.ts",
           "src/evidence/import/base/provenance/canonical-hash.ts",
           "src/evidence/import/base/provenance/canonical-stream.ts",
+          "src/evidence/import/base/provenance/credential-names.ts",
           "src/evidence/import/base/provenance/credentials.ts",
           "src/evidence/import/base/provenance/identity.ts",
           "src/evidence/import/base/provenance/json-snapshot.ts",
@@ -210,12 +249,16 @@
           "src/evidence/import/base/types.ts",
           "src/mail.server.d.mts",
           "src/modules/demo/README.md",
+          "src/modules/demo/declaration.mjs",
           "src/modules/demo/effects.mjs",
           "src/modules/demo/index.d.mts",
           "src/modules/demo/index.mjs",
+          "src/modules/demo/input-path.mjs",
           "src/modules/demo/label.d.mts",
           "src/modules/demo/label.mjs",
+          "src/modules/demo/navigation.mjs",
           "src/modules/demo/responses.mjs",
+          "src/modules/demo/run-url.mjs",
           "src/modules/demo/sockets.mjs",
           "src/modules/demo/vite.d.mts",
           "src/modules/demo/vite.mjs",
@@ -224,6 +267,7 @@
           "src/modules/dependencies/auth.mjs",
           "src/modules/dependencies/authority.mjs",
           "src/modules/dependencies/crypto.mjs",
+          "src/modules/dependencies/custody.mjs",
           "src/modules/dependencies/index.d.mts",
           "src/modules/dependencies/index.mjs",
           "src/modules/dependencies/logout.mjs",
@@ -231,6 +275,8 @@
           "src/modules/dependencies/protocol.mjs",
           "src/modules/dependencies/schema/approval-attempt.sql",
           "src/modules/dependencies/schema/dependencies.sql",
+          "src/modules/dependencies/schema/keys-sealed.sql",
+          "src/modules/dependencies/sealing.mjs",
           "src/modules/dependencies/store.mjs",
           "src/modules/mail/.gitignore",
           "src/modules/mail/LICENSE",
@@ -295,6 +341,7 @@
           "src/modules/mail/src/sendgrid-email/index.mjs",
           "src/modules/mail/src/unsubscribe/index.mjs",
           "src/modules/operator-auth/README.md",
+          "src/modules/operator-auth/SCHEDULED-POLICY.md",
           "src/modules/operator-auth/accounts/adapter.mjs",
           "src/modules/operator-auth/accounts/admin.mjs",
           "src/modules/operator-auth/accounts/credentials.mjs",
@@ -310,16 +357,21 @@
           "src/modules/operator-auth/accounts/owner-signin.mjs",
           "src/modules/operator-auth/accounts/provider-control.mjs",
           "src/modules/operator-auth/accounts/provider-pin.mjs",
+          "src/modules/operator-auth/accounts/provider-setup.mjs",
           "src/modules/operator-auth/accounts/roles.mjs",
           "src/modules/operator-auth/accounts/schema/dependency-setup.sql",
           "src/modules/operator-auth/accounts/schema/dev-sessions.sql",
           "src/modules/operator-auth/accounts/schema/domain-rules-step-up.sql",
           "src/modules/operator-auth/accounts/schema/invitation-cancellation.sql",
+          "src/modules/operator-auth/accounts/schema/last-signin.sql",
           "src/modules/operator-auth/accounts/schema/operator-auth.sql",
           "src/modules/operator-auth/accounts/schema/owner-signin.sql",
           "src/modules/operator-auth/accounts/schema/provider-control.sql",
           "src/modules/operator-auth/accounts/schema/provider-pins.sql",
+          "src/modules/operator-auth/accounts/schema/scheduled-policy-hardening.sql",
+          "src/modules/operator-auth/accounts/schema/scheduled-policy.sql",
           "src/modules/operator-auth/accounts/settings-page.mjs",
+          "src/modules/operator-auth/accounts/status.mjs",
           "src/modules/operator-auth/accounts/store.mjs",
           "src/modules/operator-auth/branding.mjs",
           "src/modules/operator-auth/config.mjs",
@@ -336,6 +388,7 @@
           "src/modules/operator-auth/dev/index.d.mts",
           "src/modules/operator-auth/dev/index.mjs",
           "src/modules/operator-auth/dev/personas.mjs",
+          "src/modules/operator-auth/dev/refusal.mjs",
           "src/modules/operator-auth/dev/sign-in-as.d.mts",
           "src/modules/operator-auth/dev/sign-in-as.mjs",
           "src/modules/operator-auth/docs/README.md",
@@ -356,6 +409,7 @@
           "src/modules/operator-auth/identity/index.d.mts",
           "src/modules/operator-auth/identity/index.mjs",
           "src/modules/operator-auth/identity/oidc/README.md",
+          "src/modules/operator-auth/identity/oidc/aes-gcm.mjs",
           "src/modules/operator-auth/identity/oidc/client-auth.mjs",
           "src/modules/operator-auth/identity/oidc/config.mjs",
           "src/modules/operator-auth/identity/oidc/crypto.mjs",
@@ -378,7 +432,15 @@
           "src/modules/operator-auth/policy.d.mts",
           "src/modules/operator-auth/policy.mjs",
           "src/modules/operator-auth/rejected-response.mjs",
+          "src/modules/operator-auth/representation.mjs",
           "src/modules/operator-auth/routes.mjs",
+          "src/modules/operator-auth/scheduled/definition.mjs",
+          "src/modules/operator-auth/scheduled/expiry.mjs",
+          "src/modules/operator-auth/scheduled/fence.mjs",
+          "src/modules/operator-auth/scheduled/history.mjs",
+          "src/modules/operator-auth/scheduled/index.d.mts",
+          "src/modules/operator-auth/scheduled/index.mjs",
+          "src/modules/operator-auth/scheduled/runner.mjs",
           "src/modules/operator-auth/service.mjs",
           "src/modules/operator-auth/signin/index.d.mts",
           "src/modules/operator-auth/signin/index.mjs",
@@ -397,7 +459,7 @@
         ],
         "origin": {
           "repository": "https://github.com/runeditrun/base.git",
-          "revision": "9d371985250abd531495a9d8752e1c291a778308",
+          "revision": "11f94fec479228d71ba6d7dd6ea7796c0d42c544",
           "path": ".",
           "paths": [
             "LICENSE",
@@ -405,10 +467,15 @@
             "default-seed/scripts/installer/ui/background.svg",
             "default-seed/src/router.tsx",
             "edition-authoring/README.md",
+            "edition-authoring/adopt.mjs",
+            "edition-authoring/base-acknowledgements.mjs",
             "edition-authoring/base-copies.mjs",
             "edition-authoring/cli.mjs",
+            "edition-authoring/copy-checkout.mjs",
             "edition-authoring/files.mjs",
+            "edition-authoring/lock.mjs",
             "edition-authoring/manifest.mjs",
+            "edition-authoring/offline-git.mjs",
             "edition-authoring/parent-comparison.mjs",
             "edition-authoring/projection-lock.mjs",
             "edition-authoring/release.mjs",
@@ -446,13 +513,37 @@
             "foundation/template/src/mail.server.d.mts",
             "modules/d1-transport/index.d.mts",
             "modules/d1-transport/index.mjs",
+            "modules/delivery-producer/artifact.mjs",
+            "modules/delivery-producer/bindings.mjs",
+            "modules/delivery-producer/capabilities.mjs",
+            "modules/delivery-producer/cli.mjs",
+            "modules/delivery-producer/declarations.mjs",
+            "modules/delivery-producer/export.mjs",
+            "modules/delivery-producer/generators/integration.mjs",
+            "modules/delivery-producer/generators/managed.mjs",
+            "modules/delivery-producer/generators/project.mjs",
+            "modules/delivery-producer/generators/validation.mjs",
+            "modules/delivery-producer/mail.mjs",
+            "modules/delivery-producer/migrations.mjs",
+            "modules/delivery-producer/native-export.mjs",
+            "modules/delivery-producer/package.mjs",
+            "modules/delivery-producer/paths.mjs",
+            "modules/delivery-producer/payloads.mjs",
+            "modules/delivery-producer/setup-manifest.mjs",
+            "modules/delivery-producer/sign-in.mjs",
+            "modules/delivery-producer/spec.mjs",
+            "modules/delivery-producer/sql-statements.mjs",
             "modules/demo/README.md",
+            "modules/demo/declaration.mjs",
             "modules/demo/effects.mjs",
             "modules/demo/index.d.mts",
             "modules/demo/index.mjs",
+            "modules/demo/input-path.mjs",
             "modules/demo/label.d.mts",
             "modules/demo/label.mjs",
+            "modules/demo/navigation.mjs",
             "modules/demo/responses.mjs",
+            "modules/demo/run-url.mjs",
             "modules/demo/sockets.mjs",
             "modules/demo/vite.d.mts",
             "modules/demo/vite.mjs",
@@ -461,6 +552,7 @@
             "modules/dependencies/auth.mjs",
             "modules/dependencies/authority.mjs",
             "modules/dependencies/crypto.mjs",
+            "modules/dependencies/custody.mjs",
             "modules/dependencies/index.d.mts",
             "modules/dependencies/index.mjs",
             "modules/dependencies/logout.mjs",
@@ -468,9 +560,12 @@
             "modules/dependencies/protocol.mjs",
             "modules/dependencies/schema/approval-attempt.sql",
             "modules/dependencies/schema/dependencies.sql",
+            "modules/dependencies/schema/keys-sealed.sql",
+            "modules/dependencies/sealing.mjs",
             "modules/dependencies/store.mjs",
             "modules/import-kit/src/d1/README.md",
             "modules/import-kit/src/d1/apply.ts",
+            "modules/import-kit/src/d1/atomic-prefix.ts",
             "modules/import-kit/src/d1/budget.ts",
             "modules/import-kit/src/d1/compressed-plan.ts",
             "modules/import-kit/src/d1/creation.ts",
@@ -538,6 +633,7 @@
             "modules/import-kit/src/d1/preparation-steps-schema.ts",
             "modules/import-kit/src/d1/preparation-steps.ts",
             "modules/import-kit/src/d1/preparations.ts",
+            "modules/import-kit/src/d1/preserved-preview.ts",
             "modules/import-kit/src/d1/preserved-reverse.ts",
             "modules/import-kit/src/d1/provenance-set.ts",
             "modules/import-kit/src/d1/publication-fence.ts",
@@ -556,11 +652,16 @@
             "modules/import-kit/src/d1/retirement-steps.ts",
             "modules/import-kit/src/d1/retirement-tally.ts",
             "modules/import-kit/src/d1/retirement.ts",
+            "modules/import-kit/src/d1/reversal-conversion-record.ts",
+            "modules/import-kit/src/d1/reversal-conversion-schema.ts",
+            "modules/import-kit/src/d1/reversal-conversion.ts",
             "modules/import-kit/src/d1/reversal-fence-schema.ts",
             "modules/import-kit/src/d1/reversal-fence.ts",
+            "modules/import-kit/src/d1/reversal-journal.ts",
             "modules/import-kit/src/d1/reverse.ts",
             "modules/import-kit/src/d1/reviewed-source.ts",
             "modules/import-kit/src/d1/sets.ts",
+            "modules/import-kit/src/d1/staged-creation.ts",
             "modules/import-kit/src/d1/staging-admission.ts",
             "modules/import-kit/src/d1/staging-control.ts",
             "modules/import-kit/src/d1/staging-erasure.ts",
@@ -596,6 +697,7 @@
             "modules/import-kit/src/d1/undo-snapshot.ts",
             "modules/import-kit/src/d1/undo-state.ts",
             "modules/import-kit/src/d1/undo-types.ts",
+            "modules/import-kit/src/d1/verified-plan.ts",
             "modules/import-kit/src/journal/authority.ts",
             "modules/import-kit/src/journal/boundary.ts",
             "modules/import-kit/src/journal/jobs.ts",
@@ -605,6 +707,7 @@
             "modules/import-kit/src/plan/size.ts",
             "modules/import-kit/src/provenance/canonical-hash.ts",
             "modules/import-kit/src/provenance/canonical-stream.ts",
+            "modules/import-kit/src/provenance/credential-names.ts",
             "modules/import-kit/src/provenance/credentials.ts",
             "modules/import-kit/src/provenance/identity.ts",
             "modules/import-kit/src/provenance/json-snapshot.ts",
@@ -681,6 +784,7 @@
             "modules/mail/src/sendgrid-email/index.mjs",
             "modules/mail/src/unsubscribe/index.mjs",
             "modules/operator-auth/README.md",
+            "modules/operator-auth/SCHEDULED-POLICY.md",
             "modules/operator-auth/accounts/adapter.mjs",
             "modules/operator-auth/accounts/admin.mjs",
             "modules/operator-auth/accounts/credentials.mjs",
@@ -696,16 +800,21 @@
             "modules/operator-auth/accounts/owner-signin.mjs",
             "modules/operator-auth/accounts/provider-control.mjs",
             "modules/operator-auth/accounts/provider-pin.mjs",
+            "modules/operator-auth/accounts/provider-setup.mjs",
             "modules/operator-auth/accounts/roles.mjs",
             "modules/operator-auth/accounts/schema/dependency-setup.sql",
             "modules/operator-auth/accounts/schema/dev-sessions.sql",
             "modules/operator-auth/accounts/schema/domain-rules-step-up.sql",
             "modules/operator-auth/accounts/schema/invitation-cancellation.sql",
+            "modules/operator-auth/accounts/schema/last-signin.sql",
             "modules/operator-auth/accounts/schema/operator-auth.sql",
             "modules/operator-auth/accounts/schema/owner-signin.sql",
             "modules/operator-auth/accounts/schema/provider-control.sql",
             "modules/operator-auth/accounts/schema/provider-pins.sql",
+            "modules/operator-auth/accounts/schema/scheduled-policy-hardening.sql",
+            "modules/operator-auth/accounts/schema/scheduled-policy.sql",
             "modules/operator-auth/accounts/settings-page.mjs",
+            "modules/operator-auth/accounts/status.mjs",
             "modules/operator-auth/accounts/store.mjs",
             "modules/operator-auth/branding.mjs",
             "modules/operator-auth/config.mjs",
@@ -722,6 +831,7 @@
             "modules/operator-auth/dev/index.d.mts",
             "modules/operator-auth/dev/index.mjs",
             "modules/operator-auth/dev/personas.mjs",
+            "modules/operator-auth/dev/refusal.mjs",
             "modules/operator-auth/dev/sign-in-as.d.mts",
             "modules/operator-auth/dev/sign-in-as.mjs",
             "modules/operator-auth/docs/README.md",
@@ -742,6 +852,7 @@
             "modules/operator-auth/identity/index.d.mts",
             "modules/operator-auth/identity/index.mjs",
             "modules/operator-auth/identity/oidc/README.md",
+            "modules/operator-auth/identity/oidc/aes-gcm.mjs",
             "modules/operator-auth/identity/oidc/client-auth.mjs",
             "modules/operator-auth/identity/oidc/config.mjs",
             "modules/operator-auth/identity/oidc/crypto.mjs",
@@ -764,7 +875,15 @@
             "modules/operator-auth/policy.d.mts",
             "modules/operator-auth/policy.mjs",
             "modules/operator-auth/rejected-response.mjs",
+            "modules/operator-auth/representation.mjs",
             "modules/operator-auth/routes.mjs",
+            "modules/operator-auth/scheduled/definition.mjs",
+            "modules/operator-auth/scheduled/expiry.mjs",
+            "modules/operator-auth/scheduled/fence.mjs",
+            "modules/operator-auth/scheduled/history.mjs",
+            "modules/operator-auth/scheduled/index.d.mts",
+            "modules/operator-auth/scheduled/index.mjs",
+            "modules/operator-auth/scheduled/runner.mjs",
             "modules/operator-auth/service.mjs",
             "modules/operator-auth/signin/index.d.mts",
             "modules/operator-auth/signin/index.mjs",
@@ -778,7 +897,12 @@
             "modules/owner-claim/schema/owner-claim.sql",
             "modules/owner-claim/transaction.mjs",
             "modules/owner-claim/verify.d.mts",
-            "modules/owner-claim/verify.mjs"
+            "modules/owner-claim/verify.mjs",
+            "schema/SETUP.schema.json",
+            "schema/business-field-inputs.mjs",
+            "schema/dependencies.mjs",
+            "schema/json-schema.mjs",
+            "schema/setup-validation.mjs"
           ]
         },
         "mappings": [
@@ -799,6 +923,114 @@
             "originPath": "export/RUN-LOCALLY.md"
           },
           {
+            "path": "scripts/delivery/base/artifact.mjs",
+            "originPath": "modules/delivery-producer/artifact.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/bindings.mjs",
+            "originPath": "modules/delivery-producer/bindings.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/capabilities.mjs",
+            "originPath": "modules/delivery-producer/capabilities.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/cli.mjs",
+            "originPath": "modules/delivery-producer/cli.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/declarations.mjs",
+            "originPath": "modules/delivery-producer/declarations.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/export.mjs",
+            "originPath": "modules/delivery-producer/export.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/generators/integration.mjs",
+            "originPath": "modules/delivery-producer/generators/integration.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/generators/managed.mjs",
+            "originPath": "modules/delivery-producer/generators/managed.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/generators/project.mjs",
+            "originPath": "modules/delivery-producer/generators/project.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/generators/validation.mjs",
+            "originPath": "modules/delivery-producer/generators/validation.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/mail.mjs",
+            "originPath": "modules/delivery-producer/mail.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/migrations.mjs",
+            "originPath": "modules/delivery-producer/migrations.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/native-export.mjs",
+            "originPath": "modules/delivery-producer/native-export.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/package.mjs",
+            "originPath": "modules/delivery-producer/package.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/paths.mjs",
+            "originPath": "modules/delivery-producer/paths.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/payloads.mjs",
+            "originPath": "modules/delivery-producer/payloads.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/schema/business-field-inputs.mjs",
+            "originPath": "schema/business-field-inputs.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/schema/dependencies.mjs",
+            "originPath": "schema/dependencies.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/schema/json-schema.mjs",
+            "originPath": "schema/json-schema.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/schema/setup-validation.mjs",
+            "originPath": "schema/setup-validation.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/schema/SETUP.schema.json",
+            "originPath": "schema/SETUP.schema.json"
+          },
+          {
+            "path": "scripts/delivery/base/setup-manifest.mjs",
+            "originPath": "modules/delivery-producer/setup-manifest.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/sign-in.mjs",
+            "originPath": "modules/delivery-producer/sign-in.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/spec.mjs",
+            "originPath": "modules/delivery-producer/spec.mjs"
+          },
+          {
+            "path": "scripts/delivery/base/sql-statements.mjs",
+            "originPath": "modules/delivery-producer/sql-statements.mjs"
+          },
+          {
+            "path": "scripts/edition-authoring/adopt.mjs",
+            "originPath": "edition-authoring/adopt.mjs"
+          },
+          {
+            "path": "scripts/edition-authoring/base-acknowledgements.mjs",
+            "originPath": "edition-authoring/base-acknowledgements.mjs"
+          },
+          {
             "path": "scripts/edition-authoring/base-copies.mjs",
             "originPath": "edition-authoring/base-copies.mjs"
           },
@@ -807,12 +1039,24 @@
             "originPath": "edition-authoring/cli.mjs"
           },
           {
+            "path": "scripts/edition-authoring/copy-checkout.mjs",
+            "originPath": "edition-authoring/copy-checkout.mjs"
+          },
+          {
             "path": "scripts/edition-authoring/files.mjs",
             "originPath": "edition-authoring/files.mjs"
           },
           {
+            "path": "scripts/edition-authoring/lock.mjs",
+            "originPath": "edition-authoring/lock.mjs"
+          },
+          {
             "path": "scripts/edition-authoring/manifest.mjs",
             "originPath": "edition-authoring/manifest.mjs"
+          },
+          {
+            "path": "scripts/edition-authoring/offline-git.mjs",
+            "originPath": "edition-authoring/offline-git.mjs"
           },
           {
             "path": "scripts/edition-authoring/parent-comparison.mjs",
@@ -961,6 +1205,10 @@
           {
             "path": "src/evidence/import/base/d1/apply.ts",
             "originPath": "modules/import-kit/src/d1/apply.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/atomic-prefix.ts",
+            "originPath": "modules/import-kit/src/d1/atomic-prefix.ts"
           },
           {
             "path": "src/evidence/import/base/d1/budget.ts",
@@ -1231,6 +1479,10 @@
             "originPath": "modules/import-kit/src/d1/preparations.ts"
           },
           {
+            "path": "src/evidence/import/base/d1/preserved-preview.ts",
+            "originPath": "modules/import-kit/src/d1/preserved-preview.ts"
+          },
+          {
             "path": "src/evidence/import/base/d1/preserved-reverse.ts",
             "originPath": "modules/import-kit/src/d1/preserved-reverse.ts"
           },
@@ -1307,12 +1559,28 @@
             "originPath": "modules/import-kit/src/d1/retirement.ts"
           },
           {
+            "path": "src/evidence/import/base/d1/reversal-conversion-record.ts",
+            "originPath": "modules/import-kit/src/d1/reversal-conversion-record.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/reversal-conversion-schema.ts",
+            "originPath": "modules/import-kit/src/d1/reversal-conversion-schema.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/reversal-conversion.ts",
+            "originPath": "modules/import-kit/src/d1/reversal-conversion.ts"
+          },
+          {
             "path": "src/evidence/import/base/d1/reversal-fence-schema.ts",
             "originPath": "modules/import-kit/src/d1/reversal-fence-schema.ts"
           },
           {
             "path": "src/evidence/import/base/d1/reversal-fence.ts",
             "originPath": "modules/import-kit/src/d1/reversal-fence.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/reversal-journal.ts",
+            "originPath": "modules/import-kit/src/d1/reversal-journal.ts"
           },
           {
             "path": "src/evidence/import/base/d1/reverse.ts",
@@ -1325,6 +1593,10 @@
           {
             "path": "src/evidence/import/base/d1/sets.ts",
             "originPath": "modules/import-kit/src/d1/sets.ts"
+          },
+          {
+            "path": "src/evidence/import/base/d1/staged-creation.ts",
+            "originPath": "modules/import-kit/src/d1/staged-creation.ts"
           },
           {
             "path": "src/evidence/import/base/d1/staging-admission.ts",
@@ -1467,6 +1739,10 @@
             "originPath": "modules/import-kit/src/d1/undo-types.ts"
           },
           {
+            "path": "src/evidence/import/base/d1/verified-plan.ts",
+            "originPath": "modules/import-kit/src/d1/verified-plan.ts"
+          },
+          {
             "path": "src/evidence/import/base/journal/authority.ts",
             "originPath": "modules/import-kit/src/journal/authority.ts"
           },
@@ -1505,6 +1781,10 @@
           {
             "path": "src/evidence/import/base/provenance/canonical-stream.ts",
             "originPath": "modules/import-kit/src/provenance/canonical-stream.ts"
+          },
+          {
+            "path": "src/evidence/import/base/provenance/credential-names.ts",
+            "originPath": "modules/import-kit/src/provenance/credential-names.ts"
           },
           {
             "path": "src/evidence/import/base/provenance/credentials.ts",
@@ -1563,6 +1843,10 @@
             "originPath": "foundation/template/src/mail.server.d.mts"
           },
           {
+            "path": "src/modules/demo/declaration.mjs",
+            "originPath": "modules/demo/declaration.mjs"
+          },
+          {
             "path": "src/modules/demo/effects.mjs",
             "originPath": "modules/demo/effects.mjs"
           },
@@ -1575,6 +1859,10 @@
             "originPath": "modules/demo/index.mjs"
           },
           {
+            "path": "src/modules/demo/input-path.mjs",
+            "originPath": "modules/demo/input-path.mjs"
+          },
+          {
             "path": "src/modules/demo/label.d.mts",
             "originPath": "modules/demo/label.d.mts"
           },
@@ -1583,12 +1871,20 @@
             "originPath": "modules/demo/label.mjs"
           },
           {
+            "path": "src/modules/demo/navigation.mjs",
+            "originPath": "modules/demo/navigation.mjs"
+          },
+          {
             "path": "src/modules/demo/README.md",
             "originPath": "modules/demo/README.md"
           },
           {
             "path": "src/modules/demo/responses.mjs",
             "originPath": "modules/demo/responses.mjs"
+          },
+          {
+            "path": "src/modules/demo/run-url.mjs",
+            "originPath": "modules/demo/run-url.mjs"
           },
           {
             "path": "src/modules/demo/sockets.mjs",
@@ -1617,6 +1913,10 @@
           {
             "path": "src/modules/dependencies/crypto.mjs",
             "originPath": "modules/dependencies/crypto.mjs"
+          },
+          {
+            "path": "src/modules/dependencies/custody.mjs",
+            "originPath": "modules/dependencies/custody.mjs"
           },
           {
             "path": "src/modules/dependencies/index.d.mts",
@@ -1649,6 +1949,14 @@
           {
             "path": "src/modules/dependencies/schema/dependencies.sql",
             "originPath": "modules/dependencies/schema/dependencies.sql"
+          },
+          {
+            "path": "src/modules/dependencies/schema/keys-sealed.sql",
+            "originPath": "modules/dependencies/schema/keys-sealed.sql"
+          },
+          {
+            "path": "src/modules/dependencies/sealing.mjs",
+            "originPath": "modules/dependencies/sealing.mjs"
           },
           {
             "path": "src/modules/dependencies/store.mjs",
@@ -1963,6 +2271,10 @@
             "originPath": "modules/operator-auth/accounts/provider-pin.mjs"
           },
           {
+            "path": "src/modules/operator-auth/accounts/provider-setup.mjs",
+            "originPath": "modules/operator-auth/accounts/provider-setup.mjs"
+          },
+          {
             "path": "src/modules/operator-auth/accounts/roles.mjs",
             "originPath": "modules/operator-auth/accounts/roles.mjs"
           },
@@ -1983,6 +2295,10 @@
             "originPath": "modules/operator-auth/accounts/schema/invitation-cancellation.sql"
           },
           {
+            "path": "src/modules/operator-auth/accounts/schema/last-signin.sql",
+            "originPath": "modules/operator-auth/accounts/schema/last-signin.sql"
+          },
+          {
             "path": "src/modules/operator-auth/accounts/schema/operator-auth.sql",
             "originPath": "modules/operator-auth/accounts/schema/operator-auth.sql"
           },
@@ -1999,8 +2315,20 @@
             "originPath": "modules/operator-auth/accounts/schema/provider-pins.sql"
           },
           {
+            "path": "src/modules/operator-auth/accounts/schema/scheduled-policy-hardening.sql",
+            "originPath": "modules/operator-auth/accounts/schema/scheduled-policy-hardening.sql"
+          },
+          {
+            "path": "src/modules/operator-auth/accounts/schema/scheduled-policy.sql",
+            "originPath": "modules/operator-auth/accounts/schema/scheduled-policy.sql"
+          },
+          {
             "path": "src/modules/operator-auth/accounts/settings-page.mjs",
             "originPath": "modules/operator-auth/accounts/settings-page.mjs"
+          },
+          {
+            "path": "src/modules/operator-auth/accounts/status.mjs",
+            "originPath": "modules/operator-auth/accounts/status.mjs"
           },
           {
             "path": "src/modules/operator-auth/accounts/store.mjs",
@@ -2065,6 +2393,10 @@
           {
             "path": "src/modules/operator-auth/dev/personas.mjs",
             "originPath": "modules/operator-auth/dev/personas.mjs"
+          },
+          {
+            "path": "src/modules/operator-auth/dev/refusal.mjs",
+            "originPath": "modules/operator-auth/dev/refusal.mjs"
           },
           {
             "path": "src/modules/operator-auth/dev/sign-in-as.d.mts",
@@ -2141,6 +2473,10 @@
           {
             "path": "src/modules/operator-auth/identity/index.mjs",
             "originPath": "modules/operator-auth/identity/index.mjs"
+          },
+          {
+            "path": "src/modules/operator-auth/identity/oidc/aes-gcm.mjs",
+            "originPath": "modules/operator-auth/identity/oidc/aes-gcm.mjs"
           },
           {
             "path": "src/modules/operator-auth/identity/oidc/client-auth.mjs",
@@ -2239,8 +2575,44 @@
             "originPath": "modules/operator-auth/rejected-response.mjs"
           },
           {
+            "path": "src/modules/operator-auth/representation.mjs",
+            "originPath": "modules/operator-auth/representation.mjs"
+          },
+          {
             "path": "src/modules/operator-auth/routes.mjs",
             "originPath": "modules/operator-auth/routes.mjs"
+          },
+          {
+            "path": "src/modules/operator-auth/SCHEDULED-POLICY.md",
+            "originPath": "modules/operator-auth/SCHEDULED-POLICY.md"
+          },
+          {
+            "path": "src/modules/operator-auth/scheduled/definition.mjs",
+            "originPath": "modules/operator-auth/scheduled/definition.mjs"
+          },
+          {
+            "path": "src/modules/operator-auth/scheduled/expiry.mjs",
+            "originPath": "modules/operator-auth/scheduled/expiry.mjs"
+          },
+          {
+            "path": "src/modules/operator-auth/scheduled/fence.mjs",
+            "originPath": "modules/operator-auth/scheduled/fence.mjs"
+          },
+          {
+            "path": "src/modules/operator-auth/scheduled/history.mjs",
+            "originPath": "modules/operator-auth/scheduled/history.mjs"
+          },
+          {
+            "path": "src/modules/operator-auth/scheduled/index.d.mts",
+            "originPath": "modules/operator-auth/scheduled/index.d.mts"
+          },
+          {
+            "path": "src/modules/operator-auth/scheduled/index.mjs",
+            "originPath": "modules/operator-auth/scheduled/index.mjs"
+          },
+          {
+            "path": "src/modules/operator-auth/scheduled/runner.mjs",
+            "originPath": "modules/operator-auth/scheduled/runner.mjs"
           },
           {
             "path": "src/modules/operator-auth/service.mjs",
@@ -2335,6 +2707,7 @@
       "source": {
         "kind": "local",
         "paths": [
+          ".github/workflows/rer-managed.yml",
           ".github/workflows/run-site.yml",
           ".github/workflows/verify.yml",
           ".gitignore",
@@ -2347,6 +2720,7 @@
           "OPERATIONS.json",
           "OPERATIONS.md",
           "README.md",
+          "RELEASE.json",
           "base-copies.json",
           "deploy-demo.json",
           "deploy-site.json",
@@ -2368,6 +2742,7 @@
           "docs/SAQ-WORKSHEETS.md",
           "docs/TRACKERS.md",
           "docs/USDP-CITATIONS.md",
+          "management/integration/deployment-spec.json",
           "migrations/core/0001_owner.sql",
           "migrations/core/0002_outbox.sql",
           "migrations/core/0003_portability.sql",
@@ -2431,6 +2806,7 @@
           "migrations/core/0060_audit_engagements.sql",
           "migrations/core/0061_audit_sharing.sql",
           "package.json",
+          "packaging.json",
           "pnpm-lock.yaml",
           "public/apple-touch-icon.png",
           "public/archive.css",
@@ -2515,6 +2891,8 @@
           "rer-project.json",
           "rer-setup.json",
           "scripts/archive.mjs",
+          "scripts/build-deployment-spec.mjs",
+          "scripts/delivery/base/packaging.json",
           "scripts/evidence-agent.mjs",
           "scripts/evidence-archive/local.mjs",
           "scripts/evidence-archive/storage-worker.mjs",
