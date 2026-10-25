@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "a9b129f15e08012c53751b49e87f7a5389de3e77763b3063a7407b346b3576cf",
+  "manifest": "69c11855e7a02bb297d8c5988afc5fa97372efa7489bc4a6000c3e553ca8ee9a",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -3185,7 +3185,10 @@
           "src/evidence/review/engagement/checklist.ts",
           "src/evidence/review/engagement/decisions.ts",
           "src/evidence/review/engagement/http.ts",
+          "src/evidence/review/engagement/intervals.ts",
           "src/evidence/review/engagement/observations.ts",
+          "src/evidence/review/engagement/population.ts",
+          "src/evidence/review/engagement/revisions.ts",
           "src/evidence/review/engagement/sharing.ts",
           "src/evidence/review/engagement/storage.ts",
           "src/evidence/review/engagement/validate.ts",
@@ -3465,7 +3468,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "082d929acbde6546519d47f195f97faa962b52368ebe22261cb0ad4b773883d6",
+      "sha256": "ff67dcffc37681eaaa08afb94a96ec792f7b899c6511161fcc03b48d09126f6a",
       "executable": false
     },
     "AGENTS.md": {
@@ -3481,7 +3484,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "7dba77f3165a646e190c3b634e01c082140ed51e0aa2c36c8cc34abff761b914",
+      "sha256": "6c6408e954da4739176bf85d047aedc898a01dc85965ab823da2727a9cfed6d3",
       "executable": false
     },
     "DEMO.md": {
@@ -3509,7 +3512,7 @@
       "executable": false
     },
     "docs/AUDITOR-API.md": {
-      "sha256": "646544ab76f5955d8b72d1840a74e97e985f18c68b3f027c7c2a17dc2a976097",
+      "sha256": "0285a0be530eca4dfc05f6929570240598c0d0df087a75fddebe9d59f5354a30",
       "executable": false
     },
     "docs/BACKUP-RESTORE.md": {
@@ -3569,7 +3572,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "a9b129f15e08012c53751b49e87f7a5389de3e77763b3063a7407b346b3576cf",
+      "sha256": "69c11855e7a02bb297d8c5988afc5fa97372efa7489bc4a6000c3e553ca8ee9a",
       "executable": false
     },
     "LICENSE": {
@@ -6257,19 +6260,31 @@
       "executable": false
     },
     "src/evidence/review/engagement/http.ts": {
-      "sha256": "b35e14b73bac6b895c0b5285670e6a73d14ccf95e138649beccc74d72a1b13c5",
+      "sha256": "3758fddcf0d2e91398a65a61179fdccae92137559dd7161d697d99e0c40c0212",
+      "executable": false
+    },
+    "src/evidence/review/engagement/intervals.ts": {
+      "sha256": "46cbe7517ad924b46f852f67cd246345d7289e78ebebf598e0e6881db73c7d41",
       "executable": false
     },
     "src/evidence/review/engagement/observations.ts": {
       "sha256": "5d2c8c9ae64e386a0ef84c4e52d10a5d7afe89af7cd6ef8cfc1e721f394c3487",
       "executable": false
     },
+    "src/evidence/review/engagement/population.ts": {
+      "sha256": "387cd82e68ce29be1fe109b2a536f181e94f064a87988c9c87af82e0e7470d4c",
+      "executable": false
+    },
+    "src/evidence/review/engagement/revisions.ts": {
+      "sha256": "393f9d0ff0bc81c99fa9a199f644247b712055f0043f7a6f5631100d14c9c225",
+      "executable": false
+    },
     "src/evidence/review/engagement/sharing.ts": {
-      "sha256": "08d4ddc23594ce16ca65cbc277660d0b0166ccfbf2285f3387a19fde9ccdb975",
+      "sha256": "0f8c087708ccea3fe0c17451c3264cecb461e039c6950709f4b285346e429ab7",
       "executable": false
     },
     "src/evidence/review/engagement/storage.ts": {
-      "sha256": "0325787b1b186d4400fabba69c9a3e08f29471ed6052e4e8d8560dbfcbe8da1f",
+      "sha256": "cefe574de81db8c203e7462c520de5b2104ca0f4b1c0aaac2b2e1d8209f8a77f",
       "executable": false
     },
     "src/evidence/review/engagement/validate.ts": {
@@ -7725,7 +7740,7 @@
       "executable": false
     },
     "tests/helpers/audit-sharing-journey.mjs": {
-      "sha256": "073b6c338310f2421da38ef912c2acc080ccdcdb3361c67c9cef685b3174e6e6",
+      "sha256": "fa6689d4edfd9c185e694a284cca11402b0a701668a089fb7e8150d8aeb9b88a",
       "executable": false
     },
     "tests/helpers/azure-deadline-browser.mjs": {

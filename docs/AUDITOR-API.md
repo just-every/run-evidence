@@ -53,7 +53,7 @@ The following owner routes use the same native owner and origin checks as reques
 
 An authorized auditor reads the identical projection at `/api/auditor/{engagement}/evidence` or `/api/auditor/{engagement}/evidence/{share}`. Active grants and native sessions are rechecked after recording the view, and the selected shares are read again to fence a concurrent withdrawal. Unknown and withdrawn shares return 404. Auditor sessions cannot create or withdraw shares. The projection carries the detail level and an explicit coverage limitation.
 
-This foundation exposes selected definitions, approved document revisions and in-period observations for explicitly shared Full-detail tests. It does not yet expose historical populations, stale intervals, SLA histories, pseudonyms or complete period-history packs. The period pack now also includes selected revisions, fixed detail settings, independent decisions and replies under `shared_evidence`. The complete observation-history pack and auditor screens remain unbuilt. AUDIT-003 stays partial. Restored share records retain history but never reactivate restored auditor grants.
+This foundation exposes selected definitions, approved document revisions and in-period observations for explicitly shared Full-detail tests. It does not yet expose SLA histories, pseudonyms or complete period-history packs. The period pack now also includes selected revisions, fixed detail settings, independent decisions and replies under `shared_evidence`. The complete observation-history pack and auditor screens remain unbuilt. AUDIT-003 stays partial. Restored share records retain history but never reactivate restored auditor grants.
 
 ## Independent continuous-evidence decisions
 
@@ -61,7 +61,7 @@ An authorized auditor posts to `/api/auditor/{engagement}/evidence/{share}/decis
 
 Only an owner posts to `/api/audit-engagements/{engagement}/evidence/{share}/replies` with the exact `decision_id` and required `body`. Replies append their own numbered history and retain the decision being answered. Both histories appear in the shared projection and the period pack, separate from request decisions, and survive restart and custody restore. Unsharing removes access to both histories from the auditor while retaining owner custody records. A restored grant remains revoked.
 
-Program readiness and the board show the latest active flags, their auditor names and comments, with a link to the selected evidence and complete review history. Superseding a flag or withdrawing its share removes it from this current flag list. These flags count review records only: decisions never change test results, observations, criteria, mappings or readiness passes. Historical populations, complete library revision history, stale intervals, SLA history and Restricted disclosure remain unimplemented; AUDIT-003 remains partial.
+Program readiness and the board show the latest active flags, their auditor names and comments, with a link to the selected evidence and complete review history. Superseding a flag or withdrawing its share removes it from this current flag list. These flags count review records only: decisions never change test results, observations, criteria, mappings or readiness passes. SLA history and Restricted disclosure remain unimplemented; AUDIT-003 remains partial.
 
 ## Request-free period observations
 
@@ -70,3 +70,13 @@ A shared test projection includes `observations` within the engagement's inclusi
 An authorized auditor may read one exact observation at `/api/auditor/{engagement}/evidence/{share}/observations/{observation}`. Another test's observation, an observation outside the period, or a withdrawn share returns 404. Shares and authority are read again after the view audit before returning data. Owner preview and period packs include the same observations. The owner test-detail API also includes the identifier of each latest observation, so clients can reference exact records.
 
 A selected test with more than 5000 observations or more than 8 MiB of projected observation data is explicitly refused with 413; no truncated history is presented as complete. Choose a narrower engagement period. These are read bounds, not measured scale claims.
+
+## Period revision, population and interval histories
+
+Each selected Full-detail test also carries `criteria_revisions`, `library_revisions`, `population` and `intervals`. Revision lifetimes and population membership use inclusive `from` and exclusive `to` timestamps clipped to the engagement dates. Revision history includes accepted library changes with no intervening run and the revision already in force at the start; it never substitutes the installation's latest revision. Original observation criteria remain unchanged.
+
+Population intervals retain historical attributes and source references from immutable resource versions. Additions, removal and restoration retain their dates. Prospective test exclusions end later membership without deleting earlier membership; observations outside that membership are omitted and their individual auditor reads return 404. Current attributes and later removals never reconstruct the period.
+
+Unknown intervals cover missing observations, unknown source values and criteria changed without a matching run. An observation is stale after 1.5 times its recorded cadence. Intervals end no later than the product clock or the period end, so future time is never presented as historical coverage. A completed period has stable interval history across restart and custody restore. Owner preview and auditor reads use the same projection, including the period pack.
+
+Each revision, population or interval read refuses more than 5000 required records or more than 8 MiB of output with 413. No truncation is presented as complete. Per-item SLA and exception history, pre-period remedies, Restricted detail and auditor screens remain AUDIT-003 gaps.

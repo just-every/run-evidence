@@ -10,7 +10,7 @@ export function engagementHandler(clock:()=>Date){
  const routes:Route[]=[
  {method:'GET',pattern:owner(),run:async c=>json({engagements:await rows(c.env,'SELECT * FROM audit_engagements ORDER BY created_at,id')})},
  {method:'POST',pattern:owner(),run:async c=>json(await createEngagement(c.env,await readInput(c.request),c.actor,c.now),201)},
- {method:'GET',pattern:owner('/'+id+'(?:/pack)?'),run:async(c,m)=>{const result=await projection(c.env,await engagement(c.env,m[1]));await auditStatement(c.env,c.actor,c.url.pathname.endsWith('/pack')?'audit.pack.exported':'audit.engagement.viewed',m[1],c.now).run();return json(result)}},
+ {method:'GET',pattern:owner('/'+id+'(?:/pack)?'),run:async(c,m)=>{const result=await projection(c.env,await engagement(c.env,m[1]),c.now);await auditStatement(c.env,c.actor,c.url.pathname.endsWith('/pack')?'audit.pack.exported':'audit.engagement.viewed',m[1],c.now).run();return json(result)}},
  {method:'POST',pattern:owner('/'+id+'/evidence/'+id+'/replies'),run:async(c,m)=>json(await evidenceReply(c.env,await engagement(c.env,m[1]),m[2],await readInput(c.request),c.actor,c.now),201)},
  {method:'POST',pattern:owner('/'+id+'/shares'),run:async(c,m)=>json(await shareEvidence(c.env,await engagement(c.env,m[1]),await readInput(c.request),c.actor,c.now),201)},
  {method:'POST',pattern:owner('/'+id+'/shares/'+id+'/unshare'),run:async(c,m)=>json(await unshareEvidence(c.env,await engagement(c.env,m[1]),m[2],await readInput(c.request),c.actor,c.now))},
@@ -37,14 +37,14 @@ export function engagementHandler(clock:()=>Date){
  if(!eid||!await authorized(env,eid,email,clock()))return json({error:'Engagement not found.'},404)
  try{
   const e=await engagement(env,eid);let response:Response
-  if((parts.length===1||parts.length===2&&parts[1]==='pack')&&['GET','HEAD'].includes(request.method))response=json(await projection(env,e))
-  else if((parts.length===2||parts.length===3)&&parts[1]==='evidence'&&['GET','HEAD'].includes(request.method))response=json(await sharedEvidence(env,e,parts[2]))
-  else if(parts.length===5&&parts[1]==='evidence'&&parts[3]==='observations'&&['GET','HEAD'].includes(request.method)){const data=await sharedEvidence(env,e,parts[2]),observation=data.shares[0].observations.find(o=>o.id===parts[4]);if(!observation)throw new Refusal('Shared observation not found.',404);response=json(observation)}
+  if((parts.length===1||parts.length===2&&parts[1]==='pack')&&['GET','HEAD'].includes(request.method))response=json(await projection(env,e,clock()))
+  else if((parts.length===2||parts.length===3)&&parts[1]==='evidence'&&['GET','HEAD'].includes(request.method))response=json(await sharedEvidence(env,e,clock(),parts[2]))
+  else if(parts.length===5&&parts[1]==='evidence'&&parts[3]==='observations'&&['GET','HEAD'].includes(request.method)){const data=await sharedEvidence(env,e,clock(),parts[2]),observation=data.shares[0].observations.find(o=>o.id===parts[4]);if(!observation)throw new Refusal('Shared observation not found.',404);response=json(observation)}
   else if(parts.length===4&&parts[1]==='evidence'&&parts[3]==='decisions'&&request.method==='POST')response=json(await evidenceDecision(env,e,parts[2],await readInput(request),actor,email,session.id,clock()),201)
   else if(parts.length===5&&parts[1]==='requests'){
    const r=await requestOf(env,eid,parts[2])
    if(!['receipts','observations'].includes(parts[3])||!['GET','HEAD'].includes(request.method))return json({error:'Not found.'},404)
-   if(parts[3]==='observations'){const data=await projection(env,e),observation=data.requests.find(q=>q.id===r.id)?.observations.find(o=>o.id===parts[4]);if(!observation)return json({error:'Not found.'},404);response=json(observation)}else {
+   if(parts[3]==='observations'){const data=await projection(env,e,clock()),observation=data.requests.find(q=>q.id===r.id)?.observations.find(o=>o.id===parts[4]);if(!observation)return json({error:'Not found.'},404);response=json(observation)}else {
    if(!await env.DB.prepare('SELECT 1 FROM audit_submissions WHERE request_id=? AND receipt_id=?').bind(r.id,parts[4]).first())return json({error:'Not found.'},404)
    const row=await scopedSubmissionReceipt(env,e,r,parts[4]),bytes=await storedBytes(env,row);if(!bytes)return json({error:'Retained bytes unavailable.'},404)
    response=new Response(bytes,{headers:{'cache-control':'no-store','content-type':'application' + '/' + 'octet-stream','content-disposition':'attachment; filename="exhibit"','x-content-type-options':'nosniff','content-security-policy':"default-src 'none'; sandbox",'referrer-policy':'no-referrer'}})
@@ -52,8 +52,8 @@ export function engagementHandler(clock:()=>Date){
   }else if(parts.length===4&&parts[1]==='requests'&&['comments','decisions'].includes(parts[3])&&request.method==='POST')response=json(await auditorWrite(env,e,await requestOf(env,eid,parts[2]),await readInput(request),actor,email,clock(),parts[3]==='decisions',session.id),201)
   else return json({error:'Not found.'},404)
   await auditStatement(env,{...actor,kind:'system'},'audit.auditor.viewed',eid,clock(),'succeeded','Authenticated auditor').run()
-  if(parts[1]==='evidence'&&['GET','HEAD'].includes(request.method)){const data=await sharedEvidence(env,e,parts[2]);if(parts.length===5){const observation=data.shares[0].observations.find(o=>o.id===parts[4]);if(!observation)throw new Refusal('Shared observation not found.',404);response=json(observation)}else response=json(data)}
-  else if(parts.length===1||parts.length===2&&parts[1]==='pack')response=json(await projection(env,e))
+  if(parts[1]==='evidence'&&['GET','HEAD'].includes(request.method)){const data=await sharedEvidence(env,e,clock(),parts[2]);if(parts.length===5){const observation=data.shares[0].observations.find(o=>o.id===parts[4]);if(!observation)throw new Refusal('Shared observation not found.',404);response=json(observation)}else response=json(data)}
+  else if(parts.length===1||parts.length===2&&parts[1]==='pack')response=json(await projection(env,e,clock()))
   if(!await authorized(env,eid,email,clock())||!await operatorAuth(env).getSession(request))return json({error:'Engagement not found.'},404)
   return request.method==='HEAD'?new Response(null,{status:response.status,headers:response.headers}):response
  }catch(error){return error instanceof Refusal?json({error:error.message},error.status):json({error:'Auditor operation unavailable.'},503)}

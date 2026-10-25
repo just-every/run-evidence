@@ -1,3 +1,6 @@
+import {sharedIntervals} from './intervals'
+import {sharedPopulation} from './population'
+import {sharedRevisions} from './revisions'
 import {sharedObservations} from './observations'
 import type { Bindings } from '../../../auth.server'
 import { auditStatement,text,type Actor,type Input } from '../../door'
@@ -51,9 +54,17 @@ export async function unshareEvidence(env:Bindings,e:Engagement,id:string,input:
  if(!result.meta.changes)throw new Refusal('Active share not found.',404)
  return {unshared:true}
 }
-export async function sharedEvidence(env:Bindings,e:Engagement,id?:string){
+export async function sharedEvidence(env:Bindings,e:Engagement,now:Date,id?:string){
  const shares=await rows(env,'SELECT id,kind,subject_id,revision,snapshot_json,shared_at FROM audit_evidence_shares WHERE engagement_id=? AND unshared_at IS NULL'+(id?' AND id=?':'')+' ORDER BY shared_at,id',e.id,...(id?[id]:[]))
  if(id&&!shares.length)throw new Refusal('Shared evidence not found.',404)
- return {engagement:{id:e.id,name:e.name,period_from:e.period_from,period_to:e.period_to},...await settingsFor(env,e),shares:await Promise.all(shares.map(async s=>({id:s.id,kind:s.kind,subject_id:s.subject_id,revision:s.revision,shared_at:s.shared_at,record:JSON.parse(s.snapshot_json),observations:s.kind==='test'?await sharedObservations(env,e,s.subject_id):[],decisions:await rows(env,'SELECT id,revision,state,reason,actor_id,actor_name,at FROM audit_evidence_decisions WHERE share_id=? ORDER BY revision',s.id),replies:await rows(env,'SELECT id,decision_id,revision,body,actor_id,actor_name,at FROM audit_evidence_replies WHERE share_id=? ORDER BY revision',s.id)}))),coverage:'Selected definitions, approved documents and in-period observations of explicitly shared tests. Historical populations, stale intervals and SLA history are not yet available. Independent review decisions and owner replies are retained separately from requests.'}
+ const projected=await Promise.all(shares.map(async s=>{
+  const population=s.kind==='test'?await sharedPopulation(env,e,s.subject_id):[]
+  const observations=s.kind==='test'?(await sharedObservations(env,e,s.subject_id)).filter(o=>population.some(p=>p.resource_id===o.resource_id&&p.intervals.some(i=>i.from<=o.observed_at&&o.observed_at<i.to))):[]
+  return {id:s.id,kind:s.kind,subject_id:s.subject_id,revision:s.revision,shared_at:s.shared_at,record:JSON.parse(s.snapshot_json),
+   ...(s.kind==='test'?{population,intervals:await sharedIntervals(env,e,s.subject_id,population,now),...await sharedRevisions(env,e,s.subject_id)}:{}),observations,
+   decisions:await rows(env,'SELECT id,revision,state,reason,actor_id,actor_name,at FROM audit_evidence_decisions WHERE share_id=? ORDER BY revision',s.id),
+   replies:await rows(env,'SELECT id,decision_id,revision,body,actor_id,actor_name,at FROM audit_evidence_replies WHERE share_id=? ORDER BY revision',s.id)}
+ }))
+ return {engagement:{id:e.id,name:e.name,period_from:e.period_from,period_to:e.period_to},...await settingsFor(env,e),shares:projected,coverage:'Selected definitions, period-bounded criteria and accepted library revision timelines, approved documents and in-period observations of explicitly shared tests. Historical population membership and attributes are retained; stale and unknown intervals are bounded by the product clock; SLA history is not yet available. Independent review decisions and owner replies are retained separately from requests.'}
 }
-export async function previewEvidence(env:Bindings,e:Engagement,actor:Actor,now:Date,id?:string){const result=await sharedEvidence(env,e,id);await auditStatement(env,actor,'audit.evidence.previewed',e.id,now).run();return result}
+export async function previewEvidence(env:Bindings,e:Engagement,actor:Actor,now:Date,id?:string){const result=await sharedEvidence(env,e,now,id);await auditStatement(env,actor,'audit.evidence.previewed',e.id,now).run();return result}
