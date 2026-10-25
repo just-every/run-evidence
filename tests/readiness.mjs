@@ -21,7 +21,8 @@ const reconcileChecklist = report => {
   if (!area.available) assert.deepEqual([area.ready,area.total,area.refs],[0,0,[]])
  }
  for (const name of ['Policies','Access reviews','Vendor risk','Trust center']) assert.ok(report.checklist.some(a => a.area === name))
- for (const name of ['Trust center']) assert.equal(report.checklist.find(a => a.area === name).available,false)
+ assert.equal(report.checklist.find(a => a.area === 'Trust center').available,false)
+ assert.deepEqual(report.checklist.find(a => a.area === 'Auditor decisions'),{area:'Auditor decisions',ready:0,total:0,available:true,refs:[],records:[]})
 }
 const reconcileCsv = async (query, report) => {
  const response = await request(`/app/programs/${fixture.program.id}/board.csv${query?'?'+query:''}`)

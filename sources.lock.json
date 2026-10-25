@@ -3464,7 +3464,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "15b810203bd33f6b4a8c0d9c0b72a8bdb0ccd6b27231aa3762ddd7b5e366444e",
+      "sha256": "19378faa1136af7c11f2606206c71554c8e713b5af6c71235c82a0badee68d97",
       "executable": false
     },
     "AGENTS.md": {
@@ -3480,7 +3480,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "38c05a0f7a2fadcba8aef817116a1f36bc0d56f7b5bb9306a2787f2b6ee1e32f",
+      "sha256": "4c2b0e0a81a8cc0eb41074c00d7afe4ef55cae68cea7671bf4fe6b102d7a3882",
       "executable": false
     },
     "DEMO.md": {
@@ -3508,7 +3508,7 @@
       "executable": false
     },
     "docs/AUDITOR-API.md": {
-      "sha256": "b892e8df0e8c3993935f756d4ffc118ae1a0d765dc5b2ef6e5abd99c55106ffb",
+      "sha256": "5eb4bb3dd9224ed1f5c8caf681c3002a8b2c45e250ebe7bd8b57b7cd16fa4ff6",
       "executable": false
     },
     "docs/BACKUP-RESTORE.md": {
@@ -7720,7 +7720,7 @@
       "executable": false
     },
     "tests/helpers/audit-sharing-journey.mjs": {
-      "sha256": "0ac33714a3e6a62b9bca015ddecbd55b4e662eda9f873a87259cbd17a4fee896",
+      "sha256": "b59ed17a00473704a345217c9cb04f01e61069f83d72e81b4b9bc20559fdc494",
       "executable": false
     },
     "tests/helpers/azure-deadline-browser.mjs": {
@@ -8028,7 +8028,7 @@
       "executable": false
     },
     "tests/readiness.mjs": {
-      "sha256": "cdd0c1f9114a3a78b0305efae4b09c865ac5f249641bc59996cebf364e607d29",
+      "sha256": "dd603f45fbe447ac7f02b16f29d1e4d4ec1c1a37d4571196cf95ef5f3752a89f",
       "executable": false
     },
     "tests/report.mjs": {
