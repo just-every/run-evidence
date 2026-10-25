@@ -13,7 +13,7 @@ import re
 import subprocess
 import time
 
-from daytona import Daytona, DaytonaConfig, CreateSandboxFromImageParams, Resources
+from daytona import Daytona, DaytonaConfig, CreateSandboxFromImageParams, Resources, DaytonaNotFoundError
 
 
 def event(kind, **data):
@@ -31,8 +31,9 @@ def main():
     assert re.fullmatch('[a-f0-9]{40}', sha)
     client = Daytona(DaytonaConfig(api_url='https://app.daytona.io/api'))
     sandbox = None
+    name = 'evidence-own-i816-' + str(int(time.time()))
     try:
-        sandbox = client.create(CreateSandboxFromImageParams(name='evidence-own-i816-' + str(int(time.time())),
+        sandbox = client.create(CreateSandboxFromImageParams(name=name,
             image='ubuntu:24.04', os_user='root', public=False, auto_stop_interval=0,
             auto_delete_interval=0, ttl_minutes=180, labels={'run':'sx-evidence-c-i816'},
             resources=Resources(cpu=2, memory=4, disk=12)), timeout=300)
@@ -77,6 +78,12 @@ def main():
             time.sleep(20)
         raise RuntimeError('journey deadline exceeded')
     finally:
+        # A creation timeout may leave a provider resource before the SDK returns.
+        if sandbox is None:
+            try:
+                sandbox = client.get(name)
+            except DaytonaNotFoundError:
+                pass
         if sandbox is not None:
             sandbox.delete(timeout=180, wait=True)
             event('sandbox_deleted', sandbox_id=sandbox.id)
@@ -86,5 +93,6 @@ if __name__ == '__main__':
     try:
         main()
     except Exception as error:
-        event('failed', error_type=type(error).__name__)
+        event('failed', error_type=type(error).__name__, status=getattr(error,'status_code',None),
+              code=getattr(error,'code',None), source=getattr(error,'source',None))
         raise SystemExit(1)
