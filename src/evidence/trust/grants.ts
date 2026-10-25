@@ -1,9 +1,9 @@
 import type { Bindings } from '../../auth.server'
 import { auditStatement, list, text, type Actor, type Input } from '../door'
-import { requireCapability } from '../archive/capabilities'
+import { capabilityAllowed,requireCapability } from '../archive/capabilities'
 import { Refusal } from '../upload'
 import { tokenDigest } from '../review/storage'
-import { emailOf, flag, issueCredential, requireUpdate, subscriberFor, type CustomerGrant } from './model'
+import { emailOf, flag, issueCredential, requireUpdate, settings, subscriberFor, type CustomerGrant } from './model'
 import { addSubscriptions } from './subscribers'
 export interface GrantRecord { grant_id:string;update_id:string;can_read:number;can_submit:number }
 export interface Submission { id:string;grant_id:string;update_id:string;body:string;submitted_at:string }
@@ -32,13 +32,12 @@ export async function revokeCustomer(env:Bindings,actor:Actor,id:string,now:Date
 }
 export const grantActor=(grant:CustomerGrant)=>({id:grant.id,name:'Approved customer',kind:'token' as const})
 export async function customerAccess(env:Bindings,token:string,now:Date) {
- await requireCapability(env,'shares')
  if(!/^[a-f0-9]{64}$/.test(token))return null
  // Lookup also identifies expired uses for the audit; only the digest is queried.
  const grant=await env.DB.prepare("SELECT g.* FROM trust_customer_grants g JOIN trust_credentials c ON c.subject_id=g.id WHERE c.kind='customer' AND c.token_hash=?").bind(await tokenDigest(token)).first<CustomerGrant>()
  if(!grant)return null
- if(grant.revoked_at||grant.expires_at<=now.toISOString()) {
-  await auditStatement(env,grantActor(grant),'trust.customer-use',grant.id,now,'refused','Expired or revoked grant').run()
+ if(grant.revoked_at||grant.expires_at<=now.toISOString()||!await capabilityAllowed(env,'shares')||!(await settings(env)).public_enabled) {
+  await auditStatement(env,grantActor(grant),'trust.customer-use',grant.id,now,'refused','Expired, revoked or inactive grant').run()
   return null
  }
  await auditStatement(env,grantActor(grant),'trust.customer-use',grant.id,now,'succeeded','Live named-record grant presented').run()

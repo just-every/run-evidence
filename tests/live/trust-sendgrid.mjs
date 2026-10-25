@@ -42,16 +42,17 @@ try{
  await post('/auth/magic-link',{email:TEST_MAIL_TO},{status:202})
  const authMail=accepted.at(-1),authReceipt=await receipt(authMail.subject)
  // Use the delivered mail, with MIME quoted-printable folding removed, in memory.
- const decoded=authReceipt.raw.replace(/=\r?\n/g,'').replace(/=3D/g,'=').replaceAll('&amp;','&')
+ const decoded=authReceipt.row.excerpt+'\n'+authReceipt.raw.replace(/=\r?\n/g,'').replace(/=3D/g,'=').replaceAll('&amp;','&')
  const authToken=decoded.match(/\/auth\/confirm\?token=([A-Za-z0-9_-]+)/)?.[1]
  assert.ok(authToken,'received sign-in mail contains its confirmation link')
  const confirmed=await post('/auth/confirm',{token:authToken},{status:303})
  app.setCookie(confirmed.headers.getSetCookie().map(x=>x.split(';')[0]).join('; '))
- await post('/setup',{confirm:'yes'},{status:303})
+ const setup=await app.fetch('/setup',{method:'POST',headers:{origin:app.origin,'content-type':'application'+'/'+'x-www-form-urlencoded'},body:'confirm=yes'})
+ assert.equal(setup.status,303,'complete first-run setup')
  await post('/api/trust/settings',{postal_address:'80 Test Street, Brisbane QLD 4000, Australia',notice_days:30,public_enabled:true,confirmations_enabled:true})
  await post('/trust/subscribe',{email:TEST_MAIL_TO,categories:['subprocessors']},{visitor:true,status:202})
  const confirmation=accepted.at(-1),subscription=await receipt(confirmation.subject)
- const raw=subscription.raw.replace(/=\r?\n/g,'').replace(/=3D/g,'=')
+ const raw=subscription.row.excerpt+'\n'+subscription.raw.replace(/=\r?\n/g,'').replace(/=3D/g,'=')
  const token=raw.match(/\/trust\/confirm\/([a-f0-9]{64})/)?.[1]
  assert.ok(token,'delivered double opt-in mail contains its confirmation')
  assert.ok(raw.includes('80 Test Street'));assert.match(raw,/List-Unsubscribe-Post: List-Unsubscribe=One-Click/i)

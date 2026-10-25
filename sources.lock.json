@@ -3593,7 +3593,7 @@
       "executable": false
     },
     "docs/TRUST-UPDATES.md": {
-      "sha256": "7c5166d787b28a4553ae23354fae1fb19b68c486ed60c05d1bc157c7d9602ef5",
+      "sha256": "d1fff35bc8c1eec0142fae334299ab9c208f7717a45cb87aad00fce201d161e1",
       "executable": false
     },
     "docs/USDP-CITATIONS.md": {
@@ -6493,7 +6493,7 @@
       "executable": false
     },
     "src/evidence/trust/grants.ts": {
-      "sha256": "5bcfd2e787dcca5b56c300607bc92bc72373ba7052e5c0eafd39ed199ea37be1",
+      "sha256": "d01be8475f2aa5e33363093c38754e2fa39aad06290a6fc0b9820b3c262e5d9b",
       "executable": false
     },
     "src/evidence/trust/http.ts": {
@@ -6517,7 +6517,7 @@
       "executable": false
     },
     "src/evidence/trust/public-http.ts": {
-      "sha256": "f7f85b78e3fc3d42769502070898fbe2be6a4701bda967f8a859c9a0f476a7b0",
+      "sha256": "618650518be5b5bb603511cfeac12a3f4ce8ee18a588d6adab4591db2db3a6f1",
       "executable": false
     },
     "src/evidence/trust/public-view.ts": {
@@ -8089,7 +8089,7 @@
       "executable": false
     },
     "tests/helpers/trust-journey.mjs": {
-      "sha256": "84ed218c2af4a61cda1b1f67608d7c63c796dc506036fe8d1e99d47e05155a6c",
+      "sha256": "ce380e0ca9157b5909767cabc4fdd37b553fcbea0eaa406c39aeda5e734d6b0e",
       "executable": false
     },
     "tests/helpers/vendor-journey.mjs": {
@@ -8125,7 +8125,7 @@
       "executable": false
     },
     "tests/live/trust-sendgrid.mjs": {
-      "sha256": "71bd6709fc6dd485b64e16da7629ebaa65b650b18ac794e97431bd4e9c75a40a",
+      "sha256": "14ee19263f26fef66aa31b8edbe6dda32367ee1447002ba7d0eb68340b4a2e69",
       "executable": false
     },
     "tests/open.mjs": {

@@ -36,6 +36,10 @@ export function trustPublicHandler(clock:()=>Date=()=>new Date()) {
     const result=await confirm(env,token,now)
     return wantsJson?json(result):trustMessage('Subscription confirmed','You will receive updates in the categories you selected.')
    }
+   const customer=/^\/trust\/customer\/([a-f0-9]{64})(?:\/feed|\/updates\/([a-f0-9-]{36})\/submissions)?$/.exec(path)
+   if(path!=='/trust'&&path!=='/trust/feed'&&path!=='/trust/subprocessors'&&path!=='/trust/subscribe'&&!customer)throw new Refusal('Not found.',404)
+   const grant=customer?await customerAccess(env,customer[1],now):null
+   if(customer&&!grant)throw new Refusal('Not found.',404)
    const rules=await settings(env)
    if(!rules.public_enabled||!await capabilityAllowed(env,'shares'))throw new Refusal('Trust center is unavailable.',404)
    if(path==='/trust/subscribe') {
@@ -46,10 +50,6 @@ export function trustPublicHandler(clock:()=>Date=()=>new Date()) {
     const result=await subscribe(env,await readInput(request),now)
     return wantsJson?json(result,202):trustMessage('Check your email','If confirmation is needed, a link has been sent to that address. Confirm it to start receiving updates.')
    }
-   const customer=/^\/trust\/customer\/([a-f0-9]{64})(?:\/feed|\/updates\/([a-f0-9-]{36})\/submissions)?$/.exec(path)
-   if(path!=='/trust'&&path!=='/trust/feed'&&path!=='/trust/subprocessors'&&!customer)throw new Refusal('Not found.',404)
-   const grant=customer?await customerAccess(env,customer[1],now):null
-   if(customer&&!grant)throw new Refusal('Not found.',404)
    if(customer?.[2]&&grant) {
     if(request.method!=='POST')throw new Refusal('Method not allowed.',405)
     if(![env.AUTH_ORIGIN,'null'].includes(request.headers.get('origin')??'')||request.headers.get('sec-fetch-site')==='cross-site') {
