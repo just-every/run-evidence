@@ -3494,7 +3494,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "ddd99741a512317caac920e67e4e515b84933cfd1df80834f269ae78a31c94a0",
+      "sha256": "6bddc8c76030b99e1f021bf8dc8ba5aabd68ed2e32da5c22703ff230cd4f2f36",
       "executable": false
     },
     "AGENTS.md": {
@@ -3510,7 +3510,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "62ff94392919dcdde219e63e1168c57a5dffdeb955079d4ff4585758f088c7dc",
+      "sha256": "a3ca88ee09394b6d983c22f91786d646380999b45d0e19dae2e312390040c236",
       "executable": false
     },
     "DEMO.md": {
@@ -3594,7 +3594,7 @@
       "executable": false
     },
     "docs/TRUST-UPDATES.md": {
-      "sha256": "d1fff35bc8c1eec0142fae334299ab9c208f7717a45cb87aad00fce201d161e1",
+      "sha256": "c30dcbf5efd10478e64aded19cf3c062c32ebb4b57c1631dd2399bbadd9ce62c",
       "executable": false
     },
     "docs/USDP-CITATIONS.md": {
