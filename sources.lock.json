@@ -3077,7 +3077,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "d844362c74e0458809f7be6f772e88ce304fdf68f0147e03bde8db279d52fa3f",
+      "sha256": "f0a43349f2728995fa867ffa4e38aef044a1682304d06bdd6bc1762f5383df4c",
       "executable": false
     },
     "AGENTS.md": {
@@ -3093,7 +3093,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "3d923bcf0c3e88043e68ae622b7be89795ab488949aac19840a94413b001ff96",
+      "sha256": "b280708132f780cf2a7a8c3cb8c184f0b01be7a63fcd6582534df76999dbd7cc",
       "executable": false
     },
     "DEMO.md": {
@@ -3121,7 +3121,7 @@
       "executable": false
     },
     "docs/AUDITOR-API.md": {
-      "sha256": "f9ce3f454b4b734340a4cc38c8790dbcc619f9408c971a0e920615e96a13619f",
+      "sha256": "4269e2237e0fa543c0ca5f7ca8a9e06747a55c0210cd877d45308f4da7c7b1d5",
       "executable": false
     },
     "docs/BACKUP-RESTORE.md": {

@@ -35,4 +35,4 @@ Program readiness counts audit engagements and requests as records, with record 
 
 Custody archives retain all engagement, request, receipt-reference, comment and decision records. Restored auditor grants are revoked, native sessions are not transferred, and sharing and mail remain behind the existing restore capability gates. The destination owner must explicitly authorize any new access.
 
-Current conservative authorization default: auditors use identities separate from People and existing non-auditor operators; only an owner grants access, with a recorded reason and expiry. This default awaits ct approval, so AUDIT-001 remains partial.
+Approved native authorization policy (ct, 23 October 2026 at 14:35Z): auditors use identities separate from People and existing non-auditor operators; only an owner grants access, with a recorded reason and expiry. The public-door journey also asserts refusal at non-audit product doors and at exact grant expiry; AUDIT-001 is complete for the native explicitly authorized API.
