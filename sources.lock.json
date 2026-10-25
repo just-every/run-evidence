@@ -6514,7 +6514,7 @@
       "executable": false
     },
     "src/evidence/trust/subscribers.ts": {
-      "sha256": "0126d7e09fd2244ecc55adc7aa0a6c04c953b068bc23df0458f0daa0898ed16a",
+      "sha256": "61b0d50a17e9a96523a10c2239d0f555d214e2d747d59770afc022780612e301",
       "executable": false
     },
     "src/evidence/trust/updates.ts": {
@@ -8078,7 +8078,7 @@
       "executable": false
     },
     "tests/helpers/trust-journey.mjs": {
-      "sha256": "a74dd462856dbf2cd5ad9d4feb2622e95554f2d82ee7c5517ea9b70e1123d0dd",
+      "sha256": "c6bb97601cef12f10162141de70fbeb1ac411ab08de84d792d524b77a607577e",
       "executable": false
     },
     "tests/helpers/vendor-journey.mjs": {
