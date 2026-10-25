@@ -3526,7 +3526,7 @@
       "executable": false
     },
     "deploy.json": {
-      "sha256": "18ba5cf2acf4098dc5d1476bc1ccfd01650e36353bf4971055ce739f6b93f893",
+      "sha256": "f75b3d9a78941f2e7073829f908536ebc6cbeab83d16836a488fdcf97097eb54",
       "executable": false
     },
     "docs/AGENT-COMMANDS.md": {
@@ -4218,7 +4218,7 @@
       "executable": false
     },
     "README.md": {
-      "sha256": "3450b8ccdf44af9ca49ea62a4f758224898c104a3eab1d3b9151d7155abd15a9",
+      "sha256": "ae329978506de5156db9f9489d04311ed9fa73887f08e8a5f5bfd97ece1472b2",
       "executable": false
     },
     "RELEASE.json": {
