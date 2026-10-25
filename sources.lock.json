@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "cebcfec2cd9ee7a32e2dc5853f3a74ed7eb9f47e6b5d16044bdbcc65f1355569",
+  "manifest": "91cbed6ba93a45701d77ee0307fb27ecefccb4cacef7f4a1e7edd828f19042a7",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -3435,6 +3435,11 @@
           "tests/import.mjs",
           "tests/inventory-browser.mjs",
           "tests/inventory.mjs",
+          "tests/live/own-daytona-http.py",
+          "tests/live/own-daytona-remote.py",
+          "tests/live/own-daytona.py",
+          "tests/live/own-hosted-http.mjs",
+          "tests/live/own-hosted.mjs",
           "tests/live/trust-sendgrid.mjs",
           "tests/open.mjs",
           "tests/ops-browser.mjs",
@@ -3602,7 +3607,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "cebcfec2cd9ee7a32e2dc5853f3a74ed7eb9f47e6b5d16044bdbcc65f1355569",
+      "sha256": "91cbed6ba93a45701d77ee0307fb27ecefccb4cacef7f4a1e7edd828f19042a7",
       "executable": false
     },
     "LICENSE": {
@@ -8123,6 +8128,26 @@
     },
     "tests/inventory.mjs": {
       "sha256": "7612f336d0c9f3d9a3837cf79476065937b519585006b55886ebd37ed3ddd1ca",
+      "executable": false
+    },
+    "tests/live/own-daytona-http.py": {
+      "sha256": "8041bf091d8b26fc97ee659d8106fe8fd4ef8bcd3f665b5c1db9c92378e81a5d",
+      "executable": false
+    },
+    "tests/live/own-daytona-remote.py": {
+      "sha256": "2101963b44cd3e4754f0e7cee2836f5559cb93f14918858250c3fc5878e8c3bb",
+      "executable": false
+    },
+    "tests/live/own-daytona.py": {
+      "sha256": "9444837894c39debb421702489feb493063668756dcd879dac6665ca4bdd96eb",
+      "executable": false
+    },
+    "tests/live/own-hosted-http.mjs": {
+      "sha256": "d9b67c7f708e2b8c03b5fb451a7446e1752577d2c1ae3374611a14a07b0e9a2a",
+      "executable": false
+    },
+    "tests/live/own-hosted.mjs": {
+      "sha256": "c5fecd8d75ef19bcf213dd201307e402b367107e0701e6a491fe8f4859314259",
       "executable": false
     },
     "tests/live/trust-sendgrid.mjs": {
