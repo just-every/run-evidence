@@ -3,12 +3,14 @@ import assert from 'node:assert/strict'
 import {runtime} from '../helpers/runtime.mjs'
 const {MAIL_API_KEY,MAIL_FROM,TEST_MAIL_TO,QA_INBOX_RECEIPT_TOKEN}=process.env
 if(!MAIL_API_KEY||!MAIL_FROM||!TEST_MAIL_TO||!QA_INBOX_RECEIPT_TOKEN)throw Error('Required held mail configuration is absent')
-const started=new Date().toISOString(),tag='Evidence live '+crypto.randomUUID(),accepted=[]
+const started=new Date().toISOString(),tag='Evidence live '+crypto.randomUUID(),accepted=[],providerStatuses=[]
 async function provider(request){
  assert.equal(request.url,'https://api.sendgrid.com/v3/mail/send')
  const body=await request.clone().json(),recipients=body.personalizations.flatMap(p=>[...(p.to??[]),...(p.cc??[]),...(p.bcc??[])])
  assert.equal(recipients.length,1);assert.equal(recipients[0].email,TEST_MAIL_TO,'only the controlled inbox may receive mail')
- const response=await fetch(request.url,{method:request.method,headers:request.headers,body:await request.text()})
+ let response
+ try{response=await fetch(request.url,{method:request.method,headers:{authorization:request.headers.get('authorization'),'content-type':request.headers.get('content-type')},body:await request.text()})}catch(error){console.log('SendGrid transport failed: '+(error.cause?.code??error.name));throw error}
+ providerStatuses.push(response.status)
  assert.equal(response.status,202,'SendGrid must accept the actual message')
  accepted.push({subject:body.subject,id:response.headers.get('x-message-id'),body})
  return new Response(null,{status:response.status,headers:response.headers})
@@ -33,6 +35,7 @@ async function receipt(subject,contains){
 const app=await runtime({origin:'https://127.0.0.1:8787',ownerEmail:TEST_MAIL_TO,settings:{MAIL_PROVIDER:'sendgrid',MAIL_API_KEY,MAIL_FROM},outbound:provider})
 const post=async(path,body,{visitor=false,status=200}={})=>{
  const response=await app.fetch(path,{method:'POST',headers:{origin:app.origin,'content-type':'application'+'/'+'json',...(visitor?{cookie:''}:{})},body:JSON.stringify(body)})
+ if(response.status!==status)console.log(JSON.stringify({door:path,status:response.status,providerStatuses}))
  assert.equal(response.status,status,'HTTP door '+path)
  return response
 }

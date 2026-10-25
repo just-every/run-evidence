@@ -83,6 +83,6 @@ export async function updateExport(env:Bindings,id:string) {
   env.DB.prepare('SELECT * FROM trust_deliveries WHERE update_id=? ORDER BY queued_at,id').bind(id).all(),
  ])
  const events=(await env.DB.prepare('SELECT e.* FROM trust_delivery_events e JOIN trust_deliveries d ON d.id=e.delivery_id WHERE d.update_id=? ORDER BY e.occurred_at,e.id').bind(id).all()).results
- const submissions=(await env.DB.prepare('SELECT * FROM trust_submissions WHERE update_id=? ORDER BY submitted_at,id').bind(id).all<import('./grants').Submission>()).results
+ const submissions=(await env.DB.prepare('SELECT q.*,s.email FROM trust_submissions q JOIN trust_customer_grants g ON g.id=q.grant_id JOIN trust_subscribers s ON s.id=g.subscriber_id WHERE q.update_id=? ORDER BY q.submitted_at,q.id').bind(id).all<import('./grants').Submission&{email:string}>()).results
  return {update,notice,deliveries:deliveries.results,delivery_events:events,submissions}
 }

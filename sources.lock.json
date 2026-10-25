@@ -3609,7 +3609,7 @@
       "executable": false
     },
     "management/integration/deployment-spec.json": {
-      "sha256": "eef63541750b92aa9f4780dc3b3895c801b64afb108c96bd17e2e926ee89787f",
+      "sha256": "c8db6626cf897a7074c1d8cc6300aa783fa1b45537816ab975dedb662d34e77f",
       "executable": false
     },
     "migrations/core/0001_owner.sql": {
@@ -6513,7 +6513,7 @@
       "executable": false
     },
     "src/evidence/trust/owner-view.ts": {
-      "sha256": "3dcf6f0108bcc953e2bb18de91b422135083f516f23a627bd5f9681aa2038742",
+      "sha256": "1cebc480ddadfc9581a9db0be324b1753f96360cca269b4372a45c824ce65763",
       "executable": false
     },
     "src/evidence/trust/public-http.ts": {
@@ -6529,7 +6529,7 @@
       "executable": false
     },
     "src/evidence/trust/updates.ts": {
-      "sha256": "5a4f4019085e2397df5abf5f00be56ab9a46dc17ad4a89f844c8f4896321e132",
+      "sha256": "16aeb654dc918add5730f33d1f04c69a163c2e4b1631ed8d646232d5b2ffcbdf",
       "executable": false
     },
     "src/evidence/ui.ts": {
@@ -8125,7 +8125,7 @@
       "executable": false
     },
     "tests/live/trust-sendgrid.mjs": {
-      "sha256": "14ee19263f26fef66aa31b8edbe6dda32367ee1447002ba7d0eb68340b4a2e69",
+      "sha256": "56e633be74646e92a2a177f6e4e401874d57e5f813dd397145ab8b5d79010b88",
       "executable": false
     },
     "tests/open.mjs": {
