@@ -30,7 +30,7 @@ export function preInventoryArchive(bytes) {
  const magic=Buffer.from('EVIDENCE-ARCHIVE\n'),prefix=n=>{const b=Buffer.alloc(4);b.writeUInt32BE(n);return b},pack=v=>{const b=Buffer.from(JSON.stringify(v));return Buffer.concat([prefix(b.length),b])}
  let at=magic.length
  const next=()=>{const size=bytes.readUInt32BE(at);at+=4;const raw=bytes.subarray(at,at+size);at+=size;return JSON.parse(raw)}
- const head=next(),removed=new Set(['inventory_decisions','inventory_group_events','library_acceptances','run_library_revisions','operation_steps','period_investigations','period_investigation_decisions','code_manifest_grants','code_manifest_snapshots',...Object.keys(head.tables).filter(t=>t.startsWith('audit_')||t.startsWith('code_manifest_')||t.startsWith('tailor')||t.startsWith('questionnaire')||t.startsWith('privacy_')||t.startsWith('vendor_')||t.startsWith('program_document')||t.startsWith('iso_'))])
+ const head=next(),removed=new Set(['inventory_decisions','inventory_group_events','library_acceptances','run_library_revisions','operation_steps','period_investigations','period_investigation_decisions','code_manifest_grants','code_manifest_snapshots',...Object.keys(head.tables).filter(t=>t.startsWith('trust_')||t.startsWith('audit_')||t.startsWith('code_manifest_')||t.startsWith('tailor')||t.startsWith('questionnaire')||t.startsWith('privacy_')||t.startsWith('vendor_')||t.startsWith('program_document')||t.startsWith('iso_'))])
  let dropped=0
  assert.equal(head.version,10)
  const first=pack({...head,tables:Object.fromEntries(Object.entries(head.tables).filter(([t])=>!removed.has(t)))}),parts=[magic,first],hash=createHash('sha256').update(first)

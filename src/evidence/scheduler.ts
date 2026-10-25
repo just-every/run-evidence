@@ -1,3 +1,4 @@
+import {flushTrustDeliveries} from './trust/delivery'
 import {withCollectionClock} from './connect/clock'
 import { configurationFailures } from './ops/configuration'
 import { runStep, reconcileDeliveries } from './ops/outcomes'
@@ -30,6 +31,10 @@ export const scheduledWork=(env:Bindings,now:Date)=>withCollectionClock(()=>new 
 async function scheduledWorkImpl(env: Bindings, now: Date) {
  const missing = configurationFailures(env)
  if (missing.length) throw new Error('Required configuration is missing or invalid: ' + missing.join(', '))
+ // An unused installation has no scheduled product work. Avoid manufacturing
+ // operational records that would race the empty-destination restore door.
+ const active=await env.DB.prepare('SELECT EXISTS(SELECT 1 FROM controls) OR EXISTS(SELECT 1 FROM connections) OR EXISTS(SELECT 1 FROM programs) OR EXISTS(SELECT 1 FROM people) OR EXISTS(SELECT 1 FROM policies) OR EXISTS(SELECT 1 FROM trust_deliveries) AS active').first<{active:number}>()
+ if(!active?.active)return {}
  const outcome: Record<string, number | string> = {}
  const deadline = Date.now() + EXECUTION_TIMEOUT_MS
  const step = async (name: string, work: (scopedEnv: Bindings) => Promise<number>) => { outcome[name] = Date.now() >= deadline ? 'not run: execution deadline reached' : await runStep(env, name, now, work, deadline) }
@@ -43,6 +48,7 @@ async function scheduledWorkImpl(env: Bindings, now: Date) {
  await step('training', scoped => trainingWork(scoped, now))
  await step('retests', scoped => runRetests(scoped, now, (test, resource) => runTest(scoped, test, 'retest', now, resource)))
  await step('ticket automation', scoped => ticketAutomation(scoped, now))
+ await step('trust notices',scoped=>flushTrustDeliveries(scoped,now))
  await step('failure notices', scoped => openingNotices(scoped, now))
  await step('escalations', scoped => escalate(scoped, now))
  await step('renewals', scoped => renewalReminders(scoped, now))

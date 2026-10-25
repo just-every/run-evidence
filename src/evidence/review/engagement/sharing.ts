@@ -1,3 +1,6 @@
+import {sharedExhibits} from './exhibits'
+import {sharedRemediation} from './remediation'
+import {restrictProjection} from './restricted'
 import {sharedIntervals} from './intervals'
 import {sharedPopulation} from './population'
 import {sharedRevisions} from './revisions'
@@ -40,9 +43,6 @@ export async function shareEvidence(env:Bindings,e:Engagement,input:Input,actor:
  await requireCapability(env,'shares')
  if(e.closed_at)throw new Refusal('Engagement is closed.',409)
  const kind=text(input,'kind'),subject=text(input,'subject_id'),reason=text(input,'reason',1000),selected=await selectedSnapshot(env,e,kind,subject),id=crypto.randomUUID()
- // Restricted prose projection is deliberately unavailable until its complete
- // redaction contract is implemented. A refusal never grants a partial share.
- if((await settingsFor(env,e)).detail_level==='Restricted')throw new Refusal('Restricted request-free projection is not yet available. Use a new Full engagement only if full disclosure is authorized.',409)
  const statement=env.DB.prepare('INSERT INTO audit_evidence_shares(id,engagement_id,kind,subject_id,revision,snapshot_json,shared_by,shared_at,reason) SELECT ?,?,?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM audit_engagements WHERE id=? AND closed_at IS NULL) AND NOT EXISTS(SELECT 1 FROM audit_evidence_shares WHERE engagement_id=? AND kind=? AND subject_id=? AND unshared_at IS NULL)').bind(id,e.id,kind,subject,selected.revision,JSON.stringify(selected.snapshot),actor.id,now.toISOString(),reason,e.id,e.id,kind,subject)
  const log=env.DB.prepare("INSERT INTO product_audit(id,actor_kind,actor_id,actor_name,action,subject,outcome,detail,at,reason,revision) SELECT ?,'owner',?,?,'audit.evidence.shared',?,'succeeded','',?,?,? WHERE EXISTS(SELECT 1 FROM audit_evidence_shares WHERE id=?)").bind(crypto.randomUUID(),actor.id,actor.name,e.id,now.toISOString(),reason,selected.revision,id)
  const [result]=await env.DB.batch([statement,log]);if(!result.meta.changes)throw new Refusal('Engagement closed or record is already shared.',409)
@@ -61,10 +61,11 @@ export async function sharedEvidence(env:Bindings,e:Engagement,now:Date,id?:stri
   const population=s.kind==='test'?await sharedPopulation(env,e,s.subject_id):[]
   const observations=s.kind==='test'?(await sharedObservations(env,e,s.subject_id)).filter(o=>population.some(p=>p.resource_id===o.resource_id&&p.intervals.some(i=>i.from<=o.observed_at&&o.observed_at<i.to))):[]
   return {id:s.id,kind:s.kind,subject_id:s.subject_id,revision:s.revision,shared_at:s.shared_at,record:JSON.parse(s.snapshot_json),
-   ...(s.kind==='test'?{population,intervals:await sharedIntervals(env,e,s.subject_id,population,now),...await sharedRevisions(env,e,s.subject_id)}:{}),observations,
+   ...(s.kind==='test'?{population,exhibits:await sharedExhibits(env,e,s.subject_id),...await sharedRemediation(env,e,s.subject_id,population,now),intervals:await sharedIntervals(env,e,s.subject_id,population,now),...await sharedRevisions(env,e,s.subject_id)}:{}),observations,
    decisions:await rows(env,'SELECT id,revision,state,reason,actor_id,actor_name,at FROM audit_evidence_decisions WHERE share_id=? ORDER BY revision',s.id),
    replies:await rows(env,'SELECT id,decision_id,revision,body,actor_id,actor_name,at FROM audit_evidence_replies WHERE share_id=? ORDER BY revision',s.id)}
  }))
- return {engagement:{id:e.id,name:e.name,period_from:e.period_from,period_to:e.period_to},...await settingsFor(env,e),shares:projected,coverage:'Selected definitions, period-bounded criteria and accepted library revision timelines, approved documents and in-period observations of explicitly shared tests. Historical population membership and attributes are retained; stale and unknown intervals are bounded by the product clock; SLA history is not yet available. Independent review decisions and owner replies are retained separately from requests.'}
+ const settings=await settingsFor(env,e)
+ return restrictProjection({engagement:{id:e.id,name:e.name,period_from:e.period_from,period_to:e.period_to},...settings,shares:projected,coverage:'Selected definitions, period-bounded criteria and accepted library revision timelines, approved documents and in-period observations of explicitly shared tests. Historical population membership and attributes are retained; stale and unknown intervals are bounded by the product clock; Per-item SLA cycles, approved exceptions and linked remediation retain their period history; verified fixes before the period are separately labeled. Independent review decisions and owner replies are retained separately from requests.'},e.id,settings)
 }
-export async function previewEvidence(env:Bindings,e:Engagement,actor:Actor,now:Date,id?:string){const result=await sharedEvidence(env,e,now,id);await auditStatement(env,actor,'audit.evidence.previewed',e.id,now).run();return result}
+export async function previewEvidence(env:Bindings,e:Engagement,actor:Actor,now:Date,id?:string){await sharedEvidence(env,e,now,id);await auditStatement(env,actor,'audit.evidence.previewed',e.id,now).run();return sharedEvidence(env,e,now,id)}

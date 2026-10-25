@@ -1,3 +1,5 @@
+import {trustHandler} from './evidence/trust/http'
+import {trustPublicHandler} from './evidence/trust/public-http'
 import { engagementHandler } from './evidence/review/engagement/http'
 import { auditIdentity } from './evidence/review/engagement/storage'
 import { operatorAuth } from './auth.server'
@@ -50,6 +52,7 @@ import { provideShellFacts } from './evidence/shell'
 // The production Worker and workerd harness share this complete owner HTTP door.
 export function createAppResponse(clock: () => Date = () => new Date()) {
  provideShellFacts(shellFacts)
+ const trustPublic=trustPublicHandler(clock)
  const collectors = collectorHandler(clock)
  const agents = agentHandler(clock)
  const imports = importHandler(clock)
@@ -58,7 +61,7 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
  const review = reviewHandler(clock)
  const supplier = supplierHandler(clock)
  const archive = archiveHandler(clock)
- const program = [privacyHandler(clock), tailoringHandler(clock), answerHandler(clock), vendorReviewHandler(clock), periodAgentHandler(clock), operationsHandler(clock), frameworkHandler(clock), collectorOwnerHandler(clock), programHandler(clock), documentHandler(clock), auditHandler(clock), testHandler(clock), remedyHandler(clock), connectHandler(clock), riskHandler(clock), vendorHandler(clock), policyHandler(clock), workHandler(clock), followupHandler(clock), identityHandler(clock), attestHandler(clock), recurringReviews(clock), populationHandler(clock), inventoryHandler(clock), accessHandler(clock), trainingHandler(clock), handoverHandler(clock), vulnHandler(clock)]
+ const program = [trustHandler(clock), privacyHandler(clock), tailoringHandler(clock), answerHandler(clock), vendorReviewHandler(clock), periodAgentHandler(clock), operationsHandler(clock), frameworkHandler(clock), collectorOwnerHandler(clock), programHandler(clock), documentHandler(clock), auditHandler(clock), testHandler(clock), remedyHandler(clock), connectHandler(clock), riskHandler(clock), vendorHandler(clock), policyHandler(clock), workHandler(clock), followupHandler(clock), identityHandler(clock), attestHandler(clock), recurringReviews(clock), populationHandler(clock), inventoryHandler(clock), accessHandler(clock), trainingHandler(clock), handoverHandler(clock), vulnHandler(clock)]
  const api = apiHandler(clock)
  const hooks = hookHandler(clock)
  const member = memberHandler(clock)
@@ -69,6 +72,7 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
    const missing = configurationFailures(runtimeBindings(env))
    if (missing.length) return configurationRefusal(missing)
   }
+  if(path==='/trust'||path.startsWith('/trust/'))return trustPublic(request,env)
   if (path.startsWith('/collectors/')) return collectors(request, env)
   // The public API takes Bearer tokens only, outside every owner door.
   if (path.startsWith('/v1/')) return api(request,env)

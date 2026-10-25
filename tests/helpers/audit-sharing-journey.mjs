@@ -22,6 +22,7 @@ export async function auditSharingJourney(browserProof){
  const push=async(resources)=>source('PUT','/v1/resources/audit_service',{resources,fullSync:true})
  await push([member])
  const populationTest=await call('/api/tests',{...definition,name:'Period population',resourceType:'audit_service'},201)
+ const privacyTest=await call('/api/tests',{...definition,name:'Shared population privacy',resourceType:'audit_service'},201)
  await app.clock('2026-10-10T06:00:00Z');await push([member,{uniqueId:'synthetic-evidence-4',attributes:{email:'added@example.test',private:false}}])
  await app.clock('2026-10-10T18:00:00Z');await push([{uniqueId:'synthetic-evidence-4',attributes:{email:'changed@example.test',private:true}}])
  await app.clock('2026-10-11T06:00:00Z');await push([member,{uniqueId:'synthetic-evidence-4',attributes:{email:'changed@example.test',private:true}}])
@@ -42,7 +43,7 @@ export async function auditSharingJourney(browserProof){
  const e=await call('/api/audit-engagements',config,201),base='/api/audit-engagements/'+e.id,view='/api/auditor/'+e.id
  await call('/api/audit-engagements',{...config,detail_level:'Restricted',hidden_attributes:'email'},400)
  const restricted=await call('/api/audit-engagements',{...config,detail_level:'Restricted',hidden_attributes:['email']},201)
- await call('/api/audit-engagements/'+restricted.id+'/shares',{kind:'test',subject_id:test.id,reason:'No unsafe fallback'},409)
+ assert.equal(restricted.name,config.name)
  await call('/api/audit-engagements/'+restricted.id+'/requests',{requests:'[]'},409)
  const grant=await call(base+'/auditors',{name:'Sharing auditor',email:'sharing-auditor@example.test',reason:'Explicit Full disclosure',expires_at:'2026-10-13T00:00:00Z'},201)
  const mail=app.messages.at(-1),url=new URL(mail.html.match(/href="([^"]*\/auth\/confirm\?token=[^"]+)"/)[1].replaceAll('&amp;','&'),app.origin)
@@ -245,13 +246,49 @@ export async function auditSharingJourney(browserProof){
  try{const racedPack=await call(view+'/pack',undefined,200,cookie);assert.ok(!racedPack.shared_evidence.shares.some(s=>s.id===packShare.id),'pack rechecks withdrawal after its view audit')}finally{await app.db.prepare('DROP TRIGGER sharing_pack_race').run()}
  const events=(await call('/api/audit?action=audit.evidence')).entries.filter(v=>v.subject===e.id)
  assert.ok(events.some(v=>v.action==='audit.evidence.unshared'&&v.reason==='Policy withdrawn'));assert.ok(events.some(v=>v.action==='audit.evidence.previewed'))
+ const restrictedBase='/api/audit-engagements/'+restricted.id,restrictedView='/api/auditor/'+restricted.id
+ await call(restrictedBase+'/auditors',{name:'Sharing auditor',email:'sharing-auditor@example.test',reason:'Restricted engagement grant',expires_at:'2026-10-13T00:00:00Z'},201)
+ const restrictedShares=[]
+ for(const subject_id of [test.id,populationTest.id,privacyTest.id])restrictedShares.push(await call(restrictedBase+'/shares',{kind:'test',subject_id,reason:'Restricted continuous evidence review'},201))
+ const restrictedPolicy=await call(restrictedBase+'/shares',{kind:'policy',subject_id:draft.policy,reason:'Restricted policy review'},201)
+ const restrictedData=await call(restrictedView+'/evidence',undefined,200,cookie)
+ assert.equal(restrictedData.detail_level,'Restricted')
+ assert.ok(!JSON.stringify(restrictedData).includes('@example.test'),'email values and repeated prose never enter Restricted projection')
+ const redactedPopulation=restrictedData.shares.find(s=>s.subject_id===populationTest.id).population
+ const matchingPopulation=restrictedData.shares.find(s=>s.subject_id===privacyTest.id).population
+ assert.ok(redactedPopulation.length&&matchingPopulation.length)
+ const common=redactedPopulation.find(p=>matchingPopulation.some(q=>q.resource_id===p.resource_id))
+ assert.ok(common,'resource pseudonyms stay consistent across shared tests')
+ assert.ok(common.resource_id.startsWith('subject-'))
+ assert.ok(common.intervals.every(i=>String(i.attributes.email).startsWith('subject-')))
+ assert.deepEqual(await call(restrictedBase+'/evidence'),restrictedData,'Restricted owner preview has exact field parity')
+ const beforeRestricted=await call('/api/tests/'+test.id),readinessBeforeRestricted=(await call('/api/programs/'+program.id)).readiness
+ for(const [index,item]of restrictedShares.entries())await call(restrictedView+'/evidence/'+item.id+'/decisions',{state:index?'accepted':'flagged',reason:index?'':'Restricted failure needs review',expected_revision:0},201,cookie)
+ await call(restrictedView+'/evidence/'+restrictedPolicy.id+'/decisions',{state:'accepted',expected_revision:0},201,cookie)
+ assert.deepEqual(await call('/api/tests/'+test.id),beforeRestricted)
+ assert.deepEqual((await call('/api/programs/'+program.id)).readiness.totals,readinessBeforeRestricted.totals)
+ const restrictedPack=await call(restrictedView+'/pack',undefined,200,cookie)
+ assert.deepEqual(restrictedPack.shared_evidence,(await call(restrictedBase+'/pack')).shared_evidence)
+ assert.equal(restrictedPack.shared_evidence.shares.find(s=>s.id===restrictedShares[0].id).decisions[0].state,'flagged')
+ assert.ok(!JSON.stringify(restrictedPack.shared_evidence).includes('@example.test'))
+ if(browserProof){
+  await browserProof(app,{cookie,stage:'restricted-auditor',decisionForm:true,screens:[['evidence','/auditor/'+restricted.id,'Restricted detail']],followLink:false})
+  await browserProof(app,{cookie:ownerCookie,stage:'restricted-preview',screens:[['preview','/app/audit-engagements/'+restricted.id+'/preview','Read-only owner preview']],followLink:false})
+ }
+ await call(restrictedBase+'/shares/'+restrictedPolicy.id+'/unshare',{reason:'Restricted policy withdrawn'})
+ await call(restrictedView+'/evidence/'+restrictedPolicy.id,undefined,404,cookie)
+ await call(restrictedView+'/evidence/'+crypto.randomUUID(),undefined,404,cookie)
+ await call(restrictedView+'/evidence/'+restrictedShares[0].id+'/observations/'+beforePeriod[0],undefined,404,cookie)
+ assert.ok((await call('/api/audit?action=audit.evidence')).entries.some(v=>v.subject===restricted.id&&v.reason==='Restricted policy withdrawn'))
+ const expectedRestricted=await call(restrictedBase+'/evidence'),decisionCount=(await app.db.prepare('SELECT COUNT(*) AS n FROM audit_evidence_decisions').first()).n
  const expected=await call(base+'/evidence'),expectedPack=await call(base+'/pack'),archive=await app.fetch('/api/archive/export');assert.equal(archive.status,200,await archive.clone().text())
  await target.clock('2026-10-12T00:00:01Z')
  await target.signin()
  const restored=await target.fetch('/api/archive/restore',{method:'POST',headers:{origin:target.origin,'content-type':'application'+'/'+'octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:await archive.arrayBuffer()});assert.equal(restored.status,200,await restored.clone().text())
  assert.deepEqual(await(await target.fetch(base+'/evidence')).json(),expected)
  assert.deepEqual(await(await target.fetch(base+'/pack')).json(),expectedPack)
- assert.equal((await target.db.prepare('SELECT COUNT(*) AS n FROM audit_evidence_decisions').first()).n,6)
+ assert.equal((await target.db.prepare('SELECT COUNT(*) AS n FROM audit_evidence_decisions').first()).n,decisionCount)
+ assert.deepEqual(await(await target.fetch(restrictedBase+'/evidence')).json(),expectedRestricted)
  assert.equal((await target.db.prepare('SELECT COUNT(*) AS n FROM audit_evidence_replies').first()).n,4)
  const settings=await(await target.fetch('/api/audit-engagements/'+restricted.id+'/evidence')).json();assert.deepEqual([settings.detail_level,settings.hidden_attributes],['Restricted',['email']])
  assert.ok((await target.db.prepare('SELECT revoked_at FROM audit_grants').all()).results.every(g=>g.revoked_at))

@@ -21,7 +21,7 @@ export async function engagementJourney(browserProof){
  const mail=app.messages.at(-1),url=new URL(mail.html.match(/href="([^"]*\/auth\/confirm\?token=[^"]+)"/)[1].replaceAll('&amp;','&'),app.origin)
  const confirmed=await app.fetch('/auth/confirm',{method:'POST',headers:{cookie:'',origin:app.origin,'content-type':'application' + '/' + 'json'},body:JSON.stringify({token:url.searchParams.get('token')})});assert.equal(confirmed.status,303);auditorCookie=confirmed.headers.getSetCookie().map(s=>s.split(';')[0]).join('; ')
  await call(view,undefined,401,'');await call('/api/auditor/'+other.id,undefined,404,auditorCookie)
- for(const path of ['/api/desk','/api/me','/api/folders','/api/people','/api/archive/export','/me'])await call(path,undefined,403,auditorCookie)
+ for(const path of ['/api/desk','/api/me','/api/folders','/api/people','/api/archive/export','/api/trust','/app/trust','/me'])await call(path,undefined,403,auditorCookie)
  await call(base+'/auditors',{name:'Existing owner',email:'owner@example.test',reason:'Invalid widening',expires_at:'2026-10-20T00:00:00Z'},409)
  const req={title:'Operating proof',control_id:requirement.control_id,owner_person_id:person.id,due_date:'2026-10-15'}
  await call(base+'/requests',{requests:JSON.stringify([req,{...req,control_id:crypto.randomUUID()}])},400)
