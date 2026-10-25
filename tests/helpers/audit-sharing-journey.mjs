@@ -1,17 +1,19 @@
 import assert from 'node:assert/strict'
 import {runtime} from './runtime.mjs'
 import {githubFixture} from './github-fixture.mjs'
-export async function auditSharingJourney(){
+export async function auditSharingJourney(browserProof){
  const {outbound}=githubFixture(),app=await runtime({outbound}),target=await runtime({ownerEmail:'restored-sharing@example.test'})
  const call=async(path,body,status=200,cookie)=>{const response=await app.fetch(path,{...(body===undefined?{}:{method:'POST',body:JSON.stringify(body)}),headers:{...(body===undefined?{}:{origin:app.origin,'content-type':'application'+'/'+'json'}),...(cookie===undefined?{}:{cookie})}});assert.equal(response.status,status,path+': '+await response.clone().text());return response.json()}
  try{
- await app.signin()
+ const ownerCookie=await app.signin()
  const makeControl=async name=>{const r=await app.fetch('/app/controls',{method:'POST',headers:{origin:app.origin,'content-type':'application'+'/'+'x-www-form-urlencoded'},body:new URLSearchParams({name,group:'Access',proof:'Period proof',cadence:'daily'})});assert.equal(r.status,303);return(await call('/api/desk')).requirements.find(q=>q.id===r.headers.get('location').split('/').at(-1)).control_id}
  const control=await makeControl('Shared control'),outside=await makeControl('Unshared control')
  const connection=await call('/api/connections',{account:'northstar',token:'synthetic-evidence-1',label:'Share source'},201)
  await call('/api/connections/'+connection.id+'/repositories',{repositories:connection.repositories})
  const definition={name:'Shared test',resourceType:'github.repository',criteria:JSON.stringify([{attribute:'private',op:'equals',value:true}]),cadence:'hourly',category:'code',severity:'high',controls:[control]}
  const test=await call('/api/tests',definition,201),otherTest=await call('/api/tests',{...definition,name:'Outside scope',controls:[outside]},201)
+ const program=await call('/api/programs',{framework:'soc2',name:'Continuous review',legal_entity:'Northstar',report_type:'Type II',audit_from:'2026-10-10',audit_to:'2026-10-11'},201)
+ await call('/api/controls/'+control+'/mappings',{framework:'soc2',edition:'tsc-2017-pof-2022',ref:'CC6.1',reason:'Continuous evidence scope'},201)
  const config={name:'Request-free audit',period_from:'2026-10-10',period_to:'2026-10-11',control_ids:[control]}
  const e=await call('/api/audit-engagements',config,201),base='/api/audit-engagements/'+e.id,view='/api/auditor/'+e.id
  await call('/api/audit-engagements',{...config,detail_level:'Restricted',hidden_attributes:'email'},400)
@@ -44,25 +46,75 @@ export async function auditSharingJourney(){
  assert.equal((await call(view+'/evidence/'+shared.id,undefined,200,cookie)).shares.length,1)
  await call(view+'/evidence/'+otherTest.id,undefined,404,cookie)
  await call(view+'/evidence/'+shared.id+'/observations/'+crypto.randomUUID(),undefined,404,cookie)
+ const decisions=view+'/evidence/'+shared.id+'/decisions',replies=base+'/evidence/'+shared.id+'/replies'
+ const before=(await call('/api/programs/'+program.id)).readiness.totals,testBefore=await call('/api/tests/'+test.id)
+ await call(decisions,{state:'flagged',expected_revision:0},400,cookie)
+ await call(decisions,{state:'not-applicable',reason:' ',expected_revision:0},400,cookie)
+ await call(decisions,{state:'accepted'},400,cookie)
+ await call(decisions,{state:'accepted',expected_revision:0},403)
+ await call(view+'/evidence/'+sharedControl.id+'/decisions',{state:'accepted',expected_revision:0},409,cookie)
+ await call(view+'/evidence/'+otherTest.id+'/decisions',{state:'accepted',expected_revision:0},409,cookie)
+ assert.equal((await app.fetch(decisions,{method:'POST',headers:{cookie,origin:'https://elsewhere.test','content-type':'application'+'/'+'json'},body:JSON.stringify({state:'accepted',expected_revision:0})})).status,403)
+ const flagged=await call(decisions,{state:'flagged',reason:'Explain the failed population',expected_revision:0,actor_name:'Spoofed owner'},201,cookie)
+ await call(decisions,{state:'accepted',expected_revision:0},409,cookie)
+ await call(replies,{decision_id:flagged.id,body:'Owner reply'},403,cookie)
+ await call(replies,{decision_id:crypto.randomUUID(),body:'Wrong decision'},409)
+ await call(replies,{decision_id:flagged.id,body:''},400)
+ await call(replies,{decision_id:flagged.id,body:'Population review is retained separately.'},201)
+ let evidence=await call(view+'/evidence/'+shared.id,undefined,200,cookie)
+ assert.deepEqual(evidence,await call(base+'/evidence/'+shared.id))
+ assert.equal(evidence.shares[0].decisions[0].actor_name,'Sharing auditor')
+ assert.equal(evidence.shares[0].decisions[0].revision,1)
+ assert.equal(evidence.shares[0].replies[0].actor_name,'Evidence owner')
+ assert.equal(evidence.shares[0].replies[0].decision_id,flagged.id)
+ const readiness=(await call('/api/programs/'+program.id)).readiness
+ assert.deepEqual(readiness.totals,before,'flag never changes readiness passes')
+ assert.deepEqual(await call('/api/tests/'+test.id),testBefore,'review never changes observations, results, mappings or criteria')
+ const flags=readiness.checklist.find(a=>a.area==='Auditor decisions')
+ assert.deepEqual([flags.ready,flags.total,flags.records.length],[0,1,1]);assert.match(flags.records[0].state,/Sharing auditor: Explain the failed population/)
+ assert.equal(flags.records[0].href,base+'/evidence/'+shared.id)
+ if(browserProof)await browserProof(app,{cookie:ownerCookie,program:program.id,stage:'flagged',screens:[['readiness','/app/programs/'+program.id,'Explain the failed population'],['board','/app/programs/'+program.id+'/board','Explain the failed population']],followLink:false})
+ const accepted=await call(decisions,{state:'accepted',expected_revision:1},201,cookie)
+ await call(decisions,{state:'not-applicable',reason:'Outside current review objective',expected_revision:2},201,cookie)
+ await call(replies,{decision_id:accepted.id,body:'Exact acceptance acknowledged.'},201)
+ const policyDecision=await call(view+'/evidence/'+policy.id+'/decisions',{state:'flagged',reason:'Confirm effective date',expected_revision:0},201,cookie)
+ await call(base+'/evidence/'+policy.id+'/replies',{decision_id:policyDecision.id,body:'The selected published revision has the date.'},201)
+ evidence=await call(view+'/evidence/'+shared.id,undefined,200,cookie)
+ assert.deepEqual(evidence.shares[0].decisions.map(d=>[d.revision,d.state]),[[1,'flagged'],[2,'accepted'],[3,'not-applicable']])
+ assert.deepEqual(evidence.shares[0].replies.map(r=>r.revision),[1,2])
+ const pack=await call(base+'/pack');assert.deepEqual(pack,await call(view+'/pack',undefined,200,cookie));assert.deepEqual(pack.shared_evidence,await call(base+'/evidence'))
+ assert.equal(pack.requests.length,0,'continuous decisions are separate from request decisions')
+ await app.clock('2026-10-11T12:00:01Z')
+ assert.deepEqual(await call(base+'/pack'),pack,'worker restart retains exact decisions and replies')
  await call('/api/tests/'+test.id+'/revisions',{criteria:JSON.stringify([{attribute:'private',op:'equals',value:false}]),reason:'Later criteria'})
  const after=await call(view+'/evidence/'+shared.id,undefined,200,cookie)
  assert.equal(after.shares[0].revision,'1');assert.equal(after.shares[0].record.criteria[0].value,true,'selected revision is retained')
  await call(base+'/shares/'+policy.id+'/unshare',{reason:'Policy withdrawn'},403,cookie)
  await call(base+'/shares/'+policy.id+'/unshare',{reason:'Policy withdrawn'})
  await call(view+'/evidence/'+policy.id,undefined,404,cookie)
+ await call(view+'/evidence/'+policy.id+'/decisions',{state:'accepted',expected_revision:1},409,cookie)
+ await call(base+'/evidence/'+policy.id+'/replies',{decision_id:policyDecision.id,body:'Withdrawn'},409)
+ assert.equal((await call('/api/programs/'+program.id)).readiness.checklist.find(a=>a.area==='Auditor decisions').total,0,'superseded flags and withdrawn policy flags are absent')
  assert.equal((await call(view+'/evidence',undefined,200,cookie)).shares.length,2)
  const again=await call(base+'/shares',{kind:'policy',subject_id:draft.policy,reason:'Explicit fresh grant'},201)
  await app.db.prepare(`CREATE TRIGGER sharing_race AFTER INSERT ON product_audit WHEN NEW.action='audit.auditor.viewed' BEGIN UPDATE audit_evidence_shares SET unshared_at=NEW.at,unshared_by='race',unshare_reason='Concurrent owner withdrawal' WHERE id='${again.id}'; END`).run()
  try{await call(view+'/evidence/'+again.id,undefined,404,cookie)}finally{await app.db.prepare('DROP TRIGGER sharing_race').run()}
+ const packShare=await call(base+'/shares',{kind:'policy',subject_id:draft.policy,reason:'Pack withdrawal fence'},201)
+ await app.db.prepare(`CREATE TRIGGER sharing_pack_race AFTER INSERT ON product_audit WHEN NEW.action='audit.auditor.viewed' BEGIN UPDATE audit_evidence_shares SET unshared_at=NEW.at,unshared_by='race',unshare_reason='Concurrent pack withdrawal' WHERE id='${packShare.id}'; END`).run()
+ try{const racedPack=await call(view+'/pack',undefined,200,cookie);assert.ok(!racedPack.shared_evidence.shares.some(s=>s.id===packShare.id),'pack rechecks withdrawal after its view audit')}finally{await app.db.prepare('DROP TRIGGER sharing_pack_race').run()}
  const events=(await call('/api/audit?action=audit.evidence')).entries.filter(v=>v.subject===e.id)
  assert.ok(events.some(v=>v.action==='audit.evidence.unshared'&&v.reason==='Policy withdrawn'));assert.ok(events.some(v=>v.action==='audit.evidence.previewed'))
- const expected=await call(base+'/evidence'),archive=await app.fetch('/api/archive/export');assert.equal(archive.status,200,await archive.clone().text())
+ const expected=await call(base+'/evidence'),expectedPack=await call(base+'/pack'),archive=await app.fetch('/api/archive/export');assert.equal(archive.status,200,await archive.clone().text())
  await target.signin()
  const restored=await target.fetch('/api/archive/restore',{method:'POST',headers:{origin:target.origin,'content-type':'application'+'/'+'octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:await archive.arrayBuffer()});assert.equal(restored.status,200,await restored.clone().text())
  assert.deepEqual(await(await target.fetch(base+'/evidence')).json(),expected)
+ assert.deepEqual(await(await target.fetch(base+'/pack')).json(),expectedPack)
+ assert.equal((await target.db.prepare('SELECT COUNT(*) AS n FROM audit_evidence_decisions').first()).n,4)
+ assert.equal((await target.db.prepare('SELECT COUNT(*) AS n FROM audit_evidence_replies').first()).n,3)
  const settings=await(await target.fetch('/api/audit-engagements/'+restricted.id+'/evidence')).json();assert.deepEqual([settings.detail_level,settings.hidden_attributes],['Restricted',['email']])
  assert.ok((await target.db.prepare('SELECT revoked_at FROM audit_grants').all()).results.every(g=>g.revoked_at))
  await call(base+'/auditors/'+grant.id+'/revoke',{reason:'Review ended'})
+ await call(decisions,{state:'accepted',expected_revision:3},404,cookie)
  await call(view+'/evidence',undefined,404,cookie);await call(view+'/evidence/'+sharedControl.id,undefined,404,cookie)
  }finally{await app.close();await target.close()}
 }

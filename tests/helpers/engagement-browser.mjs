@@ -3,7 +3,7 @@ import {createServer} from 'node:http'
 import {readFile,mkdir} from 'node:fs/promises'
 import {resolve,extname,join} from 'node:path'
 import {chromium} from 'playwright'
-export async function engagementBrowser(app,{cookie,program,leaver,stage='open'}){
+export async function engagementBrowser(app,{cookie,program,leaver,stage='open',screens,followLink=true}){
  const output=resolve(process.env.EVIDENCE_BROWSER_OUTPUT??'.cache/browser/engagements');let browser,server,origin
  try{
   server=createServer(async(req,res)=>{try{
@@ -21,7 +21,7 @@ export async function engagementBrowser(app,{cookie,program,leaver,stage='open'}
    const context=await browser.newContext({viewport:{width,height:1000}})
    await context.addCookies(cookie.split('; ').map(pair=>{const i=pair.indexOf('=');return{name:pair.slice(0,i),value:pair.slice(i+1),url:origin}}))
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message))
-   for(const [name,path,expected]of [['handover','/app/handover?person='+leaver,'Continuous control evidence'],['readiness','/app/programs/'+program,'Audit requests'],['board','/app/programs/'+program+'/board','Audit engagements']]){
+   for(const [name,path,expected]of screens??[['handover','/app/handover?person='+leaver,'Continuous control evidence'],['readiness','/app/programs/'+program,'Audit requests'],['board','/app/programs/'+program+'/board','Audit engagements']]){
     assert.equal((await page.goto(origin+path)).status(),200)
     await page.getByRole('cell').filter({hasText:expected}).first().waitFor();await page.evaluate(()=>document.fonts.ready)
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),name+' overflow at '+width)
@@ -29,7 +29,7 @@ export async function engagementBrowser(app,{cookie,program,leaver,stage='open'}
     assert.deepEqual(iconOnly,[],name+' has no icon-only controls requiring tooltips')
     await page.screenshot({path:join(output,width+'-'+stage+'-'+name+'.png'),fullPage:true})
    }
-   const link=page.getByRole('link',{name:'Continuous control evidence',exact:true});await link.focus();await page.keyboard.press('Enter');await page.waitForURL(/\/api\/audit-engagements\//);assert.match(await page.locator('body').innerText(),/Continuous control evidence/)
+   if(followLink){const link=page.getByRole('link',{name:'Continuous control evidence',exact:true});await link.focus();await page.keyboard.press('Enter');await page.waitForURL(/\/api\/audit-engagements\//);assert.match(await page.locator('body').innerText(),/Continuous control evidence/)}
    assert.deepEqual(errors,[]);await context.close()
   }
  }finally{await browser?.close();if(server)await new Promise(done=>server.close(done))}

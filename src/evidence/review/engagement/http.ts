@@ -1,3 +1,4 @@
+import {evidenceDecision,evidenceReply} from './decisions'
 import { shareEvidence,unshareEvidence,sharedEvidence,previewEvidence } from './sharing'
 import { operatorAuth,runtimeBindings,type Bindings } from '../../../auth.server'
 import { ownerRoutes,json,readInput,text,auditStatement,type Route } from '../../door'
@@ -10,6 +11,7 @@ export function engagementHandler(clock:()=>Date){
  {method:'GET',pattern:owner(),run:async c=>json({engagements:await rows(c.env,'SELECT * FROM audit_engagements ORDER BY created_at,id')})},
  {method:'POST',pattern:owner(),run:async c=>json(await createEngagement(c.env,await readInput(c.request),c.actor,c.now),201)},
  {method:'GET',pattern:owner('/'+id+'(?:/pack)?'),run:async(c,m)=>{const result=await projection(c.env,await engagement(c.env,m[1]));await auditStatement(c.env,c.actor,c.url.pathname.endsWith('/pack')?'audit.pack.exported':'audit.engagement.viewed',m[1],c.now).run();return json(result)}},
+ {method:'POST',pattern:owner('/'+id+'/evidence/'+id+'/replies'),run:async(c,m)=>json(await evidenceReply(c.env,await engagement(c.env,m[1]),m[2],await readInput(c.request),c.actor,c.now),201)},
  {method:'POST',pattern:owner('/'+id+'/shares'),run:async(c,m)=>json(await shareEvidence(c.env,await engagement(c.env,m[1]),await readInput(c.request),c.actor,c.now),201)},
  {method:'POST',pattern:owner('/'+id+'/shares/'+id+'/unshare'),run:async(c,m)=>json(await unshareEvidence(c.env,await engagement(c.env,m[1]),m[2],await readInput(c.request),c.actor,c.now))},
  {method:'GET',pattern:owner('/'+id+'/evidence(?:/'+id+')?'),run:async(c,m)=>json(await previewEvidence(c.env,await engagement(c.env,m[1]),c.actor,c.now,m[2]))},
@@ -37,6 +39,7 @@ export function engagementHandler(clock:()=>Date){
   const e=await engagement(env,eid);let response:Response
   if((parts.length===1||parts.length===2&&parts[1]==='pack')&&['GET','HEAD'].includes(request.method))response=json(await projection(env,e))
   else if((parts.length===2||parts.length===3)&&parts[1]==='evidence'&&['GET','HEAD'].includes(request.method))response=json(await sharedEvidence(env,e,parts[2]))
+  else if(parts.length===4&&parts[1]==='evidence'&&parts[3]==='decisions'&&request.method==='POST')response=json(await evidenceDecision(env,e,parts[2],await readInput(request),actor,email,session.id,clock()),201)
   else if(parts.length===5&&parts[1]==='requests'){
    const r=await requestOf(env,eid,parts[2])
    if(!['receipts','observations'].includes(parts[3])||!['GET','HEAD'].includes(request.method))return json({error:'Not found.'},404)
@@ -48,7 +51,8 @@ export function engagementHandler(clock:()=>Date){
   }else if(parts.length===4&&parts[1]==='requests'&&['comments','decisions'].includes(parts[3])&&request.method==='POST')response=json(await auditorWrite(env,e,await requestOf(env,eid,parts[2]),await readInput(request),actor,email,clock(),parts[3]==='decisions',session.id),201)
   else return json({error:'Not found.'},404)
   await auditStatement(env,{...actor,kind:'system'},'audit.auditor.viewed',eid,clock(),'succeeded','Authenticated auditor').run()
-  if(parts[1]==='evidence')response=json(await sharedEvidence(env,e,parts[2]))
+  if(parts[1]==='evidence'&&['GET','HEAD'].includes(request.method))response=json(await sharedEvidence(env,e,parts[2]))
+  else if(parts.length===1||parts.length===2&&parts[1]==='pack')response=json(await projection(env,e))
   if(!await authorized(env,eid,email,clock())||!await operatorAuth(env).getSession(request))return json({error:'Engagement not found.'},404)
   return request.method==='HEAD'?new Response(null,{status:response.status,headers:response.headers}):response
  }catch(error){return error instanceof Refusal?json({error:error.message},error.status):json({error:'Auditor operation unavailable.'},503)}

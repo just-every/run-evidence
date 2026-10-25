@@ -1,4 +1,4 @@
-import { reviewSettings,settingsFor } from './sharing'
+import { reviewSettings,settingsFor,sharedEvidence } from './sharing'
 import type { Bindings } from '../../../auth.server'
 import { auditStatement, text, type Actor, type Input } from '../../door'
 import { validDate } from '../../model'
@@ -66,7 +66,7 @@ export async function projection(env:Bindings,e:Engagement){
   const exceptions=await rows(env,`SELECT x.id,x.test_id,x.resource_id,x.reason,x.approved_name,x.approved_at,x.expires_at,x.revoked_at FROM test_exceptions x WHERE x.approved_at<? AND x.expires_at>=? AND (x.revoked_at IS NULL OR x.revoked_at>=?) AND EXISTS(SELECT 1 FROM test_controls tc WHERE tc.test_id=x.test_id AND tc.control_id=?) ORDER BY x.approved_at,x.id`,new Date(Date.parse(e.period_to+'T00:00:00Z')+86400000).toISOString(),e.period_from+'T00:00:00.000Z',e.period_from+'T00:00:00.000Z',r.control_id)
   projected.push({...r,submissions:receipts,observations,exceptions,comments:await rows(env,'SELECT id,body,actor_id,actor_name,actor_role,at FROM audit_comments WHERE request_id=? ORDER BY at,id',r.id),decisions,state:r.closed_at?'closed':!submissions.length?'open':decisions.at(-1)?.submission_id===submissions.at(-1)?.id?decisions.at(-1)!.state:'submitted'})
  }
- return {engagement:e,scope:await rows(env,'SELECT control_id FROM audit_scope WHERE engagement_id=? ORDER BY control_id',e.id),requests:projected}
+ return {engagement:e,scope:await rows(env,'SELECT control_id FROM audit_scope WHERE engagement_id=? ORDER BY control_id',e.id),requests:projected,shared_evidence:await sharedEvidence(env,e)}
 }
 // Conditional writes fence revocation and close-out in the same database statement.
 export async function auditorWrite(env:Bindings,e:Engagement,r:AuditRequest,input:Input,actor:Actor,email:string,now:Date,decision:boolean,sessionId:string){
