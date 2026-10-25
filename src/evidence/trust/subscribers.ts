@@ -26,16 +26,18 @@ export async function subscribe(env:Bindings,input:Input,now:Date) {
 export async function confirm(env:Bindings,token:string,now:Date) {
  const link=await credential(env,'confirmation',token,now)
  if(!link)throw new Refusal('Confirmation link is invalid or expired.',404)
- if(link.used_at)return {confirmed:true}
- const pending=(await env.DB.prepare("SELECT category FROM trust_subscriptions WHERE subscriber_id=? AND state='pending' AND confirmation_id=?").bind(link.subject_id,link.id).all<{category:string}>()).results
- if(!pending.length)throw new Refusal('This request has ended. Subscribe again to choose your categories.',409)
+ const subscriber=await requireSubscriber(env,link.subject_id)
+ if(link.used_at){if(subscriber.unsubscribed_at)throw new Refusal('This request has ended. Subscribe again to choose your categories.',409);return {confirmed:true}}
  const at=now.toISOString()
- await env.DB.batch([
-  env.DB.prepare('UPDATE trust_credentials SET used_at=? WHERE id=? AND used_at IS NULL').bind(at,link.id),
-  env.DB.prepare('UPDATE trust_subscribers SET unsubscribed_at=NULL WHERE id=?').bind(link.subject_id),
-  env.DB.prepare("UPDATE trust_subscriptions SET state='active',confirmed_at=?,updated_at=?,confirmation_id=NULL WHERE subscriber_id=? AND state='pending' AND confirmation_id=?").bind(at,at,link.subject_id,link.id),
-  ...pending.map(p=>consent(env,link.subject_id,p.category,'confirmed','double-opt-in','Email confirmation completed',visitor,now)),
+ // The consent insert claims only live pending categories inside the atomic
+ // batch. Withdrawal before this claim cannot be overwritten by a stale read.
+ const [claimed]=await env.DB.batch([
+  env.DB.prepare("INSERT INTO trust_consent_events(id,subscriber_id,category,action,source,reason,actor_id,actor_name,at) SELECT lower(hex(randomblob(16))),t.subscriber_id,t.category,'confirmed','double-opt-in','Email confirmation completed',?,?,? FROM trust_subscriptions t JOIN trust_credentials c ON c.id=t.confirmation_id WHERE t.subscriber_id=? AND t.state='pending' AND c.id=? AND c.used_at IS NULL").bind(visitor.id,visitor.name,at,link.subject_id,link.id),
+  env.DB.prepare('UPDATE trust_credentials SET used_at=? WHERE id=? AND used_at IS NULL AND changes()>0').bind(at,link.id),
+  env.DB.prepare('UPDATE trust_subscribers SET unsubscribed_at=NULL WHERE id=? AND changes()=1').bind(link.subject_id),
+  env.DB.prepare("UPDATE trust_subscriptions SET state='active',confirmed_at=?,updated_at=?,confirmation_id=NULL WHERE subscriber_id=? AND state='pending' AND confirmation_id=? AND changes()=1").bind(at,at,link.subject_id,link.id),
  ])
+ if(!claimed.meta.changes)throw new Refusal('This request has ended. Subscribe again to choose your categories.',409)
  return {confirmed:true}
 }
 export async function unsubscribe(env:Bindings,token:string,now:Date) {

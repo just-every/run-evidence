@@ -58,6 +58,8 @@ export async function trustJourney(app,{browserProof}={}) {
  // Mailbox-provider one-click POST deliberately has no Origin or owner session.
  const unsub=await app.fetch(unsubscribePath,{method:'POST',headers:{cookie:'','content-type':'application'+'/'+'x-www-form-urlencoded'},body:'List-Unsubscribe=One-Click'})
  assert.equal(unsub.status,200)
+ await visitor('/trust/confirm/'+departing.token,{},409)
+ assert.ok((await get('/api/trust')).subscribers.find(s=>s.email==='departing@customer.test').unsubscribed_at,'an old confirmation cannot undo withdrawal')
  await owner('/subscribers',{email:'departing@customer.test',categories:['subprocessors'],reason:'Cannot override withdrawal'},409)
  const baseline=app.messages.length
  const draft=await owner('/subprocessors',{action:'add',name:'Atlas Storage',purpose:'Encrypted document storage',data_categories:'Business contact details and uploaded compliance reports',location:'Australia',effective_on:'2026-11-29'},201)
