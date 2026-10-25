@@ -1,10 +1,11 @@
 import { runtimeBindings,type Bindings } from '../../auth.server'
-import { readInput } from '../door'
+import { auditStatement, readInput } from '../door'
 import { safeHeaders } from '../review/frame'
 import { capabilityAllowed } from '../archive/capabilities'
 import { Refusal } from '../upload'
 import { categories,credential,settings } from './model'
-import { confirm,subscribe,unsubscribe,customerAccess } from './subscribers'
+import { confirm,subscribe,unsubscribe } from './subscribers'
+import { customerAccess,grantActor,grantRecords,submitToRecord } from './grants'
 import { publicFeed } from './data'
 import { subprocessorList } from './updates'
 import { deliveryWebhook } from './events'
@@ -45,16 +46,28 @@ export function trustPublicHandler(clock:()=>Date=()=>new Date()) {
     const result=await subscribe(env,await readInput(request),now)
     return wantsJson?json(result,202):trustMessage('Check your email','If confirmation is needed, a link has been sent to that address. Confirm it to start receiving updates.')
    }
-   if(!['GET','HEAD'].includes(request.method))throw new Refusal('Method not allowed.',405)
-   const customer=/^\/trust\/customer\/([a-f0-9]{64})(?:\/feed)?$/.exec(path)
+   const customer=/^\/trust\/customer\/([a-f0-9]{64})(?:\/feed|\/updates\/([a-f0-9-]{36})\/submissions)?$/.exec(path)
    if(path!=='/trust'&&path!=='/trust/feed'&&path!=='/trust/subprocessors'&&!customer)throw new Refusal('Not found.',404)
    const grant=customer?await customerAccess(env,customer[1],now):null
    if(customer&&!grant)throw new Refusal('Not found.',404)
+   if(customer?.[2]&&grant) {
+    if(request.method!=='POST')throw new Refusal('Method not allowed.',405)
+    if(![env.AUTH_ORIGIN,'null'].includes(request.headers.get('origin')??'')||request.headers.get('sec-fetch-site')==='cross-site') {
+     await auditStatement(env,grantActor(grant),'trust.customer-submit',customer[2],now,'refused','Same-origin submission required').run()
+     throw new Refusal('Same-origin submission required.',403)
+    }
+    const result=await submitToRecord(env,grant,customer[2],await readInput(request),now)
+    return wantsJson?json(result,201):new Response(null,{status:303,headers:{...safeHeaders,location:'/trust/customer/'+customer[1]}})
+   }
+   if(!['GET','HEAD'].includes(request.method))throw new Refusal('Method not allowed.',405)
    const category=url.searchParams.get('category'),categoryRows=await categories(env)
    if(category&&!categoryRows.some(c=>c.slug===category))throw new Refusal('Choose a listed category.')
-   const [updates,subprocessors]=await Promise.all([publicFeed(env,!!grant,category),subprocessorList(env,now)])
+   const [updates,subprocessors]=await Promise.all([publicFeed(env,grant?.id??null,category),subprocessorList(env,now)])
+   const permissions=grant?await grantRecords(env,grant.id):[]
+   const submissions=grant?(await env.DB.prepare('SELECT * FROM trust_submissions WHERE grant_id=? ORDER BY submitted_at,id').bind(grant.id).all<import('./grants').Submission>()).results:[]
+   if(grant)await auditStatement(env,grantActor(grant),'trust.customer-read',grant.id,now,'succeeded','Named records: '+updates.filter(u=>permissions.some(p=>p.update_id===u.id)).map(u=>u.id).join(', ')).run()
    if(path==='/trust/subprocessors')return json(subprocessors)
-   return wantsJson?json({updates,subprocessors,categories:categoryRows}):trustPublicPage(updates,subprocessors,categoryRows,!!grant,!!rules.confirmations_enabled)
+   return wantsJson?json({updates,subprocessors,categories:categoryRows,permissions,submissions}):trustPublicPage(updates,subprocessors,categoryRows,customer?.[1],!!rules.confirmations_enabled,permissions,submissions)
   }catch(error) {
    if(error instanceof Refusal)return wantsJson?json({error:error.message},error.status):new Response(error.message+'\n',{status:error.status,headers:{...safeHeaders,'content-type':'text'+'/'+'plain; charset=utf-8'}})
    return json({error:'Trust storage unavailable; no result is claimed.'},503)

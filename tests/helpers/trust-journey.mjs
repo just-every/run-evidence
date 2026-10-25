@@ -1,11 +1,13 @@
 // TRUST-003 through public HTTP doors. Mail submission is the runtime's network
 // edge; signed Resend events below represent the provider's delivery and bounce edge.
 import assert from 'node:assert/strict'
-import { createHmac } from 'node:crypto'
+import { createHmac,generateKeyPairSync,sign } from 'node:crypto'
 import { runtime } from './runtime.mjs'
 export async function trustJourney(app,{browserProof}={}) {
  let now='2026-10-30T12:00:00.000Z',eventSequence=0
- const signingMaterial='synthetic-evidence-1',key='whsec_'+Buffer.from(signingMaterial).toString('base64')
+ const provider=app.harnessState().settings.MAIL_PROVIDER,pair=generateKeyPairSync('ec',{namedCurve:'prime256v1'})
+ const signingMaterial='synthetic-evidence-1',key=provider==='sendgrid'?pair.publicKey.export({type:'spki',format:'der'}).toString('base64'):'whsec_'+Buffer.from(signingMaterial).toString('base64')
+ const eventPath='/trust/mail/events/'+provider,signatureHeader=provider==='sendgrid'?'x-twilio-email-event-webhook-signature':'svix-signature'
  const owner=async(path,body,status=200)=>{
   const response=await app.fetch('/api/trust'+path,{method:'POST',headers:{origin:app.origin,'content-type':'application'+'/'+'json'},body:JSON.stringify(body)}),text=await response.text()
   assert.equal(response.status,status,path+' '+text)
@@ -29,16 +31,17 @@ export async function trustJourney(app,{browserProof}={}) {
   return {token,message}
  }
  const signedEvent=async(delivery,type,id='trust-event-'+ ++eventSequence)=>{
-  const payload={type,created_at:now,data:{email_id:delivery.provider_message_id,to:[delivery.recipient]}},raw=JSON.stringify(payload),timestamp=String(Date.parse(now)/1000)
+  const payload=provider==='sendgrid'?[{event:type==='email.bounced'?'bounce':'delivered',sg_event_id:id,sg_message_id:delivery.provider_message_id+'.provider-suffix',rer_delivery_id:'evidence-trust-'+delivery.id,email:delivery.recipient,timestamp:Date.parse(now)/1000}]:{type,created_at:now,data:{email_id:delivery.provider_message_id,to:[delivery.recipient]}},raw=JSON.stringify(payload),timestamp=String(Date.parse(now)/1000)
   const signature=createHmac('sha256',Buffer.from(signingMaterial)).update(id+'.'+timestamp+'.'+raw).digest('base64')
-  const init={method:'POST',headers:{cookie:'','content-type':'application'+'/'+'json','svix-id':id,'svix-timestamp':timestamp,'svix-signature':'v1,'+signature},body:raw}
-  return {init,response:await app.fetch('/trust/mail/events/resend',init)}
+  const auth=provider==='sendgrid'?{'x-twilio-email-event-webhook-timestamp':timestamp,[signatureHeader]:sign('sha256',Buffer.from(timestamp+raw),pair.privateKey).toString('base64')}:{'svix-id':id,'svix-timestamp':timestamp,[signatureHeader]:'v1,'+signature}
+  const init={method:'POST',headers:{cookie:'','content-type':'application'+'/'+'json',...auth},body:raw}
+  return {init,response:await app.fetch(eventPath,init)}
  }
  await app.clock(now);const ownerCookie=await app.signin()
  assert.equal((await app.fetch('/api/trust',{headers:{cookie:''}})).status,401)
  assert.equal((await app.fetch('/api/trust/settings',{method:'POST',headers:{origin:'https://foreign.test','content-type':'application'+'/'+'json'},body:'{}'})).status,403)
  await owner('/settings',{postal_address:'80 Test Street, Brisbane QLD 4000, Australia',notice_days:30,public_enabled:true,confirmations_enabled:true})
- await owner('/mail-webhooks',{provider:'resend',key})
+ await owner('/mail-webhooks',{provider,key})
  await owner('/categories',{name:'Assurance operations',slug:'assurance-operations'},201)
  const custom=await owner('/updates',{category:'assurance-operations',title:'Draft custom category update',body:'Owner-written assurance operations draft.',visibility:'public'},201)
  assert.equal(custom.category,'assurance-operations')
@@ -76,9 +79,9 @@ export async function trustJourney(app,{browserProof}={}) {
  for(const delivery of evidence.deliveries) {
   const event=await signedEvent(delivery,delivery.recipient.startsWith('bounce@')?'email.bounced':'email.delivered')
   assert.equal(event.response.status,202,await event.response.text())
-  assert.equal((await app.fetch('/trust/mail/events/resend',event.init)).status,202,'repeated verified provider event is idempotent')
-  const forged={...event.init,headers:{...event.init.headers,'svix-signature':'v1,'+Buffer.alloc(32).toString('base64')}}
-  assert.equal((await app.fetch('/trust/mail/events/resend',forged)).status,401)
+  assert.equal((await app.fetch(eventPath,event.init)).status,202,'repeated verified provider event is idempotent')
+  const forged={...event.init,headers:{...event.init.headers,[signatureHeader]:(provider==='resend'?'v1,':'')+Buffer.alloc(32).toString('base64')}}
+  assert.equal((await app.fetch(eventPath,forged)).status,401)
  }
  evidence=await get('/api/trust/updates/'+draft.update.id+'/export')
  assert.deepEqual(evidence.deliveries.map(d=>d.state).sort(),['bounced','delivered'])
@@ -98,7 +101,13 @@ export async function trustJourney(app,{browserProof}={}) {
  await owner('/updates/'+security.id+'/publish',{})
  const restricted=await owner('/updates',{category:'security',title:'Customer assurance detail',body:'Approved-customer-only assurance statement.',visibility:'customers'},201)
  await owner('/updates/'+restricted.id+'/approve',{notify:true})
- const customer=await owner('/customers',{email:'alice@customer.test',expires_at:'2026-12-31',reason:'Reviewed active customer contract',subscribe_subprocessors:true},201)
+ await owner('/customers',{email:'scope@customer.test',expires_at:'2026-12-31',reason:'No implicit broad access'},400)
+ await owner('/customers',{email:'scope@customer.test',expires_at:'2026-12-31',read_records:[restricted.id]},400)
+ await owner('/customers',{email:'scope@customer.test',reason:'Expiry is mandatory',read_records:[restricted.id]},400)
+ await owner('/customers',{email:'scope@customer.test',expires_at:'2026-12-31',reason:'Submit requires read',read_records:[security.id],submit_records:[restricted.id]},400)
+ await owner('/customers',{email:'scope@customer.test',expires_at:'2026-12-31',reason:'No drafts',read_records:[custom.id]},409)
+ const signedOutGrant=await app.fetch('/api/trust/customers',{method:'POST',headers:{cookie:'',origin:app.origin,'content-type':'application'+'/'+'json'},body:JSON.stringify({email:'scope@customer.test',reason:'No owner session',expires_at:'2026-12-31',read_records:[restricted.id]})});assert.equal(signedOutGrant.status,401)
+ const customer=await owner('/customers',{email:'alice@customer.test',expires_at:'2026-12-31',reason:'Reviewed active customer contract',subscribe_subprocessors:true,read_records:[restricted.id],submit_records:[restricted.id]},201)
  const customerPath=new URL(customer.url).pathname
  await owner('/updates/'+restricted.id+'/publish',{notify:true})
  const restrictedEvidence=await get('/api/trust/updates/'+restricted.id+'/export')
@@ -106,17 +115,46 @@ export async function trustJourney(app,{browserProof}={}) {
  const publicFeed=await visitor('/trust/feed'),customerFeed=await visitor(customerPath+'/feed')
  assert.ok(publicFeed.updates.some(u=>u.id===security.id));assert.ok(!publicFeed.updates.some(u=>u.id===restricted.id))
  assert.ok(customerFeed.updates.some(u=>u.id===restricted.id))
- if(browserProof)await browserProof(app,{cookie:'',stage:'customer',screens:[['customer-feed',customerPath,'Customer assurance detail']],followLink:false})
+ const other=await owner('/updates',{category:'security',title:'Other customer record',body:'A separate approved scope.',visibility:'customers'},201)
+ await owner('/updates/'+other.id+'/approve',{notify:true});await owner('/updates/'+other.id+'/publish',{notify:true})
+ assert.equal((await get('/api/trust/updates/'+other.id+'/export')).deliveries.length,0,'customer notifications also require the named record grant')
+ assert.ok(!(await visitor(customerPath+'/feed')).updates.some(u=>u.id===other.id),'new restricted records never inherit an old grant')
+ const readOnly=await owner('/customers',{email:'read-only@customer.test',reason:'Read only',expires_at:'2026-12-31',read_records:[restricted.id]},201),readOnlyPath=new URL(readOnly.url).pathname
+ await visitor(readOnlyPath+'/updates/'+restricted.id+'/submissions',{body:'Cannot submit'},403)
+ await visitor(customerPath+'/updates/'+other.id+'/submissions',{body:'Cannot cross scope'},403)
+ await visitor(customerPath+'/updates/'+restricted.id+'/submissions',{body:'Foreign submission'},403,{origin:'https://foreign.test'})
+ const submitted=await visitor(customerPath+'/updates/'+restricted.id+'/submissions',{body:'Please retain this assurance statement.'},201)
+ assert.equal(submitted.update_id,restricted.id)
+ assert.ok((await visitor(customerPath+'/feed')).submissions.some(s=>s.id===submitted.id))
+ assert.deepEqual((await visitor(readOnlyPath+'/feed')).submissions,[],'one recipient never sees another grant submission')
+ assert.equal((await get('/api/trust/updates/'+restricted.id+'/export')).submissions[0].body,submitted.body)
+ const grantOverview=await get('/api/trust')
+ assert.ok(!JSON.stringify(grantOverview).includes(customer.url.split('/').at(-1)),'link is only in the creation response')
+ const savedGrant=await app.db.prepare("SELECT token_hash FROM trust_credentials WHERE subject_id=? AND kind='customer'").bind(customer.id).first()
+ assert.match(savedGrant.token_hash,/^[a-f0-9]{64}$/);assert.notEqual(savedGrant.token_hash,customer.url.split('/').at(-1))
+ assert.equal((await app.fetch('/api/trust',{headers:{cookie:'',authorization:'Bearer '+customer.url.split('/').at(-1)}})).status,403,'customer capability never opens owner doors')
+ if(browserProof){
+  await browserProof(app,{cookie:'',stage:'customer',screens:[['customer-feed',customerPath,'Customer assurance detail']],followLink:false,customerSubmission:true})
+  await browserProof(app,{cookie:'',stage:'customer-read-only',screens:[['customer-feed',readOnlyPath,'Customer assurance detail']],followLink:false})
+  await browserProof(app,{cookie:ownerCookie,stage:'grant',screens:[['overview','/app/trust','Named record permissions'],['submissions','/app/trust/updates/'+restricted.id,'Customer submissions']],followLink:false,issueGrant:{id:restricted.id,expires:'2026-12-31'}})
+ }
+ await app.clock('2026-10-30T12:00:00.002Z')
+ assert.ok((await visitor(customerPath+'/feed')).submissions.some(s=>s.id===submitted.id),'submission survives worker restart')
+ const customerAudit=await app.db.prepare("SELECT * FROM product_audit WHERE actor_id=? ORDER BY at,rowid").bind(customer.id).all()
+ assert.ok(customerAudit.results.some(r=>r.action==='trust.customer-read'&&r.outcome==='succeeded'))
+ assert.ok(customerAudit.results.some(r=>r.action==='trust.customer-submit'&&r.outcome==='succeeded'&&r.subject===restricted.id))
+ assert.ok(customerAudit.results.some(r=>r.action==='trust.customer-submit'&&r.outcome==='refused'&&r.subject===other.id))
  const publicHtml=await (await app.fetch('/trust',{headers:{cookie:''}})).text()
  assert.ok(!publicHtml.includes(restricted.title));assert.ok(!publicHtml.includes('owner@example.test'));assert.ok(!publicHtml.includes('bounce@customer.test'))
  await owner('/customers/'+customer.id+'/revoke',{})
  await visitor(customerPath+'/feed',undefined,404)
+ await visitor(customerPath+'/updates/'+restricted.id+'/submissions',{body:'Revoked'},404)
  const consent=await get('/api/trust/subscribers/export')
  assert.ok(consent.history.some(h=>h.source==='double-opt-in'&&h.action==='confirmed'))
  assert.ok(consent.history.some(h=>h.source==='owner-added'&&h.reason==='Contractual DPA notice obligation'))
  assert.ok(consent.history.some(h=>h.action==='unsubscribed'))
  assert.ok(!JSON.stringify(consent).includes(alice.token),'exports never include bearer credentials')
- const expiring=await owner('/customers',{email:'expiry@customer.test',expires_at:'2026-11-28',reason:'Time-bounded approved customer'},201)
+ const expiring=await owner('/customers',{email:'expiry@customer.test',expires_at:'2026-11-28',reason:'Time-bounded approved customer',read_records:[restricted.id]},201)
  now='2026-11-29T00:00:00.000Z';await app.clock(now)
  await visitor(new URL(expiring.url).pathname+'/feed',undefined,404)
  list=await visitor('/trust/subprocessors')
@@ -136,8 +174,9 @@ export async function trustJourney(app,{browserProof}={}) {
  assert.equal(original.notice.location,'Australia');assert.deepEqual(original.deliveries.map(d=>d.state).sort(),['bounced','delivered'])
  // The complete portable archive preserves approvals and per-recipient evidence,
  // while restored mail and shares stay off and bearer credentials cannot reopen a feed.
- const portableCustomer=await owner('/customers',{email:'portable@customer.test',expires_at:'2027-03-31',reason:'Portable grant evidence'},201)
+ const portableCustomer=await owner('/customers',{email:'portable@customer.test',expires_at:'2027-03-31',reason:'Portable grant evidence',read_records:[restricted.id],submit_records:[restricted.id]},201)
  const portableCustomerPath=new URL(portableCustomer.url).pathname
+ const expectedSubmission=await get('/api/trust/updates/'+restricted.id+'/export')
  const expectedConsent=await get('/api/trust/subscribers/export'),expectedNotice=await get('/api/trust/updates/'+draft.update.id+'/export')
  const archiveResponse=await app.fetch('/api/archive/export');assert.equal(archiveResponse.status,200,await archiveResponse.clone().text())
  const archive=await archiveResponse.arrayBuffer(),target=await runtime({origin:'https://127.0.0.1:8788',ownerEmail:'restored@owner.test',settings:{MAIL_API_KEY:'synthetic-evidence-3'}})
@@ -146,6 +185,7 @@ export async function trustJourney(app,{browserProof}={}) {
   const restored=await target.fetch('/api/archive/restore',{method:'POST',headers:{origin:target.origin,'content-type':'application'+'/'+'octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:archive})
   assert.equal(restored.status,200,await restored.clone().text())
   assert.deepEqual(await(await target.fetch('/api/trust/subscribers/export')).json(),expectedConsent)
+  assert.deepEqual(await(await target.fetch('/api/trust/updates/'+restricted.id+'/export')).json(),expectedSubmission)
   assert.deepEqual(await(await target.fetch('/api/trust/updates/'+draft.update.id+'/export')).json(),expectedNotice)
   const overview=await(await target.fetch('/api/trust')).json()
   assert.ok(overview.customer_grants.some(g=>g.id===customer.id&&g.revoked_at),'revoked grants retain their evidence')

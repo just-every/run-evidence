@@ -36,7 +36,7 @@ export async function confirmationMail(env:Bindings,subscriber:string,email:stri
 export async function eligible(env:Bindings,row:Delivery,update:Update,now:Date) {
  const sub=await env.DB.prepare("SELECT 1 FROM trust_subscribers s JOIN trust_subscriptions t ON t.subscriber_id=s.id WHERE s.id=? AND s.unsubscribed_at IS NULL AND t.category=? AND t.state='active' AND t.confirmed_at IS NOT NULL").bind(row.subscriber_id,update.category).first()
  if(!sub)return false
- return update.visibility==='public'||!!await env.DB.prepare('SELECT 1 FROM trust_customer_grants WHERE subscriber_id=? AND revoked_at IS NULL AND expires_at>?').bind(row.subscriber_id,now.toISOString()).first()
+ return update.visibility==='public'||!!await env.DB.prepare('SELECT 1 FROM trust_customer_grants g JOIN trust_grant_records r ON r.grant_id=g.id WHERE g.subscriber_id=? AND g.revoked_at IS NULL AND g.expires_at>? AND r.update_id=? AND r.can_read=1').bind(row.subscriber_id,now.toISOString(),update.id).first()
 }
 export async function flushTrustDeliveries(env:Bindings,now:Date,updateId?:string) {
  if(!await capabilityAllowed(env,'mail'))return 0

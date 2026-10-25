@@ -9,9 +9,9 @@ export async function trustOverview(env:Bindings,now:Date) {
   env.DB.prepare('SELECT * FROM trust_deliveries ORDER BY queued_at DESC,rowid DESC LIMIT 200').all<Delivery>(),subprocessorList(env,now),
   env.DB.prepare('SELECT provider,updated_by,updated_at FROM trust_mail_webhooks ORDER BY provider').all(),
  ])
- return {settings:rules,categories:categoryRows,updates:updates.results,...subscribers,customer_grants:customers.results,deliveries:deliveries.results,subprocessors,webhooks:webhooks.results}
+ return {settings:rules,categories:categoryRows,updates:updates.results,...subscribers,customer_grants:customers.results,grant_records:(await env.DB.prepare('SELECT * FROM trust_grant_records ORDER BY grant_id,update_id').all<import('./grants').GrantRecord>()).results,deliveries:deliveries.results,subprocessors,webhooks:webhooks.results}
 }
-export async function publicFeed(env:Bindings,customers:boolean,category:string|null=null) {
- const rows=(await env.DB.prepare("SELECT id,category,title,body,visibility,approved_at,published_at FROM trust_updates WHERE published_at IS NOT NULL AND approved_at IS NOT NULL AND (?=1 OR visibility='public') AND (? IS NULL OR category=?) ORDER BY published_at DESC,rowid DESC").bind(customers?1:0,category,category).all<Pick<Update,'id'|'category'|'title'|'body'|'visibility'|'approved_at'|'published_at'>>()).results
+export async function publicFeed(env:Bindings,grantId:string|null,category:string|null=null) {
+ const rows=(await env.DB.prepare("SELECT id,category,title,body,visibility,approved_at,published_at FROM trust_updates WHERE published_at IS NOT NULL AND approved_at IS NOT NULL AND (visibility='public' OR EXISTS(SELECT 1 FROM trust_grant_records r WHERE r.grant_id=? AND r.update_id=trust_updates.id AND r.can_read=1)) AND (? IS NULL OR category=?) ORDER BY published_at DESC,rowid DESC").bind(grantId,category,category).all<Pick<Update,'id'|'category'|'title'|'body'|'visibility'|'approved_at'|'published_at'>>()).results
  return rows
 }

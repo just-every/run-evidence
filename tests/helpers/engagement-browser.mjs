@@ -3,7 +3,7 @@ import {createServer} from 'node:http'
 import {readFile,mkdir} from 'node:fs/promises'
 import {resolve,extname,join} from 'node:path'
 import {chromium} from 'playwright'
-export async function engagementBrowser(app,{cookie,program,leaver,stage='open',screens,followLink=true,expand=false,decisionForm=false,trustForms=false}){
+export async function engagementBrowser(app,{cookie,program,leaver,stage='open',screens,followLink=true,expand=false,decisionForm=false,trustForms=false,customerSubmission=false,issueGrant}){
  const output=resolve(process.env.EVIDENCE_BROWSER_OUTPUT??'.cache/browser/engagements');let browser,server,origin
  try{
   server=createServer(async(req,res)=>{try{
@@ -35,7 +35,26 @@ export async function engagementBrowser(app,{cookie,program,leaver,stage='open',
      await page.getByText(comment,{exact:false}).first().waitFor()
      assert.equal(new URL(page.url()).pathname.startsWith('/auditor/'),true,'decision returns to the auditor screen')
     }
+    if(customerSubmission){
+     await page.getByRole('textbox',{name:'Comment on Customer assurance detail',exact:true}).fill('Browser customer comment at '+width)
+     await page.getByRole('button',{name:'Submit comment',exact:true}).click()
+     await page.getByText('Browser customer comment at '+width,{exact:false}).first().waitFor()
+    }
     await page.screenshot({path:join(output,width+'-'+stage+'-'+name+'.png'),fullPage:true})
+   }
+   if(issueGrant){
+    await page.goto(origin+'/app/trust')
+    const form=page.locator('form[action="/app/trust/customers"]')
+    await form.locator('[name=email]').fill('reviewed-'+width+'@customer.test')
+    await form.locator('[name=expires_at]').fill(issueGrant.expires)
+    await form.locator('[name=reason]').fill('Reviewed customer contract for named assurance statement')
+    await form.locator('[name="read_records[]"][value="'+issueGrant.id+'"]').check()
+    await form.locator('[name="submit_records[]"][value="'+issueGrant.id+'"]').check()
+    await form.getByRole('button',{name:'Approve customer and issue link',exact:true}).click()
+    await page.getByRole('heading',{name:'Customer access issued',exact:true}).waitFor()
+    assert.equal(await page.locator('a[href*="/trust/customer/"]').count(),1)
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'issued grant fits viewport')
+    await page.screenshot({path:join(output,width+'-grant-issued.png'),fullPage:true})
    }
    if(trustForms){
     const email='browser-'+width+'@customer.test'

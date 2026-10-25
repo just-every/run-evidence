@@ -192,7 +192,7 @@ try {
    const exported = Buffer.from(await (await prior.fetch('/api/archive/export')).arrayBuffer())
    const magic = Buffer.from('EVIDENCE-ARCHIVE\n'), decoded = decodeArchive(exported), manifest = decoded.manifest
    // Trust records first joined the core portable registry after this legacy format.
-   const trustTables = ['trust_settings','trust_categories','trust_subscribers','trust_subscriptions','trust_consent_events','trust_customer_grants','trust_updates','trust_subprocessor_changes','trust_deliveries','trust_delivery_events']
+   const trustTables = ['trust_settings','trust_categories','trust_subscribers','trust_subscriptions','trust_consent_events','trust_customer_grants','trust_updates','trust_subprocessor_changes','trust_deliveries','trust_delivery_events','trust_grant_records','trust_submissions']
    for (const table of trustTables) delete manifest.extensions.program.rows[table]
    manifest.version = 4; delete manifest.extensions.program.files; delete manifest.extensions.program.rows.handover_events; delete manifest.extensions.program.rows.handover_settings; for (const t of ['vuln_imports','vuln_findings','vuln_documents','vuln_events','control_revisions','requirement_revisions','run_control_definitions','custom_frameworks','custom_framework_requirements','custom_framework_revisions','custom_framework_mappings']) delete manifest.extensions.program.rows[t]; manifest.extensions.program.rows.risk_methods = []
    for (const row of manifest.extensions.program.rows.risks) delete row.library_revision

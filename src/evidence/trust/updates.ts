@@ -70,8 +70,8 @@ export async function publishUpdate(env:Bindings,actor:Actor,id:string,input:Inp
  SELECT lower(hex(randomblob(16))),?,s.id,'update',s.email,'pending','Owner-approved notification queued',?,?
  FROM trust_subscribers s JOIN trust_subscriptions t ON t.subscriber_id=s.id
  WHERE s.unsubscribed_at IS NULL AND t.category=? AND t.state='active' AND t.confirmed_at IS NOT NULL
- AND (?='public' OR EXISTS(SELECT 1 FROM trust_customer_grants g WHERE g.subscriber_id=s.id AND g.revoked_at IS NULL AND g.expires_at>?))
- ON CONFLICT(update_id,subscriber_id) DO NOTHING`).bind(id,env.MAIL_PROVIDER??'',at,row.category,row.visibility,at))
+ AND (?='public' OR EXISTS(SELECT 1 FROM trust_customer_grants g JOIN trust_grant_records r ON r.grant_id=g.id WHERE g.subscriber_id=s.id AND g.revoked_at IS NULL AND g.expires_at>? AND r.update_id=? AND r.can_read=1))
+ ON CONFLICT(update_id,subscriber_id) DO NOTHING`).bind(id,env.MAIL_PROVIDER??'',at,row.category,row.visibility,at,id))
  statements.push(auditStatement(env,actor,'trust.update-published',id,now,'succeeded',notify?'Owner-approved notification queued':'Published without email notification'))
  await env.DB.batch(statements)
  if(notify)await flushTrustDeliveries(env,now,id)
@@ -83,5 +83,6 @@ export async function updateExport(env:Bindings,id:string) {
   env.DB.prepare('SELECT * FROM trust_deliveries WHERE update_id=? ORDER BY queued_at,id').bind(id).all(),
  ])
  const events=(await env.DB.prepare('SELECT e.* FROM trust_delivery_events e JOIN trust_deliveries d ON d.id=e.delivery_id WHERE d.update_id=? ORDER BY e.occurred_at,e.id').bind(id).all()).results
- return {update,notice,deliveries:deliveries.results,delivery_events:events}
+ const submissions=(await env.DB.prepare('SELECT * FROM trust_submissions WHERE update_id=? ORDER BY submitted_at,id').bind(id).all<import('./grants').Submission>()).results
+ return {update,notice,deliveries:deliveries.results,delivery_events:events,submissions}
 }

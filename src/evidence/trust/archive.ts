@@ -11,6 +11,8 @@ export const trustColumns = {
  trust_consent_events:['id','subscriber_id','category','action','source','reason','actor_id','actor_name','at'],
  trust_customer_grants:['id','subscriber_id','reason','approved_by','approved_name','approved_at','expires_at','revoked_at','revoked_by'],
  trust_updates:['id','category','title','body','visibility','drafted_by','drafted_name','drafted_at','approved_by','approved_name','approved_at','notification_approved','published_at','notification_started_at'],
+ trust_grant_records:['grant_id','update_id','can_read','can_submit'],
+ trust_submissions:['id','grant_id','update_id','body','submitted_at'],
  trust_subprocessor_changes:['id','update_id','subprocessor_id','action','name','purpose','data_categories','location','effective_on','notice_days','created_at'],
  trust_deliveries:['id','update_id','subscriber_id','kind','recipient','state','detail','provider','provider_message_id','queued_at','attempted_at','accepted_at','outcome_at','provider_event_at'],
  trust_delivery_events:['id','delivery_id','provider','event_id','fingerprint','conflict','state','detail','occurred_at','received_at'],
