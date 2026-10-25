@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "91cbed6ba93a45701d77ee0307fb27ecefccb4cacef7f4a1e7edd828f19042a7",
+  "manifest": "437639965bb928dd1b936c98da53921a28f79ba68d08613c5236fdade06091b7",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -3440,6 +3440,7 @@
           "tests/live/own-daytona.py",
           "tests/live/own-hosted-http.mjs",
           "tests/live/own-hosted.mjs",
+          "tests/live/own-macos.py",
           "tests/live/trust-sendgrid.mjs",
           "tests/open.mjs",
           "tests/ops-browser.mjs",
@@ -3607,7 +3608,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "91cbed6ba93a45701d77ee0307fb27ecefccb4cacef7f4a1e7edd828f19042a7",
+      "sha256": "437639965bb928dd1b936c98da53921a28f79ba68d08613c5236fdade06091b7",
       "executable": false
     },
     "LICENSE": {
@@ -8148,6 +8149,10 @@
     },
     "tests/live/own-hosted.mjs": {
       "sha256": "c5fecd8d75ef19bcf213dd201307e402b367107e0701e6a491fe8f4859314259",
+      "executable": false
+    },
+    "tests/live/own-macos.py": {
+      "sha256": "9f31bef912d0522df6c5177e1bf03a3458f8e86327972b1e99243cc87ba7a68b",
       "executable": false
     },
     "tests/live/trust-sendgrid.mjs": {

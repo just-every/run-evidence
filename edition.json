@@ -3432,6 +3432,7 @@
           "tests/live/own-daytona.py",
           "tests/live/own-hosted-http.mjs",
           "tests/live/own-hosted.mjs",
+          "tests/live/own-macos.py",
           "tests/live/trust-sendgrid.mjs",
           "tests/open.mjs",
           "tests/ops-browser.mjs",
