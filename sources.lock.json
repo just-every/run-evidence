@@ -6481,7 +6481,7 @@
       "executable": false
     },
     "src/evidence/trust/data.ts": {
-      "sha256": "d42d2ea7ea7b65422a67fadbbaed13f80429b7829315a2399a1c9737205e5b25",
+      "sha256": "82a9612399f4d80fcdf03df38701675701570a4739f62a3c2c10de3e3a7b7bd4",
       "executable": false
     },
     "src/evidence/trust/delivery.ts": {
@@ -6493,11 +6493,11 @@
       "executable": false
     },
     "src/evidence/trust/grants.ts": {
-      "sha256": "d01be8475f2aa5e33363093c38754e2fa39aad06290a6fc0b9820b3c262e5d9b",
+      "sha256": "4a633232444241ade2dc6b8d122bf973b44cc454853a8e6eb81772e4ec8d9bff",
       "executable": false
     },
     "src/evidence/trust/http.ts": {
-      "sha256": "6d14a55a9a367bb0bba8315b9af9553a864e923a792423bacab5b22003db6611",
+      "sha256": "6f67c6c0dc08f41dc0fbce25e40a12d9ea8a668fc202d3afea3783b50412ecca",
       "executable": false
     },
     "src/evidence/trust/mail-verifier.d.mts": {
@@ -6517,7 +6517,7 @@
       "executable": false
     },
     "src/evidence/trust/public-http.ts": {
-      "sha256": "618650518be5b5bb603511cfeac12a3f4ce8ee18a588d6adab4591db2db3a6f1",
+      "sha256": "3b7764a426c54c2723072a007a0f07ce7e1ba22e0a3ed6f69ddaaa4f031310f8",
       "executable": false
     },
     "src/evidence/trust/public-view.ts": {
@@ -8089,7 +8089,7 @@
       "executable": false
     },
     "tests/helpers/trust-journey.mjs": {
-      "sha256": "ce380e0ca9157b5909767cabc4fdd37b553fcbea0eaa406c39aeda5e734d6b0e",
+      "sha256": "8b5726028685d172c8e8aa374948adf4bb06ee201b1675e4fba5f58373c5be1f",
       "executable": false
     },
     "tests/helpers/vendor-journey.mjs": {

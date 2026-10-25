@@ -11,7 +11,7 @@ export async function trustOverview(env:Bindings,now:Date) {
  ])
  return {settings:rules,categories:categoryRows,updates:updates.results,...subscribers,customer_grants:customers.results,grant_records:(await env.DB.prepare('SELECT * FROM trust_grant_records ORDER BY grant_id,update_id').all<import('./grants').GrantRecord>()).results,deliveries:deliveries.results,subprocessors,webhooks:webhooks.results}
 }
-export async function publicFeed(env:Bindings,grantId:string|null,category:string|null=null) {
- const rows=(await env.DB.prepare("SELECT id,category,title,body,visibility,approved_at,published_at FROM trust_updates WHERE published_at IS NOT NULL AND approved_at IS NOT NULL AND (visibility='public' OR EXISTS(SELECT 1 FROM trust_grant_records r WHERE r.grant_id=? AND r.update_id=trust_updates.id AND r.can_read=1)) AND (? IS NULL OR category=?) ORDER BY published_at DESC,rowid DESC").bind(grantId,category,category).all<Pick<Update,'id'|'category'|'title'|'body'|'visibility'|'approved_at'|'published_at'>>()).results
+export async function publicFeed(env:Bindings,grantId:string|null,category:string|null,now:Date) {
+ const rows=(await env.DB.prepare("SELECT id,category,title,body,visibility,approved_at,published_at FROM trust_updates WHERE published_at IS NOT NULL AND approved_at IS NOT NULL AND (visibility='public' OR EXISTS(SELECT 1 FROM trust_grant_records r JOIN trust_customer_grants g ON g.id=r.grant_id WHERE r.grant_id=? AND r.update_id=trust_updates.id AND r.can_read=1 AND g.revoked_at IS NULL AND g.expires_at>?)) AND (? IS NULL OR category=?) ORDER BY published_at DESC,rowid DESC").bind(grantId,now.toISOString(),category,category).all<Pick<Update,'id'|'category'|'title'|'body'|'visibility'|'approved_at'|'published_at'>>()).results
  return rows
 }

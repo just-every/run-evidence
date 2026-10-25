@@ -62,7 +62,7 @@ export function trustPublicHandler(clock:()=>Date=()=>new Date()) {
    if(!['GET','HEAD'].includes(request.method))throw new Refusal('Method not allowed.',405)
    const category=url.searchParams.get('category'),categoryRows=await categories(env)
    if(category&&!categoryRows.some(c=>c.slug===category))throw new Refusal('Choose a listed category.')
-   const [updates,subprocessors]=await Promise.all([publicFeed(env,grant?.id??null,category),subprocessorList(env,now)])
+   const [updates,subprocessors]=await Promise.all([publicFeed(env,grant?.id??null,category,now),subprocessorList(env,now)])
    const permissions=grant?await grantRecords(env,grant.id):[]
    const submissions=grant?(await env.DB.prepare('SELECT * FROM trust_submissions WHERE grant_id=? ORDER BY submitted_at,id').bind(grant.id).all<import('./grants').Submission>()).results:[]
    if(grant)await auditStatement(env,grantActor(grant),'trust.customer-read',grant.id,now,'succeeded','Named records: '+updates.filter(u=>permissions.some(p=>p.update_id===u.id)).map(u=>u.id).join(', ')).run()

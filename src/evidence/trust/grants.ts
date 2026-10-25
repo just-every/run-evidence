@@ -13,7 +13,8 @@ export async function grantCustomer(env:Bindings,actor:Actor,input:Input,now:Dat
  if(!Number.isFinite(date.getTime())||date.getTime()<=now.getTime())throw new Refusal('Give a future customer-grant expiry date.')
  const reads=list(input,'read_records',100),submits=list(input,'submit_records',100)
  if(!reads.length||submits.some(id=>!reads.includes(id)))throw new Refusal('Choose named records to read. Submit permission also requires read permission.')
- for(const id of reads)if(!(await requireUpdate(env,id)).approved_at)throw new Refusal('Only owner-approved records may be granted.',409)
+ const records=[]
+ for(const id of reads){const update=await requireUpdate(env,id);if(!update.approved_at)throw new Refusal('Only owner-approved records may be granted.',409);records.push({id,title:update.title,read:true,submit:submits.includes(id)})}
  const expires=date.toISOString(),subscriber=await subscriberFor(env,email,now),id=crypto.randomUUID(),at=now.toISOString()
  await env.DB.batch([
   env.DB.prepare('INSERT INTO trust_customer_grants(id,subscriber_id,reason,approved_by,approved_name,approved_at,expires_at) VALUES(?,?,?,?,?,?,?)').bind(id,subscriber.id,reason,actor.id,actor.name,at,expires),
@@ -22,7 +23,7 @@ export async function grantCustomer(env:Bindings,actor:Actor,input:Input,now:Dat
  ])
  if(flag(input.subscribe_subprocessors)&&!subscriber.unsubscribed_at)await addSubscriptions(env,actor,{email,categories:['subprocessors'],reason},now,'customer-grant')
  const issued=await issueCredential(env,'customer',id,now,expires)
- return {id,subscriber_id:subscriber.id,expires_at:expires,url:env.AUTH_ORIGIN+'/trust/customer/'+issued.token}
+ return {id,email,reason,records,subscriber_id:subscriber.id,expires_at:expires,url:env.AUTH_ORIGIN+'/trust/customer/'+issued.token}
 }
 export async function revokeCustomer(env:Bindings,actor:Actor,id:string,now:Date) {
  const row=await env.DB.prepare('SELECT * FROM trust_customer_grants WHERE id=?').bind(id).first<CustomerGrant>()

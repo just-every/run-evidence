@@ -107,6 +107,12 @@ export async function trustJourney(app,{browserProof}={}) {
  await owner('/customers',{email:'scope@customer.test',expires_at:'2026-12-31',reason:'Submit requires read',read_records:[security.id],submit_records:[restricted.id]},400)
  await owner('/customers',{email:'scope@customer.test',expires_at:'2026-12-31',reason:'No drafts',read_records:[custom.id]},409)
  const signedOutGrant=await app.fetch('/api/trust/customers',{method:'POST',headers:{cookie:'',origin:app.origin,'content-type':'application'+'/'+'json'},body:JSON.stringify({email:'scope@customer.test',reason:'No owner session',expires_at:'2026-12-31',read_records:[restricted.id]})});assert.equal(signedOutGrant.status,401)
+ const invitation=await app.fetch('/auth/invite',{method:'POST',headers:{origin:app.origin,'content-type':'application'+'/'+'json'},body:JSON.stringify({email:'operator@customer.test',displayName:'Non-owner operator',role:'admin'})})
+ assert.equal(invitation.status,202)
+ const invitationToken=new URL(app.messages.at(-1).html.match(/href="([^"]*\/auth\/confirm\?token=[^"]+)"/)[1].replaceAll('&amp;','&'),app.origin).searchParams.get('token')
+ const joined=await app.fetch('/auth/confirm',{method:'POST',headers:{cookie:'',origin:app.origin,'content-type':'application'+'/'+'json'},body:JSON.stringify({token:invitationToken})});assert.equal(joined.status,303)
+ const operatorCookie=joined.headers.getSetCookie().map(x=>x.split(';')[0]).join('; ')
+ const nonOwnerGrant=await app.fetch('/api/trust/customers',{method:'POST',headers:{cookie:operatorCookie,origin:app.origin,'content-type':'application'+'/'+'json'},body:JSON.stringify({email:'scope@customer.test',reason:'Admin is not owner',expires_at:'2026-12-31',read_records:[restricted.id]})});assert.equal(nonOwnerGrant.status,403)
  const customer=await owner('/customers',{email:'alice@customer.test',expires_at:'2026-12-31',reason:'Reviewed active customer contract',subscribe_subprocessors:true,read_records:[restricted.id],submit_records:[restricted.id]},201)
  const customerPath=new URL(customer.url).pathname
  await owner('/updates/'+restricted.id+'/publish',{notify:true})
