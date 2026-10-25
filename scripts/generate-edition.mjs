@@ -21,6 +21,15 @@ if (files.includes(adapted)) {
  entries.push({ path: adapted, originPath: 'foundation/runtime/font-head.ts' })
  groups.set(baseRevision, entries)
 }
+// Retain the seed's adapted demo deployment workflow as a comparison origin.
+mapped.add('.github/workflows/run-demo.yml')
+const workflowEntries = groups.get('11f94fec479228d71ba6d7dd6ea7796c0d42c544') || []
+workflowEntries.push({path: '.github/workflows/run-demo.yml', originPath: 'export/run-demo.yml'})
+groups.set('11f94fec479228d71ba6d7dd6ea7796c0d42c544', workflowEntries)
+mapped.add('scripts/delivery/base/setup-manifest.mjs')
+const deliveryEntries = groups.get('11f94fec479228d71ba6d7dd6ea7796c0d42c544') || []
+deliveryEntries.push({path: 'scripts/delivery/base/setup-manifest.mjs', originPath: 'modules/delivery-producer/setup-manifest.mjs'})
+groups.set('11f94fec479228d71ba6d7dd6ea7796c0d42c544', deliveryEntries)
 const components=[...groups].map(([revision,mappings],index)=>({id:index?'runeditrun/base-history-'+revision.slice(0,7):'runeditrun/base',role:index?'module':'foundation',source:{kind:'local',paths:mappings.map(x=>x.path).sort(),origin:{repository:'https://github.com/runeditrun/base.git',revision,path:'.',paths:[...new Set(mappings.map(x=>x.originPath))].sort()},mappings:mappings.sort((a,b)=>a.path.localeCompare(b.path))}}))
 components.push({id:'just-every/evidence',role:'edition',source:{kind:'local',paths:files.filter(p=>!reserved(p)&&!mapped.has(p)).sort()}})
 writeFileSync('edition.json',JSON.stringify({schemaVersion:1,id:'just-every/evidence',identityKind:'project',toolchain:{id:'runeditrun/edition-authoring',version:'1.1.0'},parent:null,components},null,2)+'\n')
