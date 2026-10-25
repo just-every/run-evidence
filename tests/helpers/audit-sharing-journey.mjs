@@ -2,16 +2,28 @@ import assert from 'node:assert/strict'
 import {runtime} from './runtime.mjs'
 import {githubFixture} from './github-fixture.mjs'
 export async function auditSharingJourney(browserProof){
- const {outbound}=githubFixture(),app=await runtime({outbound}),target=await runtime({ownerEmail:'restored-sharing@example.test'})
+ const {github,outbound}=githubFixture(),app=await runtime({outbound}),target=await runtime({ownerEmail:'restored-sharing@example.test'})
  const call=async(path,body,status=200,cookie)=>{const response=await app.fetch(path,{...(body===undefined?{}:{method:'POST',body:JSON.stringify(body)}),headers:{...(body===undefined?{}:{origin:app.origin,'content-type':'application'+'/'+'json'}),...(cookie===undefined?{}:{cookie})}});assert.equal(response.status,status,path+': '+await response.clone().text());return response.json()}
  try{
- const ownerCookie=await app.signin()
+ const ownerCookie=await app.signin();await app.clock('2026-10-09T12:00:00Z')
  const makeControl=async name=>{const r=await app.fetch('/app/controls',{method:'POST',headers:{origin:app.origin,'content-type':'application'+'/'+'x-www-form-urlencoded'},body:new URLSearchParams({name,group:'Access',proof:'Period proof',cadence:'daily'})});assert.equal(r.status,303);return(await call('/api/desk')).requirements.find(q=>q.id===r.headers.get('location').split('/').at(-1)).control_id}
  const control=await makeControl('Shared control'),outside=await makeControl('Unshared control')
  const connection=await call('/api/connections',{account:'northstar',token:'synthetic-evidence-1',label:'Share source'},201)
  await call('/api/connections/'+connection.id+'/repositories',{repositories:connection.repositories})
  const definition={name:'Shared test',resourceType:'github.repository',criteria:JSON.stringify([{attribute:'private',op:'equals',value:true}]),cadence:'hourly',category:'code',severity:'high',controls:[control]}
  const test=await call('/api/tests',definition,201),otherTest=await call('/api/tests',{...definition,name:'Outside scope',controls:[outside]},201)
+ const changingRepo=Object.values(github.repos).find(r=>!r.private);assert.ok(changingRepo);changingRepo.private=true
+ github.clock='2026-10-09T12:00:00Z'
+ await call('/api/connections/'+connection.id+'/collect',{},201)
+ const beforePeriod=(await call('/api/tests/'+test.id)).latest.map(o=>o.id)
+ github.clock='2026-10-10T00:00:00Z';await app.clock(github.clock)
+ await call('/api/connections/'+connection.id+'/collect',{},201)
+ const atPeriodStart=(await call('/api/tests/'+test.id)).latest
+ assert.ok(atPeriodStart.every(o=>o.result==='pass'))
+ changingRepo.private=false
+ github.clock='2026-10-11T12:00:00Z';await app.clock(github.clock)
+ await call('/api/connections/'+connection.id+'/collect',{},201)
+ const inPeriod=[...atPeriodStart,...(await call('/api/tests/'+test.id)).latest]
  const program=await call('/api/programs',{framework:'soc2',name:'Continuous review',legal_entity:'Northstar',report_type:'Type II',audit_from:'2026-10-10',audit_to:'2026-10-11'},201)
  await call('/api/controls/'+control+'/mappings',{framework:'soc2',edition:'tsc-2017-pof-2022',ref:'CC6.1',reason:'Continuous evidence scope'},201)
  const config={name:'Request-free audit',period_from:'2026-10-10',period_to:'2026-10-11',control_ids:[control]}
@@ -46,6 +58,24 @@ export async function auditSharingJourney(browserProof){
  assert.equal((await call(view+'/evidence/'+shared.id,undefined,200,cookie)).shares.length,1)
  await call(view+'/evidence/'+otherTest.id,undefined,404,cookie)
  await call(view+'/evidence/'+shared.id+'/observations/'+crypto.randomUUID(),undefined,404,cookie)
+ const observations=auditor.shares.find(s=>s.id===shared.id).observations
+ assert.deepEqual(observations.map(o=>o.id).sort(),inPeriod.map(o=>o.id).sort())
+ assert.ok(observations.some(o=>o.result==='fail'),'mid-period failures remain visible')
+ assert.ok(observations.every(o=>o.source_connector==='github'&&o.source_account==='northstar'&&o.library_revision>=1&&Array.isArray(o.criteria)))
+ assert.ok(!JSON.stringify(auditor).includes(beforePeriod[0]),'pre-period observations are excluded')
+ for(const observation of observations)assert.deepEqual(await call(view+'/evidence/'+shared.id+'/observations/'+observation.id,undefined,200,cookie),observation)
+ await call(view+'/evidence/'+shared.id+'/observations/'+beforePeriod[0],undefined,404,cookie)
+ const outsideObservation=(await call('/api/tests/'+otherTest.id)).latest[0]
+ await call(view+'/evidence/'+shared.id+'/observations/'+outsideObservation.id,undefined,404,cookie)
+ changingRepo.private=true
+ github.clock='2026-10-12T00:00:00Z';await app.clock(github.clock)
+ await call('/api/connections/'+connection.id+'/collect',{},201)
+ const afterRows=(await call('/api/tests/'+test.id)).latest;assert.ok(afterRows.every(o=>o.result==='pass'))
+ const afterPeriod=afterRows.map(o=>o.id)
+ await app.clock('2026-10-11T12:00:00Z')
+ const bounded=await call(view+'/evidence/'+shared.id,undefined,200,cookie)
+ assert.deepEqual(bounded.shares[0].observations,observations,'later source reads do not enter the selected period')
+ for(const id of afterPeriod)await call(view+'/evidence/'+shared.id+'/observations/'+id,undefined,404,cookie)
  const decisions=view+'/evidence/'+shared.id+'/decisions',replies=base+'/evidence/'+shared.id+'/replies'
  const before=(await call('/api/programs/'+program.id)).readiness.totals,testBefore=await call('/api/tests/'+test.id)
  await call(decisions,{state:'flagged',expected_revision:0},400,cookie)
@@ -73,7 +103,7 @@ export async function auditSharingJourney(browserProof){
  const flags=readiness.checklist.find(a=>a.area==='Auditor decisions')
  assert.deepEqual([flags.ready,flags.total,flags.records.length],[0,1,1]);assert.match(flags.records[0].state,/Sharing auditor: Explain the failed population/)
  assert.equal(flags.records[0].href,base+'/evidence/'+shared.id)
- if(browserProof)await browserProof(app,{cookie:ownerCookie,program:program.id,stage:'flagged',screens:[['readiness','/app/programs/'+program.id,'Explain the failed population'],['board','/app/programs/'+program.id+'/board','Explain the failed population']],followLink:false})
+ if(browserProof)await browserProof(app,{cookie:ownerCookie,program:program.id,stage:'flagged',screens:[['readiness','/app/programs/'+program.id,'Explain the failed population'],['board','/app/programs/'+program.id+'/board','Explain the failed population']],followLink:{name:'Shared test',text:'Explain the failed population'}})
  const accepted=await call(decisions,{state:'accepted',expected_revision:1},201,cookie)
  await call(decisions,{state:'not-applicable',reason:'Outside current review objective',expected_revision:2},201,cookie)
  await call(replies,{decision_id:accepted.id,body:'Exact acceptance acknowledged.'},201)
@@ -99,7 +129,7 @@ export async function auditSharingJourney(browserProof){
  const docDecision=await call(view+'/evidence/'+documentShare.id+'/decisions',{state:'flagged',reason:'Clarify the system boundary',expected_revision:0},201,cookie)
  await call(base+'/evidence/'+documentShare.id+'/replies',{decision_id:docDecision.id,body:'The selected description records the boundary.'},201)
  await call(base+'/evidence/'+documentShare.id+'/replies',{decision_id:flagged.id,body:'Wrong share'},409)
- if(browserProof)await browserProof(app,{cookie:ownerCookie,program:program.id,stage:'document-flagged',screens:[['readiness','/app/programs/'+program.id,'Clarify the system boundary'],['board','/app/programs/'+program.id+'/board','Clarify the system boundary']],followLink:false})
+ if(browserProof)await browserProof(app,{cookie:ownerCookie,program:program.id,stage:'document-flagged',screens:[['readiness','/app/programs/'+program.id,'Clarify the system boundary'],['board','/app/programs/'+program.id+'/board','Clarify the system boundary']],followLink:{name:'soc2 description',text:'Clarify the system boundary'}})
  await call(base+'/shares/'+documentShare.id+'/unshare',{reason:'Document review concluded'})
  await call(view+'/evidence/'+documentShare.id,undefined,404,cookie)
  const pack=await call(base+'/pack');assert.deepEqual(pack,await call(view+'/pack',undefined,200,cookie));assert.deepEqual(pack.shared_evidence,await call(base+'/evidence'))

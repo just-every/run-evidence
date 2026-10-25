@@ -19,7 +19,7 @@ export interface TestDetail {
  revisions: { revision: number; criteria_json: string; excluded_json: string; cadence: string; actor: string; reason: string; at: string }[]
  controls: { id: string; name: string; library_id: string | null }[]
  runs: { id: string; trigger: string; started_at: string; revision: number; library_revision: number; population: number; passed: number; failed: number; unknown: number; not_applicable: number }[]
- latest: { resource_id: string; display_name: string; source_kind: string; source_label: string; result: string; reason: string; expected_json: string; actual_json: string; observed_at: string; revision: number; library_revision: number; exception: string | null; obligation: string | null; sla: string | null; due: string | null; tickets: { remote_key: string | null; remote_url: string | null; remote_status: string; remote_assignee: string | null; sync_state: string; last_synced_at: string | null; label: string; stale: boolean }[] }[]
+ latest: { id: string; resource_id: string; display_name: string; source_kind: string; source_label: string; result: string; reason: string; expected_json: string; actual_json: string; observed_at: string; revision: number; library_revision: number; exception: string | null; obligation: string | null; sla: string | null; due: string | null; tickets: { remote_key: string | null; remote_url: string | null; remote_status: string; remote_assignee: string | null; sync_state: string; last_synced_at: string | null; label: string; stale: boolean }[] }[]
  exceptions: { id: string; resource_id: string | null; reason: string; approved_name: string; approved_at: string; expires_at: string; revoked_at: string | null }[]
  stale: { from: string; to: string }[]
 }

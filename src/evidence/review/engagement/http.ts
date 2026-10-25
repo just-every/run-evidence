@@ -39,6 +39,7 @@ export function engagementHandler(clock:()=>Date){
   const e=await engagement(env,eid);let response:Response
   if((parts.length===1||parts.length===2&&parts[1]==='pack')&&['GET','HEAD'].includes(request.method))response=json(await projection(env,e))
   else if((parts.length===2||parts.length===3)&&parts[1]==='evidence'&&['GET','HEAD'].includes(request.method))response=json(await sharedEvidence(env,e,parts[2]))
+  else if(parts.length===5&&parts[1]==='evidence'&&parts[3]==='observations'&&['GET','HEAD'].includes(request.method)){const data=await sharedEvidence(env,e,parts[2]),observation=data.shares[0].observations.find(o=>o.id===parts[4]);if(!observation)throw new Refusal('Shared observation not found.',404);response=json(observation)}
   else if(parts.length===4&&parts[1]==='evidence'&&parts[3]==='decisions'&&request.method==='POST')response=json(await evidenceDecision(env,e,parts[2],await readInput(request),actor,email,session.id,clock()),201)
   else if(parts.length===5&&parts[1]==='requests'){
    const r=await requestOf(env,eid,parts[2])
@@ -51,7 +52,7 @@ export function engagementHandler(clock:()=>Date){
   }else if(parts.length===4&&parts[1]==='requests'&&['comments','decisions'].includes(parts[3])&&request.method==='POST')response=json(await auditorWrite(env,e,await requestOf(env,eid,parts[2]),await readInput(request),actor,email,clock(),parts[3]==='decisions',session.id),201)
   else return json({error:'Not found.'},404)
   await auditStatement(env,{...actor,kind:'system'},'audit.auditor.viewed',eid,clock(),'succeeded','Authenticated auditor').run()
-  if(parts[1]==='evidence'&&['GET','HEAD'].includes(request.method))response=json(await sharedEvidence(env,e,parts[2]))
+  if(parts[1]==='evidence'&&['GET','HEAD'].includes(request.method)){const data=await sharedEvidence(env,e,parts[2]);if(parts.length===5){const observation=data.shares[0].observations.find(o=>o.id===parts[4]);if(!observation)throw new Refusal('Shared observation not found.',404);response=json(observation)}else response=json(data)}
   else if(parts.length===1||parts.length===2&&parts[1]==='pack')response=json(await projection(env,e))
   if(!await authorized(env,eid,email,clock())||!await operatorAuth(env).getSession(request))return json({error:'Engagement not found.'},404)
   return request.method==='HEAD'?new Response(null,{status:response.status,headers:response.headers}):response

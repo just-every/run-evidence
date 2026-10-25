@@ -14,5 +14,5 @@ export async function evidenceDecisionChecklist(env:Bindings,controls:string[]):
  WHERE s.unshared_at IS NULL AND d.state='flagged' AND d.revision=(SELECT MAX(x.revision) FROM audit_evidence_decisions x WHERE x.share_id=s.id)
  AND EXISTS(SELECT 1 FROM audit_scope a WHERE a.engagement_id=e.id AND a.control_id IN (SELECT value FROM json_each(?)))
  AND (s.kind<>'test' OR EXISTS(SELECT 1 FROM test_controls t WHERE t.test_id=s.subject_id AND t.control_id IN (SELECT value FROM json_each(?)))) ORDER BY d.at,d.id`,JSON.stringify(controls),JSON.stringify(controls))
- return {area:'Auditor decisions',ready:0,total:flags.length,available:true,refs:[],records:flags.map(f=>({id:f.id,href:'/api/audit-engagements/'+f.engagement_id+'/evidence/'+f.share_id,label:JSON.parse(f.snapshot_json).name??JSON.parse(f.snapshot_json).title??f.name,state:'Flagged by '+f.actor_name+': '+f.reason}))}
+ return {area:'Auditor decisions',ready:0,total:flags.length,available:true,refs:[],records:flags.map(f=>({id:f.id,href:'/api/audit-engagements/'+f.engagement_id+'/evidence/'+f.share_id,label:JSON.parse(f.snapshot_json).name??JSON.parse(f.snapshot_json).title??JSON.parse(f.snapshot_json).kind?.replaceAll('-',' ')??f.name,state:'Flagged by '+f.actor_name+': '+f.reason}))}
 }

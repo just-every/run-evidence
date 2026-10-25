@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "368a352c8c05f43e695c7df2e3f3d03c41d14394d14e9a63c6aa6af9f8f1dac6",
+  "manifest": "a9b129f15e08012c53751b49e87f7a5389de3e77763b3063a7407b346b3576cf",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -3185,6 +3185,7 @@
           "src/evidence/review/engagement/checklist.ts",
           "src/evidence/review/engagement/decisions.ts",
           "src/evidence/review/engagement/http.ts",
+          "src/evidence/review/engagement/observations.ts",
           "src/evidence/review/engagement/sharing.ts",
           "src/evidence/review/engagement/storage.ts",
           "src/evidence/review/engagement/validate.ts",
@@ -3464,7 +3465,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "19378faa1136af7c11f2606206c71554c8e713b5af6c71235c82a0badee68d97",
+      "sha256": "082d929acbde6546519d47f195f97faa962b52368ebe22261cb0ad4b773883d6",
       "executable": false
     },
     "AGENTS.md": {
@@ -3480,7 +3481,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "4c2b0e0a81a8cc0eb41074c00d7afe4ef55cae68cea7671bf4fe6b102d7a3882",
+      "sha256": "7dba77f3165a646e190c3b634e01c082140ed51e0aa2c36c8cc34abff761b914",
       "executable": false
     },
     "DEMO.md": {
@@ -3508,7 +3509,7 @@
       "executable": false
     },
     "docs/AUDITOR-API.md": {
-      "sha256": "5eb4bb3dd9224ed1f5c8caf681c3002a8b2c45e250ebe7bd8b57b7cd16fa4ff6",
+      "sha256": "646544ab76f5955d8b72d1840a74e97e985f18c68b3f027c7c2a17dc2a976097",
       "executable": false
     },
     "docs/BACKUP-RESTORE.md": {
@@ -3568,7 +3569,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "368a352c8c05f43e695c7df2e3f3d03c41d14394d14e9a63c6aa6af9f8f1dac6",
+      "sha256": "a9b129f15e08012c53751b49e87f7a5389de3e77763b3063a7407b346b3576cf",
       "executable": false
     },
     "LICENSE": {
@@ -6248,7 +6249,7 @@
       "executable": false
     },
     "src/evidence/review/engagement/checklist.ts": {
-      "sha256": "3d7adf0e7340d0f930d9efd063c781160056b1f9fc0a1fae8a13ad7cea83aa3c",
+      "sha256": "18a14f3045f04b2c5d3b7ec8dde4b9705d54c77291ea08c769f37121f7cad6c9",
       "executable": false
     },
     "src/evidence/review/engagement/decisions.ts": {
@@ -6256,11 +6257,15 @@
       "executable": false
     },
     "src/evidence/review/engagement/http.ts": {
-      "sha256": "bf257dc6719bdb00a7d62444dfd49692e94c615fc606092fbdbb96b52548b010",
+      "sha256": "b35e14b73bac6b895c0b5285670e6a73d14ccf95e138649beccc74d72a1b13c5",
+      "executable": false
+    },
+    "src/evidence/review/engagement/observations.ts": {
+      "sha256": "5d2c8c9ae64e386a0ef84c4e52d10a5d7afe89af7cd6ef8cfc1e721f394c3487",
       "executable": false
     },
     "src/evidence/review/engagement/sharing.ts": {
-      "sha256": "bfba367295454c8a145837b694b14adbe31efeb27cddfae7731badc06a763af4",
+      "sha256": "08d4ddc23594ce16ca65cbc277660d0b0166ccfbf2285f3387a19fde9ccdb975",
       "executable": false
     },
     "src/evidence/review/engagement/storage.ts": {
@@ -6368,7 +6373,7 @@
       "executable": false
     },
     "src/evidence/tests/http.ts": {
-      "sha256": "ae8349a1c978805b06be7db09d1094c0c7813f089835819bbde16d68a07190e1",
+      "sha256": "b35e1d4b419b9bafb7c02bfbce5333788d936aff393bc8d17cd5ca90b6cc9f07",
       "executable": false
     },
     "src/evidence/tests/storage.ts": {
@@ -6376,7 +6381,7 @@
       "executable": false
     },
     "src/evidence/tests/view.ts": {
-      "sha256": "7e7b7b7334619ed4dd9dae4825addb2ae7b165b30b22b477707bb80967954dfb",
+      "sha256": "7c51e49f654929582ff5130c420d5d8b5d46c9acf648ac6b041eb7baf70bca95",
       "executable": false
     },
     "src/evidence/tests/workspace-view.ts": {
@@ -7720,7 +7725,7 @@
       "executable": false
     },
     "tests/helpers/audit-sharing-journey.mjs": {
-      "sha256": "b59ed17a00473704a345217c9cb04f01e61069f83d72e81b4b9bc20559fdc494",
+      "sha256": "073b6c338310f2421da38ef912c2acc080ccdcdb3361c67c9cef685b3174e6e6",
       "executable": false
     },
     "tests/helpers/azure-deadline-browser.mjs": {
@@ -7776,7 +7781,7 @@
       "executable": false
     },
     "tests/helpers/engagement-browser.mjs": {
-      "sha256": "5d8997efb27e98e6bc65621047a9931b16bbd71d34195c3ebd26649677ca02c6",
+      "sha256": "6adae9a29f592d460847a1cdb64aa6c50ec378881ab9d886ab3a1e6f904064ab",
       "executable": false
     },
     "tests/helpers/engagement-journey.mjs": {
