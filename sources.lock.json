@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "62fbf39208ba430880be8c352a740321f7180294909b5e642c046d81ab15672d",
+  "manifest": "cebcfec2cd9ee7a32e2dc5853f3a74ed7eb9f47e6b5d16044bdbcc65f1355569",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -3455,6 +3455,7 @@
           "tests/trackers-browser.mjs",
           "tests/trackers.mjs",
           "tests/training.mjs",
+          "tests/trust-browser.mjs",
           "tests/trust.mjs",
           "tests/vendor-browser.mjs",
           "tests/vulns.mjs",
@@ -3601,7 +3602,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "62fbf39208ba430880be8c352a740321f7180294909b5e642c046d81ab15672d",
+      "sha256": "cebcfec2cd9ee7a32e2dc5853f3a74ed7eb9f47e6b5d16044bdbcc65f1355569",
       "executable": false
     },
     "LICENSE": {
@@ -7797,7 +7798,7 @@
       "executable": false
     },
     "tests/engagement-browser.mjs": {
-      "sha256": "967c8f65a8faaff1c27aaba8bd54034488417fc40313e39b4ec2fdda7703a38b",
+      "sha256": "9499bafd7481f8f6c3f9dbd019912500d406006ce083f62afff1dcd84589d323",
       "executable": false
     },
     "tests/evidence.mjs": {
@@ -8202,6 +8203,10 @@
     },
     "tests/training.mjs": {
       "sha256": "1a2517f0d8bb86227000474f1a3f5075c83d055cb6a6a45a75d7ccfb5becb194",
+      "executable": false
+    },
+    "tests/trust-browser.mjs": {
+      "sha256": "98dac5e99998712478458785e647a10bdd07bc6786865d0c5484de37ad365f56",
       "executable": false
     },
     "tests/trust.mjs": {

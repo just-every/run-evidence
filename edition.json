@@ -3447,6 +3447,7 @@
           "tests/trackers-browser.mjs",
           "tests/trackers.mjs",
           "tests/training.mjs",
+          "tests/trust-browser.mjs",
           "tests/trust.mjs",
           "tests/vendor-browser.mjs",
           "tests/vulns.mjs",
