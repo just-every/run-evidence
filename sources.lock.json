@@ -7781,7 +7781,7 @@
       "executable": false
     },
     "tests/helpers/engagement-browser.mjs": {
-      "sha256": "6adae9a29f592d460847a1cdb64aa6c50ec378881ab9d886ab3a1e6f904064ab",
+      "sha256": "ebf9e482fed388d6f775b11916428558d7fa963107ef55a4047a7eb2874f3fc7",
       "executable": false
     },
     "tests/helpers/engagement-journey.mjs": {

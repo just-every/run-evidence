@@ -29,7 +29,7 @@ export async function engagementBrowser(app,{cookie,program,leaver,stage='open',
     assert.deepEqual(iconOnly,[],name+' has no icon-only controls requiring tooltips')
     await page.screenshot({path:join(output,width+'-'+stage+'-'+name+'.png'),fullPage:true})
    }
-   if(followLink){const name=typeof followLink==='object'?followLink.name:'Continuous control evidence',expected=typeof followLink==='object'?followLink.text:'Continuous control evidence',link=page.getByRole('link',{name,exact:true});await link.focus();await page.keyboard.press('Enter');await page.waitForURL(/\/api\/audit-engagements\//);assert.ok((await page.locator('body').innerText()).includes(expected),'source drilldown retains review context');await page.screenshot({path:join(output,width+'-'+stage+'-source.png'),fullPage:true})}
+   if(followLink){const name=typeof followLink==='object'?followLink.name:'Continuous control evidence',expected=typeof followLink==='object'?followLink.text:'Continuous control evidence',link=page.getByRole('link',{name,exact:true}).and(page.locator('a[href^="/api/audit-engagements/"]'));await link.focus();await page.keyboard.press('Enter');await page.waitForURL(/\/api\/audit-engagements\//);assert.ok((await page.locator('body').innerText()).includes(expected),'source drilldown retains review context');await page.screenshot({path:join(output,width+'-'+stage+'-source.png'),fullPage:true})}
    assert.deepEqual(errors,[]);await context.close()
   }
  }finally{await browser?.close();if(server)await new Promise(done=>server.close(done))}
