@@ -1,3 +1,5 @@
+// These core-registry tables first travel in portable v10 archives, never in
+// the program-domain extension or the table gates of older archive versions.
 // Consent, approvals, dated changes and delivery evidence travel in the portable archive.
 // Bearer credentials and provider verification keys are installation-local. Restores
 // require fresh owner grants and keys and the existing mail and shares capability reauthorization.
