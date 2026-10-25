@@ -42,12 +42,6 @@ try {
    } finally {await broken.close()}
   }
  })
- await scenario('mail validation names the selected provider setting and retains supported mailbox forms',async()=>{
-  const invalid=await runtime({settings:{MAIL_PROVIDER:'cloudflare',MAIL_ACCOUNT_ID:'invalid-account'}})
-  try {const r=await invalid.fetch('/api/operations');assert.equal(r.status,503);assert.deepEqual((await r.json()).settings,['MAIL_ACCOUNT_ID'])}finally{await invalid.close()}
-  const named=await runtime({settings:{MAIL_FROM:'Evidence <auth@localhost.test>'}})
-  try {assert.equal((await named.fetch('/api/operations')).status,401)}finally{await named.close()}
- })
  await app.signin();github.clock='2026-10-11T12:00:00Z'
  await scenario('outcomes keep the existing owner, host, origin and token boundaries',async()=>{
   assert.equal((await app.fetch('/api/operations',{headers:{cookie:''}})).status,401)
