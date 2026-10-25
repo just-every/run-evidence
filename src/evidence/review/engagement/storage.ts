@@ -1,3 +1,4 @@
+import { reviewSettings,settingsFor } from './sharing'
 import type { Bindings } from '../../../auth.server'
 import { auditStatement, text, type Actor, type Input } from '../../door'
 import { validDate } from '../../model'
@@ -14,15 +15,17 @@ export async function requestOf(env:Bindings,e:string,id:string){const row=await
 export async function authorized(env:Bindings,e:string,email:string,now:Date){return !!await env.DB.prepare('SELECT 1 FROM audit_grants g JOIN audit_engagements e ON e.id=g.engagement_id WHERE g.engagement_id=? AND g.email=? AND g.revoked_at IS NULL AND g.expires_at>? AND e.closed_at IS NULL').bind(e,email,now.toISOString()).first()}
 export const auditIdentity=async(env:Bindings,email:string)=>!!await env.DB.prepare('SELECT 1 FROM audit_identities WHERE email=?').bind(email).first()
 export async function createEngagement(env:Bindings,input:Input,actor:Actor,now:Date){
+ const settings=reviewSettings(input)
  const name=text(input,'name',200),from=text(input,'period_from'),to=text(input,'period_to');if(!validDate(from)||!validDate(to)||from>to)throw new Refusal('Choose an inclusive UTC audit period.')
  const ids=Array.isArray(input.control_ids)?[...new Set(input.control_ids)]:[];if(!ids.length||ids.length>100)throw new Refusal('Choose 1 to 100 controls.')
  for(const id of ids)if(!await env.DB.prepare('SELECT 1 FROM controls c WHERE c.id=? AND '+activeControl('c')).bind(id).first())throw new Refusal('Choose existing controls.')
  const e:Engagement={id:crypto.randomUUID(),name,period_from:from,period_to:to,created_by:actor.id,created_at:now.toISOString(),closed_at:null}
- await env.DB.batch([env.DB.prepare('INSERT INTO audit_engagements(id,name,period_from,period_to,created_by,created_at) VALUES(?,?,?,?,?,?)').bind(e.id,name,from,to,actor.id,e.created_at),...ids.map(id=>env.DB.prepare('INSERT INTO audit_scope VALUES(?,?)').bind(e.id,id)),auditStatement(env,actor,'audit.engagement.created',e.id,now)])
+ await env.DB.batch([env.DB.prepare('INSERT INTO audit_engagements(id,name,period_from,period_to,created_by,created_at) VALUES(?,?,?,?,?,?)').bind(e.id,name,from,to,actor.id,e.created_at),...ids.map(id=>env.DB.prepare('INSERT INTO audit_scope VALUES(?,?)').bind(e.id,id)),env.DB.prepare('INSERT INTO audit_review_settings VALUES(?,?,?)').bind(e.id,settings.detail_level,JSON.stringify(settings.hidden_attributes)),auditStatement(env,actor,'audit.engagement.created',e.id,now)])
  return e
 }
 export async function importRequests(env:Bindings,e:Engagement,input:Input,actor:Actor,now:Date){
  if(e.closed_at)throw new Refusal('Engagement is closed.',409)
+ if((await settingsFor(env,e)).detail_level==='Restricted')throw new Refusal('Restricted request evidence projection is not yet available.',409)
  let list:any;try{list=JSON.parse(text(input,'requests',60000))}catch{throw new Refusal('Provide a JSON request list.')}
  if(!Array.isArray(list)||!list.length||list.length>100)throw new Refusal('Import 1 to 100 requests.')
  const statements:D1PreparedStatement[]=[],ids:string[]=[]

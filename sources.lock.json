@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "30c384d90bfb2337f198d8b9739eed142f7437521a8080b3681b5b5c5238337d",
+  "manifest": "8a3f2f8730f2905f8b819e1daf25fba082f30278b87e0fb902b4d0420a7202f8",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2437,6 +2437,7 @@
           "migrations/core/0058_extended_programs.sql",
           "migrations/core/0059_code_manifests.sql",
           "migrations/core/0060_audit_engagements.sql",
+          "migrations/core/0061_audit_sharing.sql",
           "package.json",
           "pnpm-lock.yaml",
           "public/apple-touch-icon.png",
@@ -2804,6 +2805,7 @@
           "src/evidence/review/engagement/archive.ts",
           "src/evidence/review/engagement/checklist.ts",
           "src/evidence/review/engagement/http.ts",
+          "src/evidence/review/engagement/sharing.ts",
           "src/evidence/review/engagement/storage.ts",
           "src/evidence/review/engagement/validate.ts",
           "src/evidence/review/frame.ts",
@@ -2959,6 +2961,7 @@
           "tests/handover.mjs",
           "tests/helpers/answer-journey.mjs",
           "tests/helpers/assurance-browser.mjs",
+          "tests/helpers/audit-sharing-journey.mjs",
           "tests/helpers/azure-deadline-browser.mjs",
           "tests/helpers/azuredevops-fixture.mjs",
           "tests/helpers/azuredevops-journey.mjs",
@@ -3077,7 +3080,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "f0a43349f2728995fa867ffa4e38aef044a1682304d06bdd6bc1762f5383df4c",
+      "sha256": "b02c795a0643c84a6c97bc6b27e10c68a4c55951835dc2f10780699168357532",
       "executable": false
     },
     "AGENTS.md": {
@@ -3093,7 +3096,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "b280708132f780cf2a7a8c3cb8c184f0b01be7a63fcd6582534df76999dbd7cc",
+      "sha256": "151fef1ec6d1cc6243025b29f9e5f147ca12579e7d658a16a99021d4e20bbb94",
       "executable": false
     },
     "DEMO.md": {
@@ -3121,7 +3124,7 @@
       "executable": false
     },
     "docs/AUDITOR-API.md": {
-      "sha256": "4269e2237e0fa543c0ca5f7ca8a9e06747a55c0210cd877d45308f4da7c7b1d5",
+      "sha256": "62feaf7ab8400952de9fe78c5c8460818a9bd51f40e3f4b65ff8af4adc4dcbc2",
       "executable": false
     },
     "docs/BACKUP-RESTORE.md": {
@@ -3181,7 +3184,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "30c384d90bfb2337f198d8b9739eed142f7437521a8080b3681b5b5c5238337d",
+      "sha256": "8a3f2f8730f2905f8b819e1daf25fba082f30278b87e0fb902b4d0420a7202f8",
       "executable": false
     },
     "LICENSE": {
@@ -3430,6 +3433,10 @@
     },
     "migrations/core/0060_audit_engagements.sql": {
       "sha256": "496074157e2ab845ff4fc45747de7b6e14d1c31f4afd175406a0964ef5825b93",
+      "executable": false
+    },
+    "migrations/core/0061_audit_sharing.sql": {
+      "sha256": "1701133cad0f18c85cb96920064ebbaa1ab7f125fc324e216ffeb522161b3e6c",
       "executable": false
     },
     "ONBOARDING.md": {
@@ -4185,7 +4192,7 @@
       "executable": false
     },
     "src/evidence/archive/portable-restore.ts": {
-      "sha256": "7b7d5028fe39a9f71238c93d5610aff760f29992b075cb60bac8d976cd4526f4",
+      "sha256": "4241e3fd3f8eed36d6526356a9819a5882c0e2c0953a6badebf11ea5ebfc5bec",
       "executable": false
     },
     "src/evidence/archive/program.ts": {
@@ -4205,7 +4212,7 @@
       "executable": false
     },
     "src/evidence/archive/schema.json": {
-      "sha256": "2e8d6652411135acf673bd3b0785cded5f4476a3a74c8561d46536a6c22e57d4",
+      "sha256": "d7e711f34c6a942dfa0562d800fce72b8021d31a698c563a5915405b0b1385f8",
       "executable": false
     },
     "src/evidence/archive/service.ts": {
@@ -5673,7 +5680,7 @@
       "executable": false
     },
     "src/evidence/review/engagement/archive.ts": {
-      "sha256": "cc2db7fa477df06e50f155aea90473088c904609948c2ce7d3af9198111f7059",
+      "sha256": "0a56fd90e1adef5362d005c23d65df1a18ed8641fc88231291132be244d50f0f",
       "executable": false
     },
     "src/evidence/review/engagement/checklist.ts": {
@@ -5681,11 +5688,15 @@
       "executable": false
     },
     "src/evidence/review/engagement/http.ts": {
-      "sha256": "f8475a283380eb8a830be220d437e374964b926e50d8e70486864e9ca015c42b",
+      "sha256": "e95548517e6d25192acf330fa04d5c67831dbfeecfc10f2c07665efdae3ff137",
+      "executable": false
+    },
+    "src/evidence/review/engagement/sharing.ts": {
+      "sha256": "51f58cf7fba26c9ae2819e567b1a1991682a473ebff5d2955be785cd88c4cae6",
       "executable": false
     },
     "src/evidence/review/engagement/storage.ts": {
-      "sha256": "79d101590f78a5cffbcd14902f82ae03e06cb052d17a60816258e2202a834477",
+      "sha256": "103d13948597558e3545ac6d529b9170a101f5ca430c860b4e66c66edd72c1c3",
       "executable": false
     },
     "src/evidence/review/engagement/validate.ts": {
@@ -7048,6 +7059,10 @@
       "sha256": "a12711fc3b36c270776822569d184e5595cfa7bdac17d4db8accbbe27afc52cc",
       "executable": false
     },
+    "tests/helpers/audit-sharing-journey.mjs": {
+      "sha256": "46320dc0248775aa15b3d1de4b290c346743dad2c1e2b111c6d66445db4361fc",
+      "executable": false
+    },
     "tests/helpers/azure-deadline-browser.mjs": {
       "sha256": "c5a79b83404cb2bfe762a78a487cef63be2622fb0e2d424cfbc4b999a0c7c9ca",
       "executable": false
@@ -7365,7 +7380,7 @@
       "executable": false
     },
     "tests/review.mjs": {
-      "sha256": "2bda23604fc30ce7bc0139a9e4761922f1bf681a619bfa395a9376f25ae803e1",
+      "sha256": "23934f3ffb88bb381317343114329e32570ace0b97018c1becfb4745fdfc467c",
       "executable": false
     },
     "tests/risk.mjs": {

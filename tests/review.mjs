@@ -1,3 +1,4 @@
+import {auditSharingJourney} from './helpers/audit-sharing-journey.mjs'
 import { engagementJourney } from './helpers/engagement-journey.mjs'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
@@ -190,5 +191,6 @@ try {
   assert.deepEqual(await denial(secondFolder.path+'/events'),expected404)
  })
  await scenario('AUDIT-001 native auditor authorization, exact submissions and retained decisions',engagementJourney)
+ await scenario('AUDIT-003 request-free selected revisions, scope, preview, unsharing and inactive restore',auditSharingJourney)
  console.log(`${passed} review public-door scenarios passed; independent cookie-free workerd requests, real D1/R2 and native owner sessions.`)
 } catch (error) { console.error('FAIL review scenario: '+active);console.error(String(error.stack||'').split('\n').filter(line=>/^\s+at /.test(line)).join('\n'));process.exitCode=1 } finally {await app.close()}

@@ -36,3 +36,21 @@ Program readiness counts audit engagements and requests as records, with record 
 Custody archives retain all engagement, request, receipt-reference, comment and decision records. Restored auditor grants are revoked, native sessions are not transferred, and sharing and mail remain behind the existing restore capability gates. The destination owner must explicitly authorize any new access.
 
 Approved native authorization policy (ct, 23 October 2026 at 14:35Z): auditors use identities separate from People and existing non-auditor operators; only an owner grants access, with a recorded reason and expiry. The public-door journey also asserts refusal at non-audit product doors and at exact grant expiry; AUDIT-001 is complete for the native explicitly authorized API.
+
+
+## Request-free selected revisions (AUDIT-003 foundation)
+
+At creation an engagement accepts `detail_level` of Full (the default) or Restricted and a `hidden_attributes` array of attribute names. These settings are fixed for the engagement and retained by custody restore. Restricted request-free projection is not implemented: both sharing and importing request evidence into a Restricted engagement return 409. There is no fallback that discloses Full evidence. A different detail level requires a new engagement.
+
+The following owner routes use the same native owner and origin checks as request administration:
+
+| Method | Owner route | Input or result |
+| --- | --- | --- |
+| POST | `/api/audit-engagements/{engagement}/shares` | `kind` (control, test, policy or document), `subject_id` and required `reason`. Retains the selected definition or approved document revision. Tests must map to an in-scope control; controls must be in scope. Policies must be published and program documents approved. A record already actively shared returns 409. |
+| POST | `/api/audit-engagements/{engagement}/shares/{share}/unshare` | Required `reason`. Ends access immediately and records the withdrawal, retaining its exact prior snapshot in owner custody. A later share is a new grant. |
+| GET | `/api/audit-engagements/{engagement}/evidence` | Audited read-only preview of all active selected revisions. |
+| GET | `/api/audit-engagements/{engagement}/evidence/{share}` | Same preview restricted to one active share. |
+
+An authorized auditor reads the identical projection at `/api/auditor/{engagement}/evidence` or `/api/auditor/{engagement}/evidence/{share}`. Active grants and native sessions are rechecked after recording the view, and the selected shares are read again to fence a concurrent withdrawal. Unknown and withdrawn shares return 404. Auditor sessions cannot create or withdraw shares. The projection carries the detail level and an explicit coverage limitation.
+
+This foundation exposes selected definitions and approved document revisions only. It does not yet expose period observations, historical populations, stale intervals, SLA histories, pseudonyms or independent test decisions. The existing request period pack is unchanged; the complete AUDIT-003 period pack and auditor screens remain unbuilt. AUDIT-003 stays partial. Restored share records retain history but never reactivate restored auditor grants.
