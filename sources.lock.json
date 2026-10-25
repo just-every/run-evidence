@@ -7336,7 +7336,7 @@
       "executable": false
     },
     "tests/ops.mjs": {
-      "sha256": "53dc74f11c2a960823d9695fd06110e240bf3d3094705661c880aa8b49a2c2a9",
+      "sha256": "159f6166a09ee6ba2c8bb52da191489d14bbef452c1142542179e4e5fc8587e1",
       "executable": false
     },
     "tests/period-agent-browser.mjs": {
