@@ -52,6 +52,9 @@ export async function trainingBrowser(app, ownerCookie, right) {
    await ownerPage.goto(origin + '/app/training')
    await ownerPage.getByRole('heading', { name: 'Assessment attempts' }).waitFor()
    await capture(ownerPage, 'owner-training-results')
+   const review = ownerPage.locator('[aria-labelledby="courses-title"] details').first()
+   await review.locator('summary').click()
+   await capture(ownerPage, 'course-revision-review')
    await learner.close(); await owner.close()
    console.log(`PASS learner invitation, failure, retake, retained results and task isolation at ${width}`)
   }

@@ -1,11 +1,12 @@
 import type { CatalogueEntry } from '../tests/catalogue'
+import { securityAwarenessUpdate } from './security-awareness-update'
 // TRAIN-001 shipped courses. Each course is text (its own transcript, readable
 // by screen readers and at any width) with a graded assessment. A course
 // changes only through a new revision an owner adopts; results keep the
 // revision they were earned under.
 export interface Question { q: string; options: string[]; answer: number }
 export interface Course { id: string; revision: number; title: string; audience: 'everyone' | 'hipaa' | 'engineering'; minutes: number; passMark: number; lessons: { title: string; text: string }[]; quiz: Question[] }
-export const courses: Course[] = [
+export const courseRevisions: Course[] = [
  { id: 'security-awareness', revision: 1, title: 'Security awareness', audience: 'everyone', minutes: 25, passMark: 80,
   lessons: [
    { title: 'Phishing', text: 'Most breaches start with a message that asks you to act quickly: open an attachment, sign in, pay an invoice or share a code. Check the sender address, hover over links before you click, and be suspicious of urgency and unusual requests. Never enter your password on a page you reached from an email link; go to the site yourself. Report suspicious messages with the report button or to the security team, even if you already clicked: early reports limit damage.' },
@@ -64,7 +65,9 @@ export const courses: Course[] = [
    { q: 'Output should be:', options: ['Encoded for its context', 'Left raw for speed', 'Encrypted always', 'Uppercased'], answer: 0 },
   ] },
 ]
-export const course = (id: string) => courses.find(c => c.id === id)
+courseRevisions.push(securityAwarenessUpdate(courseRevisions.find(c => c.id === 'security-awareness')!))
+export const courses: Course[] = [...new Set(courseRevisions.map(c => c.id))].map(id => courseRevisions.filter(c => c.id === id).reduce((latest, c) => c.revision > latest.revision ? c : latest))
+export const course = (id: string, revision?: number) => revision === undefined ? courses.find(c => c.id === id) : courseRevisions.find(c => c.id === id && c.revision === revision)
 // Grade an attempt: answers are option indexes; the score is a percentage.
 export function grade(c: Course, answers: number[]) {
  if (answers.length !== c.quiz.length || answers.some(a => !Number.isInteger(a) || a < 0 || a > 3)) return null

@@ -38,7 +38,10 @@ try{
  await post(`/api/trust/updates/${update.id}/publish`,{},200)
  await check('Public trust center names the business and category with readable dates',async()=>{const html=plain(await(await app.fetch('/trust',{headers:{cookie:''}})).text());assert.match(html,/Cedar Ridge Health Analytics/);assert.match(html,/Assurance operations/);assert.ok(!html.includes('assurance-operations'));assert.doesNotMatch(html,/2026-10-11T12:00/)})
  assert.equal(failures.length,0,failures.join('; '))
- if (browser) await readableRecordsBrowser(app,ownerCookie,{document,receipt,review})
+ if (browser) {
+  for (const template of ['encryption','sanctions','human-resources']) await post('/api/policies/templates/'+template,{program_id:p.id})
+  await readableRecordsBrowser(app,ownerCookie,{document,receipt,review})
+ }
 }finally{await app.close()}
 }
 

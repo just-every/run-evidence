@@ -9,6 +9,7 @@ const initial = (name: string) => `<span class="avatar" aria-hidden="true">${esc
 const query = (params: Record<string, string>) => '?' + new URLSearchParams(Object.entries(params).filter(([, v]) => v)).toString()
 // Resource type slugs stay in APIs; people see a noun and the correct count.
 export function resourceNoun(type: string, count = 2) {
+ if (type.startsWith('policy.')) return count === 1 ? 'policy' : 'policies'
  const noun = type.split('.').at(-1)!.replaceAll('_',' ').replaceAll('-',' ').replace(/\biam\b/gi,'IAM').replace(/\bec2\b/gi,'EC2').replace(/\bs3\b/gi,'S3').replace(/\brds\b/gi,'RDS').replace(/\bsql\b/gi,'SQL').replace(/\bapi\b/gi,'API').replace(/\bnsg\b/gi,'network security group').replace(/\bsa key\b/gi,'service account key')
  if (count === 1) return noun
  const irregular: Record<string,string> = {person:'people',repository:'repositories',policy:'policies',identity:'identities'}

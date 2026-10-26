@@ -1,5 +1,6 @@
 import { auditStatement, json, ownerRoutes, type Route } from '../door'
 import type { Bindings } from '../../auth.server'
+import { frameworks } from '../library'
 import { kinds } from '../program/documents/kinds'
 import { auditCsv, auditFilter, auditTrail, type AuditEntry } from './storage'
 import { auditPage } from './view'
@@ -8,6 +9,8 @@ import { auditPage } from './view'
 async function namedEntries(env: Bindings, rows: AuditEntry[]): Promise<AuditEntry[]> {
  const shown = rows.slice(0,500), refs = [...new Set(shown.flatMap(r=>[r.subject.split(':').at(-1)!,...(r.detail.match(/[a-f0-9]{8}-[a-f0-9-]{27,}|\b[a-f0-9]{32}\b/gi)??[])]))]
  const sources: Record<string,string> = {
+  operator:'SELECT id,display_name AS label FROM oa_operators',
+  trust:'SELECT id,title AS label FROM trust_updates',
   control:'SELECT id,name AS label FROM controls', requirement:'SELECT id,name AS label FROM requirements',
   person:'SELECT id,name AS label FROM people', policy:'SELECT id,title AS label FROM policies', vendor:'SELECT id,name AS label FROM vendors',
   program:'SELECT id,name AS label FROM programs', test:'SELECT id,name AS label FROM tests', risk:'SELECT id,title AS label FROM risks',
@@ -28,7 +31,7 @@ async function namedEntries(env: Bindings, rows: AuditEntry[]): Promise<AuditEnt
   const found = await env.DB.prepare(`SELECT * FROM (${sql}) WHERE id IN (SELECT value FROM json_each(?))`).bind(JSON.stringify(refs)).all<{id:string;label:string|null}>()
   for(const row of found.results) if(row.label){const label=kind==='program-document'?kinds[row.label]?.title??row.label.replaceAll('-',' '):row.label;names.set(kind+':'+row.id,label);identifiers.set(row.id,label)}
  }))
- const plain=(value:string)=>value.replace(/[a-f0-9]{8}-[a-f0-9-]{27,}|\b[a-f0-9]{32}\b/gi,id=>identifiers.get(id)??'record identifier retained in export')
+ const plain=(value:string)=>Object.values(frameworks).reduce((text,f)=>f.editions.reduce((text,e)=>text.replaceAll(e.id,e.label),text),value).replace(/[a-f0-9]{8}-[a-f0-9-]{27,}|\b[a-f0-9]{32}\b/gi,id=>identifiers.get(id)??'record identifier retained in export')
  return rows.map(r=>{
   const kind=r.subject.includes(':')?r.subject.split(':')[0]:r.action.split('.')[0]
   const subject=names.get(r.subject)??names.get(kind+':'+r.subject)

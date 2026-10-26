@@ -24,8 +24,10 @@ export async function availability(env: Bindings) {
  return courses.map(c => ({ id: c.id, title: c.title, audience: c.audience, shipped_revision: c.revision, adopted_revision: adopted.get(c.id) ?? null, minutes: c.minutes, lessons: c.lessons.length, questions: c.quiz.length, pass_mark: c.passMark, available: c.audience === 'everyone' || (c.audience === 'hipaa' && frameworks.has('hipaa')) || (c.audience === 'engineering' && (frameworks.has('soc2') || frameworks.has('iso27001'))), unlock: c.audience === 'hipaa' ? 'a HIPAA program' : c.audience === 'engineering' ? 'a SOC 2 or ISO 27001 program, for engineering roles' : 'always' }))
 }
 // A shipped revision applies only after an owner reviews and adopts it.
-export async function adopt(env: Bindings, actor: Actor, courseId: string, now: Date) {
- const c = course(courseId); if (!c) throw new Refusal('Course not found.', 404)
+export async function adopt(env: Bindings, actor: Actor, courseId: string, now: Date, revision?: unknown) {
+ const selected = revision === undefined ? undefined : revisionNumber(revision)
+ if (selected !== undefined && !course(courseId, selected)) throw new Refusal('Course revision not found.', 404)
+ const c = course(courseId, selected); if (!c) throw new Refusal('Course not found.', 404)
  await env.DB.batch([env.DB.prepare('INSERT INTO training_adoptions(course_id,revision,adopted_by,adopted_at) VALUES(?,?,?,?) ON CONFLICT DO NOTHING').bind(c.id, c.revision, actor.name, now.toISOString()), auditStatement(env, actor, 'training.adopted', 'course:' + c.id, now, 'succeeded', `revision ${c.revision}`, { revision: c.revision })])
 }
 export async function createCampaign(env: Bindings, actor: Actor, input: Input, now: Date) {
@@ -59,25 +61,35 @@ export async function amendSchedule(env: Bindings, actor: Actor, id: string, inp
  ])
 }
 const schedule = async (env: Bindings, c: { id: string; due_days: number; interval_months: number }) => (await env.DB.prepare('SELECT due_days,interval_months FROM training_schedule_changes WHERE campaign_id=? ORDER BY at DESC,rowid DESC LIMIT 1').bind(c.id).first<{ due_days: number; interval_months: number }>()) ?? c
-// Complete matching open assignments with a completion recorded after they were assigned.
-async function settle(env: Bindings, person: string, courseId: string, completion: string, at: string) {
- await env.DB.prepare("UPDATE training_assignments SET state='completed',completed_at=?,completion_id=? WHERE person_id=? AND course_id=? AND state='assigned' AND assigned_at<=?").bind(at, completion, person, courseId, at).run()
+function revisionNumber(value: unknown): number {
+ if ((typeof value !== 'number' && (typeof value !== 'string' || !/^[1-9][0-9]*$/.test(value))) || !Number.isSafeInteger(Number(value)) || Number(value) < 1) throw new Refusal('Choose a known course revision.')
+ return Number(value)
+}
+// Resolve the exact assignment curriculum; open assignments take priority.
+export async function assignedCourse(env: Bindings, person: string, courseId: string, revision?: unknown, includeCompleted = false) {
+ const selected = revision === undefined ? null : revisionNumber(revision)
+ const assignment = await env.DB.prepare(`SELECT revision FROM training_assignments WHERE person_id=? AND course_id=? AND state ${includeCompleted ? "IN ('assigned','completed')" : "= 'assigned'"} AND (? IS NULL OR revision=?) ORDER BY state='assigned' DESC,assigned_at,revision,id LIMIT 1`).bind(person, courseId, selected, selected).first<{ revision: number }>()
+ const c = assignment && course(courseId, assignment.revision)
+ if (!c) throw new Refusal('This course revision is not assigned to you.', 404)
+ return c
+}
+// External and approved internal completions can replace a course; native passes settle only their assessed revision.
+async function settle(env: Bindings, person: string, courseId: string, completion: string, at: string, revision: number | null = null) {
+ await env.DB.prepare("UPDATE training_assignments SET state='completed',completed_at=?,completion_id=? WHERE person_id=? AND course_id=? AND state='assigned' AND assigned_at<=? AND (? IS NULL OR revision=?)").bind(at, completion, person, courseId, at, revision, revision).run()
 }
 export async function attempt(env: Bindings, person: { id: string; email: string }, courseId: string, input: Input, now: Date) {
- const c = course(courseId); if (!c) throw new Refusal('Course not found.', 404)
- const adopted = await env.DB.prepare('SELECT revision FROM training_adoptions WHERE course_id=? ORDER BY revision DESC LIMIT 1').bind(c.id).first<{ revision: number }>()
- if (!adopted || !await env.DB.prepare("SELECT 1 FROM training_assignments WHERE person_id=? AND course_id=? AND state='assigned'").bind(person.id, c.id).first()) throw new Refusal('This course is not assigned to you.', 404)
+ const c = await assignedCourse(env, person.id, courseId, input.revision)
  const submitted = input.answers === undefined ? c.quiz.map((_, i) => input[`answers[${i}]`]) : Array.isArray(input.answers) ? input.answers : input.answers.split(',')
  // Missing, repeated and blank answers must never become the numeric answer zero.
  if (submitted.length !== c.quiz.length || submitted.some(a => typeof a !== 'string' || !/^[0-3]$/.test(a))) throw new Refusal('Answer every question.')
  const answers = submitted.map(Number), result = grade(c, answers)
  if (!result) throw new Refusal('Answer every question.')
  const id = crypto.randomUUID(), at = now.toISOString()
- const statements = [env.DB.prepare('INSERT INTO training_attempts(id,person_id,course_id,revision,answers_json,score,passed,operator_email,at) VALUES(?,?,?,?,?,?,?,?,?)').bind(id, person.id, c.id, adopted.revision, JSON.stringify(answers), result.score, result.passed ? 1 : 0, person.email, at)]
+ const statements = [env.DB.prepare('INSERT INTO training_attempts(id,person_id,course_id,revision,answers_json,score,passed,operator_email,at) VALUES(?,?,?,?,?,?,?,?,?)').bind(id, person.id, c.id, c.revision, JSON.stringify(answers), result.score, result.passed ? 1 : 0, person.email, at)]
  const completion = crypto.randomUUID()
- if (result.passed) statements.push(env.DB.prepare("INSERT INTO training_completions(id,person_id,course_id,course_title,revision,source,provenance,score,attempt_id,recorded_by,completed_at,recorded_at) VALUES(?,?,?,?,?,'evidence','assessment graded in Evidence',?,?,?,?,?)").bind(completion, person.id, c.id, c.title, adopted.revision, result.score, id, person.email, at, at))
+ if (result.passed) statements.push(env.DB.prepare("INSERT INTO training_completions(id,person_id,course_id,course_title,revision,source,provenance,score,attempt_id,recorded_by,completed_at,recorded_at) VALUES(?,?,?,?,?,'evidence','assessment graded in Evidence',?,?,?,?,?)").bind(completion, person.id, c.id, c.title, c.revision, result.score, id, person.email, at, at))
  await env.DB.batch(statements)
- if (result.passed) await settle(env, person.id, c.id, completion, at)
+ if (result.passed) await settle(env, person.id, c.id, completion, at, c.revision)
  await syncTraining(env, now)
  return { ...result, attempt: id }
 }
