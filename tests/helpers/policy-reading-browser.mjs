@@ -10,7 +10,7 @@ export async function policyReadingJourney(app, bridge, ownerCookie) {
   assert.equal(response.status, 201, path)
   return response.json()
  }
- const program = await post('/api/programs', { framework: 'soc2', name: 'Cedar Ridge assurance', legal_entity: 'Cedar Ridge Software', products: 'Cedar Ridge workspace', systems: 'Customer portal and production services', audit_from: '2026-07-01', audit_to: '2027-06-30' })
+ const program = await post('/api/programs', { framework: 'soc2', report_type:'Type II', name: 'Cedar Ridge assurance', legal_entity: 'Cedar Ridge Software', products: 'Cedar Ridge workspace', systems: 'Customer portal and production services', audit_from: '2026-07-01', audit_to: '2027-06-30' })
  for (const [width, name, email] of [[1440, 'Priya Shah', 'priya@cedar-ridge.test'], [390, 'Jess Tran', 'jess@cedar-ridge.test']]) {
   const owner = await bridge.context(width, ownerCookie), member = await bridge.context(width)
   const page = await owner.newPage(), reader = await member.newPage()
