@@ -4030,7 +4030,7 @@
       "executable": false
     },
     "public/components.css": {
-      "sha256": "8a23e85a35676f603f25dcc3e893fc9e1194babacd591046a79fb67d602be385",
+      "sha256": "5cce733634a745a6969ed0489a5ab348f754662fc2a789526f878cb98b7251c6",
       "executable": false
     },
     "public/desk.css": {
@@ -6198,7 +6198,7 @@
       "executable": false
     },
     "src/evidence/me/http.ts": {
-      "sha256": "f0bd95c7699554917f423b496a4a0fb42ab25f1f3e77ece346b3216337ab7601",
+      "sha256": "9536ec4e7072d25a696bc15c9615adef14356fe0b0786daad6a0259c8541e9ba",
       "executable": false
     },
     "src/evidence/member-frame.ts": {
