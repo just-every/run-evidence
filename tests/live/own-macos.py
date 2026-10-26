@@ -72,6 +72,7 @@ def main():
         if sha:
             assert re.fullmatch('[a-f0-9]{40}', sha), 'full public candidate SHA required'
             server.stop()
+            server = None
             subprocess.run(['git','fetch','origin',sha], cwd=checkout, check=True,
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             subprocess.run(['git','checkout','--detach',sha], cwd=checkout, check=True,
@@ -81,6 +82,7 @@ def main():
         expected = owner.populate()
         owner.reconcile(expected)
         server.stop()
+        server = None
         state = checkout/'.wrangler/state'
         assert list(state.rglob('*.sqlite')), 'local D1 persistence files absent'
         assert any('r2' in p.parts for p in state.rglob('*') if p.is_file()), 'local R2 persistence files absent'

@@ -8137,7 +8137,7 @@
       "executable": false
     },
     "tests/live/own-daytona-remote.py": {
-      "sha256": "6f3f3fe633fd303aa3f54b3ccaf981d1927dc556daec35e468169e56c8a8943a",
+      "sha256": "642756082feca9a5b238abbf93cfe68ff2bede2c9fca3ead51cece3ef8c9b4d8",
       "executable": false
     },
     "tests/live/own-daytona.py": {
@@ -8157,7 +8157,7 @@
       "executable": false
     },
     "tests/live/own-macos.py": {
-      "sha256": "ecf6c6bfd6d148fe908214d728a3e6b56298b909a286890396e8afbd68f3c972",
+      "sha256": "607087c394b0a28f3a54f3775ba7f4467457c60b9cb14745017ab10ec6687527",
       "executable": false
     },
     "tests/live/trust-sendgrid.mjs": {

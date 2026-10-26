@@ -67,9 +67,9 @@ class Server:
         _, _, directory, command_line = self.identity
         arguments = shlex.split(command_line)
         checks = dict(checkout=directory == str(self.checkout), foreground=not self.foreground or '--foreground' in arguments,
-                      dev='dev' in arguments, executable=any(argument.endswith('/bin/rer.mjs') for argument in arguments))
+                      dev='dev' in arguments, executable=any(str((Path(directory)/argument).resolve()).endswith('/bin/rer.mjs') for argument in arguments))
         if not all(checks.values()):
-            event('runtime_identity_refused', checks=checks)
+            event('runtime_identity_refused', checks=checks, entry_names=[Path(a).name for a in arguments if a.endswith(('.mjs','/rer'))])
             self.identity = None
             raise RuntimeError('runtime_identity_refused')
         if self.foreground and os.getpgid(self.identity[0]) != self.process.pid:
@@ -239,6 +239,7 @@ def run():
         if sha:
             assert re.fullmatch('[a-f0-9]{40}', sha), 'expected full candidate SHA'
             server.stop()
+            server = None
             subprocess.run(['git','fetch','origin',sha], cwd=checkout, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             subprocess.run(['git','checkout','--detach',sha], cwd=checkout, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             server = Server(['npx','--no-install','rer','dev','--foreground'], checkout)
@@ -251,6 +252,7 @@ def run():
         expected = owner.populate()
         owner.reconcile(expected)
         server.stop()
+        server = None
         # Only prove physical local-state presence, never inspect credential files.
         state = checkout / '.wrangler/state'
         assert list(state.rglob('*.sqlite')), 'D1 persistence files absent'
