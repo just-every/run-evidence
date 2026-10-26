@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "0ed18cc77a08d754c386f811963b66dd6c4317e5d6eb978085aaac3dff44db49",
+  "manifest": "9c8e8839e190d880fa5e5bfd1b8b139529cc7919a0e04c40c5cce428c97cb13f",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2936,6 +2936,7 @@
           "src/demo-data.ts",
           "src/demo-tests.ts",
           "src/demo.ts",
+          "src/evidence/access/evidence-view.ts",
           "src/evidence/access/exhibit.ts",
           "src/evidence/access/http.ts",
           "src/evidence/access/storage.ts",
@@ -3687,7 +3688,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "0ed18cc77a08d754c386f811963b66dd6c4317e5d6eb978085aaac3dff44db49",
+      "sha256": "9c8e8839e190d880fa5e5bfd1b8b139529cc7919a0e04c40c5cce428c97cb13f",
       "executable": false
     },
     "LICENSE": {
@@ -4718,12 +4719,16 @@
       "sha256": "7d24cb83de4302472d944adeb1b0467a54cd1f50112223fded8302c34163fdf6",
       "executable": false
     },
+    "src/evidence/access/evidence-view.ts": {
+      "sha256": "8d58305ba8b4b5093222d746ce76eb3a0c14c8db9c23ce204742f26739328f6d",
+      "executable": false
+    },
     "src/evidence/access/exhibit.ts": {
       "sha256": "08c5790e42cd1a7b545abc209a683a47618d63dba0e1c1d8c60da372d3ab86ca",
       "executable": false
     },
     "src/evidence/access/http.ts": {
-      "sha256": "03571c14a92c23c92b834ecbbab0239dab88ae19c167d79fff9e8f10590c0240",
+      "sha256": "af9bf13174ee6ff7079ee5b3369a0f2afd9e20d451abc827b2500ef1537f95c8",
       "executable": false
     },
     "src/evidence/access/storage.ts": {

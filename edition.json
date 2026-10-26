@@ -2928,6 +2928,7 @@
           "src/demo-data.ts",
           "src/demo-tests.ts",
           "src/demo.ts",
+          "src/evidence/access/evidence-view.ts",
           "src/evidence/access/exhibit.ts",
           "src/evidence/access/http.ts",
           "src/evidence/access/storage.ts",
