@@ -68,6 +68,8 @@ try {
    assert.equal(response.status,303);const id=response.headers.get('location').split('/').at(-1)
    await readReceipt(await upload(id,{covered_from:from,covered_to:to}))
    for(const [time,expected] of [[early,'covered'],[soon,'due soon'],[late,'overdue']]) {await app.clock(time);assert.equal((await rows()).find(r=>r.id===id).gap,expected,cadence+' '+time)}
+   const overdue=(await rows()).find(r=>r.id===id);assert.equal(overdue.renewal.due,late.slice(0,10));assert.equal(overdue.renewal.expired_on,overdue.renewal.due)
+   await app.clock(new Date(Date.parse(late)+14*86400000).toISOString());assert.equal((await rows()).find(r=>r.id===id).renewal.due,late.slice(0,10))
   }
   await app.clock('2026-10-12T00:00:00Z')
  })

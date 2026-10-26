@@ -1,4 +1,5 @@
 import { problem } from './problem'
+import { auditFormRefusal, retainedMultipart, scalarValues, type RefusedForm } from './form-state'
 import { operatorAuth, runtimeBindings, type Bindings } from '../auth.server'
 import { day, validDate, groups, cadences } from './model'
 import { createControl, desk, receipt, storedBytes } from './storage'
@@ -31,8 +32,17 @@ export function evidenceHandler(clock: () => Date = () => new Date()) {
    const sensitive = await sensitiveIds(env), held = new Set((await env.DB.prepare('SELECT receipt_id FROM record_grants WHERE email=? AND revoked_at IS NULL').bind(verdict.delegate.email).all<{ receipt_id: string }>()).results.map(r => r.receipt_id))
    return rows.map(r => ({ ...r, receipts: r.receipts.filter(x => !sensitive.has(x.id) || held.has(x.id)) }))
   }
+  const now = clock(), selected = url.searchParams.get('date') || day(now)
+  const renderRequirement = async (id: string, refused?: RefusedForm) => {
+   const data = await desk(env,selected,now), row = (await hideSensitive(data.requirements)).find(x => x.id === id)
+   if (!row) return json({ error:'Requirement not found.' },404)
+   const [people, programs] = await Promise.all([
+    env.DB.prepare('SELECT id,name,email FROM people ORDER BY name').all<{ id: string; name: string; email: string }>(),
+    env.DB.prepare('SELECT id,name FROM programs ORDER BY created_at').all<{ id: string; name: string }>(),
+   ])
+   return requirementPage(row,selected,session.operator.displayName,people.results,programs.results,refused)
+  }
   try {
-   const now = clock(), selected = url.searchParams.get('date') || day(now)
    if (!validDate(selected)) throw new Refusal('Select a real UTC date.')
    if (request.method === 'POST' && path === '/app/controls') {
     if (!request.headers.get('content-type')?.startsWith('application/x-www-form-urlencoded')) throw new Refusal('Use the control form.')
@@ -44,11 +54,23 @@ export function evidenceHandler(clock: () => Date = () => new Date()) {
     return redirect('/app/requirements/'+result.requirement)
    }
    const uploading = /^\/app\/requirements\/([a-f0-9-]+)\/uploads$/.exec(path)
-   if (uploading && request.method === 'POST') { if (!await reaches(uploading[1])) return json({ error:'That requirement is outside your scope.' },403); return redirect('/app/receipts/'+await upload(request,env,uploading[1],operator,now)) }
+   if (uploading && request.method === 'POST') {
+    if (!await reaches(uploading[1])) return json({ error:'That requirement is outside your scope.' },403)
+    let values: Record<string, string> = {}
+    try {
+     const retained = await retainedMultipart(request, 12 * 1024 * 1024)
+     values = scalarValues(retained.form)
+     return redirect('/app/receipts/'+await upload(retained.request,env,uploading[1],operator,now))
+    } catch (error) {
+     if (!(error instanceof Refusal) || error.status >= 500) throw error
+     await auditFormRefusal({ env, actor: verdict.actor, request, url, now },error)
+     return renderRequirement(uploading[1], { values, error: error.message, status: error.status })
+    }
+   }
    if (!['GET','HEAD'].includes(request.method)) return json({ error:'Method not allowed.' },405)
    if (path === '/app' || path === '/api/desk') { const data = await desk(env,selected,now); if (reach) data.requirements = data.requirements.filter(x => reach.has(x.control_id)); data.requirements = await hideSensitive(data.requirements); return isApi ? json(data) : deskPage(data,session.operator.displayName) }
    const requirement = /^\/app\/requirements\/([a-f0-9-]+)$/.exec(path)
-   if (requirement) { if (!await reaches(requirement[1])) return json({ error:'Requirement not found.' },404); const data = await desk(env,selected,now), row = (await hideSensitive(data.requirements)).find(x => x.id === requirement[1]); return row ? requirementPage(row,selected,session.operator.displayName,(await env.DB.prepare('SELECT id,name,email FROM people ORDER BY name').all<{ id: string; name: string; email: string }>()).results,(await env.DB.prepare('SELECT id,name FROM programs ORDER BY created_at').all<{ id: string; name: string }>()).results) : json({ error:'Requirement not found.' },404) }
+   if (requirement) { if (!await reaches(requirement[1])) return json({ error:'Requirement not found.' },404); return renderRequirement(requirement[1]) }
    const match = /^\/(?:app|api)\/receipts\/([a-f0-9-]+)(\/download)?$/.exec(path)
    if (match) {
     const row = await receipt(env,match[1]); if (!row || !await reaches(row.requirement_id)) return json({ error:'Receipt not found.' },404)

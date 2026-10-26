@@ -10,6 +10,7 @@
 .rer-themed .requirement-summary p { margin: 0 0 2px; color: var(--app-label); font-size: 13.5px; line-height: 1.45; }
 .rer-themed .requirement-link { font-size: 13.5px; }
 .requirement-link::after, .receipt-title::after { content: ''; position: absolute; inset: 0; z-index: 1; }
+.control-definition-link { position: relative; z-index: 2; }
 .requirement-link::after { inset: -14px -18px; border-radius: 12px; }
 .requirement-slab:has(.requirement-link:hover) { border-color: #cbdcf2; }
 .requirement-card:has(a:focus-visible), .receipt-row:has(.receipt-title:focus-visible) { outline: 2px solid var(--site-link); outline-offset: 6px; border-radius: 8px; }
@@ -48,7 +49,8 @@
  .rer-themed .requirement-card > .icon-tile { width: 40px; height: 40px; grid-column: 1; grid-row: 1; }
  .requirement-summary { grid-column: 1 / -1; grid-row: 2; }
  .requirement-state { grid-column: 2; grid-row: 1; justify-self: end; gap: 8px; }
- .requirement-link::after { inset: -14px; }
+ .control-definition-link { position: relative; z-index: 2; }
+.requirement-link::after { inset: -14px; }
  .rer-themed .empty-slab { min-height: 240px; }
  .rer-themed .requirement-period { align-items: start; }
  .receipt-row { grid-template-columns: 36px minmax(0, 1fr) 16px; gap: 10px; padding: 12px 10px; }

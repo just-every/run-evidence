@@ -1,3 +1,6 @@
+import { auditFormRefusal, scalarValues, type RefusedForm } from '../form-state'
+import { Refusal } from '../upload'
+import type { OwnerContext } from '../door'
 import { definitions, reviseControl, addRequirement, reviseRequirement } from '../control-definition/storage'
 import { definitionPanel } from '../control-definition/view'
 import { populationMemberships } from '../population/storage'
@@ -21,6 +24,17 @@ import { acceptLibraryRevision, libraryReview } from './library'
 import { libraryPage } from './library-view'
 const id = `(${uuid})`
 const both = (path: string) => new RegExp(`^/(?:app|api)${path}$`)
+
+async function renderControl(c: OwnerContext, controlId: string, refused?: RefusedForm) {
+ const control = await requireControl(c.env, controlId), data = await desk(c.env, day(c.now), c.now)
+ const requirements = data.requirements.filter(r => r.control_id === control.id).map(r => ({ id: r.id, name: r.name, cadence: r.cadence, gap: r.gap, receipts: r.receipts.length }))
+ const linked = (await c.env.DB.prepare('SELECT t.id,t.name FROM test_controls l JOIN tests t ON t.id=l.test_id WHERE l.control_id=?').bind(control.id).all<{ id: string; name: string }>()).results
+ const latest = await latestResults(c.env)
+ const tests = linked.map(t => { const results = latest.filter(o => o.test_id === t.id).map(o => o.result); return { ...t, status: results.includes('fail') ? 'failing' : results.includes('unknown') ? 'unknown' : results.length ? 'passing' : 'never run' } })
+ const mappings = await controlMappings(c.env, control.id, control.library_id), owners = await ownership(c.env, control.id), scope = await scopeAt(c.env, control.id, c.now.toISOString())
+ const revisions = await definitions(c.env,control.id)
+ return c.isApi ? json({ control, mappings, owners, scope, requirements, tests, revisions }) : controlPage(control, mappings, owners, scope, requirements, tests, await people(c.env), c.actor.name, definitionPanel(control.id,revisions),refused)
+}
 
 export function programHandler(clock: () => Date) {
  const routes: Route[] = [
@@ -76,22 +90,21 @@ export function programHandler(clock: () => Date) {
    await auditStatement(c.env, c.actor, 'program.board-exported', 'program:' + row.id, c.now, 'succeeded', 'csv').run()
    return new Response(boardCsv(report), { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="board-report-${row.id}.csv"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } })
   } },
-  { method: 'GET', pattern: both(`/controls/${id}`), run: async (c, m) => {
-   const control = await requireControl(c.env, m[1]), data = await desk(c.env, day(c.now), c.now)
-   const requirements = data.requirements.filter(r => r.control_id === control.id).map(r => ({ id: r.id, name: r.name, cadence: r.cadence, gap: r.gap, receipts: r.receipts.length }))
-   const linked = (await c.env.DB.prepare('SELECT t.id,t.name FROM test_controls l JOIN tests t ON t.id=l.test_id WHERE l.control_id=?').bind(control.id).all<{ id: string; name: string }>()).results
-   const latest = await latestResults(c.env)
-   const tests = linked.map(t => { const results = latest.filter(o => o.test_id === t.id).map(o => o.result); return { ...t, status: results.includes('fail') ? 'failing' : results.includes('unknown') ? 'unknown' : results.length ? 'passing' : 'never run' } })
-   const mappings = await controlMappings(c.env, control.id, control.library_id), owners = await ownership(c.env, control.id), scope = await scopeAt(c.env, control.id, c.now.toISOString())
-   const revisions = await definitions(c.env,control.id)
-   return c.isApi ? json({ control, mappings, owners, scope, requirements, tests, revisions }) : controlPage(control, mappings, owners, scope, requirements, tests, await people(c.env), c.actor.name, definitionPanel(control.id,revisions))
-  } },
+  { method: 'GET', pattern: both(`/controls/${id}`), run: async (c, m) => renderControl(c,m[1]) },
   { method: 'POST', pattern: both(`/controls/${id}/revisions`), run: async (c,m) => done(c,'/app/controls/'+m[1],await reviseControl(c.env,c.actor,m[1],await readInput(c.request),c.now)) },
   { method: 'POST', pattern: both(`/controls/${id}/requirements`), run: async (c,m) => { const result=await addRequirement(c.env,c.actor,m[1],await readInput(c.request),c.now); return done(c,'/app/requirements/'+result.id,result,201) } },
   { method: 'POST', pattern: both(`/requirements/${id}/revisions`), run: async (c,m) => { await reviseRequirement(c.env,c.actor,m[1],await readInput(c.request),c.now); return done(c,'/app/requirements/'+m[1],{revised:true}) } },
   { method: 'GET', pattern: both(`/controls/${id}/export`), run: async (c,m) => { const control=await requireControl(c.env,m[1]); return json({control,revisions:await definitions(c.env,m[1]),mappings:await controlMappings(c.env,m[1],control.library_id)}) } },
   { method: 'POST', pattern: both(`/controls/${id}/owners`), run: async (c, m) => { await assignOwner(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/controls/' + m[1], { assigned: true }) } },
-  { method: 'POST', pattern: both(`/controls/${id}/mappings`), run: async (c, m) => done(c, '/app/controls/' + m[1], { id: await addMapping(c.env, c.actor, m[1], await readInput(c.request), c.now) }, 201) },
+  { method: 'POST', pattern: both(`/controls/${id}/mappings`), run: async (c, m) => {
+   const input = await readInput(c.request)
+   try { return done(c, '/app/controls/' + m[1], { id: await addMapping(c.env, c.actor, m[1], input, c.now) }, 201) }
+   catch (error) {
+    if (c.isApi || !(error instanceof Refusal) || error.status >= 500 || error.status === 404) throw error
+    await auditFormRefusal(c,error)
+    return renderControl(c,m[1],{ values: scalarValues(input), error: error.message, status: error.status })
+   }
+  } },
   { method: 'POST', pattern: both(`/controls/${id}/mappings/${id}/remove`), run: async (c, m) => { await removeMapping(c.env, c.actor, m[1], m[2], await readInput(c.request), c.now); return done(c, '/app/controls/' + m[1], { removed: true }) } },
   { method: 'POST', pattern: both(`/controls/${id}/scope`), run: async (c, m) => { await changeScope(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/controls/' + m[1], { recorded: true }) } },
   { method: 'GET', pattern: both(`/controls/${id}/report`), run: async (c, m) => {

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "076f38957576cac8a01f74ebdea52b5cbb30322dbe4c48ef194319666e34b01a",
+  "manifest": "39ac3ab377b435c52d367f1296cb70fbc3691b6d6ff4f524d6f0611ec43cbbc6",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -3076,6 +3076,7 @@
           "src/evidence/followup/send.ts",
           "src/evidence/followup/settings.ts",
           "src/evidence/followup/view.ts",
+          "src/evidence/form-state.ts",
           "src/evidence/format.ts",
           "src/evidence/framework/http.ts",
           "src/evidence/framework/import.ts",
@@ -3420,6 +3421,7 @@
           "tests/helpers/control-journey.mjs",
           "tests/helpers/credential-browser.mjs",
           "tests/helpers/credential-journey.mjs",
+          "tests/helpers/desk-defects-journey.mjs",
           "tests/helpers/engagement-browser.mjs",
           "tests/helpers/engagement-journey.mjs",
           "tests/helpers/erasure-journey.mjs",
@@ -3460,6 +3462,7 @@
           "tests/helpers/readable-records-journey.mjs",
           "tests/helpers/readiness-browser.mjs",
           "tests/helpers/readiness-fixture.mjs",
+          "tests/helpers/refused-forms-browser.mjs",
           "tests/helpers/review-browser-archive.mjs",
           "tests/helpers/review-browser-runtime.mjs",
           "tests/helpers/risk-browser.mjs",
@@ -3677,7 +3680,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "076f38957576cac8a01f74ebdea52b5cbb30322dbe4c48ef194319666e34b01a",
+      "sha256": "39ac3ab377b435c52d367f1296cb70fbc3691b6d6ff4f524d6f0611ec43cbbc6",
       "executable": false
     },
     "LICENSE": {
@@ -4037,7 +4040,7 @@
       "executable": false
     },
     "public/desk.css": {
-      "sha256": "7f1cb626c8f4d69b6217a17be9e2e89f9bd4c9dfe4d59c08f3bc146215a69a2a",
+      "sha256": "a08ad186d346d669437f8ddf58347ee035859bed9dde8394b8d6e898a295f2f3",
       "executable": false
     },
     "public/favicon.ico": {
@@ -4989,7 +4992,7 @@
       "executable": false
     },
     "src/evidence/cadence.ts": {
-      "sha256": "0cd05118ece9d6e9019c65cfb56333dc01bf9be28c610e2bd1105f8b9af81286",
+      "sha256": "b5e4dd53f197de7987f533732081c5bc0aafe5c10344fa90efabc0d406f52d44",
       "executable": false
     },
     "src/evidence/cloud/aws-schema.ts": {
@@ -5276,6 +5279,10 @@
       "sha256": "3ec38a2c1ed913ba1bd846943d1ceabe1efe849eb6d840c674f7492aa6c54a23",
       "executable": false
     },
+    "src/evidence/form-state.ts": {
+      "sha256": "a97dcdb92e0ca072da9d86971ab786093d640c927bfb42afc76e114b3f9d4791",
+      "executable": false
+    },
     "src/evidence/format.ts": {
       "sha256": "258190d0f6bab931e0fbfdd2610d4d322c0850688e04001d1cf50a97c39abaa5",
       "executable": false
@@ -5317,7 +5324,7 @@
       "executable": false
     },
     "src/evidence/http.ts": {
-      "sha256": "4dd85448e458406ba1b885ddbe3c00ed0c62b8f0fe2cc2f6e1a49463411fdba2",
+      "sha256": "0d3c5b333838121e73fce5cac7d246aeb0abc921d07bedfe0e3dc95bae6f7b51",
       "executable": false
     },
     "src/evidence/identity/catalogue.ts": {
@@ -6269,7 +6276,7 @@
       "executable": false
     },
     "src/evidence/population/http.ts": {
-      "sha256": "4fba85e0d9db59c336dd3ba98e824c3c4352ed38f397a73fdec8a3e4a6ecf7dc",
+      "sha256": "9bed02b208e693bdc54dc87687d96b4bd85516934bec92045cb0d2fcb9ea95f1",
       "executable": false
     },
     "src/evidence/population/storage.ts": {
@@ -6393,7 +6400,7 @@
       "executable": false
     },
     "src/evidence/program/http.ts": {
-      "sha256": "a231962678b533117af50d631f5bd36aebba743c996cfb35d8f0e6cae5a6f440",
+      "sha256": "98b1c5e785d09133e70f1bd94facde4e477416afb9eb7f7f9034095c3bbde3ba",
       "executable": false
     },
     "src/evidence/program/labels.ts": {
@@ -6437,7 +6444,7 @@
       "executable": false
     },
     "src/evidence/program/view.ts": {
-      "sha256": "ae3196c7926e2935efa8761f7c1b6fba26a4e0c64f1cc55e3561a1bbc71e3bb9",
+      "sha256": "ac91094231e5f06f234f2dc3f3b1326ea02447813dc17cd74c64ff1b1111a0ca",
       "executable": false
     },
     "src/evidence/remedy/http.ts": {
@@ -6789,7 +6796,7 @@
       "executable": false
     },
     "src/evidence/view.ts": {
-      "sha256": "736baedd02d356076376da170532de83b7953997a0bd4840ee26ab946ac0d415",
+      "sha256": "49baaeeb5195c852d05dcc7f510fdf527998578bd9c16d3d1e36fff09b6fa8d0",
       "executable": false
     },
     "src/evidence/visibility.ts": {
@@ -8001,7 +8008,7 @@
       "executable": false
     },
     "tests/evidence.mjs": {
-      "sha256": "77e8716a5d43c4b70ede67feb8ab55606e05e1725882d92f2f8647c3516abe05",
+      "sha256": "7e58d80bc9f575dff163ba321e8d54b12ee6978a1f13b0f5f65e26d54c5c2285",
       "executable": false
     },
     "tests/extended-programs-browser.mjs": {
@@ -8122,6 +8129,10 @@
     },
     "tests/helpers/credential-journey.mjs": {
       "sha256": "98ac326e2dd6f32582b0259b967531aa24e446949f06b101ab54acab726b435f",
+      "executable": false
+    },
+    "tests/helpers/desk-defects-journey.mjs": {
+      "sha256": "ace3dff0bf8bea4910f70555f249a384b65d0d66240419ee83d75a0f29d5b93c",
       "executable": false
     },
     "tests/helpers/engagement-browser.mjs": {
@@ -8282,6 +8293,10 @@
     },
     "tests/helpers/readiness-fixture.mjs": {
       "sha256": "1dc4ad3b2368fd476ac72b00078b583ad0a15b21f5c86e8b0a5a290a9abadce5",
+      "executable": false
+    },
+    "tests/helpers/refused-forms-browser.mjs": {
+      "sha256": "9795fefab1f36965b58499788287dae028bcf137e1a6f7ac569af2828296f10a",
       "executable": false
     },
     "tests/helpers/review-browser-archive.mjs": {
