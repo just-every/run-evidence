@@ -1,0 +1,1 @@
+export const promiseColumns={promise_dependencies:['id','subject_kind','subject_id','source_json','linked_by','linked_at'],promise_reviews:['update_id','snapshot_hash','dependency_hash','reviewer_person_id','reason','actor_id','actor_name','decided_at'],promise_revisions:['update_id','previous_update_id','actor_name','prepared_at']} as const

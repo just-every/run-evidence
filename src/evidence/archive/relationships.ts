@@ -11,6 +11,10 @@ import { validatePlans } from './plan-stream'
 const nullable=new Set(['receipts.supersedes','review_folders.closed_at','review_events.folder_id','review_events.exhibit_id'])
 const timestamp=(v:unknown)=>typeof v==='string'&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{3})?Z$/.test(v)&&Number.isFinite(Date.parse(v))&&new Date(v).toISOString().replace('.000Z','Z')===v.replace('.000Z','Z')
 export function baseRow(table:string,row:Record<string,any>) {
+ if(table==='promise_dependencies'){
+  let source:any;try{source=JSON.parse(row.source_json)}catch{fail('Invalid promise source snapshot.')}
+  if(!['answer','trust'].includes(row.subject_kind)||!source||typeof source.kind!=='string'||typeof source.source_id!=='string'||typeof source.quote!=='string'||typeof source.href!=='string'||!/^\/app\//.test(source.href)||! /^[a-f0-9]{64}$/.test(source.fingerprint))fail('Invalid promise dependency.')
+ }
  if(!Object.hasOwn(columns,table))return
  for(const c of columns[table as keyof typeof columns]){const v=row[c];if(v===null&&nullable.has(table+'.'+c))continue;if(table==='exhibits'&&c==='size'){if(!Number.isSafeInteger(v)||v<1||v>10*1024*1024)fail('Invalid exhibit size.');continue}if(typeof v!=='string'||!v||v.length>(c==='source'?1000:1024))fail('Invalid custody field.');if((c==='id'||c.endsWith('_id')||['added_by','supersedes'].includes(c))&&!/^[A-Za-z0-9_-]{1,128}$/.test(v))fail('Invalid record identity.');if(c.endsWith('_at')&&!timestamp(v))fail('Invalid custody timestamp.')}
  if(table==='controls'&&!(groups as readonly unknown[]).includes(row.group_name))fail('Unknown control group.')
@@ -23,6 +27,7 @@ export async function validateRelationships(env:Store,id:string) {
  const t=(name:string)=>staged(id,name)
  const checks:{statement:D1PreparedStatement;message:string}[]=[]
  const invalid=(sql:string,message:string)=>{checks.push({statement:env.DB.prepare(sql),message})}
+ invalid(`SELECT 1 FROM ${t('promise_dependencies')} d WHERE (d.subject_kind='answer' AND NOT EXISTS(SELECT 1 FROM ${t('questionnaire_drafts')} a WHERE a.id=d.subject_id)) OR (d.subject_kind='trust' AND NOT EXISTS(SELECT 1 FROM ${t('trust_updates')} u WHERE u.id=d.subject_id)) LIMIT 1`,'Promise dependency has no exact subject revision.')
  invalid(`SELECT 1 FROM ${t('exhibits')} e WHERE NOT EXISTS(SELECT 1 FROM ${t('receipts')} r WHERE r.exhibit_id=e.id) LIMIT 1`,'Exhibit has no immutable receipt.')
  invalid(`SELECT 1 FROM ${t('receipts')} r JOIN ${t('receipts')} old ON old.id=r.supersedes WHERE old.requirement_id<>r.requirement_id OR old.id=r.id LIMIT 1`,'Invalid receipt supersession.')
  invalid(`WITH RECURSIVE chain(start,id) AS (SELECT id,supersedes FROM ${t('receipts')} WHERE supersedes IS NOT NULL UNION SELECT chain.start,r.supersedes FROM chain JOIN ${t('receipts')} r ON r.id=chain.id WHERE r.supersedes IS NOT NULL) SELECT 1 FROM chain WHERE start=id LIMIT 1`,'Cyclic receipt supersession.')

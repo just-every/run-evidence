@@ -1,3 +1,6 @@
+import { requirePerson,people } from '../program/people'
+import { sha } from '../archive/format'
+import { assertDependencies,dependencies,carryDependencies,type Replacement } from '../agent/promises'
 import type { Bindings } from '../../auth.server'
 import { auditStatement, oneOf, text, type Actor, type Input } from '../door'
 import { requireCapability } from '../archive/capabilities'
@@ -5,11 +8,11 @@ import { day, validDate } from '../model'
 import { Refusal } from '../upload'
 import { categories, flag, requireUpdate, settings, type Change, type Update } from './model'
 import { flushTrustDeliveries, mailReady } from './delivery'
-export async function draftUpdate(env:Bindings,actor:Actor,input:Input,now:Date) {
+export async function draftUpdate(env:Bindings,actor:Actor,input:Input,now:Date,previous?:{id:string;replacement:Replacement}) {
  const category=text(input,'category',80)
  if(!(await categories(env)).some(c=>c.slug===category))throw new Refusal('Choose a listed update category.')
  const id=crypto.randomUUID(),title=text(input,'title',200),body=text(input,'body',20000),visibility=oneOf(input,'visibility',['public','customers'] as const)
- await env.DB.batch([env.DB.prepare('INSERT INTO trust_updates(id,category,title,body,visibility,drafted_by,drafted_name,drafted_at) VALUES(?,?,?,?,?,?,?,?)').bind(id,category,title,body,visibility,actor.id,actor.name,now.toISOString()),auditStatement(env,actor,'trust.update-drafted',id,now)])
+ await env.DB.batch([env.DB.prepare('INSERT INTO trust_updates(id,category,title,body,visibility,drafted_by,drafted_name,drafted_at) VALUES(?,?,?,?,?,?,?,?)').bind(id,category,title,body,visibility,actor.id,actor.name,now.toISOString()),...(previous?[carryDependencies(env,'trust',previous.id,id,previous.replacement),env.DB.prepare('INSERT INTO promise_revisions VALUES(?,?,?,?)').bind(id,previous.id,actor.name,now.toISOString())]:[]),auditStatement(env,actor,'trust.update-drafted',id,now)])
  return requireUpdate(env,id)
 }
 export async function subprocessorList(env:Bindings,now:Date) {
@@ -45,20 +48,25 @@ async function noticeTiming(env:Bindings,id:string,now:Date) {
  return notice
 }
 export async function approveUpdate(env:Bindings,actor:Actor,id:string,input:Input,now:Date) {
+ const dependencyState=await assertDependencies(env,'trust',id,now,input)
  const row=await requireUpdate(env,id)
  if(row.approved_at){const priorNotice=await env.DB.prepare('SELECT 1 FROM trust_subprocessor_changes WHERE update_id=?').bind(id).first();return priorNotice&&!row.published_at?publishUpdate(env,actor,id,{notify:'on'},now):row}
  const notice=await noticeTiming(env,id,now),notify=!!notice||flag(input.notify)
  if(notify)await mailReady(env)
  if(notice)await requireCapability(env,'shares')
- await env.DB.batch([
-  env.DB.prepare('UPDATE trust_updates SET approved_by=?,approved_name=?,approved_at=?,notification_approved=? WHERE id=? AND approved_at IS NULL').bind(actor.id,actor.name,now.toISOString(),notify?1:0,id),
+ const review=dependencyState.rows.length?{reviewer:await requirePerson(env,input.reviewer_person_id,'named security and legal reviewer'),reason:text(input,'reason',1000),hash:await sha(new TextEncoder().encode(JSON.stringify({id,title:row.title,body:row.body,category:row.category,visibility:row.visibility,dependency_hash:dependencyState.hash})))}:null
+ const saved=await env.DB.batch([
+  env.DB.prepare("UPDATE trust_updates SET approved_by=?,approved_name=?,approved_at=?,notification_approved=? WHERE id=? AND approved_at IS NULL AND (SELECT COUNT(*) FROM promise_dependencies WHERE subject_kind='trust' AND subject_id=?)=? AND NOT EXISTS(SELECT 1 FROM promise_dependencies WHERE subject_kind='trust' AND subject_id=? AND id NOT IN (SELECT value FROM json_each(?)))").bind(actor.id,actor.name,now.toISOString(),notify?1:0,id,id,dependencyState.rows.length,id,JSON.stringify(dependencyState.rows.map(r=>r.id))),
+  ...(review?[env.DB.prepare('INSERT INTO promise_reviews SELECT ?,?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM trust_updates WHERE id=? AND approved_at=?)').bind(id,review.hash,dependencyState.hash,review.reviewer.id,review.reason,actor.id,actor.name,now.toISOString(),id,now.toISOString())]:[]),
   auditStatement(env,actor,'trust.update-approved',id,now,'succeeded',notify?'Publication and category notification approved':'Publication approved; notification not authorized'),
  ])
+ if(!saved[0].meta.changes)throw new Refusal('Dependencies changed during approval. Review again.',409)
  // DPA notices are sent when approved; ordinary updates keep a separate publication door.
  return notice?publishUpdate(env,actor,id,{notify:'on'},now):requireUpdate(env,id)
 }
 export async function publishUpdate(env:Bindings,actor:Actor,id:string,input:Input,now:Date) {
  await requireCapability(env,'shares')
+ await assertDependencies(env,'trust',id,now)
  const row=await requireUpdate(env,id)
  if(!row.approved_at)throw new Refusal('A named owner must approve this draft before publication.',409)
  if(row.published_at)return row
@@ -77,12 +85,12 @@ export async function publishUpdate(env:Bindings,actor:Actor,id:string,input:Inp
  if(notify)await flushTrustDeliveries(env,now,id)
  return requireUpdate(env,id)
 }
-export async function updateExport(env:Bindings,id:string) {
+export async function updateExport(env:Bindings,id:string,now:Date) {
  const update=await requireUpdate(env,id),[notice,deliveries]=await Promise.all([
   env.DB.prepare('SELECT * FROM trust_subprocessor_changes WHERE update_id=?').bind(id).first<Change>(),
   env.DB.prepare('SELECT * FROM trust_deliveries WHERE update_id=? ORDER BY queued_at,id').bind(id).all(),
  ])
  const events=(await env.DB.prepare('SELECT e.* FROM trust_delivery_events e JOIN trust_deliveries d ON d.id=e.delivery_id WHERE d.update_id=? ORDER BY e.occurred_at,e.id').bind(id).all()).results
  const submissions=(await env.DB.prepare('SELECT q.*,s.email FROM trust_submissions q JOIN trust_customer_grants g ON g.id=q.grant_id JOIN trust_subscribers s ON s.id=g.subscriber_id WHERE q.update_id=? ORDER BY q.submitted_at,q.id').bind(id).all<import('./grants').Submission&{email:string}>()).results
- return {update,notice,deliveries:deliveries.results,delivery_events:events,submissions}
+ return {previous_revision:await env.DB.prepare('SELECT * FROM promise_revisions WHERE update_id=?').bind(id).first<{previous_update_id:string}>(),later_revisions:(await env.DB.prepare('SELECT * FROM promise_revisions WHERE previous_update_id=? ORDER BY prepared_at,rowid').bind(id).all<{update_id:string}>()).results,review:await env.DB.prepare('SELECT r.*,p.name AS reviewer_name FROM promise_reviews r JOIN people p ON p.id=r.reviewer_person_id WHERE update_id=?').bind(id).first<any>(),reviewers:await people(env),dependencies:await dependencies(env,'trust',id,now),update,notice,deliveries:deliveries.results,delivery_events:events,submissions}
 }

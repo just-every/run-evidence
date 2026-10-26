@@ -432,7 +432,7 @@ A passing proof-custody test cannot stand in for a passing compliance/control te
 
   Current evidence: —.
 
-- **AGENT-005 — Keep customer promises current · missing.** Approve an answer and trust statement linked to a passing control and contract obligation, then fail the control and change the source policy. Inspect invalidation, affected customer commitments and cited revision. Attempt to reuse/export/send the stale answer; require a fresh authorized decision and retain the prior external version and recipient history.
+- **AGENT-005 — Keep customer promises current · done.** Approve an answer and trust statement linked to a passing control and contract obligation, then fail the control and change the source policy. Inspect invalidation, affected customer commitments and cited revision. Attempt to reuse/export/send the stale answer; require a fresh authorized decision and retain the prior external version and recipient history. `tests/trust.mjs` invokes `promiseJourney` in `tests/helpers/promise-journey.mjs` against both Resend and SendGrid network edges: it links the passing control, exhibit, policy, audit period and approved contract obligation; asserts failed-source and policy invalidation, affected commitments, stale reuse and both answer exports, trust export, publication and queued-mail refusal; prepares current cited revisions, requires new named exact decisions, isolates recipients and retains the original external versions, successor links and review history through inactive restore. The pinned-clock cadence check independently refuses stale passing evidence. `tests/trust-browser.mjs` asserts the current, invalidated and refreshed answer and trust screens at 1440 and 390, including the icon-control audit. `tests/agent.mjs` retains recursive prior-answer and approved-report invalidation. Source selection and freshness semantics are in `docs/CUSTOMER-PROMISES.md`; future ANSWER-002 and ANSWER-003 doors inherit these gates.
 
   Current evidence: —.
 
@@ -462,4 +462,4 @@ The current public-door suites are `tests/evidence.mjs` (native owner access, re
 
 For each new user flow, build rounds must exercise the named public door, persistence/restart, refusal/error path, actor permissions and final state in the journey. Inspect each changed screen at 1440 and 390 with realistic data; provider acknowledgments are separate from source truth and human decisions. Certification, independent assessor judgment, legal applicability, outside-provider reliability and copies already downloaded remain the declared boundaries in BOUNDARY-001, rather than fabricated acceptance results.
 
-**Clause totals:** 80 — 46 done / 13 partial / 21 missing.
+**Clause totals:** 80 — 47 done / 13 partial / 20 missing.

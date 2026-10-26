@@ -1,3 +1,4 @@
+import { assertDependencies,carryDependencies,type Replacement } from '../agent/promises'
 import type { Bindings } from '../../auth.server'
 import { auditStatement,text,type Actor,type Input } from '../door'
 import { boundedBody,MAX_FILE,Refusal } from '../upload'
@@ -33,7 +34,8 @@ export function extractiveAnswers(questions:Question[],selected:Source[]):Answer
 })}
 export async function draftOf(env:Bindings,q:string,id:string){const r=await env.DB.prepare('SELECT * FROM questionnaire_drafts WHERE id=? AND questionnaire_id=?').bind(id,q).first<Draft>();if(!r)throw new Refusal('Draft not found.',404);return r}
 const fingerprint=(s:string)=>sha(new TextEncoder().encode(s))
-export async function appendDraft(env:Bindings,q:string,answers:Answer[],actor:Actor,now:Date){
+export async function appendDraft(env:Bindings,q:string,answers:Answer[],actor:Actor,now:Date,replacement?:Replacement){
+ const previous=await env.DB.prepare('SELECT id FROM questionnaire_drafts WHERE questionnaire_id=? ORDER BY revision DESC LIMIT 1').bind(q).first<{id:string}>()
  const row=await questionnaire(env,q),questions=JSON.parse(row.questions_json) as Question[]
  if(answers.length!==questions.length||answers.some((a,i)=>{
   if(a.id!==questions[i].id)return true
@@ -45,9 +47,9 @@ export async function appendDraft(env:Bindings,q:string,answers:Answer[],actor:A
  }))throw new Refusal('Each answer needs exact cited excerpts or an explicit reviewed mapping to its declared choice format; otherwise flag it.')
  await assertSources(env,answers.flatMap(a=>a.citations),now)
  const stats={cited:answers.filter(a=>a.state==='cited').length,flagged:answers.filter(a=>a.state==='flagged').length,conflicting:answers.filter(a=>a.state==='conflicting').length,total:questions.length},snapshot=JSON.stringify({questions,answers,stats,template_sha256:row.sha256}),hash=await fingerprint(snapshot),id=crypto.randomUUID()
- await env.DB.batch([env.DB.prepare('INSERT INTO questionnaire_drafts SELECT ?,?,COALESCE(max(revision),0)+1,?,?,?,? FROM questionnaire_drafts WHERE questionnaire_id=?').bind(id,q,snapshot,hash,actor.name,now.toISOString(),q),auditStatement(env,actor,'questionnaire.drafted','questionnaire:'+q,now,'succeeded',JSON.stringify(stats),{revision:hash})]);return draftOf(env,q,id)
+ await env.DB.batch([env.DB.prepare('INSERT INTO questionnaire_drafts SELECT ?,?,COALESCE(max(revision),0)+1,?,?,?,? FROM questionnaire_drafts WHERE questionnaire_id=?').bind(id,q,snapshot,hash,actor.name,now.toISOString(),q),...(previous?[carryDependencies(env,'answer',previous.id,id,replacement)]:[]),auditStatement(env,actor,'questionnaire.drafted','questionnaire:'+q,now,'succeeded',JSON.stringify(stats),{revision:hash})]);return draftOf(env,q,id)
 }
-export async function generateDraft(env:Bindings,q:string,actor:Actor,now:Date){return appendDraft(env,q,extractiveAnswers(JSON.parse((await questionnaire(env,q)).questions_json),await sources(env,now)),actor,now)}
+export async function generateDraft(env:Bindings,q:string,actor:Actor,now:Date,replacement?:Replacement){return appendDraft(env,q,extractiveAnswers(JSON.parse((await questionnaire(env,q)).questions_json),await sources(env,now)),actor,now,replacement)}
 export async function editDraft(env:Bindings,q:string,id:string,input:Input,actor:Actor,now:Date){
  const row=await draftOf(env,q,id);if(input.snapshot_hash!==row.snapshot_hash)throw new Refusal('Review the exact draft.',409)
  const s=JSON.parse(row.snapshot_json),answer=s.answers.find((a:Answer)=>a.id===input.question_id),question=s.questions.find((q:Question)=>q.id===input.question_id)
@@ -66,14 +68,14 @@ export async function editDraft(env:Bindings,q:string,id:string,input:Input,acto
  }
  return appendDraft(env,q,s.answers,actor,now)
 }
-export async function approveDraft(env:Bindings,q:string,id:string,input:Input,actor:Actor,now:Date){const row=await draftOf(env,q,id),snapshot=JSON.parse(row.snapshot_json),reviewer=await requirePerson(env,input.reviewer_person_id,'named security/legal reviewer'),recipient=text(input,'recipient',254),expiry=text(input,'expires_on',10),reason=text(input,'reason',1000)
+export async function approveDraft(env:Bindings,q:string,id:string,input:Input,actor:Actor,now:Date){const dependencies=await assertDependencies(env,'answer',id,now,input);const row=await draftOf(env,q,id),snapshot=JSON.parse(row.snapshot_json),reviewer=await requirePerson(env,input.reviewer_person_id,'named security/legal reviewer'),recipient=text(input,'recipient',254),expiry=text(input,'expires_on',10),reason=text(input,'reason',1000)
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)||!validDate(expiry)||expiry<now.toISOString().slice(0,10))throw new Refusal('Name the exact recipient email and a current or future expiry date.')
  if(input.snapshot_hash!==row.snapshot_hash||await fingerprint(row.snapshot_json)!==row.snapshot_hash||(await env.DB.prepare('SELECT max(revision) AS n FROM questionnaire_drafts WHERE questionnaire_id=?').bind(q).first<{n:number}>())?.n!==row.revision)throw new Refusal('Review the exact latest answer set.',409)
  await assertSources(env,snapshot.answers.flatMap((a:Answer)=>a.citations),now)
  if(await env.DB.prepare('SELECT 1 FROM questionnaire_approvals WHERE draft_id=?').bind(id).first())throw new Refusal('This draft is already approved.',409)
- await env.DB.batch([env.DB.prepare('INSERT INTO questionnaire_approvals VALUES(?,?,?,?,?,?,?,?)').bind(id,row.snapshot_hash,reviewer.id,recipient,expiry,reason,actor.name,now.toISOString()),auditStatement(env,actor,'questionnaire.approved','questionnaire:'+q,now,'succeeded','recipient '+recipient+'; reviewer '+reviewer.name,{reason,revision:row.snapshot_hash})]);return {approved:true}
+ const saved=await env.DB.batch([env.DB.prepare("INSERT INTO questionnaire_approvals SELECT ?,?,?,?,?,?,?,? WHERE (SELECT COUNT(*) FROM promise_dependencies WHERE subject_kind='answer' AND subject_id=?)=? AND NOT EXISTS(SELECT 1 FROM promise_dependencies WHERE subject_kind='answer' AND subject_id=? AND id NOT IN (SELECT value FROM json_each(?)))").bind(id,row.snapshot_hash,reviewer.id,recipient,expiry,reason,actor.name,now.toISOString(),id,dependencies.rows.length,id,JSON.stringify(dependencies.rows.map(r=>r.id))),auditStatement(env,actor,'questionnaire.approved','questionnaire:'+q,now,'succeeded','recipient '+recipient+'; reviewer '+reviewer.name,{reason,revision:row.snapshot_hash})]);if(!saved[0].meta.changes)throw new Refusal('Dependencies changed during approval. Review again.',409);return {approved:true}
 }
-export async function approvedExport(env:Bindings,q:string,id:string,recipient:string,actor:Actor,now:Date){const row=await draftOf(env,q,id),approval=await env.DB.prepare('SELECT * FROM questionnaire_approvals WHERE draft_id=?').bind(id).first<any>(),snapshot=JSON.parse(row.snapshot_json)
+export async function approvedExport(env:Bindings,q:string,id:string,recipient:string,actor:Actor,now:Date){await assertDependencies(env,'answer',id,now);const row=await draftOf(env,q,id),approval=await env.DB.prepare('SELECT * FROM questionnaire_approvals WHERE draft_id=?').bind(id).first<any>(),snapshot=JSON.parse(row.snapshot_json)
  if(!approval||approval.snapshot_hash!==row.snapshot_hash||approval.recipient!==recipient||approval.expires_on<now.toISOString().slice(0,10))throw new Refusal('An unexpired exact approval for this recipient is required.',409)
  if((await env.DB.prepare('SELECT max(revision) AS n FROM questionnaire_drafts WHERE questionnaire_id=?').bind(q).first<{n:number}>())?.n!==row.revision)throw new Refusal('A newer draft needs its own decision.',409)
  await assertSources(env,snapshot.answers.flatMap((a:Answer)=>a.citations),now)

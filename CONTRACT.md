@@ -837,8 +837,8 @@ ACCESS-001 updated 20 October 2026 with clause-named campaign, revocation-eviden
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 6 | 2 | 0 | 8 |
-| Target and push further | 40 | 11 | 21 | 72 |
-| All | 46 | 13 | 21 | 80 |
+| Target and push further | 41 | 11 | 20 | 72 |
+| All | 47 | 13 | 20 | 80 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -917,7 +917,7 @@ ACCESS-001 updated 20 October 2026 with clause-named campaign, revocation-eviden
 | `AGENT-002` | Prove operation across the audit period | push-further | done | `src/evidence/agent/period-analysis.ts`; `src/evidence/agent/period-http.ts`; `src/evidence/agent/period-storage.ts`; `src/evidence/agent/period-archive.ts`; `tests/agent.mjs`; `tests/helpers/period-agent-journey.mjs`; `tests/period-agent-browser.mjs` | Current source doors conform; named future source clauses inherit correlation and honest unknown coverage before shipping. No model or provider event validation is claimed. |
 | `AGENT-003` | Investigate, fix narrowly and re-test the real system | push-further | missing |  | No implementing path |
 | `AGENT-004` | Maintain collectors without manufacturing evidence | push-further | missing |  | No implementing path |
-| `AGENT-005` | Keep customer promises current | push-further | missing |  | No implementing path |
+| `AGENT-005` | Keep customer promises current | push-further | done | `tests/trust.mjs` — promiseJourney in `tests/helpers/promise-journey.mjs`, for both Resend and SendGrid: exact control, exhibit, policy, audit-period and customer-obligation dependencies; failed and stale evidence and changed policy invalidation; affected commitments and cited revisions; stale answer reuse, buyer-template and citation export, trust export, publication and queued-mail refusal; fresh named human decisions; exact recipient isolation, retained external versions and successor history; inactive custody restore. `tests/trust-browser.mjs` — promise-current, promise-invalidated and promise-refreshed answer and trust screens at 1440 and 390, with icon-control audit. `tests/agent.mjs` — answerJourney retains recursive prior-answer and SOC-report invalidation. | None for the current native doors. Dependencies are exact owner-selected source relationships, not inferred legal equivalence. AUTH-001 retains future reviewer roles; ANSWER-002 and ANSWER-003 inherit the same freshness, exact human decision and recipient gates before their new doors ship. `docs/CUSTOMER-PROMISES.md` documents the current semantics. |
 | `AGENT-006` | Tailor policies, risks and structured obligations | push-further | partial | `src/evidence/agent/tailoring-storage.ts`; `src/evidence/agent/tailoring-http.ts`; `tests/agent.mjs` and tailoringJourney in `tests/helpers/tailoring-journey.mjs` (mapping decisions, deterministic cited preparation, inventory, diffs, ambiguity, exact effects and full populated restore); assuranceBrowser in `tests/helpers/assurance-browser.mjs` through `tests/period-agent-browser.mjs` (all corresponding owner screens at 1440/390) | Landed: deterministic cited preparation, exact-hash human decisions, atomic downstream records, CONTROL-001 inheritance. Not yet built: agent interpretation that drafts policy/risk/obligation text, assumptions and conflicts from the sources; reviewer role check. |
 | `AGENT-007` | Check uploaded and captured evidence before the auditor sees it | push-further | missing |  | No implementing path |
 | `AI-001` | AI inventory and governance | push-further | missing |  | No implementing path |

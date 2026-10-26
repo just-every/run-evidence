@@ -1,3 +1,4 @@
+import { assertDependencies } from '../agent/promises'
 import type { Bindings } from '../../auth.server'
 import { operatorMail } from '../../mail.server.mjs'
 import { requireCapability, capabilityAllowed } from '../archive/capabilities'
@@ -51,6 +52,10 @@ export async function flushTrustDeliveries(env:Bindings,now:Date,updateId?:strin
   const update=await env.DB.prepare('SELECT * FROM trust_updates WHERE id=? AND published_at IS NOT NULL AND notification_approved=1').bind(row.update_id).first<Update>()
   if(!update||!await eligible(env,row,update,now)) {
    await env.DB.prepare("UPDATE trust_deliveries SET state='failed',detail='Suppressed: subscription or customer authority ended before dispatch.',outcome_at=? WHERE id=? AND attempted_at IS NULL").bind(now.toISOString(),row.id).run();continue
+  }
+  try{await assertDependencies(env,'trust',update.id,now)}catch(error){
+   if(!(error instanceof Refusal))throw error
+   await env.DB.prepare("UPDATE trust_deliveries SET state='failed',detail='Suppressed: customer-promise dependency changed; a fresh revision and approval are required.',outcome_at=? WHERE id=? AND attempted_at IS NULL").bind(now.toISOString(),row.id).run();continue
   }
   await sendMessage(env,row,update.title,update.body+'\n\nCategory: '+update.category+'\nPublished: '+update.published_at+'\nTrust center: '+env.AUTH_ORIGIN+'/trust',now);processed++
  }
