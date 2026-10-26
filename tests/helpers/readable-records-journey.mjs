@@ -1,8 +1,11 @@
+import { fileURLToPath } from 'node:url'
 import { readableRecordsBrowser } from './readable-records-browser.mjs'
 import assert from 'node:assert/strict'
 import {runtime} from './runtime.mjs'
 export async function readableRecordsJourney({ browser = false } = {}) {
+console.log('Preparing native readable-record fixtures')
 const app=await runtime(), failures=[]
+console.log('Native readable-record runtime ready')
 let ownerCookie
 const post=async(path,body,status=201)=>{const r=await app.fetch(path,{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify(body)});assert.equal(r.status,status,path);return r.json()}
 const check=async(name,fn)=>{try{await fn();console.log('PASS '+name)}catch(e){failures.push(name);console.log('FAIL '+name)}}
@@ -38,3 +41,5 @@ try{
  if (browser) await readableRecordsBrowser(app,ownerCookie,{document,receipt,review})
 }finally{await app.close()}
 }
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) await readableRecordsJourney({ browser: true })
