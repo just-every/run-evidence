@@ -8149,7 +8149,7 @@
       "executable": false
     },
     "tests/live/own-hosted-tail.mjs": {
-      "sha256": "5b0e0c1b588e274841c6a22dd65ed4065d58241fcb4bab2bbdd8c71a444e9292",
+      "sha256": "21fef1a71057f61aa8b8205b7303ed279ee8c60226be295d7cc5bec161962e4b",
       "executable": false
     },
     "tests/live/own-hosted.mjs": {

@@ -1,9 +1,12 @@
 // Opt-in provider diagnostics for the live journey. Never retain request context.
+import {createRequire} from 'node:module'
+const providerRequire=createRequire(import.meta.resolve('@cloudflare/vite-plugin'))
+const WebSocket=createRequire(providerRequire.resolve('miniflare'))('ws')
 export async function archiveDiagnostics(cf,worker,clean){
  const path='/workers/scripts/'+worker+'/tails',record=await cf(path,{method:'POST',body:{filters:[]}})
  const socket=new WebSocket(record.url,'trace-v1')
- socket.addEventListener('message',async event=>{
-  const text=typeof event.data==='string'?event.data:await event.data.text(),trace=JSON.parse(text)
+ socket.on('message',data=>{
+  const trace=JSON.parse(data.toString())
   console.log(JSON.stringify({providerTrace:true,outcome:trace.outcome,logCount:trace.logs?.length??0,exceptionCount:trace.exceptions?.length??0}))
   for(const line of trace.logs??[]){
    const parts=Array.isArray(line.message)?line.message:[line.message],message=parts.filter(x=>typeof x==='string').join(' ')
@@ -14,7 +17,7 @@ export async function archiveDiagnostics(cf,worker,clean){
  try{
   await new Promise((resolve,reject)=>{
    const timeout=setTimeout(()=>reject(Error('Provider diagnostic stream did not open')),20000)
-   socket.addEventListener('open',()=>{clearTimeout(timeout);socket.send(JSON.stringify({debug:false}));resolve()},{once:true})
+   socket.addEventListener('open',()=>{clearTimeout(timeout);socket.send(JSON.stringify({debug:false}),{binary:false,compress:false,mask:false,fin:true},error=>error?reject(error):resolve())},{once:true})
    socket.addEventListener('error',()=>{clearTimeout(timeout);reject(Error('Provider diagnostic stream failed'))},{once:true})
   })
  }catch(error){socket.close();await cf(path+'/'+record.id,{method:'DELETE'});throw error}
