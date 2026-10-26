@@ -21,20 +21,26 @@ export function baseRow(table:string,row:Record<string,any>) {
 }
 export async function validateRelationships(env:Store,id:string) {
  const t=(name:string)=>staged(id,name)
- const invalid=async(sql:string,message:string)=>{if(await env.DB.prepare(sql).first())fail(message)}
- await invalid(`SELECT 1 FROM ${t('exhibits')} e WHERE NOT EXISTS(SELECT 1 FROM ${t('receipts')} r WHERE r.exhibit_id=e.id) LIMIT 1`,'Exhibit has no immutable receipt.')
- await invalid(`SELECT 1 FROM ${t('receipts')} r JOIN ${t('receipts')} old ON old.id=r.supersedes WHERE old.requirement_id<>r.requirement_id OR old.id=r.id LIMIT 1`,'Invalid receipt supersession.')
- await invalid(`WITH RECURSIVE chain(start,id) AS (SELECT id,supersedes FROM ${t('receipts')} WHERE supersedes IS NOT NULL UNION SELECT chain.start,r.supersedes FROM chain JOIN ${t('receipts')} r ON r.id=chain.id WHERE r.supersedes IS NOT NULL) SELECT 1 FROM chain WHERE start=id LIMIT 1`,'Cyclic receipt supersession.')
- await invalid(`SELECT 1 FROM ${t('review_folders')} f WHERE NOT EXISTS(SELECT 1 FROM ${t('review_folder_controls')} c WHERE c.folder_id=f.id) LIMIT 1`,'Review folder has no selected controls.')
- await invalid(`SELECT object_key FROM (${fileQuery(id)}) GROUP BY object_key HAVING count(*)<>1 LIMIT 1`,'Duplicate original object key.')
- await invalid(`SELECT 1 FROM (${fileQuery(id)}) expected LEFT JOIN portable_files f ON f.session_id='${id}' AND f.object_key=expected.object_key WHERE f.ordinal IS NULL OR f.size<>expected.size OR f.sha256<>expected.sha256 LIMIT 1`,'Original file inventory contradicts custody.')
- await invalid(`SELECT 1 FROM portable_files f WHERE session_id='${id}' AND NOT EXISTS(SELECT 1 FROM (${fileQuery(id)}) e WHERE e.object_key=f.object_key) LIMIT 1`,'Unlisted original file.')
- await invalid(`SELECT 1 FROM ${t('import_reviews')} r WHERE r.object_key<>'import-sources/'||r.id OR r.archive_sha256<>json_extract(r.summary_json,'$.archive_sha256') OR (r.job_id IS NOT NULL AND r.approved_at IS NULL) LIMIT 1`,'Invalid import original custody.')
- await invalid(`SELECT 1 FROM ${t('import_additions')} a WHERE a.kind NOT IN ('control','receipt','record') OR json_extract(a.value_json,'$.review_id') IS NOT a.review_id OR (a.kind='record' AND (json_extract(a.value_json,'$.origin') IS NOT 'imported' OR json_extract(a.value_json,'$.verified') IS NOT 0 OR json_extract(a.value_json,'$.source_id') IS NULL OR json_extract(a.value_json,'$.class') NOT IN (${classIds.map(c=>`'${c}'`).join(',')}))) OR (a.kind<>'record' AND json_extract(a.value_json,CASE a.kind WHEN 'control' THEN '$.control_id' ELSE '$.receipt_id' END) IS NOT a.id) LIMIT 1`,'Invalid retained import addition.')
- await invalid(`SELECT 1 FROM ${t('import_active')} a JOIN ${t('import_additions')} b ON a.kind=b.kind AND a.id=b.id WHERE a.value_json IS NOT b.value_json OR typeof(a.revision)<>'text' LIMIT 1`,'Invalid import active custody.')
- await invalid(`SELECT 1 FROM ${t('import_additions')} a LEFT JOIN ${t('controls')} c ON c.id=a.id LEFT JOIN ${t('requirements')} r ON r.id=json_extract(a.value_json,'$.requirement_id') WHERE a.kind='control' AND (c.id IS NULL OR r.id IS NULL OR c.name IS NOT json_extract(a.value_json,'$.name') OR c.group_name IS NOT json_extract(a.value_json,'$.group') OR r.control_id IS NOT c.id OR r.name IS NOT json_extract(a.value_json,'$.proof') OR r.cadence IS NOT json_extract(a.value_json,'$.cadence')) LIMIT 1`,'Import control custody contradicts native records.')
- await invalid(`SELECT 1 FROM ${t('import_additions')} a LEFT JOIN ${t('receipts')} r ON r.id=a.id LEFT JOIN ${t('exhibits')} e ON e.id=json_extract(a.value_json,'$.exhibit_id') WHERE a.kind='receipt' AND (r.id IS NULL OR e.id IS NULL OR r.origin<>'imported' OR r.sha256 IS NOT json_extract(a.value_json,'$.sha256') OR r.requirement_id IS NOT json_extract(a.value_json,'$.requirement_id') OR r.exhibit_id IS NOT e.id OR e.object_key IS NOT json_extract(a.value_json,'$.object_key') OR e.size IS NOT json_extract(a.value_json,'$.size')) LIMIT 1`,'Import receipt custody contradicts native records.')
- await invalid(`SELECT 1 FROM ${t('resources')} WHERE source_kind='source-reported' GROUP BY type,unique_id HAVING count(*)>1 LIMIT 1`,'Duplicate public API resource identity.')
+ const checks:{statement:D1PreparedStatement;message:string}[]=[]
+ const invalid=(sql:string,message:string)=>{checks.push({statement:env.DB.prepare(sql),message})}
+ invalid(`SELECT 1 FROM ${t('exhibits')} e WHERE NOT EXISTS(SELECT 1 FROM ${t('receipts')} r WHERE r.exhibit_id=e.id) LIMIT 1`,'Exhibit has no immutable receipt.')
+ invalid(`SELECT 1 FROM ${t('receipts')} r JOIN ${t('receipts')} old ON old.id=r.supersedes WHERE old.requirement_id<>r.requirement_id OR old.id=r.id LIMIT 1`,'Invalid receipt supersession.')
+ invalid(`WITH RECURSIVE chain(start,id) AS (SELECT id,supersedes FROM ${t('receipts')} WHERE supersedes IS NOT NULL UNION SELECT chain.start,r.supersedes FROM chain JOIN ${t('receipts')} r ON r.id=chain.id WHERE r.supersedes IS NOT NULL) SELECT 1 FROM chain WHERE start=id LIMIT 1`,'Cyclic receipt supersession.')
+ invalid(`SELECT 1 FROM ${t('review_folders')} f WHERE NOT EXISTS(SELECT 1 FROM ${t('review_folder_controls')} c WHERE c.folder_id=f.id) LIMIT 1`,'Review folder has no selected controls.')
+ invalid(`SELECT object_key FROM (${fileQuery(id)}) GROUP BY object_key HAVING count(*)<>1 LIMIT 1`,'Duplicate original object key.')
+ invalid(`SELECT 1 FROM (${fileQuery(id)}) expected LEFT JOIN portable_files f ON f.session_id='${id}' AND f.object_key=expected.object_key WHERE f.ordinal IS NULL OR f.size<>expected.size OR f.sha256<>expected.sha256 LIMIT 1`,'Original file inventory contradicts custody.')
+ invalid(`SELECT 1 FROM portable_files f WHERE session_id='${id}' AND NOT EXISTS(SELECT 1 FROM (${fileQuery(id)}) e WHERE e.object_key=f.object_key) LIMIT 1`,'Unlisted original file.')
+ invalid(`SELECT 1 FROM ${t('import_reviews')} r WHERE r.object_key<>'import-sources/'||r.id OR r.archive_sha256<>json_extract(r.summary_json,'$.archive_sha256') OR (r.job_id IS NOT NULL AND r.approved_at IS NULL) LIMIT 1`,'Invalid import original custody.')
+ invalid(`SELECT 1 FROM ${t('import_additions')} a WHERE a.kind NOT IN ('control','receipt','record') OR json_extract(a.value_json,'$.review_id') IS NOT a.review_id OR (a.kind='record' AND (json_extract(a.value_json,'$.origin') IS NOT 'imported' OR json_extract(a.value_json,'$.verified') IS NOT 0 OR json_extract(a.value_json,'$.source_id') IS NULL OR json_extract(a.value_json,'$.class') NOT IN (${classIds.map(c=>`'${c}'`).join(',')}))) OR (a.kind<>'record' AND json_extract(a.value_json,CASE a.kind WHEN 'control' THEN '$.control_id' ELSE '$.receipt_id' END) IS NOT a.id) LIMIT 1`,'Invalid retained import addition.')
+ invalid(`SELECT 1 FROM ${t('import_active')} a JOIN ${t('import_additions')} b ON a.kind=b.kind AND a.id=b.id WHERE a.value_json IS NOT b.value_json OR typeof(a.revision)<>'text' LIMIT 1`,'Invalid import active custody.')
+ invalid(`SELECT 1 FROM ${t('import_additions')} a LEFT JOIN ${t('controls')} c ON c.id=a.id LEFT JOIN ${t('requirements')} r ON r.id=json_extract(a.value_json,'$.requirement_id') WHERE a.kind='control' AND (c.id IS NULL OR r.id IS NULL OR c.name IS NOT json_extract(a.value_json,'$.name') OR c.group_name IS NOT json_extract(a.value_json,'$.group') OR r.control_id IS NOT c.id OR r.name IS NOT json_extract(a.value_json,'$.proof') OR r.cadence IS NOT json_extract(a.value_json,'$.cadence')) LIMIT 1`,'Import control custody contradicts native records.')
+ invalid(`SELECT 1 FROM ${t('import_additions')} a LEFT JOIN ${t('receipts')} r ON r.id=a.id LEFT JOIN ${t('exhibits')} e ON e.id=json_extract(a.value_json,'$.exhibit_id') WHERE a.kind='receipt' AND (r.id IS NULL OR e.id IS NULL OR r.origin<>'imported' OR r.sha256 IS NOT json_extract(a.value_json,'$.sha256') OR r.requirement_id IS NOT json_extract(a.value_json,'$.requirement_id') OR r.exhibit_id IS NOT e.id OR e.object_key IS NOT json_extract(a.value_json,'$.object_key') OR e.size IS NOT json_extract(a.value_json,'$.size')) LIMIT 1`,'Import receipt custody contradicts native records.')
+ invalid(`SELECT 1 FROM ${t('resources')} WHERE source_kind='source-reported' GROUP BY type,unique_id HAVING count(*)>1 LIMIT 1`,'Duplicate public API resource identity.')
+ for(let offset=0;offset<checks.length;offset+=100){
+  const group=checks.slice(offset,offset+100)
+  const results=await env.DB.batch(group.map(check=>check.statement))
+  for(let i=0;i<group.length;i++)if(results[i].results.length)fail(group[i].message)
+ }
  await validatePlans(env,id)
  await validatePeriodInvestigations(env,id)
  await validateFeatureRecords(env,id)
@@ -44,11 +50,17 @@ export async function validateRelationships(env:Store,id:string) {
  for await(const proposals of pages(env,'agent_proposals',t('agent_proposals')))for(const p of proposals){
   let input:any;try{input=JSON.parse(String(p.input_json))}catch{fail('Invalid proposal input.')}
   if(!Array.isArray(input.control_ids)||input.control_ids.length>500)fail('Invalid proposal scope.')
-  const controls=(await env.DB.prepare(`SELECT * FROM ${t('controls')} WHERE id IN (SELECT value FROM json_each(?))`).bind(JSON.stringify(input.control_ids)).all<Row>()).results
-  const token=await env.DB.prepare(`SELECT * FROM ${t('agent_tokens')} WHERE id=?`).bind(p.token_id).first<Row>()
-  const decision=await env.DB.prepare(`SELECT * FROM ${t('agent_decisions')} WHERE proposal_id=?`).bind(p.id).first<Row>()
-  const folders=decision?.folder_id?(await env.DB.prepare(`SELECT * FROM ${t('review_folders')} WHERE id=?`).bind(decision.folder_id).all<Row>()).results:[]
-  const selections=decision?.folder_id?(await env.DB.prepare(`SELECT * FROM ${t('review_folder_controls')} WHERE folder_id=?`).bind(decision.folder_id).all<Row>()).results:[]
+  const [controlRows,tokenRows,decisionRows]=await env.DB.batch<Row>([
+   env.DB.prepare(`SELECT * FROM ${t('controls')} WHERE id IN (SELECT value FROM json_each(?))`).bind(JSON.stringify(input.control_ids)),
+   env.DB.prepare(`SELECT * FROM ${t('agent_tokens')} WHERE id=?`).bind(p.token_id),
+   env.DB.prepare(`SELECT * FROM ${t('agent_decisions')} WHERE proposal_id=?`).bind(p.id),
+  ])
+  const controls=controlRows.results,token=tokenRows.results[0],decision=decisionRows.results[0]
+  const [folderRows,selectionRows]=decision?.folder_id?await env.DB.batch<Row>([
+   env.DB.prepare(`SELECT * FROM ${t('review_folders')} WHERE id=?`).bind(decision.folder_id),
+   env.DB.prepare(`SELECT * FROM ${t('review_folder_controls')} WHERE folder_id=?`).bind(decision.folder_id),
+  ]):[]
+  const folders=folderRows?.results??[],selections=selectionRows?.results??[]
   await validateAgentArchive({...empty,controls,agent_tokens:token?[token]:[],agent_proposals:[p],agent_decisions:decision?[decision]:[],review_folders:folders,review_folder_controls:selections})
  }
 }

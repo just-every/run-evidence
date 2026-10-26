@@ -4765,7 +4765,7 @@
       "executable": false
     },
     "src/evidence/archive/portable-export.ts": {
-      "sha256": "a7630f28a3e448615b84373d902fcff4e60be1ea510d7e8af57d649a508bc766",
+      "sha256": "389c84bb0cc15bd3ae96b99e51185868f640690f8687a10e8ffef191b811d9d8",
       "executable": false
     },
     "src/evidence/archive/portable-restore.ts": {
@@ -4777,11 +4777,11 @@
       "executable": false
     },
     "src/evidence/archive/registry.ts": {
-      "sha256": "f255f1726098e35a008e85ff9059ed3cb977afd59e6bd2c52ea314fd53fef8d1",
+      "sha256": "4b4bd0303828f3eefb0fcf19eacb33ce041644c4790e7f161cf31adee90aa7dc",
       "executable": false
     },
     "src/evidence/archive/relationships.ts": {
-      "sha256": "e3558d6b2cea8189079f94443540bc98ccf71dd8b8326bb3d6851f096ab05fa1",
+      "sha256": "003b89fcf5fce68ac6e26b20d4e59e03b64ec732072313726672a9c0b3b67273",
       "executable": false
     },
     "src/evidence/archive/restore.ts": {
@@ -4801,7 +4801,7 @@
       "executable": false
     },
     "src/evidence/archive/staging.ts": {
-      "sha256": "b40a59daaad2f58adc71ae8118e4d63a6925b2f675123d6eb5783b86c16e46c9",
+      "sha256": "d1da0929f8b1f9d785a0a91bc1c0c21e4b1829dd64d73c6c92327ce9962b857e",
       "executable": false
     },
     "src/evidence/archive/validate.ts": {
