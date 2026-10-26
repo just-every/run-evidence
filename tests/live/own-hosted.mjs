@@ -5,6 +5,7 @@ import {randomBytes} from 'node:crypto'
 import {stat} from 'node:fs/promises'
 import {join} from 'node:path'
 import {hostedSession,restoreLocalArchive} from './own-hosted-http.mjs'
+import {archiveDiagnostics} from './own-hosted-tail.mjs'
 
 const environment='own-i816-20261026',worker='evidence-'+environment
 const account='b20c0ca9cab0c2b70e13d7cf724b89bd'
@@ -20,11 +21,11 @@ async function rer(args){
  console.log(clean(output))
  assert.equal(code,0,'rer deploy '+args.join(' '))
 }
-async function cf(path){
- const r=await fetch('https://api.cloudflare.com/client/v4/accounts/'+account+path,{headers:{authorization:'Bearer '+env.CLOUDFLARE_API_TOKEN}})
+async function cf(path,{method='GET',body}={}){
+ const r=await fetch('https://api.cloudflare.com/client/v4/accounts/'+account+path,{method,headers:{authorization:'Bearer '+env.CLOUDFLARE_API_TOKEN,...(body?{'content-type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})})
  const body=await r.json();assert.equal(body.success,true,'Cloudflare readback '+path);return body.result
 }
-let deployed=false
+let deployed=false,closeDiagnostics
 try{
  await rer(['--owner-name','Evidence acceptance']);deployed=true
  const settings=await cf('/workers/scripts/'+worker+'/settings')
@@ -36,10 +37,12 @@ try{
  const domain=await cf('/workers/subdomain'),origin='https://'+worker+'.'+domain.subdomain+'.workers.dev'
  console.log(JSON.stringify({deployed:true,worker,databaseId:db.id,database:database.name,bucket:bucket.bucket_name,origin,account}))
  const session=await hostedSession(origin,env)
+ if(process.env.EVIDENCE_OWN_DIAGNOSTICS==='1')closeDiagnostics=await archiveDiagnostics(cf,worker,clean)
  const archive=join(env.EVIDENCE_OWN_ARTIFACTS,'source.evidence'),deadline=Date.now()+90*60000
  while(true){try{await stat(archive);break}catch(error){if(error.code!=='ENOENT')throw error;if(Date.now()>deadline)throw Error('Ubuntu local archive did not become available');await new Promise(resolve=>setTimeout(resolve,10000))}}
  await restoreLocalArchive(session,env.EVIDENCE_OWN_ARTIFACTS)
 }finally{
+ if(closeDiagnostics)await closeDiagnostics()
  // The CLI owns these exact disposable resources, including partial deployments.
  try{await rer(['--remove','--yes']);console.log(JSON.stringify({cleanup:true,worker,deployed}))}catch(error){console.log('CLEANUP FAILED: '+clean(error.message));throw error}
 }
