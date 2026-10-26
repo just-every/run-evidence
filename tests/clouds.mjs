@@ -1,3 +1,4 @@
+import { step } from './helpers/step.mjs'
 import { gunzipSync } from 'node:zlib'
 // Google Cloud and Microsoft Azure connections through the owner's doors and
 // the Cron Trigger. The clouds are the only fakes: network-edge stand-ins for
@@ -94,49 +95,51 @@ const testOf = async id => (await get('/api/tests')).tests.find(t => t.catalogue
 const results = async id => Object.fromEntries((await get('/api/tests/' + (await testOf(id)).id)).latest.map(o => [o.display_name, o.result]))
 const conn = {}
 try {
- await scenario('Google Cloud and Azure are kept only after a real read that lists projects or subscriptions; credentials never appear', async () => {
-  await app.signin()
-  await owner('/api/connections', { provider: 'gcp', secret: JSON.stringify({ client_email: SA, private_key: pair().privateKey }) }, 400)
-  await owner('/api/connections', { provider: 'azure', tenant_id: TENANT, client_id: CLIENT, secret: 'wrong' }, 400)
-  conn.gcp = await owner('/api/connections', { provider: 'gcp', secret: gcpKey })
-  conn.azure = await owner('/api/connections', { provider: 'azure', tenant_id: TENANT, client_id: CLIENT, secret: AZ_SECRET })
-  assert.equal(conn.gcp.account, SA); assert.deepEqual(conn.gcp.scopes, g.projects); assert.equal(conn.azure.scopes.length, 2)
-  const visible = JSON.stringify(await get('/api/connections')) + await (await app.fetch('/app/connections/' + conn.gcp.id)).text() + JSON.stringify((await app.db.prepare('SELECT * FROM product_audit').all()).results)
-  assert.ok(!visible.includes('BEGIN PRIVATE KEY') && !visible.includes(AZ_SECRET))
-  const enabled = (await get('/api/tests')).tests.map(t => t.catalogue_id).filter(Boolean)
-  assert.ok(['gcp.bucket-public', 'gcp.firewall-admin-ports', 'azure.nsg-admin-ports', 'azure.storage-https'].every(id => enabled.includes(id))); assert.ok(!enabled.includes('gcp.mfa') && !enabled.includes('azure.encryption-at-rest'))
- })
- await scenario('Hourly reads cover every project and subscription class by class: misconfigurations fail with remediation, a denied class is a gap and unknown, a disabled API is noted', async () => {
-  await app.tick()
-  const gRun = (await get('/api/connections/' + conn.gcp.id)).runs[0], gCov = JSON.parse(gRun.coverage_json)
-  assert.equal(gRun.outcome, 'partial'); assert.deepEqual(gCov.gaps.map(x => `${x.account} ${x.class}`), ['northstar-sandbox IAM policy and audit logging']); assert.match(gCov.notes.join(), /northstar-sandbox: Firewall rules API not enabled/)
-  assert.deepEqual(await results('gcp.public-iam'), { 'Northstar prod (northstar-prod)': 'fail', 'Northstar sandbox (northstar-sandbox)': 'unknown' })
-  assert.deepEqual(await results('gcp.bucket-public'), { 'prod-assets (northstar-prod)': 'fail', 'prod-logs (northstar-prod)': 'pass' })
-  assert.deepEqual(Object.values(await results('gcp.sa-key-age')).sort(), ['fail', 'pass'])
-  for (const id of ['gcp.sql-backups', 'gcp.sql-public', 'gcp.sql-ssl']) assert.deepEqual(await results(id), { 'prod-db (northstar-prod)': 'fail' }, id)
-  assert.deepEqual(await results('gcp.firewall-admin-ports'), { 'allow-https (northstar-prod)': 'pass', 'allow-ssh (northstar-prod)': 'fail' })
-  assert.equal((await get('/api/connections/' + conn.azure.id)).runs[0].outcome, 'complete')
-  const subs = (name, id) => `${name} (${id})`, [prod, dev] = az.subs
-  assert.deepEqual(await results('azure.activity-log'), { [subs('Development', dev[0])]: 'fail', [subs('Production', prod[0])]: 'pass' })
-  assert.deepEqual(await results('azure.defender'), { [subs('Development', dev[0])]: 'fail', [subs('Production', prod[0])]: 'pass' })
-  for (const id of ['azure.storage-public', 'azure.storage-https']) assert.deepEqual(Object.values(await results(id)), ['fail'], id)
-  assert.deepEqual(Object.values(await results('azure.sql-public')), ['fail']); assert.deepEqual(Object.values(await results('azure.sql-backup-retention')), ['fail'])
-  assert.deepEqual(Object.values(await results('azure.nsg-admin-ports')), ['fail'])
-  for (const id of ['gcp.bucket-public', 'azure.storage-public']) { const t = await get('/api/tests/' + (await testOf(id)).id); assert.match(Object.values(t.entry.remediation)[0].terraform, /public/) }
- })
- await scenario('A source fix passes on the next read with history kept; a revoked read turns its resources unknown; a project no longer listed stays in the denominator', async () => {
-  g.buckets['northstar-prod'][0].prevention = 'enforced'
-  az.denied.add('Development:/providers/Microsoft.Network/networkSecurityGroups')
-  g.projects = ['northstar-prod']
-  await app.clock('2026-10-11T13:00:00Z'); await app.tick()
-  assert.equal((await results('gcp.bucket-public'))['prod-assets (northstar-prod)'], 'pass')
-  const fixed = (await get('/api/remediation')).resolved.find(o => o.resource_name === 'prod-assets (northstar-prod)')
-  assert.deepEqual((await get('/api/remediation/' + fixed.id)).observations.map(o => o.result).slice(0, 2), ['pass', 'fail'])
-  assert.deepEqual(Object.values(await results('azure.nsg-admin-ports')), ['unknown'])
-  assert.equal((await get('/api/connections/' + conn.azure.id)).runs[0].outcome, 'partial')
-  const gCov = JSON.parse((await get('/api/connections/' + conn.gcp.id)).runs[0].coverage_json)
-  assert.deepEqual(gCov.accounts.map(a => [a.id, a.read]), [['northstar-prod', true], ['northstar-sandbox', false]])
-  assert.equal((await results('gcp.public-iam'))['Northstar sandbox (northstar-sandbox)'], 'unknown')
+ await scenario("CLOUD-001: authorize Google Cloud and Azure, observe failures and fixes, and retain denied or removed populations", async () => {
+  await step('Google Cloud and Azure are kept only after a real read that lists projects or subscriptions; credentials never appear', async () => {
+    await app.signin()
+    await owner('/api/connections', { provider: 'gcp', secret: JSON.stringify({ client_email: SA, private_key: pair().privateKey }) }, 400)
+    await owner('/api/connections', { provider: 'azure', tenant_id: TENANT, client_id: CLIENT, secret: 'wrong' }, 400)
+    conn.gcp = await owner('/api/connections', { provider: 'gcp', secret: gcpKey })
+    conn.azure = await owner('/api/connections', { provider: 'azure', tenant_id: TENANT, client_id: CLIENT, secret: AZ_SECRET })
+    assert.equal(conn.gcp.account, SA); assert.deepEqual(conn.gcp.scopes, g.projects); assert.equal(conn.azure.scopes.length, 2)
+    const visible = JSON.stringify(await get('/api/connections')) + await (await app.fetch('/app/connections/' + conn.gcp.id)).text() + JSON.stringify((await app.db.prepare('SELECT * FROM product_audit').all()).results)
+    assert.ok(!visible.includes('BEGIN PRIVATE KEY') && !visible.includes(AZ_SECRET))
+    const enabled = (await get('/api/tests')).tests.map(t => t.catalogue_id).filter(Boolean)
+    assert.ok(['gcp.bucket-public', 'gcp.firewall-admin-ports', 'azure.nsg-admin-ports', 'azure.storage-https'].every(id => enabled.includes(id))); assert.ok(!enabled.includes('gcp.mfa') && !enabled.includes('azure.encryption-at-rest'))
+   })
+   await step('Hourly reads cover every project and subscription class by class: misconfigurations fail with remediation, a denied class is a gap and unknown, a disabled API is noted', async () => {
+    await app.tick()
+    const gRun = (await get('/api/connections/' + conn.gcp.id)).runs[0], gCov = JSON.parse(gRun.coverage_json)
+    assert.equal(gRun.outcome, 'partial'); assert.deepEqual(gCov.gaps.map(x => `${x.account} ${x.class}`), ['northstar-sandbox IAM policy and audit logging']); assert.match(gCov.notes.join(), /northstar-sandbox: Firewall rules API not enabled/)
+    assert.deepEqual(await results('gcp.public-iam'), { 'Northstar prod (northstar-prod)': 'fail', 'Northstar sandbox (northstar-sandbox)': 'unknown' })
+    assert.deepEqual(await results('gcp.bucket-public'), { 'prod-assets (northstar-prod)': 'fail', 'prod-logs (northstar-prod)': 'pass' })
+    assert.deepEqual(Object.values(await results('gcp.sa-key-age')).sort(), ['fail', 'pass'])
+    for (const id of ['gcp.sql-backups', 'gcp.sql-public', 'gcp.sql-ssl']) assert.deepEqual(await results(id), { 'prod-db (northstar-prod)': 'fail' }, id)
+    assert.deepEqual(await results('gcp.firewall-admin-ports'), { 'allow-https (northstar-prod)': 'pass', 'allow-ssh (northstar-prod)': 'fail' })
+    assert.equal((await get('/api/connections/' + conn.azure.id)).runs[0].outcome, 'complete')
+    const subs = (name, id) => `${name} (${id})`, [prod, dev] = az.subs
+    assert.deepEqual(await results('azure.activity-log'), { [subs('Development', dev[0])]: 'fail', [subs('Production', prod[0])]: 'pass' })
+    assert.deepEqual(await results('azure.defender'), { [subs('Development', dev[0])]: 'fail', [subs('Production', prod[0])]: 'pass' })
+    for (const id of ['azure.storage-public', 'azure.storage-https']) assert.deepEqual(Object.values(await results(id)), ['fail'], id)
+    assert.deepEqual(Object.values(await results('azure.sql-public')), ['fail']); assert.deepEqual(Object.values(await results('azure.sql-backup-retention')), ['fail'])
+    assert.deepEqual(Object.values(await results('azure.nsg-admin-ports')), ['fail'])
+    for (const id of ['gcp.bucket-public', 'azure.storage-public']) { const t = await get('/api/tests/' + (await testOf(id)).id); assert.match(Object.values(t.entry.remediation)[0].terraform, /public/) }
+   })
+   await step('A source fix passes on the next read with history kept; a revoked read turns its resources unknown; a project no longer listed stays in the denominator', async () => {
+    g.buckets['northstar-prod'][0].prevention = 'enforced'
+    az.denied.add('Development:/providers/Microsoft.Network/networkSecurityGroups')
+    g.projects = ['northstar-prod']
+    await app.clock('2026-10-11T13:00:00Z'); await app.tick()
+    assert.equal((await results('gcp.bucket-public'))['prod-assets (northstar-prod)'], 'pass')
+    const fixed = (await get('/api/remediation')).resolved.find(o => o.resource_name === 'prod-assets (northstar-prod)')
+    assert.deepEqual((await get('/api/remediation/' + fixed.id)).observations.map(o => o.result).slice(0, 2), ['pass', 'fail'])
+    assert.deepEqual(Object.values(await results('azure.nsg-admin-ports')), ['unknown'])
+    assert.equal((await get('/api/connections/' + conn.azure.id)).runs[0].outcome, 'partial')
+    const gCov = JSON.parse((await get('/api/connections/' + conn.gcp.id)).runs[0].coverage_json)
+    assert.deepEqual(gCov.accounts.map(a => [a.id, a.read]), [['northstar-prod', true], ['northstar-sandbox', false]])
+    assert.equal((await results('gcp.public-iam'))['Northstar sandbox (northstar-sandbox)'], 'unknown')
+   })
  })
  await scenario('COLLECTION-001 / Azure schema drift and incomplete pages retain known resources as unknown; recovery never rewrites a gap, removes a denominator or fabricates exhibits', async () => {
   az.denied.clear()

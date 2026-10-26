@@ -3580,7 +3580,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "e507c79e4c0f1ab2247f3b955dc7f59bcda3150955dd2253d443ba0f07d6a26a",
+      "sha256": "23b0ed5cdc128d0b2ebe58212aac492ff0d73e61827cb0d5436d23df871b2b3b",
       "executable": false
     },
     "DEMO.md": {
@@ -8000,7 +8000,7 @@
       "executable": false
     },
     "tests/api.mjs": {
-      "sha256": "28308aa5851080beb5d5fea115c1cc6100d28b7c1c31a782047f0d377a6ed778",
+      "sha256": "a2f69d855dbda53700c4e44d181f86279a8c0995639a2aa93eeae5e1546e25c3",
       "executable": false
     },
     "tests/archive.mjs": {
@@ -8016,11 +8016,11 @@
       "executable": false
     },
     "tests/cloud.mjs": {
-      "sha256": "99ee6b4a9977dde9e06ad053a30d57cd6c7c5d82a4ab7554d3b6511a4ee7946e",
+      "sha256": "d6d12a5ffd6f32e45a6f088c255cde28567f0a5f6cc009285e0f6770d1600a26",
       "executable": false
     },
     "tests/clouds.mjs": {
-      "sha256": "123795fa51f0b8e05c46e9dfb8bc63ab9aa5e2cbe21370f290a3ec6a16fc0042",
+      "sha256": "89ab5b21041e8064deb5f75b23fec7378432a4791338c499e91fa06869d01855",
       "executable": false
     },
     "tests/email-link.mjs": {
@@ -8032,7 +8032,7 @@
       "executable": false
     },
     "tests/evidence.mjs": {
-      "sha256": "7e58d80bc9f575dff163ba321e8d54b12ee6978a1f13b0f5f65e26d54c5c2285",
+      "sha256": "7c9b0461b06bd37a907f6c2e2a8a68f35b1f3d15bb39279c11d594eb7bf9a71c",
       "executable": false
     },
     "tests/extended-programs-browser.mjs": {
@@ -8064,7 +8064,7 @@
       "executable": false
     },
     "tests/github.mjs": {
-      "sha256": "1d3b692c63767efdeee038d08e8bb5c3eb6603af2964e4908641901f0744b510",
+      "sha256": "24e003653496c35d913a496b2dddc52e3055d2e94f9707882dbfa2e9545665aa",
       "executable": false
     },
     "tests/handover.mjs": {
@@ -8348,7 +8348,7 @@
       "executable": false
     },
     "tests/helpers/runtime.mjs": {
-      "sha256": "b1336b5440bac99809713a68a1375808d0ceb7289b4d8f2326584f3be7cb1306",
+      "sha256": "1d2a4bd0c31fc1a1c283989c6d44f96ddbe9b1d6f2e93d30e4c474a778de7353",
       "executable": false
     },
     "tests/helpers/shortcut-webhook-journey.mjs": {
@@ -8357,6 +8357,10 @@
     },
     "tests/helpers/site-runtime.mjs": {
       "sha256": "3b184a4eab3797a7f55f0f54ec74cca184bd66d286113bc5b9e9dbd5b214f9d1",
+      "executable": false
+    },
+    "tests/helpers/step.mjs": {
+      "sha256": "b13e0dc9d408fe1d08da910e1ac5d55fa5aded7f4a0e2590ebc31ab9f6c2f1ec",
       "executable": false
     },
     "tests/helpers/tailoring-journey.mjs": {
@@ -8408,7 +8412,7 @@
       "executable": false
     },
     "tests/identity.mjs": {
-      "sha256": "f490fbd6f884c560a02f7a23cf476edf401443f32ea1263fa779641927268a23",
+      "sha256": "af03092c81e0a3c2a9907bad8ac5176ac4c4749fc7f2f700c7afec1c37135034",
       "executable": false
     },
     "tests/import.mjs": {
@@ -8524,7 +8528,7 @@
       "executable": false
     },
     "tests/review.mjs": {
-      "sha256": "6ee22369abc20cc8320c684e4c7aef78729c795f00992dc368fd37dd2b617060",
+      "sha256": "3250b144ec2e801e17b9b78d387a150eff9f951372e95f10d6e6c148b82dfa9c",
       "executable": false
     },
     "tests/risk.mjs": {

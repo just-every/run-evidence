@@ -1,3 +1,4 @@
+import { step } from './helpers/step.mjs'
 import { gunzipSync } from 'node:zlib'
 // Okta, Google Workspace, Microsoft Entra ID and JumpCloud directory
 // connections, identity populations, tests and reviewable matches through the
@@ -81,37 +82,39 @@ const testOf = async id => (await get('/api/tests')).tests.find(t => t.catalogue
 const results = async id => Object.fromEntries((await get('/api/tests/' + (await testOf(id)).id)).latest.map(o => [o.display_name.replace(/ <.*/, ''), o.result]))
 const conn = {}
 try {
- await scenario('Okta, Google Workspace, Entra ID and JumpCloud are kept only after a real read; credentials stay sealed', async () => {
-  await app.signin()
-  await owner('/api/connections', { provider: 'okta', domain: 'northstar.okta.com', secret: 'wrong-token' }, 400)
-  await owner('/api/connections', { provider: 'google', domain: 'northstar.test', admin_email: 'admin@northstar.test', secret: JSON.stringify({ client_email: 'evidence@service-account.test', private_key: generateKeyPairSync('rsa', { modulusLength: 2048, privateKeyEncoding: { type: 'pkcs8', format: 'pem' }, publicKeyEncoding: { type: 'spki', format: 'pem' } }).privateKey }) }, 400)
-  await owner('/api/connections', { provider: 'entra', tenant_id: TENANT, client_id: CLIENT, secret: 'not-the-secret' }, 400)
-  assert.equal((await app.db.prepare('SELECT COUNT(*) AS n FROM connections').first()).n, 0)
-  conn.okta = await owner('/api/connections', { provider: 'okta', domain: 'northstar.okta.com', secret: secrets.okta })
-  conn.google = await owner('/api/connections', { provider: 'google', domain: 'northstar.test', admin_email: 'admin@northstar.test', secret: secrets.google })
-  conn.entra = await owner('/api/connections', { provider: 'entra', tenant_id: TENANT, client_id: CLIENT, secret: secrets.entra })
-  conn.jumpcloud = await owner('/api/connections', { provider: 'jumpcloud', secret: secrets.jumpcloud })
-  const visible = JSON.stringify(await get('/api/connections')) + (await Promise.all(Object.values(conn).map(async c => (await app.fetch('/app/connections/' + c.id)).text()))).join('') + JSON.stringify((await app.db.prepare('SELECT * FROM product_audit').all()).results)
-  for (const s of [secrets.okta, secrets.entra, secrets.jumpcloud, 'BEGIN PRIVATE KEY']) assert.ok(!visible.includes(s), 'credential leaked')
-  assert.ok((await get('/api/tests')).tests.some(t => t.catalogue_id === 'idp.admin-mfa'))
-  assert.match((await get('/api/tests')).catalogue.find(e => e.id === 'jumpcloud.inactive').manualRequirement, /Directory Insights/)
- })
- await scenario('Hourly reads bring people, contractors, guests, service and suspended accounts as explicit populations, and fail MFA, admin MFA, guest admin and inactive accounts', async () => {
-  await app.tick()
-  for (const c of Object.values(conn)) assert.equal((await get('/api/connections/' + c.id)).runs[0].outcome, 'complete', c.id)
-  const ids = await get('/api/identities')
-  assert.deepEqual(ids.populations, { person: 8, contractor: 1, guest: 1, service: 1, suspended: 1 })
-  assert.deepEqual(ids.duplicates, ['ana@northstar.test'])
-  const groupsOf = (source, email) => ids.accounts.find(a => a.source.startsWith(source) && a.email === email).groups
-  assert.equal(groupsOf('Okta', 'ana@northstar.test'), 'Everyone, Security admins'); assert.equal(groupsOf('Google', 'ana@northstar.test'), 'Workspace admins'); assert.equal(groupsOf('Microsoft', 'partner@vendor.test'), 'Vendor partners'); assert.equal(groupsOf('JumpCloud', 'frank@northstar.test'), 'Engineering')
-  const mfa = await results('idp.mfa')
-  assert.equal(mfa['Ben'], 'fail'); assert.equal(mfa['Deploy'], 'fail'); assert.equal(mfa['Cy Park'], 'fail'); assert.equal(mfa['Eve Moss'], 'fail'); assert.equal(mfa['Frank'], 'fail'); assert.equal(mfa['Old'], 'pass'); assert.equal(mfa['Gina'], 'pass')
-  const admins = await results('idp.admin-mfa')
-  assert.equal(admins['Frank'], 'fail'); assert.equal(admins['Ana Ruiz'], 'pass'); assert.equal(admins['Ben'], 'pass')
-  assert.equal((await results('idp.guest-admin'))['Partner'], 'fail')
-  const inactive = await results('idp.inactive')
-  assert.equal(inactive['Ben'], 'fail'); assert.equal(inactive['Cy Park'], 'fail'); assert.equal(inactive['Ana'], 'pass'); assert.equal(inactive['Frank'], 'unknown')
-  assert.ok((await get('/api/remediation')).open.some(o => o.resource_name.startsWith('Partner')))
+ await scenario("IDENTITY-001: authorize directory reads and evaluate the resulting account populations", async () => {
+  await step('Okta, Google Workspace, Entra ID and JumpCloud are kept only after a real read; credentials stay sealed', async () => {
+    await app.signin()
+    await owner('/api/connections', { provider: 'okta', domain: 'northstar.okta.com', secret: 'wrong-token' }, 400)
+    await owner('/api/connections', { provider: 'google', domain: 'northstar.test', admin_email: 'admin@northstar.test', secret: JSON.stringify({ client_email: 'evidence@service-account.test', private_key: generateKeyPairSync('rsa', { modulusLength: 2048, privateKeyEncoding: { type: 'pkcs8', format: 'pem' }, publicKeyEncoding: { type: 'spki', format: 'pem' } }).privateKey }) }, 400)
+    await owner('/api/connections', { provider: 'entra', tenant_id: TENANT, client_id: CLIENT, secret: 'not-the-secret' }, 400)
+    assert.equal((await app.db.prepare('SELECT COUNT(*) AS n FROM connections').first()).n, 0)
+    conn.okta = await owner('/api/connections', { provider: 'okta', domain: 'northstar.okta.com', secret: secrets.okta })
+    conn.google = await owner('/api/connections', { provider: 'google', domain: 'northstar.test', admin_email: 'admin@northstar.test', secret: secrets.google })
+    conn.entra = await owner('/api/connections', { provider: 'entra', tenant_id: TENANT, client_id: CLIENT, secret: secrets.entra })
+    conn.jumpcloud = await owner('/api/connections', { provider: 'jumpcloud', secret: secrets.jumpcloud })
+    const visible = JSON.stringify(await get('/api/connections')) + (await Promise.all(Object.values(conn).map(async c => (await app.fetch('/app/connections/' + c.id)).text()))).join('') + JSON.stringify((await app.db.prepare('SELECT * FROM product_audit').all()).results)
+    for (const s of [secrets.okta, secrets.entra, secrets.jumpcloud, 'BEGIN PRIVATE KEY']) assert.ok(!visible.includes(s), 'credential leaked')
+    assert.ok((await get('/api/tests')).tests.some(t => t.catalogue_id === 'idp.admin-mfa'))
+    assert.match((await get('/api/tests')).catalogue.find(e => e.id === 'jumpcloud.inactive').manualRequirement, /Directory Insights/)
+   })
+   await step('Hourly reads bring people, contractors, guests, service and suspended accounts as explicit populations, and fail MFA, admin MFA, guest admin and inactive accounts', async () => {
+    await app.tick()
+    for (const c of Object.values(conn)) assert.equal((await get('/api/connections/' + c.id)).runs[0].outcome, 'complete', c.id)
+    const ids = await get('/api/identities')
+    assert.deepEqual(ids.populations, { person: 8, contractor: 1, guest: 1, service: 1, suspended: 1 })
+    assert.deepEqual(ids.duplicates, ['ana@northstar.test'])
+    const groupsOf = (source, email) => ids.accounts.find(a => a.source.startsWith(source) && a.email === email).groups
+    assert.equal(groupsOf('Okta', 'ana@northstar.test'), 'Everyone, Security admins'); assert.equal(groupsOf('Google', 'ana@northstar.test'), 'Workspace admins'); assert.equal(groupsOf('Microsoft', 'partner@vendor.test'), 'Vendor partners'); assert.equal(groupsOf('JumpCloud', 'frank@northstar.test'), 'Engineering')
+    const mfa = await results('idp.mfa')
+    assert.equal(mfa['Ben'], 'fail'); assert.equal(mfa['Deploy'], 'fail'); assert.equal(mfa['Cy Park'], 'fail'); assert.equal(mfa['Eve Moss'], 'fail'); assert.equal(mfa['Frank'], 'fail'); assert.equal(mfa['Old'], 'pass'); assert.equal(mfa['Gina'], 'pass')
+    const admins = await results('idp.admin-mfa')
+    assert.equal(admins['Frank'], 'fail'); assert.equal(admins['Ana Ruiz'], 'pass'); assert.equal(admins['Ben'], 'pass')
+    assert.equal((await results('idp.guest-admin'))['Partner'], 'fail')
+    const inactive = await results('idp.inactive')
+    assert.equal(inactive['Ben'], 'fail'); assert.equal(inactive['Cy Park'], 'fail'); assert.equal(inactive['Ana'], 'pass'); assert.equal(inactive['Frank'], 'unknown')
+    assert.ok((await get('/api/remediation')).open.some(o => o.resource_name.startsWith('Partner')))
+   })
  })
  await scenario('INVENTORY-001 / PORTABLE-001 / IDENTITY-001: Matches are proposed by email and decided by a person; a duplicate is reconciled by human decisions, and a disabled account and a denied scope stay visible', async () => {
   const ana = await owner('/api/people', { name: 'Ana Ruiz', email: 'ana@northstar.test', kind: 'employee' }), dana = await owner('/api/people', { name: 'Dana Fox', email: 'dana@northstar.test', kind: 'contractor' })
