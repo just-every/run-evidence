@@ -35,7 +35,7 @@ export function evidenceHandler(clock: () => Date = () => new Date()) {
   const now = clock(), selected = url.searchParams.get('date') || day(now)
   const renderRequirement = async (id: string, refused?: RefusedForm) => {
    const data = await desk(env,selected,now), row = (await hideSensitive(data.requirements)).find(x => x.id === id)
-   if (!row) return json({ error:'Requirement not found.' },404)
+   if (!row) return json({ error: refused?.error ?? 'Requirement not found.' }, refused?.status ?? 404)
    const [people, programs] = await Promise.all([
     env.DB.prepare('SELECT id,name,email FROM people ORDER BY name').all<{ id: string; name: string; email: string }>(),
     env.DB.prepare('SELECT id,name FROM programs ORDER BY created_at').all<{ id: string; name: string }>(),
@@ -58,7 +58,7 @@ export function evidenceHandler(clock: () => Date = () => new Date()) {
     if (!await reaches(uploading[1])) return json({ error:'That requirement is outside your scope.' },403)
     let values: Record<string, string> = {}
     try {
-     const retained = await retainedMultipart(request, MAX_FILE + 1024 * 1024 + 65536)
+     const retained = await retainedMultipart(request, MAX_FILE + 1024 * 1024 + 65536, MAX_FILE + 65536)
      values = scalarValues(retained.form)
      return redirect('/app/receipts/'+await upload(retained.request,env,uploading[1],operator,now))
     } catch (error) {

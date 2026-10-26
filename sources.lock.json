@@ -5286,7 +5286,7 @@
       "executable": false
     },
     "src/evidence/form-state.ts": {
-      "sha256": "a97dcdb92e0ca072da9d86971ab786093d640c927bfb42afc76e114b3f9d4791",
+      "sha256": "de7bd2f499537790ce7eccbc9e5e8d3d92870ee4c866b8d682e02db02cbb9a16",
       "executable": false
     },
     "src/evidence/format.ts": {
@@ -5330,7 +5330,7 @@
       "executable": false
     },
     "src/evidence/http.ts": {
-      "sha256": "ab3ec59aa0a35bf21e5e388cf04b0f7acb11f53325022f3b1ae57ab7f5a99602",
+      "sha256": "9c945835cf6258c9c2db6539d2ac031a07d957b1eceaee60bb2676a92a0224d6",
       "executable": false
     },
     "src/evidence/identity/catalogue.ts": {
@@ -8314,7 +8314,7 @@
       "executable": false
     },
     "tests/helpers/readiness-browser.mjs": {
-      "sha256": "f8fa2d35aa4339d07857ae30b908412b150d2e9bd14e583394cb8f2bd31212ef",
+      "sha256": "edc6b0776d4f8da8f7ec0f96849ce86c9c3a669255663dbc2a0e3ee11359640f",
       "executable": false
     },
     "tests/helpers/readiness-fixture.mjs": {
