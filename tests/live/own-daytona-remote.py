@@ -67,7 +67,7 @@ class Server:
         _, _, directory, command_line = self.identity
         arguments = shlex.split(command_line)
         checks = dict(checkout=directory == str(self.checkout), foreground=not self.foreground or '--foreground' in arguments,
-                      dev='dev' in arguments, executable=any(str((Path(directory)/argument).resolve()).endswith('/bin/rer.mjs') for argument in arguments))
+                      dev='dev' in arguments, executable=any(str((Path(directory)/argument).resolve()).endswith(('/bin/rer.mjs','/global/rer.mjs')) for argument in arguments))
         if not all(checks.values()):
             event('runtime_identity_refused', checks=checks, entry_names=[Path(a).name for a in arguments if a.endswith(('.mjs','/rer'))])
             self.identity = None
