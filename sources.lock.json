@@ -6304,7 +6304,7 @@
       "executable": false
     },
     "src/evidence/program/board-view.ts": {
-      "sha256": "be285068cf41def6bddaff9506eab1ce266ac6cb6f12bd6cc4f6ec5a75062a4f",
+      "sha256": "5d77d67ccf2c3609c8dd9bfde2a28e49efb4fbd7afa977950ca7352b07cb50f8",
       "executable": false
     },
     "src/evidence/program/board.ts": {
