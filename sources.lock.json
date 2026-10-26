@@ -8141,7 +8141,7 @@
       "executable": false
     },
     "tests/live/own-daytona.py": {
-      "sha256": "5e06b48369c75bb2441e4850da5d992af6bad68589c8dbf4d87ea05d63e0abb7",
+      "sha256": "5b17bdcc8a56314978aa3543e6f374cb20ef9e42e911b17fc8086dccd9d3a238",
       "executable": false
     },
     "tests/live/own-hosted-http.mjs": {

@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import re
+import signal
 import subprocess
 import time
 
@@ -91,8 +92,14 @@ def main():
 
 
 if __name__ == '__main__':
+    def interrupt(signum, frame):
+        raise KeyboardInterrupt()
+    signal.signal(signal.SIGTERM, interrupt)
     try:
         main()
+    except KeyboardInterrupt:
+        event('interrupted')
+        raise SystemExit(130)
     except Exception as error:
         message = str(error).replace(os.environ['DAYTONA_API_KEY'],'[private]')
         message = re.sub(r'(https?://[^\s?#]+)[?#][^\s]+',r'\1[private]',message)
