@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "3f493c69d74653d3b4063bc9b8a2e3c4e6b9038725d5137ff279e457596256dd",
+  "manifest": "0ed18cc77a08d754c386f811963b66dd6c4317e5d6eb978085aaac3dff44db49",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -3403,6 +3403,7 @@
           "tests/followup.mjs",
           "tests/github.mjs",
           "tests/handover.mjs",
+          "tests/helpers/access-records-browser.mjs",
           "tests/helpers/answer-journey.mjs",
           "tests/helpers/archive-display-browser.mjs",
           "tests/helpers/assurance-browser.mjs",
@@ -3686,7 +3687,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "3f493c69d74653d3b4063bc9b8a2e3c4e6b9038725d5137ff279e457596256dd",
+      "sha256": "0ed18cc77a08d754c386f811963b66dd6c4317e5d6eb978085aaac3dff44db49",
       "executable": false
     },
     "LICENSE": {
@@ -7986,7 +7987,7 @@
       "executable": false
     },
     "tests/access.mjs": {
-      "sha256": "33c17d06af9a9e1fc0d2719d9890d3fb9b02a0d8c9766fee7f4b3d712a01d1f8",
+      "sha256": "7b2974a5b196cb6039cad30ba43b3cc19e9b5e20b4d926d6a472768951d30e93",
       "executable": false
     },
     "tests/agent.mjs": {
@@ -8063,6 +8064,10 @@
     },
     "tests/handover.mjs": {
       "sha256": "1fdd2ea4245e573f915b8672a37f1c7ce1064b4aeb7d5ad16e115427399a57ec",
+      "executable": false
+    },
+    "tests/helpers/access-records-browser.mjs": {
+      "sha256": "eb8a8629187531f731af9e55c307fff9397a4004c491fd3a01b70a7788b322c4",
       "executable": false
     },
     "tests/helpers/answer-journey.mjs": {

@@ -3395,6 +3395,7 @@
           "tests/followup.mjs",
           "tests/github.mjs",
           "tests/handover.mjs",
+          "tests/helpers/access-records-browser.mjs",
           "tests/helpers/answer-journey.mjs",
           "tests/helpers/archive-display-browser.mjs",
           "tests/helpers/assurance-browser.mjs",
