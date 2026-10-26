@@ -40,8 +40,10 @@ def main():
     home.mkdir(mode=0o700)
     checkout_parent.mkdir(mode=0o700)
     server = None
+    startup_uncertain = False
 
     def start(command, cwd):
+        nonlocal startup_uncertain
         # Server copies this environment into its CLI child synchronously.
         # Restore it immediately; never launch a browser under a scratch HOME.
         values = {'HOME':str(home), 'RER_SERVERS_DIR':str(home/'servers')}
@@ -49,6 +51,9 @@ def main():
         try:
             os.environ.update(values)
             return Server(command, cwd)
+        except BaseException:
+            startup_uncertain = True
+            raise
         finally:
             for name, value in before.items():
                 if value is None:
@@ -71,7 +76,7 @@ def main():
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             subprocess.run(['git','checkout','--detach',sha], cwd=checkout, check=True,
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            server = start(['npx','--no-install','rer','dev'], checkout)
+            server = start(['npx','--no-install','rer','dev','--foreground'], checkout)
         owner = Owner(server.link)
         expected = owner.populate()
         owner.reconcile(expected)
@@ -79,7 +84,7 @@ def main():
         state = checkout/'.wrangler/state'
         assert list(state.rglob('*.sqlite')), 'local D1 persistence files absent'
         assert any('r2' in p.parts for p in state.rglob('*') if p.is_file()), 'local R2 persistence files absent'
-        server = start(['npx','--no-install','rer','dev'], checkout)
+        server = start(['npx','--no-install','rer','dev','--foreground'], checkout)
         owner = Owner(server.link)
         owner.reconcile(expected)
         if os.environ.get('EVIDENCE_OWN_EXPORT') == '1':
@@ -97,17 +102,21 @@ def main():
               'Local D1 and R2 files present', 'No source connectors enabled'],
               limitation='Fresh install environment on existing macOS, not an OS reinstall; hour capture is separate')
     finally:
-        try:
-            if server:
-                server.stop()
-        finally:
+        if server:
+            server.stop()
+        # An identity ambiguity deliberately preserves the checkout instead of
+        # removing files from underneath a runtime we cannot safely stop.
+        if not startup_uncertain:
             shutil.rmtree(scratch)
             event('cleanup', checkout_and_cli_home_removed=True)
+        else:
+            event('cleanup_refused', reason='startup_identity_unproven')
 
 
 if __name__ == '__main__':
     try:
         main()
     except Exception as error:
-        event('failed', error_type=type(error).__name__)
+        event('failed', error_type=type(error).__name__,
+              reason=module('own_failure','own-daytona-remote.py').failure_reason(error))
         raise SystemExit(1)

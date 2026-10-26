@@ -9,19 +9,33 @@ import os
 from pathlib import Path
 import re
 import signal
+import shlex
 import socket
 import subprocess
 import threading
 import time
+import urllib.parse
 
 
 def event(kind, **data):
     print(json.dumps(dict(event=kind, at=datetime.datetime.now(datetime.timezone.utc).isoformat(), **data)), flush=True)
 
 
+def failure_reason(error):
+    text = str(error)
+    if re.fullmatch(r'(?:runtime|startup|listener)_[a-z_]+', text):
+        return text
+    if re.fullmatch(r'native HTTP action failed: (?:GET|POST|PUT|DELETE) status=\d{3}', text):
+        return text
+    return 'failure_details_withheld'
+
+
 class Server:
     def __init__(self, command, cwd):
         self.link = None
+        self.identity = None
+        self.foreground = '--foreground' in command
+        self.checkout = Path(cwd if self.foreground else Path(cwd)/'run-evidence').resolve()
         self.ready = threading.Event()
         self.process = subprocess.Popen(command, cwd=cwd, stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT, text=True, start_new_session=True,
@@ -35,18 +49,119 @@ class Server:
             self.ready.set()
         threading.Thread(target=consume, daemon=True).start()
         if not self.ready.wait(1800) or not self.link:
-            self.stop()
-            raise RuntimeError('README startup did not yield private owner entry')
+            if self.foreground and self.process.poll() is None:
+                os.killpg(self.process.pid, signal.SIGTERM)
+                self.process.wait(timeout=45)
+            raise RuntimeError('startup_no_private_entry')
+        self.port = urllib.parse.urlsplit(self.link).port
+        if self.port is None:
+            raise RuntimeError('startup_missing_port')
+        # The exact README command hands off to a detached rer dispatcher.
+        # The dispatcher, rather than Vite, owns the public proxy listener.
+        pids = self.listener_pids()
+        if len(pids) != 1:
+            raise RuntimeError('runtime_listener_ambiguous')
+        self.identity = self.process_identity(next(iter(pids)))
+        if self.identity is None:
+            raise RuntimeError('runtime_identity_missing')
+        _, _, directory, command_line = self.identity
+        arguments = shlex.split(command_line)
+        if directory != str(self.checkout) or '--foreground' not in arguments or 'dev' not in arguments or not any(
+                argument.endswith('/bin/rer.mjs') for argument in arguments):
+            self.identity = None
+            raise RuntimeError('runtime_identity_refused')
+        if self.foreground and os.getpgid(self.identity[0]) != self.process.pid:
+            self.identity = None
+            raise RuntimeError('runtime_group_refused')
+        event('runtime_owned', mode='foreground' if self.foreground else 'README detached dispatcher')
+
+    @staticmethod
+    def process_identity(pid):
+        try:
+            if Path('/proc').is_dir():
+                root = Path('/proc')/str(pid)
+                stat = (root/'stat').read_text().rsplit(')', 1)[1].split()
+                if stat[0] == 'Z':
+                    return None
+                command = (root/'cmdline').read_bytes().rstrip(b'\0').replace(b'\0', b' ').decode()
+                return pid, stat[19], str((root/'cwd').resolve(strict=True)), command
+            def ps(field):
+                return subprocess.check_output(['ps','-ww','-p',str(pid),'-o',field+'='],
+                    text=True, stderr=subprocess.DEVNULL).strip()
+            directory = subprocess.check_output(['lsof','-a','-p',str(pid),'-d','cwd','-Fn'],
+                text=True, stderr=subprocess.DEVNULL)
+            paths = [line[1:] for line in directory.splitlines() if line.startswith('n')]
+            if len(paths) != 1:
+                return None
+            return pid, ps('lstart'), str(Path(paths[0]).resolve()), ps('command')
+        except (OSError, subprocess.SubprocessError, UnicodeError, IndexError):
+            return None
+
+    def listener_pids(self):
+        if not Path('/proc').is_dir():
+            result = subprocess.run(['lsof','-nP','-iTCP:'+str(self.port),'-sTCP:LISTEN','-t'],
+                text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            if result.returncode not in (0,1):
+                raise RuntimeError('listener_inspection_failed')
+            return {int(line) for line in result.stdout.splitlines() if line.isdigit()}
+        inodes = set()
+        for name in ('tcp','tcp6'):
+            for line in (Path('/proc/net')/name).read_text().splitlines()[1:]:
+                fields = line.split()
+                if fields[3] == '0A' and int(fields[1].split(':')[1],16) == self.port:
+                    inodes.add(fields[9])
+        owners = set()
+        for directory in Path('/proc').iterdir():
+            if not directory.name.isdigit():
+                continue
+            try:
+                for fd in (directory/'fd').iterdir():
+                    try:
+                        target = os.readlink(fd)
+                    except FileNotFoundError:
+                        continue
+                    if target.startswith('socket:[') and target[8:-1] in inodes:
+                        owners.add(int(directory.name))
+            except FileNotFoundError:
+                continue
+        return owners
+
+    def alive(self):
+        return bool(self.identity and self.process_identity(self.identity[0]) == self.identity
+                    and self.listener_pids() == {self.identity[0]})
 
     def stop(self):
-        # Only this newly created process group, never a name-based stop.
-        if self.process.poll() is None:
-            os.killpg(self.process.pid, signal.SIGTERM)
+        if self.identity is None:
+            raise RuntimeError('runtime_stop_without_identity')
+        pid = self.identity[0]
+        current = self.process_identity(pid)
+        if current is not None and current != self.identity:
+            raise RuntimeError('runtime_identity_changed')
+        if current is not None:
             try:
-                self.process.wait(timeout=45)
-            except subprocess.TimeoutExpired:
-                os.killpg(self.process.pid, signal.SIGKILL)
+                if self.foreground:
+                    if os.getpgid(pid) != self.process.pid:
+                        raise RuntimeError('runtime_group_changed')
+                    os.killpg(self.process.pid, signal.SIGTERM)
+                else:
+                    os.kill(pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+        deadline = time.monotonic() + 60
+        while time.monotonic() < deadline:
+            # Refuse replacement listeners; never stop them to free the port.
+            listeners = self.listener_pids()
+            if listeners - {pid}:
+                raise RuntimeError('runtime_port_replaced')
+            if not listeners and self.process_identity(pid) is None:
                 self.process.wait(timeout=15)
+                event('runtime_stopped', port_closed=True)
+                return
+            current = self.process_identity(pid)
+            if current is not None and current != self.identity:
+                raise RuntimeError('runtime_identity_changed')
+            time.sleep(.25)
+        raise RuntimeError('runtime_stop_timeout')
 
 
 class Capture:
@@ -124,7 +239,7 @@ def run():
             server.stop()
             subprocess.run(['git','fetch','origin',sha], cwd=checkout, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             subprocess.run(['git','checkout','--detach',sha], cwd=checkout, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            server = Server(['npx','--no-install','rer','dev'], checkout)
+            server = Server(['npx','--no-install','rer','dev','--foreground'], checkout)
             owner = module.Owner(server.link)
         actual = subprocess.check_output(['git','rev-parse','HEAD'], cwd=checkout, text=True).strip()
         event('candidate', sha=actual, os='Ubuntu 24.04', installation_traffic='Completed before monitored hour')
@@ -138,7 +253,7 @@ def run():
         state = checkout / '.wrangler/state'
         assert list(state.rglob('*.sqlite')), 'D1 persistence files absent'
         assert any('r2' in p.parts for p in state.rglob('*') if p.is_file()), 'R2 persistence files absent'
-        server = Server(['npx','--no-install','rer','dev'], checkout)
+        server = Server(['npx','--no-install','rer','dev','--foreground'], checkout)
         owner = module.Owner(server.link)
         owner.reconcile(expected)
         event('assertion', name='Receipt facts, original bytes and evaluated test survive own-process restart in local D1 and R2')
@@ -152,7 +267,8 @@ def run():
         (artifacts/'expected.json').write_text(json.dumps(expected))
         event('archive_ready', sha=actual, bytes=len(archive), sha256=hashlib.sha256(archive).hexdigest())
         while time.monotonic() - capture.started < 3605:
-            assert server.process.poll() is None, 'app stopped during monitored hour'
+            if not server.alive():
+                raise RuntimeError('runtime_not_surviving_monitored_hour')
             owner.reconcile(expected)
             event('heartbeat', elapsed_seconds=int(time.monotonic() - capture.started))
             time.sleep(30)
@@ -160,16 +276,18 @@ def run():
         capture = None
         event('complete', sha=actual)
     finally:
-        if server:
-            server.stop()
-        if capture and capture.process.poll() is None:
-            capture.process.send_signal(signal.SIGINT)
-            capture.process.wait(timeout=15)
+        try:
+            if server:
+                server.stop()
+        finally:
+            if capture and capture.process.poll() is None:
+                capture.process.send_signal(signal.SIGINT)
+                capture.process.wait(timeout=15)
 
 
 if __name__ == '__main__':
     try:
         run()
     except Exception as error:
-        event('failed', error_type=type(error).__name__)
+        event('failed', error_type=type(error).__name__, reason=failure_reason(error))
         raise SystemExit(1)  # Never traceback with private request context.

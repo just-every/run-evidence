@@ -3501,7 +3501,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "6bddc8c76030b99e1f021bf8dc8ba5aabd68ed2e32da5c22703ff230cd4f2f36",
+      "sha256": "e2bdce53bef7dda6f1bd6b38b7fd09cc29758c17c8233dd7b5d61ca2ddc61809",
       "executable": false
     },
     "AGENTS.md": {
@@ -3517,7 +3517,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "a3ca88ee09394b6d983c22f91786d646380999b45d0e19dae2e312390040c236",
+      "sha256": "33643a66864362324f69bfe13f22360154eccd566b9406ca0bf09932b8cd0870",
       "executable": false
     },
     "DEMO.md": {
@@ -8137,7 +8137,7 @@
       "executable": false
     },
     "tests/live/own-daytona-remote.py": {
-      "sha256": "2101963b44cd3e4754f0e7cee2836f5559cb93f14918858250c3fc5878e8c3bb",
+      "sha256": "07d6e1b07c40ec1001123f2f1b58b81f276d4d079ad06f96f716c1ff52e5d175",
       "executable": false
     },
     "tests/live/own-daytona.py": {
@@ -8157,7 +8157,7 @@
       "executable": false
     },
     "tests/live/own-macos.py": {
-      "sha256": "9afbc6f1bba68785b743c041eaaabf4efd78f692a093f383244389fcc96ede70",
+      "sha256": "ecf6c6bfd6d148fe908214d728a3e6b56298b909a286890396e8afbd68f3c972",
       "executable": false
     },
     "tests/live/trust-sendgrid.mjs": {
