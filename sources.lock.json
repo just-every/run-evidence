@@ -8153,7 +8153,7 @@
       "executable": false
     },
     "tests/live/own-hosted.mjs": {
-      "sha256": "e999181b0616a25bc5d2ac9e11b022d3f9aef005336719b4ead698d3735076b5",
+      "sha256": "f41083587567b4c0dbf5cbfa51cd947f56a57a1aa7ce74e3d6e2bfb651368d49",
       "executable": false
     },
     "tests/live/own-macos.py": {

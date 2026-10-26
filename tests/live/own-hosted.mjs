@@ -23,7 +23,7 @@ async function rer(args){
 }
 async function cf(path,{method='GET',body}={}){
  const r=await fetch('https://api.cloudflare.com/client/v4/accounts/'+account+path,{method,headers:{authorization:'Bearer '+env.CLOUDFLARE_API_TOKEN,...(body?{'content-type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})})
- const body=await r.json();assert.equal(body.success,true,'Cloudflare readback '+path);return body.result
+ const response=await r.json();assert.equal(response.success,true,'Cloudflare readback '+path);return response.result
 }
 let deployed=false,closeDiagnostics
 try{
