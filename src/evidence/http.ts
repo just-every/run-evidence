@@ -1,3 +1,4 @@
+import { problem } from './problem'
 import { operatorAuth, runtimeBindings, type Bindings } from '../auth.server'
 import { day, validDate, groups, cadences } from './model'
 import { createControl, desk, receipt, storedBytes } from './storage'
@@ -6,7 +7,6 @@ import { authorize } from './authz/gate'
 import { scopedControls, unrestricted } from './authz/roles'
 import { guardRead, recordState, sensitiveIds } from './secure/records'
 import { deskPage, requirementPage, receiptPage, page, headers, escape, signedOutPage } from './view'
-const json = (data: unknown, status = 200) => Response.json(data, { status, headers })
 const redirect = (location: string) => new Response(null, { status: 303, headers: { ...headers, location } })
 // Only the harness supplies a clock function. No header, URL or runtime binding sets time.
 export function evidenceHandler(clock: () => Date = () => new Date()) {
@@ -14,6 +14,7 @@ export function evidenceHandler(clock: () => Date = () => new Date()) {
   const url = new URL(request.url), path = url.pathname
   if (!(path === '/app' || path.startsWith('/app/') || path === '/api/desk' || path.startsWith('/api/receipts/'))) return null
   const env = runtimeBindings(original), isApi = path.startsWith('/api/')
+  const json = (data: { error: string } | unknown, status = 200): Response | Promise<Response> => !isApi && status >= 400 ? problem((data as { error: string }).error, status, status === 403 ? '/me' : '/app', status === 403) : Response.json(data, { status, headers })
   if (url.origin !== env.AUTH_ORIGIN || (request.headers.has('host') && request.headers.get('host')?.toLowerCase() !== url.host.toLowerCase())) return json({ error:'Invalid host.' },403)
   if (request.headers.get('sec-fetch-site') === 'cross-site' || (request.headers.has('origin') && request.headers.get('origin') !== env.AUTH_ORIGIN) || (!['GET','HEAD'].includes(request.method) && request.headers.get('origin') !== env.AUTH_ORIGIN)) return json({ error:'Same-origin request required.' },403)
   const session = await operatorAuth(env).getSession(request)

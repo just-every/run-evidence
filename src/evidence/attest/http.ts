@@ -25,7 +25,13 @@ export function attestHandler(clock: () => Date) {
   } },
   { method: 'POST', pattern: both('/attestations/assign'), run: async c => { const input = await readInput(c.request); return done(c, '/app/attestations', await assign(c.env, c.actor, text(input, 'policy_id', 36), input, c.now), 201) } },
   { method: 'POST', pattern: both('/attestations/exceptions'), run: async c => { const input = await readInput(c.request); await addException(c.env, c.actor, text(input, 'policy_id', 36), input, c.now); return done(c, '/app/attestations#exception-title', { approved: true }, 201) } },
-  { method: 'POST', pattern: both(`/people/${id}/invite`), run: async (c, m) => { await invite(c.env, c.request, c.actor, m[1], c.now); return done(c, '/app/people', { invited: true }, 202) } },
+  { method: 'POST', pattern: both(`/people/${id}/invite`), run: async (c, m) => {
+   const person = await invite(c.env, c.request, c.actor, m[1], c.now)
+   if (c.isApi) return json({ invited: true }, 202)
+   const local = c.env.AUTH_LOCAL === 'true'
+   const next = local ? '<p>This local installation requires the private development browser for sign-in. The invitation does not grant access to a fresh browser. Use the account chooser here to review this person’s own tasks.</p><p><a class="button" href="/signin?returnTo=%2Fme">Choose an invited account</a></p>' : '<p>They can accept their invitation to sign in and open their own compliance tasks.</p>'
+   return page('Invitation created', slab(`<section aria-labelledby="invited-title"><h2 id="invited-title" role="status">${escape(person.name)} is invited</h2><p>${escape(person.email)}</p>${next}<p><a href="/app/people">Back to People</a></p></section>`), 202, { owner: c.actor.name, active: 'people' })
+  } },
   { method: 'POST', pattern: both(`/people/${id}/depart`), run: async (c, m) => done(c, '/app/people', await depart(c.env, c.actor, c.request, m[1], text(await readInput(c.request), 'reason', 500, true), c.now)) },
  ]
  return ownerRoutes(routes, clock)

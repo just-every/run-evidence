@@ -1,3 +1,4 @@
+import { usDate, usInstant } from '../../format'
 import type { Bindings } from '../../../auth.server'
 import { addMonths } from '../../cadence'
 import { day, validDate } from '../../model'
@@ -13,7 +14,7 @@ import type { Ctx, Generated, Inputs } from './context'
 import { kinds, kindsFor } from './kinds'
 import { ephiScenarios } from './hipaa'
 import { explanationNeeded } from './saq-scope'
-import { notice, type Rendered, type Section } from './model'
+import { factText, notice, type Rendered, type Section } from './model'
 // PROGRAM-003: each document is generated from live program state into an
 // immutable revision. Owner edits and inputs, reconciliations and approvals add
 // revisions or approvals; nothing earlier is ever rewritten.
@@ -128,7 +129,7 @@ export async function listDocuments(env: Bindings, program: ProgramRow, now: Dat
 export async function render(env: Bindings, doc: DocumentRow, revision: RevisionRow, now: Date): Promise<Rendered> {
  const program = await requireProgram(env, doc.program_id), apps = await approvals(env, doc.id), approval = apps.find(a => a.revision_id === revision.id) ?? null, content = JSON.parse(revision.content_json) as { subtitle: string; sections: Section[] }
  const owner = doc.owner_person_id ? (await env.DB.prepare('SELECT name FROM people WHERE id=?').bind(doc.owner_person_id).first<{ name: string }>())?.name : null, d = await drift(env, doc, now)
- const control: Section = { id: 'control', heading: 'Document control', status: 'prefilled', statements: [{ text: approval ? 'This revision is approved by the named approver. The approval is the owner organization’s decision, not an attestation by Evidence.' : 'This revision is a DRAFT and has no approval.', cites: [] }, ...(approval && apps.at(-1) === approval && d.items.length ? [{ text: `NEEDS REVIEW: ${d.items.length} item${d.items.length === 1 ? '' : 's'} no longer match program state (${d.items.slice(0, 3).map(i => `${i.label}: ${i.approved} -> ${i.live}`).join('; ')}).`, cites: [] }] : [])], table: { head: ['Field', 'Value'], rows: [['Program', program.name], ['Revision', `${revision.revision} (${revision.origin}, ${revision.at.slice(0, 10)} by ${revision.actor_name})`], ['Accountable owner', owner ?? 'not assigned'], ['Approver', approval?.approver_name ?? 'not approved'], ['Approved', approval ? approval.approved_at.slice(0, 10) : '—'], ['Effective date', approval?.effective_date ?? '—'], ['Review deadline', approval?.review_due ?? '—']] } }
+ const control: Section = { id: 'control', heading: 'Document control', status: 'prefilled', statements: [{ text: approval ? 'This revision is approved by the named approver. The approval is the owner organization’s decision, not an attestation by Evidence.' : 'This revision is a DRAFT and has no approval.', cites: [] }, ...(approval && apps.at(-1) === approval && d.items.length ? [{ text: `NEEDS REVIEW: ${d.items.length} item${d.items.length === 1 ? '' : 's'} no longer match program state (${d.items.slice(0, 3).map(i => `${i.label}: ${factText(i.approved)} → ${factText(i.live)}`).join('; ')}).`, cites: [] }] : [])], table: { head: ['Field', 'Value'], rows: [['Program', program.name], ['Revision', `${revision.revision} (${revision.origin}, ${usInstant(revision.at)} by ${revision.actor_name})`], ['Accountable owner', owner ?? 'not assigned'], ['Approver', approval?.approver_name ?? 'not approved'], ['Approved', approval ? usInstant(approval.approved_at) : '—'], ['Effective date', approval?.effective_date ? usDate(approval.effective_date) : '—'], ['Review deadline', approval?.review_due ? usDate(approval.review_due) : '—']] } }
  return { title: kinds[doc.kind].title, subtitle: content.subtitle, notice, sections: [control, ...content.sections] }
 }
 export async function exportDocument(env: Bindings, actor: Actor, programId: string, kind: string, revisionNumber: number | null, now: Date) {

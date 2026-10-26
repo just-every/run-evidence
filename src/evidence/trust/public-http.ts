@@ -67,7 +67,8 @@ export function trustPublicHandler(clock:()=>Date=()=>new Date()) {
    const submissions=grant?(await env.DB.prepare('SELECT * FROM trust_submissions WHERE grant_id=? ORDER BY submitted_at,id').bind(grant.id).all<import('./grants').Submission>()).results:[]
    if(grant)await auditStatement(env,grantActor(grant),'trust.customer-read',grant.id,now,'succeeded','Named records: '+updates.filter(u=>permissions.some(p=>p.update_id===u.id)).map(u=>u.id).join(', ')).run()
    if(path==='/trust/subprocessors')return json(subprocessors)
-   return wantsJson?json({updates,subprocessors,categories:categoryRows,permissions,submissions}):trustPublicPage(updates,subprocessors,categoryRows,customer?.[1],!!rules.confirmations_enabled,permissions,submissions)
+   const legalEntities=wantsJson?[]:(await env.DB.prepare("SELECT DISTINCT legal_entity FROM programs WHERE trim(legal_entity)<>'' ORDER BY legal_entity").all<{legal_entity:string}>()).results.map(p=>p.legal_entity)
+   return wantsJson?json({updates,subprocessors,categories:categoryRows,permissions,submissions}):trustPublicPage(updates,subprocessors,categoryRows,customer?.[1],!!rules.confirmations_enabled,permissions,submissions,legalEntities)
   }catch(error) {
    if(error instanceof Refusal)return wantsJson?json({error:error.message},error.status):new Response(error.message+'\n',{status:error.status,headers:{...safeHeaders,'content-type':'text'+'/'+'plain; charset=utf-8'}})
    return json({error:'Trust storage unavailable; no result is claimed.'},503)

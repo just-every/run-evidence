@@ -6,7 +6,7 @@ import { auditStatement, text, type Actor, type Input } from '../door'
 import { seal, unseal } from '../connect/custody'
 import { backoffUpdate, reconnectUpdate, startRun } from '../connect/runs'
 import type { Connection } from '../connect/storage'
-import { course } from './courses'
+import { courses } from './courses'
 import { importKnowBe4 } from './storage'
 // KnowBe4 Reporting API (read-only API key): training enrollments become
 // source-reported completions, mapped to a shipped course by module name.
@@ -31,9 +31,9 @@ const config = (c: Pick<Connection, 'config_json'>) => { try { return JSON.parse
 function parseModules(value: unknown) {
  const modules: Record<string, string> = {}
  for (const line of String(value ?? '').split('\n').map(l => l.trim()).filter(Boolean)) {
-  const m = /^(.{1,200}?)\s*=\s*([a-z-]{3,40})$/.exec(line)
-  if (!m || !course(m[2])) throw new Refusal('Map each KnowBe4 module as "Module name = course id" (security-awareness, hipaa-workforce or secure-coding).')
-  modules[m[1].toLowerCase()] = m[2]
+  const m = /^(.{1,200}?)\s*=\s*(.{1,100})$/.exec(line), selected = m && courses.find(c => c.id === m[2] || c.title.toLowerCase() === m[2].toLowerCase())
+  if (!m || !selected) throw new Refusal('Map each KnowBe4 module to Security awareness, HIPAA privacy and security for the workforce, or Secure coding.')
+  modules[m[1].toLowerCase()] = selected.id
  }
  return modules
 }

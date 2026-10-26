@@ -1,10 +1,11 @@
+import { problem } from './problem'
 import { operatorAuth, runtimeBindings, type Bindings } from '../auth.server'
 import { boundedBody, Refusal } from './upload'
 import { headers, page, escape, signedOutPage } from './view'
 import { authorize } from './authz/gate'
 import type { Delegate } from './authz/roles'
 export interface Actor { id: string; name: string }
-export interface OwnerContext { env: Bindings; actor: Actor; now: Date; url: URL; request: Request; isApi: boolean; delegate?: Delegate }
+export interface OwnerContext { env: Bindings; actor: Actor; now: Date; url: URL; request: Request; isApi: boolean; sessionId: string; delegate?: Delegate }
 export interface Route { method: 'GET' | 'POST'; pattern: RegExp; errorReturn?: string; run: (context: OwnerContext, match: RegExpExecArray) => Promise<Response> }
 export type Input = Record<string, string | string[]>
 export const json = (data: unknown, status = 200) => Response.json(data, { status, headers })
@@ -25,11 +26,11 @@ export function ownerRoutes(routes: Route[], clock: () => Date) {
   const session = await operatorAuth(env).getSession(request)
   if (!session) return isApi ? json({ error: 'Owner sign-in required.' }, 401) : signedOutPage(request)
   const verdict = await authorize(env, session.operator, request.method === 'HEAD' ? 'GET' : request.method, url.pathname)
-  if (!verdict.ok) return json({ error: verdict.error }, verdict.status)
+  if (!verdict.ok) return isApi ? json({ error: verdict.error }, verdict.status) : problem(verdict.error, verdict.status, '/me', true)
   const method = request.method === 'HEAD' ? 'GET' : request.method
   const hit = matched.find(x => x.route.method === method)
   if (!hit) return json({ error: 'Method not allowed.' }, 405)
-  const context: OwnerContext = { env, actor: verdict.actor, delegate: verdict.delegate, now: clock(), url, request, isApi }
+  const context: OwnerContext = { env, sessionId: session.id, actor: verdict.actor, delegate: verdict.delegate, now: clock(), url, request, isApi }
   try { return await hit.route.run(context, hit.match!) }
   catch (error) {
    // LOG-001: a refused or failed owner write is recorded with its outcome,

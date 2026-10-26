@@ -9,6 +9,7 @@ export const provideShellFacts = (reader: typeof readFacts) => { readFacts = rea
 export const shellFacts = () => readFacts()
 export type NavKey = 'desk' | 'programs' | 'tests' | 'remediation' | 'vulnerabilities' | 'policies' | 'people' | 'vendors' | 'risks' | 'connections' | 'folders' | 'agent' | 'import' | 'archive' | 'audit' | 'operations' | 'roles'
 export interface PageOptions {
+ member?: boolean
  active?: NavKey
  owner?: string
  heading?: boolean
@@ -51,5 +52,6 @@ function programSwitch(facts: ShellFacts | null) {
 export function appShell(title: string, body: string, options: PageOptions = {}, facts: ShellFacts | null = null) {
  const owner = options.owner?.trim(), active = options.active ?? 'desk', failing = facts?.failingTests ?? 0
  const account = owner ? `<span class="app-account" aria-label="${escape('Signed in as ' + owner)}"><span class="account-name">${escape(owner)}</span><span class="account-initial" aria-hidden="true">${escape(Array.from(owner)[0].toLocaleUpperCase())}</span></span>` : ''
+ if (options.member) return `<a class="skip-link" href="#main">Skip to content</a><div class="app-body"><header class="app-topbar"><a class="app-brand" href="/me"><img class="evidence-mark" src="/brand/mark.svg" width="36" height="36" alt=""><span data-rer-name>Evidence</span></a><nav aria-label="My work"><a href="/me">My tasks</a></nav>${account}</header><main id="main" class="app-main${options.className ? ' ' + escape(options.className) : ''}">${options.heading === false ? '' : `<h1>${escape(title)}</h1>`}${body}</main></div>`
  return `<a class="skip-link" href="#main">Skip to content</a><div class="app-frame"><aside class="app-rail"><a class="app-brand" href="/app"><img class="evidence-mark" src="/brand/mark.svg" width="36" height="36" alt=""><span data-rer-name>Evidence</span></a><nav class="app-nav" aria-label="Evidence">${navLinks(work, active, failing)}<span class="nav-rule" role="presentation"></span>${navLinks(custody, active, failing)}</nav></aside><div class="app-body"><header class="app-topbar">${programSwitch(facts)}${account}</header><main id="main" class="app-main${options.className ? ' ' + escape(options.className) : ''}">${options.heading === false ? '' : `<h1>${escape(title)}</h1>`}${body}<footer class="app-caveat">A stored fingerprint proves the bytes did not change, not that a control operated or that the exhibit is true. Evidence does not certify your business or replace an auditor.</footer></main></div></div>`
 }

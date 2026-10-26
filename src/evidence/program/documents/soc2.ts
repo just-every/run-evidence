@@ -20,7 +20,7 @@ export async function soc2Description(c: Ctx): Promise<Generated> {
  const softwareRows = inventoryRows(software)
  const softwareSection = section('software', 'Software', softwareRows.map(r => ({ text: `${r.n} ${r.type.replaceAll('_', ' ')} resource${r.n === 1 ? '' : 's'} reported by ${r.sources || 'the inventory'}.`, cites: [inventoryCite(r)] })))
  for (const k of people) facts['people:' + k.kind] = { label: `${k.kind} headcount`, value: String(k.n) }
- const peopleSection = section('people', 'People', [...people.map(k => ({ text: `${k.n} current ${k.kind}${k.n === 1 ? '' : 's'} are recorded in People.`, cites: [{ kind: 'people', ref: k.kind, revision: k.n, label: `People: ${k.n} ${k.kind}s` }] })), ...(s.teams.length ? [{ text: `Teams in scope: ${s.teams.join(', ')}.`, cites: [cite] }] : [])])
+ const peopleSection = section('people', 'People', [...people.map(k => ({ text: `${k.n} current ${k.kind}${k.n === 1 ? '' : 's'} ${k.n === 1 ? 'is' : 'are'} recorded in People.`, cites: [{ kind: 'people', ref: k.kind, revision: k.n, label: `People: ${k.n} ${k.kind}${k.n === 1 ? '' : 's'}` }] })), ...(s.teams.length ? [{ text: `Teams in scope: ${s.teams.join(', ')}.`, cites: [cite] }] : [])])
  const data = section('data', 'Data', [])
  for (const x of policies) facts['policy:' + x.id] = { label: `Policy ${x.title}`, value: String(x.version) }
  const procedures = section('procedures', 'Procedures', policies.length ? [{ text: `${policies.length} approved and published polic${policies.length === 1 ? 'y' : 'ies'} govern the system.`, cites: [] }] : [], { table: policies.length ? { head: ['Policy', 'Revision', 'Effective', 'Review'], rows: policies.map(x => [x.title, String(x.version), x.effective ? usDate(x.effective) : '', x.state]) } : undefined })

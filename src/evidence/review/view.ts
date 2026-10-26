@@ -1,6 +1,6 @@
 import { day } from '../model'
 import { iconTile, slab, stateChip } from '../ui'
-import type { controls, folders } from './storage'
+import type { controls, folders, NamedReviewEvent } from './storage'
 import type { Folder, ReviewEvent } from './types'
 import { escape, reviewFrame } from './frame'
 import { span, when } from '../format'
@@ -19,6 +19,6 @@ export async function foldersPage(rows:Awaited<ReturnType<typeof folders>>, avai
 export async function issuedPage(folder:Folder,url:string,owner?:string) {
  return reviewFrame('Folder created',`<h1>Folder created</h1><p class="issued-label">${escape(folder.reviewer_label)}</p>${slab(`<p>Copy this link now. It is shown only once; it cannot be recovered after leaving this page.</p><p class="folder-hint">Covered period: ${span(folder.period_from,folder.period_to)}. Expires ${when(folder.expires_at)}.</p><label>Reviewer link<input id="reviewer-link" class="folder-link" type="text" readonly autocomplete="off" value="${escape(url)}"></label><div class="folder-actions"><button type="button" data-copy-review>Copy link</button><a class="button button-secondary" href="${escape(url)}" rel="noreferrer">Open reviewer folder</a></div><p id="copy-status" role="status"></p>`,'folder-once')}<p class="folder-return"><a href="/app/folders">Return to review folders</a></p>`,true,owner)
 }
-export async function logsPage(rows:ReviewEvent[],owner?:string) {
- return reviewFrame('Folder access log',`<h1>Folder access log</h1><p>Allowed views and downloads, and refused attempts. Unknown grants have no folder association. Links and tokens are never recorded.</p>${slab(rows.map(event=>`<article class="review-log">${iconTile('document')}<div><h2>${escape(event.action)} · ${escape(event.outcome)}</h2><p class="review-time">${when(event.occurred_at)}</p><p>Folder: ${escape(event.folder_id||'Unknown')}</p><p>Exhibit: ${escape(event.exhibit_id||'None')}</p></div></article>`).join('')||'<p>No access events yet.</p>','review-log-panel')}`,true,owner)
+export async function logsPage(rows:(ReviewEvent & Partial<Pick<NamedReviewEvent,'folder_name'|'exhibit_name'>>)[],owner?:string) {
+ return reviewFrame('Folder access log',`<h1>Folder access log</h1><p>Allowed views and downloads, and refused attempts. Unknown grants have no folder association. Links and tokens are never recorded.</p>${slab(rows.map(event=>`<article class="review-log">${iconTile('document')}<div><h2>${escape({page:'Folder opened',list:'Exhibits listed',receipt:'Receipt viewed',download:'File downloaded',unknown:'Unknown request'}[event.action])} · ${event.outcome==='allowed'?'Allowed':'Refused'}</h2><p class="review-time">${when(event.occurred_at)}</p><p>Folder: ${escape(event.folder_name||(event.folder_id?'Unavailable folder':'Unknown'))}</p><p>Exhibit: ${escape(event.exhibit_name||(event.exhibit_id?'Unavailable exhibit':'None'))}</p></div></article>`).join('')||'<p>No access events yet.</p>','review-log-panel')}`,true,owner)
 }

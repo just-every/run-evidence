@@ -1,3 +1,4 @@
+import { showOnce, takeOnce } from '../credential-display'
 import { manifestRoutes } from './manifests'
 import {connectAzureDevops} from './azuredevops-collect'
 import {Refusal} from '../upload'
@@ -24,7 +25,7 @@ const safe = <T extends { secret_ciphertext?: unknown; secret_iv?: unknown; coll
 export function connectHandler(clock: () => Date) {
  const routes: Route[] = [
   ...manifestRoutes(id),
-  { method: 'GET', pattern: both('/connections'), run: async c => { const rows = await connections(c.env), tokens = await apiTokens(c.env); return c.isApi ? json({ connections: rows.map(safe), api_tokens: tokens }) : connectionsPage(rows, tokens, null, c.actor.name) } },
+  { method: 'GET', pattern: both('/connections'), run: async c => { const rows = await connections(c.env), tokens = await apiTokens(c.env); return c.isApi ? json({ connections: rows.map(safe), api_tokens: tokens }) : connectionsPage(rows, tokens, await takeOnce<{ token: string; name: string }>(c), c.actor.name) } },
   { method: 'POST', pattern: both('/connections'), run: async c => {
    const input = await readInput(c.request)
    if(input.provider&&!['github','aws','knowbe4','gitlab','bitbucket','azuredevops'].includes(String(input.provider))&&!isDirectory(String(input.provider))&&!isScopedCloud(String(input.provider)))throw new Refusal('Choose a supported source provider; no credential was sent.')
@@ -48,7 +49,7 @@ export function connectHandler(clock: () => Date) {
   { method: 'POST', pattern: both(`/connections/${id}/revoke`), run: async (c, m) => { await revokeConnection(c.env, c.actor, m[1], c.now); return done(c, '/app/connections/' + m[1], { revoked: true }) } },
   { method: 'POST', pattern: both('/api-tokens'), run: async c => {
    const issued = await issueApiToken(c.env, c.actor, await readInput(c.request), c.now)
-   return c.isApi ? json(issued, 201) : connectionsPage(await connections(c.env), await apiTokens(c.env), { token: issued.token, name: issued.grant.name }, c.actor.name)
+   return c.isApi ? json(issued, 201) : showOnce(c, '/app/connections', { token: issued.token, name: issued.grant.name })
   } },
   { method: 'POST', pattern: both(`/api-tokens/${id}/revoke`), run: async (c, m) => { await revokeApiToken(c.env, c.actor, m[1], c.now); return done(c, '/app/connections#api-title', { revoked: true }) } },
  ]

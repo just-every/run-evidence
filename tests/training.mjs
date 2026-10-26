@@ -1,3 +1,4 @@
+import { trainingBrowser } from './helpers/training-browser.mjs'
 // Shipped training, campaigns, assessments and completion sources through
 // public doors: owner JSON doors, Base invitations and member sign-in for
 // learners, the employee door, the Connections door for KnowBe4 and the Cron
@@ -73,6 +74,9 @@ try {
   const shown = await get('/api/me/training/security-awareness')
   assert.equal(shown.lessons.length, 5); assert.ok(shown.quiz.every(q => !('answer' in q)))
   const right = course('security-awareness').quiz.map(q => q.answer), wrong = right.map((a, i) => i < 3 ? (a + 1) % 4 : a)
+  for (const fields of [{}, Object.fromEntries(right.map((a, i) => [`answers[${i}]`, i === 4 ? '' : String(a)]))]) {
+   const incomplete = await app.fetch('/me/training/security-awareness/attempts', { method: 'POST', headers: { origin: app.origin, 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(fields) }); assert.equal(incomplete.status, 400)
+  }
   const fail = await post('/api/me/training/security-awareness/attempts', { answers: wrong })
   assert.deepEqual([fail.score, fail.passed], [70, false])
   assert.ok((await get('/api/me')).training.some(t => t.course_id === 'security-awareness' && t.state === 'assigned'))
@@ -90,7 +94,7 @@ try {
   const internal = await post('/api/training/internal', { title: 'Security town hall 2026', description: 'Live session covering the awareness curriculum, with attendance taken', counts_as: 'security-awareness' })
   await post(`/api/training/internal/${internal.id}/completions`, { person_id: people.pat, completed_on: '2026-10-11' })
   await post('/api/connections', { provider: 'knowbe4', region: 'us', secret: 'wrong-key' }, 400)
-  await post('/api/connections', { provider: 'knowbe4', region: 'us', secret: key, module_map: '2026 Security Awareness Training = security-awareness' })
+  await post('/api/connections', { provider: 'knowbe4', region: 'us', secret: key, module_map: '2026 Security Awareness Training = Security awareness' })
   await app.tick()
   const status = Object.fromEntries((await get('/api/training')).assignments.filter(a => a.campaign === 'Annual awareness').map(a => [a.email, [a.status, a.provenance]]))
   assert.deepEqual(status['pat@northstar.test'], ['completed', 'manual: approved internal course recorded by Evidence owner'])
@@ -111,6 +115,10 @@ try {
   assert.match(csv, /source-reported by KnowBe4/); assert.match(csv, /manual: approved internal course/)
   const exported = await get('/api/training/export')
   assert.deepEqual([...new Set(exported.completions.map(c => c.source))].sort(), ['evidence', 'internal', 'knowbe4'])
+  assert.deepEqual(exported.attempts.filter(a => a.email === 'nina@northstar.test').map(a => [a.revision, a.score, a.passed]), [[1, 70, 0], [1, 100, 1]])
+  assert.equal(exported.completions.filter(c => c.email === 'omar@northstar.test').length, 0)
+  await app.clock('2026-10-29T15:00:00Z')
+  await trainingBrowser(app, ownerCookie, course('security-awareness').quiz.map(q => q.answer))
  })
  await scenario('COLLECTION-001: KnowBe4 malformed completion facts, repeated or exhausted pages and throttling never admit a partial completion set; recovery deduplicates originals', async () => {
   const connection = (await get('/api/connections')).connections.find(c => c.provider === 'knowbe4'), path = '/api/connections/' + connection.id

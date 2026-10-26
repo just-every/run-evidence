@@ -37,6 +37,16 @@ export async function events(env: Bindings, folder?: string) {
  const query = env.DB.prepare('SELECT id,folder_id,exhibit_id,action,outcome,occurred_at FROM review_events'+(folder?' WHERE folder_id=?':'')+' ORDER BY occurred_at DESC,id')
  return (await (folder?query.bind(folder):query).all<ReviewEvent>()).results
 }
+// Resolve owner-facing labels without changing the access-event API or retained log.
+export type NamedReviewEvent = ReviewEvent & { folder_name: string | null; exhibit_name: string | null }
+export async function eventNames(env: Bindings, rows: ReviewEvent[]): Promise<NamedReviewEvent[]> {
+ const [folders, exhibits] = await Promise.all([
+  env.DB.prepare('SELECT id,reviewer_label FROM review_folders').all<{id:string;reviewer_label:string}>(),
+  env.DB.prepare('SELECT id,filename FROM exhibits').all<{id:string;filename:string}>(),
+ ])
+ const folderNames = new Map(folders.results.map(r=>[r.id,r.reviewer_label])), exhibitNames = new Map(exhibits.results.map(r=>[r.id,r.filename]))
+ return rows.map(row=>({...row,folder_name:row.folder_id ? folderNames.get(row.folder_id) ?? 'Unavailable folder' : null,exhibit_name:row.exhibit_id ? exhibitNames.get(row.exhibit_id) ?? 'Unavailable exhibit' : null}))
+}
 // Whole inclusive receipt interval must be contained in the folder interval.
 // A receipt spanning either boundary is excluded, including direct downloads.
 export const insidePeriod = (folder: Folder, row: Receipt) => row.covered_from >= folder.period_from && row.covered_to <= folder.period_to

@@ -1,3 +1,4 @@
+import { showOnce, takeOnce } from '../credential-display'
 import type { Bindings } from '../../auth.server'
 import { Refusal, boundedBody, MAX_FILE } from '../upload'
 import { auditStatement, done, json, ownerRoutes, readInput, uuid, type Route } from '../door'
@@ -39,7 +40,7 @@ export function vendorHandler(clock: () => Date) {
   { method: 'POST', pattern: both('/vendors'), run: async c => { const created = await onboardVendor(c.env, c.actor, await readInput(c.request), c.now); return done(c, back(created.id), created, 201) } },
   { method: 'GET', pattern: both('/vendor-templates'), run: async c => json({ templates: (await templates(c.env)).map(t => ({ id: t.id, name: t.name, revision: t.revision, source: t.source, owner_built: t.owner_built, type: t.type ?? t.workbook?.type, workbook: t.workbook, import_required: t.import_required ?? false, questions: t.questions })) }) },
   { method: 'POST', pattern: both('/vendor-templates'), run: async c => done(c, '/app/vendors', await (c.request.headers.get('content-type')?.startsWith('multipart/form-data;') ? importWorkbook(c.env, c.actor, await workbookForm(c.request), c.now) : createTemplate(c.env, c.actor, await readInput(c.request), c.now)), 201) },
-  { method: 'GET', pattern: both(`/vendors/${id}`), run: async (c, m) => { const d = await detail(c.env, m[1], c.now); return c.isApi ? json({ ...d, documents: d.documents.map(x => ({ ...x, comparison: compare(x, d.documents) })), templates: d.templates.map(t => ({ id: t.id, name: t.name, questions: t.questions.length })) }) : vendorPage(d, await people(c.env), c.now, c.actor.name, null) } },
+  { method: 'GET', pattern: both(`/vendors/${id}`), run: async (c, m) => { const d = await detail(c.env, m[1], c.now); return c.isApi ? json({ ...d, documents: d.documents.map(x => ({ ...x, comparison: compare(x, d.documents) })), templates: d.templates.map(t => ({ id: t.id, name: t.name, questions: t.questions.length })) }) : vendorPage(d, await people(c.env), c.now, c.actor.name, await takeOnce<Awaited<ReturnType<typeof issueRequests>>>(c)) } },
   { method: 'POST', pattern: both(`/vendors/${id}`), run: async (c, m) => done(c, back(m[1]), await updateProfile(c.env, c.actor, m[1], await readInput(c.request), c.now)) },
   { method: 'POST', pattern: both(`/vendors/${id}/subprocessors`), run: async (c, m) => done(c, back(m[1]), { id: await addSubprocessor(c.env, c.actor, m[1], await readInput(c.request), c.now) }, 201) },
   { method: 'POST', pattern: both(`/vendors/${id}/subprocessors/${id}/remove`), run: async (c, m) => { await removeSubprocessor(c.env, c.actor, m[1], m[2], await readInput(c.request), c.now); return done(c, back(m[1]), { removed: true }) } },
@@ -61,7 +62,7 @@ export function vendorHandler(clock: () => Date) {
   { method: 'POST', pattern: both(`/vendors/${id}/requests`), run: async (c, m) => {
    const issued = await issueRequests(c.env, c.actor, m[1], await readInput(c.request), c.now)
    if (c.isApi) return json(issued, 201)
-   return vendorPage(await detail(c.env, m[1], c.now), await people(c.env), c.now, c.actor.name, issued)
+   return showOnce(c, back(m[1]), issued)
   } },
   { method: 'POST', pattern: both(`/vendors/${id}/requests/${id}/close`), run: async (c, m) => { await closeRequest(c.env, c.actor, m[1], m[2], await readInput(c.request), c.now); return done(c, back(m[1]), { closed: true }) } },
   { method: 'POST', pattern: both(`/vendors/${id}/links/${id}/close`), run: async (c, m) => { await closeLink(c.env, c.actor, m[1], m[2], c.now); return done(c, back(m[1]), { closed: true }) } },

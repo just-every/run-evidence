@@ -1,8 +1,9 @@
+import { showOnce, takeOnce } from '../credential-display'
 import { operatorAuth, runtimeBindings, type Bindings } from '../../auth.server'
 import { validDate } from '../model'
 import { storedBytes } from '../storage'
 import { boundedBody, Refusal } from '../upload'
-import { closeFolder, controls, events, folderActive, folders, grant, issueFolder, logEvent, projectReceipt, receiptExhibit, reviewData, scopedReceipt } from './storage'
+import { closeFolder, controls, events, eventNames, folderActive, folders, grant, issueFolder, logEvent, projectReceipt, receiptExhibit, reviewData, scopedReceipt } from './storage'
 import type { FolderInput, ReviewAction } from './types'
 import { foldersPage, issuedPage, logsPage, reviewerPage, reviewReceiptPage } from './view'
 export const reviewHeaders = { 'cache-control':'no-store', 'referrer-policy':'no-referrer', 'x-content-type-options':'nosniff', 'x-robots-tag':'noindex, nofollow' }
@@ -87,18 +88,18 @@ export function reviewHandler(clock: () => Date = () => new Date()) {
    const session = await operatorAuth(env).getSession(request)
    if (!session) return json({error:'Owner sign-in required.'},401)
    if (session.operator.role!=='owner') return json({error:'Owner access required.'},403)
-   const api = path.startsWith('/api/'), now = clock()
+   const api = path.startsWith('/api/'), now = clock(), display = { env, sessionId: session.id, actor: session.operator, now, request, url }
    if (path==='/app/folders' || path==='/api/folders') {
     if (request.method==='POST') {
      const result = await issueFolder(env,await validateInput(env,await readInput(request),now),now), reviewURL = env.AUTH_ORIGIN+'/review/'+result.token
-     return api ? json({folder:result.folder,review_url:reviewURL},201) : issuedPage(result.folder,reviewURL,session.operator.displayName)
+     return api ? json({folder:result.folder,review_url:reviewURL},201) : showOnce(display, '/app/folders', { folder: result.folder, url: reviewURL })
     }
-    if (['GET','HEAD'].includes(request.method)) { const data = await folders(env); return api ? json({folders:data}) : foldersPage(data,await controls(env),now,session.operator.displayName) }
+    if (['GET','HEAD'].includes(request.method)) { const issued = !api ? await takeOnce<{ folder: import('./types').Folder; url: string }>(display) : null; if (issued) return issuedPage(issued.folder,issued.url,session.operator.displayName); const data = await folders(env); return api ? json({folders:data}) : foldersPage(data,await controls(env),now,session.operator.displayName) }
    }
    const closing = /^\/(?:app|api)\/folders\/([a-f0-9-]+)\/close$/.exec(path)
    if (closing && request.method==='POST') { const folder = await closeFolder(env,closing[1],now); return !folder ? absent() : api ? json({folder}) : redirect('/app/folders') }
    const log = /^\/(?:app|api)\/folders\/(?:([a-f0-9-]+)\/)?events$/.exec(path)
-   if (log && ['GET','HEAD'].includes(request.method)) { const data=await events(env,log[1]); return api ? json({events:data}) : logsPage(data,session.operator.displayName) }
+   if (log && ['GET','HEAD'].includes(request.method)) { const data=await events(env,log[1]); return api ? json({events:data}) : logsPage(await eventNames(env,data),session.operator.displayName) }
    return ['GET','HEAD'].includes(request.method) ? absent() : json({error:'Method not allowed.'},405)
   } catch (error) {
    if (error instanceof Refusal) return json({error:error.message},error.status)

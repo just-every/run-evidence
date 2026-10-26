@@ -67,7 +67,10 @@ export async function attempt(env: Bindings, person: { id: string; email: string
  const c = course(courseId); if (!c) throw new Refusal('Course not found.', 404)
  const adopted = await env.DB.prepare('SELECT revision FROM training_adoptions WHERE course_id=? ORDER BY revision DESC LIMIT 1').bind(c.id).first<{ revision: number }>()
  if (!adopted || !await env.DB.prepare("SELECT 1 FROM training_assignments WHERE person_id=? AND course_id=? AND state='assigned'").bind(person.id, c.id).first()) throw new Refusal('This course is not assigned to you.', 404)
- const answers = (Array.isArray(input.answers) ? input.answers : String(input.answers ?? '').split(',')).map(Number), result = grade(c, answers)
+ const submitted = input.answers === undefined ? c.quiz.map((_, i) => input[`answers[${i}]`]) : Array.isArray(input.answers) ? input.answers : input.answers.split(',')
+ // Missing, repeated and blank answers must never become the numeric answer zero.
+ if (submitted.length !== c.quiz.length || submitted.some(a => typeof a !== 'string' || !/^[0-3]$/.test(a))) throw new Refusal('Answer every question.')
+ const answers = submitted.map(Number), result = grade(c, answers)
  if (!result) throw new Refusal('Answer every question.')
  const id = crypto.randomUUID(), at = now.toISOString()
  const statements = [env.DB.prepare('INSERT INTO training_attempts(id,person_id,course_id,revision,answers_json,score,passed,operator_email,at) VALUES(?,?,?,?,?,?,?,?,?)').bind(id, person.id, c.id, adopted.revision, JSON.stringify(answers), result.score, result.passed ? 1 : 0, person.email, at)]

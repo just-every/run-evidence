@@ -6,6 +6,7 @@ import { createOwnerClaimHandler } from './modules/owner-claim/index.mjs'
 import branding from './branding.json'
 import { auditedAuthentication } from './evidence/audit/auth'
 import { loadSubjects, mfaFetch, ssoHooks, ssoProviders, type Subjects } from './evidence/authz/sso'
+import { authFailurePage } from './evidence/member-frame'
 
 // The edition's declared theme (public/rer-theme.css), as Base frames link it.
 const theme = { href: '/rer-theme.css', productName: branding.name, accentColor: branding.primaryColor }
@@ -57,7 +58,12 @@ export const runtimeBindings = (env: Bindings): Bindings => env.RER_DEV_ORIGIN &
 export const authConfig = (env: Bindings): AuthConfig => ({ origin: env.AUTH_ORIGIN, local: env.AUTH_LOCAL === 'true', OWNER_EMAIL: env.OWNER_EMAIL, SESSION_SECRET: env.SESSION_SECRET, SETUP_TOKEN: env.SETUP_TOKEN, MAIL_FROM: env.MAIL_FROM, branding: { productName: branding.name, accentColor: branding.primaryColor, signInPath: '/signin', theme: theme.href } })
 export function operatorAuth(env: Bindings, subjects: Subjects = {}) {
  const providers = ssoProviders(env, subjects), sso = providers.length > 0 && !!env.OIDC_TRANSACTION_SECRET
- return createOperatorAuth({ db: env.DB, config: { ...authConfig(env), ...(sso ? { providers, OIDC_TRANSACTION_SECRET: env.OIDC_TRANSACTION_SECRET } : {}) } as AuthConfig, mailSender: operatorMail(env), clientIp: request => request.headers.get('CF-Connecting-IP') ?? '', hooks: ssoHooks(env), ...(sso ? { fetch: mfaFetch(env) } : {}) })
+ return createOperatorAuth({ db: env.DB, config: { ...authConfig(env), ...(sso ? { providers, OIDC_TRANSACTION_SECRET: env.OIDC_TRANSACTION_SECRET } : {}) } as AuthConfig, mailSender: operatorMail(env), clientIp: request => request.headers.get('CF-Connecting-IP') ?? '', hooks: {
+  ...ssoHooks(env),
+  afterConfirm({ operator, returnTo }: { operator: { role: string }; returnTo: string }) {
+   if (operator.role === 'member' && ['/app', '/setup'].includes(returnTo)) return { returnTo: '/me' }
+  },
+ }, ...(sso ? { fetch: mfaFetch(env) } : {}) })
 }
 
 // LOG-001: every write through the sign-in, first-run and owner-claim doors is
@@ -75,6 +81,10 @@ async function authAnswer(request: Request, env: Bindings, url: URL): Promise<Re
  const subjects = url.pathname.startsWith('/auth/oidc/') ? await loadSubjects(env).catch(() => ({})) : {}
  // The shared server-rendered sign-in page: plain forms that work before any script.
  if (url.pathname === '/signin') {
+  if (['GET', 'HEAD'].includes(request.method) && !url.searchParams.has('returnTo')) {
+   const session = await operatorAuth(env, subjects).getSession(request)
+   if (session?.operator.role === 'member') return new Response(null, { status: 303, headers: { location: '/me', 'cache-control': 'no-store' } })
+  }
   const page = await createSignInHandler(operatorAuth(env, subjects), {
    defaultReturnTo: '/setup',
   })(request)
@@ -84,7 +94,10 @@ async function authAnswer(request: Request, env: Bindings, url: URL): Promise<Re
   const claim = createOwnerClaimHandler({ db: env.DB, authConfig: authConfig(env), clientIp: request => request.headers.get('CF-Connecting-IP') ?? '', issuer: env.RER_OWNER_CLAIM_ISSUER ?? '', installationId: env.RER_OWNER_CLAIM_INSTALLATION_ID ?? '', appOrigin: env.AUTH_ORIGIN, expectedEmail: env.OWNER_EMAIL.toLowerCase(), publicKeys: JSON.parse(env.RER_OWNER_CLAIM_PUBLIC_KEYS) })
   return fontDocumentResponse((await claim(request))!)
  }
- if (url.pathname.startsWith('/auth/')) return fontDocumentResponse(await createAuthHandler(operatorAuth(env, subjects))(request))
+ if (url.pathname.startsWith('/auth/')) {
+  const response = await createAuthHandler(operatorAuth(env, subjects))(request)
+  return response ? fontDocumentResponse(await authFailurePage(request, response)) : null
+ }
  if (url.pathname === '/setup' || url.pathname === '/app' || url.pathname.startsWith('/app/')) {
   const setup = await firstRunResponse(request, env, operatorAuth(env), { theme })
   if (setup) return setup

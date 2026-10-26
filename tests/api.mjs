@@ -1,3 +1,4 @@
+import { credentialJourney } from './helpers/credential-journey.mjs'
 // The v1 public API, continuous tests and remediation through public doors:
 // Bearer-token API calls, owner pages' JSON doors and the Cron Trigger, on real
 // workerd, D1 and R2. Only the paid mail edge is faked.
@@ -13,10 +14,10 @@ const get = async path => { const r = await app.fetch(path); assert.equal(r.stat
 const v1 = (token, method, path, body) => app.fetch(path, { method, headers: { cookie: '', ...(token ? { authorization: 'Bearer ' + token } : {}), ...(body && !(body instanceof FormData) ? { 'content-type': 'application/json' } : {}) }, ...(body ? { body: body instanceof FormData ? body : JSON.stringify(body) } : {}) })
 const services = (count, insecure = 'svc-07') => Array.from({ length: count }, (_, i) => { const id = 'svc-' + String(i + 1).padStart(2, '0'); return { uniqueId: id, displayName: 'Service ' + id, attributes: { mfa_enforced: id !== insecure, owner: 'platform', tier: i % 3 } } })
 const count = async (sql, ...binds) => (await app.db.prepare(sql).bind(...binds).first()).n
-let push, reader, evidence, testId, obligation, soc2
+let push, reader, evidence, testId, obligation, soc2, ownerCookie
 try {
  await scenario('Scoped expiring tokens; foreign, revoked, cookie-only and out-of-scope calls are refused with nothing written', async () => {
-  await app.signin()
+  ownerCookie = await app.signin()
   soc2 = (await owner('/api/programs', { framework: 'soc2', name: 'SOC 2', legal_entity: 'Northstar', report_type: 'Type II', audit_from: '2026-07-01', audit_to: '2027-06-30' })).id
   push = await owner('/api/api-tokens', { name: 'Inventory sync', scopes: ['resource-push', 'read', 'test-write'], expires_at: '2027-04-01' })
   reader = await owner('/api/api-tokens', { name: 'Board report', scopes: ['read'], expires_at: '2027-04-01' })
@@ -100,7 +101,7 @@ try {
   assert.equal((await v1(reader.token, 'POST', '/v1/tests', { name: 'x' })).status, 403)
   for (const [path, text] of [['/app/tests', 'Internal services enforce MFA'], ['/app/tests/' + testId, 'Service svc-07'], ['/app/remediation', 'Service svc-07'], ['/app/remediation/' + obligation.id, 'Mark work done'], ['/app/connections', 'Inventory sync'], ['/app/policies', 'Access control policy']]) { const page = await app.fetch(path); assert.equal(page.status, 200, path); const html = await page.text(); assert.ok(html.includes(text), path); assert.ok(!html.includes(push.token), path) }
   const issued = await app.fetch('/app/api-tokens', { method: 'POST', headers: { origin: app.origin, 'content-type': 'application/x-www-form-urlencoded' }, body: 'name=Form+token&scopes%5B%5D=read&expires_at=2027-01-01' })
-  assert.equal(issued.status, 200); assert.match(await issued.text(), /Copy this token now[\s\S]*evd_[a-f0-9]{10}_/)
+  assert.equal(issued.status, 303); const shown = await app.fetch(issued.headers.get('location')); assert.match(await shown.text(), /Copy this token now[\s\S]*evd_[a-f0-9]{10}_/)
   assert.ok(!(await (await app.fetch('/app/connections')).text()).match(/evd_[a-f0-9]{10}_[A-Za-z0-9_-]{43}/))
  })
  await scenario('Marking work done waits for a re-test; the queued re-test fails and keeps it open; the source fix verifies; a regression reopens', async () => {
@@ -183,5 +184,6 @@ try {
   assert.equal(limited.status, 429); assert.ok(Number(limited.headers.get('retry-after')) > 0); assert.ok((await limited.json()).retry_after_seconds > 0)
   assert.ok(await count("SELECT COUNT(*) AS n FROM api_calls WHERE status=429") >= 2)
  })
+ await scenario('Native credential forms redirect before a once-only display and refresh never issues another credential', () => credentialJourney(app, ownerCookie))
  console.log(`${passed} API, test and remediation public-door scenarios passed with real workerd, D1 and R2.`)
 } finally { await app.close() }
