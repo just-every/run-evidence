@@ -60,3 +60,14 @@ export function choiceValues(format:string):string[] {
  const match=/^(yes)\s*[/|,]\s*(no)(?:\s*[/|,]\s*(na|n\/a|not applicable))?$/i.exec(format.trim())
  return match?match.slice(1).filter((s):s is string=>!!s):[]
 }
+
+// Portal choices retain the buyer's exact option values. A multi-select answer
+// is a JSON list, explicitly mapped by the reviewer, never inferred from text.
+export function validChoice(question:Question & {portal?:{type:string;options:{value:string}[]}},value:string):boolean {
+ if(!question.portal)return choiceValues(question.format).includes(value)
+ const values=question.portal.options.map(o=>o.value)
+ if(question.portal.type==='multi-select'){
+  try{const selected=JSON.parse(value);return Array.isArray(selected)&&selected.length>0&&new Set(selected).size===selected.length&&selected.every(v=>typeof v==='string'&&values.includes(v))}catch{return false}
+ }
+ return ['choice',['yes','no'].join('/')].includes(question.portal.type)&&values.includes(value)
+}

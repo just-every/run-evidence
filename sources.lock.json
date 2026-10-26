@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "25ae232aefb6d3d83f21b787faf082d4a3c945b2403d9c16186f5514a9a8f510",
+  "manifest": "e2049e7eccbf61a3450f2dfab99c17adc355aa4305f3a9417d8996cdb8d58932",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2733,6 +2733,7 @@
           "deploy-demo.json",
           "deploy-site.json",
           "deploy.json",
+          "docs/ACCESS.md",
           "docs/AGENT-COMMANDS.md",
           "docs/API.md",
           "docs/AUDITOR-API.md",
@@ -2741,9 +2742,11 @@
           "docs/CUSTOMER-PROMISES.md",
           "docs/DRATA-IMPORT.md",
           "docs/GETTING-STARTED.md",
+          "docs/KEY-CUSTODY.md",
           "docs/MAIN-FLOWS.md",
           "docs/MOVE-IN.md",
           "docs/OPERATIONS.md",
+          "docs/PORTAL-QUESTIONNAIRES.md",
           "docs/PRIVATE-COLLECTOR.md",
           "docs/PROGRAMS.md",
           "docs/PROVIDER-COSTS.md",
@@ -2820,6 +2823,8 @@
           "migrations/core/0064_trust_grant_scope.sql",
           "migrations/core/0065_promise_dependencies.sql",
           "migrations/core/0066_promise_erasure_fence.sql",
+          "migrations/core/0067_access_roles.sql",
+          "migrations/core/0068_secure_records_flows.sql",
           "package.json",
           "packaging.json",
           "pnpm-lock.yaml",
@@ -2847,6 +2852,10 @@
           "public/fonts/schibsted-grotesk/LICENSE.txt",
           "public/fonts/schibsted-grotesk/schibsted-grotesk-latin-ext-wght-normal.woff2",
           "public/fonts/schibsted-grotesk/schibsted-grotesk-latin-wght-normal.woff2",
+          "public/portal-extension/manifest.json",
+          "public/portal-extension/popup.html",
+          "public/portal-extension/popup.js",
+          "public/portal-extension/scan.js",
           "public/rer-theme.css",
           "public/review.css",
           "public/review.js",
@@ -2942,12 +2951,15 @@
           "src/evidence/agent/storage.ts",
           "src/evidence/agent/tailoring-archive.ts",
           "src/evidence/agent/tailoring-http.ts",
+          "src/evidence/agent/tailoring-interpret.ts",
           "src/evidence/agent/tailoring-storage.ts",
           "src/evidence/agent/types.ts",
           "src/evidence/agent/view.ts",
           "src/evidence/answer/archive.ts",
           "src/evidence/answer/format.ts",
           "src/evidence/answer/http.ts",
+          "src/evidence/answer/portal-documents.ts",
+          "src/evidence/answer/portal.ts",
           "src/evidence/answer/sources.ts",
           "src/evidence/answer/storage.ts",
           "src/evidence/api/collections.ts",
@@ -2986,6 +2998,13 @@
           "src/evidence/audit/http.ts",
           "src/evidence/audit/storage.ts",
           "src/evidence/audit/view.ts",
+          "src/evidence/authz/gate.ts",
+          "src/evidence/authz/http.ts",
+          "src/evidence/authz/reviewers.ts",
+          "src/evidence/authz/roles.ts",
+          "src/evidence/authz/scim.ts",
+          "src/evidence/authz/sso.ts",
+          "src/evidence/authz/storage.ts",
           "src/evidence/cadence.ts",
           "src/evidence/cloud/aws-schema.ts",
           "src/evidence/cloud/aws.ts",
@@ -3221,6 +3240,10 @@
           "src/evidence/risk/storage.ts",
           "src/evidence/risk/view.ts",
           "src/evidence/scheduler.ts",
+          "src/evidence/secure/flows.ts",
+          "src/evidence/secure/http.ts",
+          "src/evidence/secure/records.ts",
+          "src/evidence/secure/rotation.ts",
           "src/evidence/shell-context.ts",
           "src/evidence/shell.ts",
           "src/evidence/storage.ts",
@@ -3400,8 +3423,11 @@
           "tests/helpers/github-members-journey.mjs",
           "tests/helpers/gitlab-fixture.mjs",
           "tests/helpers/gitlab-journey.mjs",
+          "tests/helpers/idp-fixture.mjs",
+          "tests/helpers/interpret-journey.mjs",
           "tests/helpers/inventory-fixture.mjs",
           "tests/helpers/migrate-journey.mjs",
+          "tests/helpers/model-fixture.mjs",
           "tests/helpers/move-in-browser.mjs",
           "tests/helpers/native-fields-fixture.mjs",
           "tests/helpers/native-fields-journey.mjs",
@@ -3441,6 +3467,8 @@
           "tests/import.mjs",
           "tests/inventory-browser.mjs",
           "tests/inventory.mjs",
+          "tests/live/anthropic-tailoring.mjs",
+          "tests/live/okta-sso.mjs",
           "tests/live/own-daytona-http.py",
           "tests/live/own-daytona-remote.py",
           "tests/live/own-daytona.py",
@@ -3448,6 +3476,8 @@
           "tests/live/own-hosted-tail.mjs",
           "tests/live/own-hosted.mjs",
           "tests/live/own-macos.py",
+          "tests/live/receipts/anthropic-tailoring.json",
+          "tests/live/receipts/okta-sso.json",
           "tests/live/trust-sendgrid.mjs",
           "tests/open.mjs",
           "tests/ops-browser.mjs",
@@ -3464,6 +3494,8 @@
           "tests/review-browser.mjs",
           "tests/review.mjs",
           "tests/risk.mjs",
+          "tests/roles.mjs",
+          "tests/secure.mjs",
           "tests/site.mjs",
           "tests/trackers-browser.mjs",
           "tests/trackers.mjs",
@@ -3507,7 +3539,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "f607e3b5702d2396c29e6a2ec3b7f1a6b3520e713804e53301cb182657059e58",
+      "sha256": "efe33575f29a1f5baba4dd388ac12f2a935e60f3a17993d5a5951da692de09f7",
       "executable": false
     },
     "AGENTS.md": {
@@ -3523,7 +3555,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "117d73aa27d9f1eff6439e0143ab231c8cdeede23dcab6fce81ac7670571e32c",
+      "sha256": "946ed9dd290d8bdf45dd9ebaa12ccdfc838d2c4c86dc049daa7f37fb0141fca6",
       "executable": false
     },
     "DEMO.md": {
@@ -3594,6 +3626,10 @@
       "sha256": "2d3001e908839102d7b08ae1a61f9bcb0d1a4f3fce11997e12c1c7450e272b81",
       "executable": false
     },
+    "docs/PORTAL-QUESTIONNAIRES.md": {
+      "sha256": "6347f41cb514df9cd2cd9cca33c2c86344d81ed0ead75693c7af14e8023a79c0",
+      "executable": false
+    },
     "docs/PRIVATE-COLLECTOR.md": {
       "sha256": "55b27ecf1c55fd7d8b32568e8c2bc4ec77221721f974ec82ef334b6cd543ff2e",
       "executable": false
@@ -3627,7 +3663,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "25ae232aefb6d3d83f21b787faf082d4a3c945b2403d9c16186f5514a9a8f510",
+      "sha256": "e2049e7eccbf61a3450f2dfab99c17adc355aa4305f3a9417d8996cdb8d58932",
       "executable": false
     },
     "LICENSE": {
@@ -4032,6 +4068,22 @@
     },
     "public/fonts/schibsted-grotesk/schibsted-grotesk-latin-wght-normal.woff2": {
       "sha256": "4c8b93f431d462c696e12b9d6a033feb3394d36e66e781357c496b95d8a75e05",
+      "executable": false
+    },
+    "public/portal-extension/manifest.json": {
+      "sha256": "4fa019e0b07e490a90363b9919ce4cfb3126b50c9d4d6d89134661fcd717e4e4",
+      "executable": false
+    },
+    "public/portal-extension/popup.html": {
+      "sha256": "31487199fb782759dce9f6624c44f07e16bbd00edc0868763e1a3d6fe1e9ba50",
+      "executable": false
+    },
+    "public/portal-extension/popup.js": {
+      "sha256": "862856f693a8effefc8000779c7334d3a49113eced125fa8b7956361ae900111",
+      "executable": false
+    },
+    "public/portal-extension/scan.js": {
+      "sha256": "38c8eb01eee9429dc1e7ddcf0a11d3f41ab445cecfa714597fa0aae7f116955a",
       "executable": false
     },
     "public/rer-theme.css": {
@@ -4723,11 +4775,19 @@
       "executable": false
     },
     "src/evidence/answer/format.ts": {
-      "sha256": "b33409e94168b7dfd12719ec9ea8fa7d723932f7edfe92a11aa0440245632aa5",
+      "sha256": "4443222eef80c282f34c7e022e9848394553d60e22a778848bad7b7a386f4f39",
       "executable": false
     },
     "src/evidence/answer/http.ts": {
-      "sha256": "896cd8bbc994099a20ce3d5da45ca607dc3dd6d8de839da5163fb7b3439605d8",
+      "sha256": "b8630c21098d3f48062513a7c5191d0ed614423d15b518ac71538b0a0ab1d0bb",
+      "executable": false
+    },
+    "src/evidence/answer/portal-documents.ts": {
+      "sha256": "2ea45e911d50e13c5c4113780feb9c2bbc69af97658670856c9662f4c680a9e5",
+      "executable": false
+    },
+    "src/evidence/answer/portal.ts": {
+      "sha256": "45204f77bcf3d032e5781a73ccdac5b618b9e67c968b21a06a1b136df045cf37",
       "executable": false
     },
     "src/evidence/answer/sources.ts": {
@@ -4735,7 +4795,7 @@
       "executable": false
     },
     "src/evidence/answer/storage.ts": {
-      "sha256": "a4fc1e3cd3ddddd75dadcc5ef9d7fdd093978d7e604e12ffafabe9ca879e8aea",
+      "sha256": "4fa9d53d942ee7a647de9c86d72768b18071c00814c99ad8407bd2d915d80544",
       "executable": false
     },
     "src/evidence/api/collections.ts": {
@@ -4743,15 +4803,15 @@
       "executable": false
     },
     "src/evidence/api/http.ts": {
-      "sha256": "1a51bb83c671f2d905f308f527cae67c251f1f90b8427d63d409961e731589f3",
+      "sha256": "5d043005df6444cc2bc7043069b4a16b87f26f91cd2633f27a6eb686b892a11f",
       "executable": false
     },
     "src/evidence/api/openapi.ts": {
-      "sha256": "4b0908e970c7a41e27c586959e9ac1578699bcd608cdc23b7ca0038a0a62fd50",
+      "sha256": "472bd6daf949c55092431441eb542e01816fe54b142a37f1959ab062889c75a7",
       "executable": false
     },
     "src/evidence/api/tokens.ts": {
-      "sha256": "639de103b2bd3e36ef2dd83738159b6c1dc60492e8c5064b00361ee49ef94a68",
+      "sha256": "84ae956756ce09469ec315ea33cf74f9accc1dea6d68a1e4f5bb3eb5f6116046",
       "executable": false
     },
     "src/evidence/archive/blob-stage.ts": {
@@ -4771,7 +4831,7 @@
       "executable": false
     },
     "src/evidence/archive/feature-records.ts": {
-      "sha256": "a1ef4c812258f9c78be2a9f202d4ddafb5ba002e5c5850606fedaa3d6b5cd20f",
+      "sha256": "7c0bcf7c9e7660168217cc136cec66a8408ad72a54cd4e314b41bb25eae0472f",
       "executable": false
     },
     "src/evidence/archive/files.ts": {
@@ -7939,7 +7999,7 @@
       "executable": false
     },
     "tests/helpers/answer-journey.mjs": {
-      "sha256": "c6fd3b38c95f778196c48a7da271b38b4218c53a0013cbaf1149a94d9c3091cf",
+      "sha256": "0c673c423da8f59df08554e1aa89675ce2b43240993ae65e0fd9989b33d2a974",
       "executable": false
     },
     "tests/helpers/assurance-browser.mjs": {

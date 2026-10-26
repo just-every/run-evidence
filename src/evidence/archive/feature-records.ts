@@ -2,7 +2,7 @@ import { validateManifestArchive } from '../connect/manifest-archive'
 import { sha,fail } from './format'
 import { pages,staged,type Store } from './registry'
 import { validateExtraction } from '../vendor/review-model'
-import { choiceValues } from '../answer/format'
+import { validChoice } from '../answer/format'
 export async function validateFeatureRecords(env:Store,id:string) {
  await validateManifestArchive(env,id)
  const t=(name:string)=>staged(id,name)
@@ -16,8 +16,10 @@ export async function validateFeatureRecords(env:Store,id:string) {
    const stats={cited:0,flagged:0,conflicting:0,total:value.answers.length}
    for(const [i,a]of value.answers.entries()){
     if(a.id!==value.questions[i].id||!['cited','flagged','conflicting'].includes(a.state)||!Array.isArray(a.citations))fail('Invalid retained questionnaire answer.')
+    if(a.document&&(value.questions[i].portal?.type!=='file'||a.state!=='cited'||a.citations.length!==1||a.citations[0].kind!=='exhibit'||a.citations[0].source_id!==a.document.receipt_id))fail('A portal document needs its exact exhibit citation and file field.')
+    if(value.questions[i].portal?.type==='file'&&a.state==='cited'&&!a.document)fail('A cited portal file needs its approved original document.')
     stats[a.state as 'cited'|'flagged'|'conflicting']++
-    if(a.state==='cited'&&(!a.citations.length||(a.mapping?(!choiceValues(value.questions[i].format).includes(a.answer)||a.mapping.value!==a.answer||a.mapping.format!==value.questions[i].format||(typeof a.mapping.reason!=='string'||!a.mapping.reason.trim())):a.answer!==a.citations.map((c:any)=>c.quote).join('\n\n')))||a.state!=='cited'&&a.answer!=='')fail('Uncited retained questionnaire answer.')
+    if(a.state==='cited'&&(!a.citations.length||(a.mapping?(!validChoice(value.questions[i],a.answer)||a.mapping.value!==a.answer||a.mapping.format!==value.questions[i].format||(typeof a.mapping.reason!=='string'||!a.mapping.reason.trim())):a.answer!==a.citations.map((c:any)=>c.quote).join('\n\n')))||a.state!=='cited'&&a.answer!=='')fail('Uncited retained questionnaire answer.')
     for(const c of a.citations){
      let expected=''
      if(c.kind==='policy'){const p=await env.DB.prepare(`SELECT policy_id,body,body_sha256 FROM ${t('policy_revisions')} WHERE id=?`).bind(c.source_id).first<any>();if(!p||p.body_sha256!==c.revision||!p.body.includes(c.quote))fail('Invalid retained policy citation.');expected=`/app/policies/${p.policy_id}/revisions/${c.source_id}`}
@@ -33,7 +35,7 @@ export async function validateFeatureRecords(env:Store,id:string) {
       const a=d?JSON.parse(d.snapshot_json).answers.find((a:any)=>a.id===qid):null
       if(c.source_id[36]!==':'||!d||!a||a.state!=='cited'||!a.answer.includes(c.quote)||d.snapshot_hash!==c.revision)fail('Invalid retained approved-answer passage.')
       expected=`/app/questionnaires/${d.questionnaire_id}/drafts/${id}`
-     }else fail('Unknown questionnaire citation kind.')
+     }else if(c.kind==='exhibit'){const e=await env.DB.prepare(`SELECT r.sha256,e.filename,e.size,e.media_type FROM ${t('receipts')} r JOIN ${t('exhibits')} e ON e.id=r.exhibit_id WHERE r.id=?`).bind(c.source_id).first<any>();if(!e||c.quote!==e.filename||!a.document||a.document.receipt_id!==c.source_id||a.document.filename!==e.filename||a.document.sha256!==e.sha256||a.document.size!==e.size||a.document.media_type!==e.media_type)fail('Invalid retained portal document.');expected='/app/receipts/'+c.source_id}else fail('Unknown questionnaire citation kind.')
      if(c.href!==expected)fail('Questionnaire citation must use its exact owner source door.')
     }
    }

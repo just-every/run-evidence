@@ -107,5 +107,151 @@ export async function answerJourney(){const app=await runtime();try{
  await post('/api/questionnaires/sources',{kind:'policy',source_id:changed.revision,quote:currentQuote})
  await post('/api/questionnaires/sources',{kind:'approved-answer',source_id:stableDraft.id+':EXP',quote:currentQuote},409)
  assert.equal((await app.fetch(stablePath+'/export?recipient=buyer@customer.test')).status,409,'approval expiry alone refuses the original and its reuse')
+ // Portal capture uses its own inbound-only scope and preserves typed pages
+ // without granting access to answers, other API reads or owner decisions.
+ const captureToken=await post('/api/api-tokens',{name:'Synthetic portal capture',scopes:['portal-capture','portal-fill'],expires_at:'2026-12-01'})
+ const portalPages=[
+  {id:'access',title:'Access controls',url:'https://portal.example.test/access',unsupported:[],fields:[{id:'access-text',label:'Describe monthly access reviews',type:'text',section:'Access',options:[]}]},
+  {id:'choices',title:'Control selection',url:'https://portal.example.test/choices',unsupported:[],fields:[{id:'access-choice',label:'Review cadence',type:'choice',options:[{value:'monthly',label:'Monthly'},{value:'annual',label:'Annual'}]},{id:'access-multi',label:'Review participants',type:'multi-select',options:[{value:'security',label:'Security'},{value:'legal',label:'Legal'}]}]},
+  {id:'documents',title:'Documents',url:'https://portal.example.test/documents',unsupported:[],fields:[{id:'enabled',label:'Reviews enabled',type:['yes','no'].join('/'),options:[{value:'yes',label:'Yes'}]},{id:'policy-file',label:'Attach reviewed policy',type:'file',options:[],accept:'.pdf'}]},
+ ]
+ const captureBody={name:'Captured procurement portal',program_id:program.id,pages:portalPages}
+ const portalCall=(token,body,path='/v1/questionnaires/captures')=>app.fetch(path,{method:'POST',headers:{cookie:'',authorization:'Bearer '+token,'content-type':'application/json'},body:JSON.stringify(body)})
+ assert.equal((await portalCall(captureToken.token,captureBody,'/api/questionnaires')).status,403)
+ assert.equal((await app.fetch('/v1/programs',{headers:{cookie:'',authorization:'Bearer '+captureToken.token}})).status,403)
+ const readToken=await post('/api/api-tokens',{name:'No capture authority',scopes:['read'],expires_at:'2026-12-01'})
+ assert.equal((await portalCall(readToken.token,captureBody)).status,403)
+ for(const pages of [[{...portalPages[0],unsupported:['Unidentified field']}],[portalPages[0],portalPages[0]],[{...portalPages[0],url:'https://portal.example.test/access?token=synthetic-evidence-1'}],[portalPages[0],{...portalPages[1],url:'https://other.example.test/choices'}],[{...portalPages[0],fields:[{...portalPages[0].fields[0],type:'password'}]}]])assert.equal((await portalCall(captureToken.token,{...captureBody,pages})).status,400)
+ const captureResponse=await portalCall(captureToken.token,captureBody);assert.equal(captureResponse.status,201,await captureResponse.clone().text());const captured=await captureResponse.json()
+ const portalView=await get('/api/questionnaires/'+captured.id)
+ assert.deepEqual(portalView.questions.map(q=>q.format),['text','choice','multi-select',['yes','no'].join('/'),'file'])
+ assert.deepEqual(portalView.questions.map(q=>q.page),['access','choices','choices','documents','documents'])
+ assert.deepEqual(portalView.questions[1].portal.options,portalPages[1].fields[0].options)
+ const captureObject=await (await app.mf.getR2Bucket('EXHIBITS')).get(captured.object_key),original=JSON.parse(await captureObject.text())
+ assert.equal(original.captured_at,'2026-11-04T15:00:00.000Z');assert.equal(original.pages.length,3)
+ const captureDraft=await post(`/api/questionnaires/${captured.id}/drafts`,{}),captureReview=await get(`/api/questionnaires/${captured.id}/drafts/${captureDraft.id}`)
+ assert.equal(captureReview.snapshot.stats.flagged,4,'unsupported choice and file drafting stays explicitly flagged')
+ assert.equal(captureReview.snapshot.answers[0].answer,currentQuote)
+ const fillBody={draft_id:captureDraft.id,recipient:'buyer@customer.test',page:portalPages[0]}
+ const fillPath='/v1/questionnaires/'+captured.id+'/fill-plan'
+ assert.equal((await portalCall(captureToken.token,fillBody,fillPath)).status,409,'unapproved capture draft cannot fill')
+ let mappedPortal=captureDraft
+ for(const [index,value]of [[1,'monthly'],[2,JSON.stringify(['security','legal'])]]){
+  const qid=portalView.questions[index].id
+  const mappedResponse=await post(`/api/questionnaires/${captured.id}/drafts/${mappedPortal.id}/edit`,{snapshot_hash:mappedPortal.snapshot_hash,question_id:qid,source_id:stableSource.id,answer_value:value,mapping_confirm:'yes',reason:'Reviewed this exact portal choice against the source passage'})
+  mappedPortal=mappedResponse
+ }
+ await post(`/api/questionnaires/${captured.id}/drafts/${mappedPortal.id}/approve`,{snapshot_hash:mappedPortal.snapshot_hash,reviewer_person_id:reviewer.id,recipient:'buyer@customer.test',expires_on:'2026-12-01',reason:'Reviewed exact text, choices and remaining flagged answers'},200)
+ fillBody.draft_id=mappedPortal.id
+ assert.equal((await portalCall(captureToken.token,{...fillBody,recipient:'other@customer.test'},fillPath)).status,409)
+ const planResponse=await portalCall(captureToken.token,fillBody,fillPath);assert.equal(planResponse.status,200,await planResponse.clone().text());const plan=await planResponse.json()
+ assert.equal(plan.results[0].value,currentQuote,'fill carries exact approved text, without appended citation text')
+ const changedPage=structuredClone(portalPages[1]);changedPage.fields[0].options.push({value:'weekly',label:'Weekly'})
+ const changedResponse=await portalCall(captureToken.token,{...fillBody,page:changedPage},fillPath);assert.equal(changedResponse.status,200);const changedPlan=await changedResponse.json()
+ assert.equal(changedPlan.results[0].state,'refused');assert.match(changedPlan.results[0].reason,/changed/)
+ assert.equal(changedPlan.results[1].value,JSON.stringify(['security','legal']))
+ for(const page of [
+  {...portalPages[0],fields:[]},
+  {...portalPages[0],fields:[{...portalPages[0].fields[0],type:'file'}]},
+  {...portalPages[0],fields:[...portalPages[0].fields,{...portalPages[0].fields[0],id:'added-field'}]},
+ ]){const r=await portalCall(captureToken.token,{...fillBody,page},fillPath);assert.equal(r.status,200);assert.ok((await r.json()).results.some(f=>f.state==='refused'&&/removed|changed|added/.test(f.reason)))}
+ const unapprovedResponse=await portalCall(captureToken.token,{...fillBody,page:portalPages[2]},fillPath);assert.equal(unapprovedResponse.status,200);const unapprovedPlan=await unapprovedResponse.json();assert.ok(unapprovedPlan.results.every(r=>r.state==='refused'))
+ const otherFillToken=await post('/api/api-tokens',{name:'Different capture token',scopes:['portal-fill'],expires_at:'2026-12-01'})
+ assert.equal((await portalCall(otherFillToken.token,fillBody,fillPath)).status,403)
+ const recaptureResponse=await portalCall(captureToken.token,{...captureBody,previous_id:captured.id,pages:[portalPages[0],changedPage,portalPages[2]]});assert.equal(recaptureResponse.status,201);const recapture=await recaptureResponse.json()
+ assert.equal(JSON.parse(recapture.mapping_json).portal.previous_id,captured.id)
+ assert.equal((await portalCall(captureToken.token,{...fillBody,draft_id:mappedPortal.id},'/v1/questionnaires/'+recapture.id+'/fill-plan')).status,404,'re-capture needs its own draft and decision')
+ const reported=await portalCall(captureToken.token,{draft_id:mappedPortal.id,snapshot_hash:mappedPortal.snapshot_hash,page_id:'access',results:[{id:'access-text',state:'filled'}]},'/v1/questionnaires/'+captured.id+'/fill-reports');assert.equal(reported.status,201)
+ const fillHistory=(await app.db.prepare("SELECT action,revision FROM product_audit WHERE subject=? AND action LIKE 'questionnaire.portal-fill-%'").bind('questionnaire:'+captured.id).all()).results
+ assert.ok(fillHistory.some(h=>h.action==='questionnaire.portal-fill-reported'&&h.revision===mappedPortal.snapshot_hash))
+ await portalBrowser(app,program,reviewer,stableSource,currentQuote,post,get)
+ const captureArchiveResponse=await app.fetch('/api/archive/export');assert.equal(captureArchiveResponse.status,200,await captureArchiveResponse.clone().text())
+ const captureArchive=Buffer.from(await captureArchiveResponse.arrayBuffer()),portalDestination=await runtime()
+ try{await portalDestination.signin();const restored=await portalDestination.fetch('/api/archive/restore',{method:'POST',headers:{origin:portalDestination.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:captureArchive});assert.equal(restored.status,200,await restored.clone().text());assert.deepEqual((await (await portalDestination.fetch('/api/questionnaires/'+captured.id)).json()).questions,portalView.questions);assert.equal((await portalDestination.fetch('/v1/questionnaires/captures',{method:'POST',headers:{authorization:'Bearer '+captureToken.token,'content-type':'application/json'},body:JSON.stringify(captureBody)})).status,401)}finally{await portalDestination.close()}
+ await app.clock('2026-12-02T15:00:00Z')
+ assert.equal((await portalCall(captureToken.token,fillBody,fillPath)).status,401,'token expiry stops fill before answer release')
+ await app.clock('2026-11-04T15:00:00Z')
+ const revisedPortal=await post(`/api/questionnaires/${captured.id}/drafts/${mappedPortal.id}/edit`,{snapshot_hash:mappedPortal.snapshot_hash,question_id:portalView.questions[0].id,source_id:stableSource.id})
+ assert.equal((await portalCall(captureToken.token,fillBody,fillPath)).status,409,'an edited draft invalidates the earlier exact fill approval')
+ await post(`/api/questionnaires/${captured.id}/drafts/${revisedPortal.id}/approve`,{snapshot_hash:revisedPortal.snapshot_hash,reviewer_person_id:reviewer.id,recipient:'buyer@customer.test',expires_on:'2026-12-01',reason:'Fresh exact portal revision'},200)
+ const freshFill={...fillBody,draft_id:revisedPortal.id};assert.equal((await portalCall(captureToken.token,freshFill,fillPath)).status,200)
+ const supersedingPolicy=await post('/api/policies',{title:'Questionnaire access policy',body:'Access reviews occur weekly for all users.'}),supersedingRevision=await get(`/api/policies/${supersedingPolicy.policy}/revisions/${supersedingPolicy.revision}`)
+ await post(`/api/policies/${supersedingPolicy.policy}/revisions/${supersedingPolicy.revision}/decision`,{decision:'approved',body_sha256:supersedingRevision.body_sha256},200)
+ assert.equal((await portalCall(captureToken.token,freshFill,fillPath)).status,409,'a superseded policy refuses portal release through AGENT-005')
+ await post('/api/api-tokens/'+captureToken.grant.id+'/revoke',{},200)
+ assert.equal((await portalCall(captureToken.token,captureBody)).status,401)
+ console.log('PASS ANSWER-002 capture slice: inbound scope, typed three-page import, refusals, exact source draft, audit and inactive archive restore')
  console.log('PASS ANSWER-001 slice: CSV/XLSX/DOCX template custody, exact cited excerpts and flags, named recipient approval, draft/source invalidation, checklist drilldown and archive parity')
 }finally{await app.close()}}
+
+// Native Chromium proof uses the shipped isolated-world scanner and applier,
+// a real three-page portal and the production HTTP approval doors.
+export async function portalBrowser(app,program,reviewer,source,quote,post,get){
+ const {existsSync}=await import('node:fs'),{createServer}=await import('node:http'),{readFile,mkdir}=await import('node:fs/promises'),{resolve,join,extname}=await import('node:path'),{chromium}=await import('playwright')
+ const output=process.env.EVIDENCE_BROWSER_OUTPUT||resolve('.cache/browser/portal');await mkdir(output,{recursive:true})
+ let server,browser,origin
+ const html=n=>`<!doctype html><html lang="en"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Procurement page ${n}</title><style>body{font:16px system-ui;margin:20px;max-width:800px}label{display:block;margin:20px 0}input,select,textarea,button{font:inherit;max-width:100%;box-sizing:border-box}textarea{width:100%;height:90px}</style><h1>Procurement page ${n}</h1><form id="procurement" onsubmit="window.submitted=true;event.preventDefault()">${n===1?'<label>Describe monthly access reviews<textarea id="access">synthetic-evidence-entered-value</textarea></label><input type="hidden" value="synthetic-evidence-hidden-value"><input type="password" value="synthetic-evidence-password-value">':n===2?'<label>Review cadence<select id="cadence"><option value="monthly">Monthly</option><option value="annual">Annual</option></select></label><label>Review participants<select id="participants" multiple><option value="security">Security</option><option value="legal">Legal</option></select></label>':'<label>Reviews enabled<input id="enabled" type="checkbox"></label><label>Approved policy document<input id="document" type="file" accept=".pdf"></label>'}<button>Submit questionnaire</button></form><nav>${[1,2,3].map(i=>`<a href="/portal/${i}">Page ${i}</a>`).join(' · ')}</nav></html>`
+ server=createServer(async(req,res)=>{try{
+  const url=new URL(req.url,origin),portal=/^\/portal\/([123])$/.exec(url.pathname)
+  if(portal){res.setHeader('content-type','text/html');res.end(html(Number(portal[1])));return}
+  if(url.pathname==='/popup.html'){res.setHeader('content-type','text/html');res.setHeader('content-security-policy',"script-src 'none'");res.end(await readFile('public/portal-extension/popup.html'));return}
+  const asset=resolve('public','.'+url.pathname)
+  if(asset.startsWith(resolve('public')+'/')&&/\.(css|woff2?|svg|png|js)$/.test(asset)){res.setHeader('content-type',({'.css':'text/css','.js':'application/javascript','.woff2':'font/woff2','.svg':'image/svg+xml'})[extname(asset)]||'application/octet-stream');res.end(await readFile(asset));return}
+  const chunks=[];for await(const c of req)chunks.push(c)
+  const headers={...req.headers,host:new URL(app.origin).host};if(headers.origin===origin)headers.origin=app.origin
+  const r=await app.fetch(url.pathname+url.search,{method:req.method,headers,...(['GET','HEAD'].includes(req.method)?{}:{body:Buffer.concat(chunks)})})
+  res.writeHead(r.status,Object.fromEntries(r.headers));res.end(Buffer.from(await r.arrayBuffer()))
+ }catch(error){res.writeHead(500);res.end('Browser transport unavailable')}})
+ await new Promise(done=>server.listen(0,'127.0.0.1',done));origin='http://127.0.0.1:'+server.address().port
+ const v1=async(token,path,body,status=200)=>{const r=await app.fetch(path,{method:'POST',headers:{cookie:'',authorization:'Bearer '+token,'content-type':'application/json'},body:JSON.stringify(body)});assert.equal(r.status,status,await r.clone().text());return r}
+ try{
+  browser=await chromium.launch({...(process.env.EVIDENCE_CHROMIUM_PATH||existsSync('/usr/bin/chromium')?{executablePath:process.env.EVIDENCE_CHROMIUM_PATH||'/usr/bin/chromium'}:{}),headless:true,args:['--no-sandbox','--use-mock-keychain','--password-store=basic']})
+  for(const width of [1440,390]){
+   const context=await browser.newContext({viewport:{width,height:1000}}),page=await context.newPage(),pages=[]
+   const shot=async name=>{const iconOnly=await page.locator('button,a,summary,[role=button]').evaluateAll(nodes=>nodes.filter(el=>el.getClientRects().length&&!el.textContent.trim()).length);assert.equal(iconOnly,0,'Touched screens have no icon-only interactive controls');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No overflow: '+name+' '+width);await page.screenshot({path:join(output,width+'-'+name+'.png'),fullPage:true})}
+   for(const n of [1,2,3]){await page.goto(origin+'/portal/'+n);await page.addScriptTag({path:'public/portal-extension/scan.js'});const scan=await page.evaluate(()=>scanPortalPage());assert.deepEqual(scan.unsupported,[]);assert.doesNotMatch(JSON.stringify(scan),/synthetic-evidence-(entered|hidden|password)-value/);pages.push({id:'step-'+n,...scan});await shot('captured-page-'+n)}
+   assert.deepEqual(pages.flatMap(p=>p.fields.map(f=>f.type)),['text','choice','multi-select',['yes','no'].join('/'),'file'])
+   const token=await post('/api/api-tokens',{name:'Browser portal '+width,scopes:['portal-capture','portal-fill'],expires_at:'2026-12-01'}),capture=await (await v1(token.token,'/v1/questionnaires/captures',{name:'Portal browser '+width,program_id:program.id,pages},201)).json()
+   const questions=(await get('/api/questionnaires/'+capture.id)).questions
+   let draft=await post('/api/questionnaires/'+capture.id+'/drafts',{})
+   const map=async(index,value,sourceId=source.id)=>{draft=await post(`/api/questionnaires/${capture.id}/drafts/${draft.id}/edit`,{snapshot_hash:draft.snapshot_hash,question_id:questions[index].id,source_id:sourceId,answer_value:value,mapping_confirm:'yes',reason:'Reviewed exact source and portal field at '+width})}
+   await map(1,'monthly');await map(2,JSON.stringify(['security','legal']))
+   const requirement=(await get('/api/desk')).requirements[0].id,form=new FormData();form.set('source','Synthetic reviewed portal document');form.set('covered_from','2026-11-04');form.set('covered_to','2026-11-04');form.set('file',new File(['synthetic-evidence-document-'+width],'synthetic-evidence-'+width+'.pdf',{type:'application/pdf'}))
+   const uploaded=await app.fetch('/app/requirements/'+requirement+'/uploads',{method:'POST',headers:{origin:app.origin},body:form});assert.equal(uploaded.status,303)
+   const documentId=uploaded.headers.get('location').split('/').at(-1),documentSource=await post('/api/questionnaires/sources',{kind:'exhibit',source_id:documentId,quote:'synthetic-evidence-'+width+'.pdf'})
+   await map(4,'',documentSource.id)
+   await post(`/api/questionnaires/${capture.id}/drafts/${draft.id}/approve`,{snapshot_hash:draft.snapshot_hash,reviewer_person_id:reviewer.id,recipient:'buyer@customer.test',expires_on:'2026-12-01',reason:'Exact portal text, choices and original document approved; enabled answer remains flagged'},200)
+   await page.goto(origin+`/app/questionnaires/${capture.id}/drafts/${draft.id}`);await page.getByRole('heading',{name:'Approved recipient',exact:true}).waitFor();await page.getByLabel('Exact portal choice value or JSON list',{exact:true}).waitFor();await shot('approved-portal-draft')
+   await page.goto(origin+'/app/questionnaires');assert.equal(await page.locator('select[name=kind] option[value=exhibit]').count(),1);await shot('questionnaires-source-selection')
+   await page.goto(origin+'/app/questionnaires/'+capture.id);await page.getByRole('heading',{name:'Portal capture',exact:true}).waitFor();await shot('capture-history')
+   await page.goto(origin+'/app/connections');await page.getByRole('checkbox',{name:'portal-capture',exact:true}).waitFor();await shot('capture-token-settings')
+   const fill=async(n,changed=false)=>{
+    await page.goto(origin+'/portal/'+n);await page.addScriptTag({path:'public/portal-extension/scan.js'})
+    if(changed)await page.evaluate(()=>document.querySelector('#cadence').add(new Option('Weekly','weekly')))
+    const scan=await page.evaluate(()=>scanPortalPage()),body={draft_id:draft.id,recipient:'buyer@customer.test',page:{id:'step-'+n,...scan}},plan=await (await v1(token.token,`/v1/questionnaires/${capture.id}/fill-plan`,body)).json()
+    for(const field of plan.results.filter(r=>r.state==='ready'&&r.document)){const bytes=Buffer.from(await (await v1(token.token,`/v1/questionnaires/${capture.id}/document`,{...body,field_id:field.id})).arrayBuffer());assert.equal(bytes.toString(),'synthetic-evidence-document-'+width);field.bytes=bytes.toString('base64')}
+    const result=await page.evaluate(plan=>applyPortalPlan(plan),plan)
+    assert.ok(!await page.evaluate(()=>window.submitted),'Extension never submits the form')
+    await v1(token.token,`/v1/questionnaires/${capture.id}/fill-reports`,{draft_id:draft.id,snapshot_hash:draft.snapshot_hash,page_id:'step-'+n,results:result.results},201)
+    return {plan,result}
+   }
+   await fill(1);assert.equal(await page.locator('#access').inputValue(),quote);await shot('exact-text-filled')
+   const changed=await fill(2,true);assert.equal(changed.result.results[0].state,'refused');assert.deepEqual(await page.locator('#participants').evaluate(el=>[...el.selectedOptions].map(o=>o.value)),['security','legal']);await shot('changed-choice-refused');const recapturedPage={id:'step-2',...await page.evaluate(()=>scanPortalPage())}
+   const files=await fill(3);assert.equal(files.result.results[0].state,'refused');assert.equal(await page.locator('#document').evaluate(el=>el.files[0].name),'synthetic-evidence-'+width+'.pdf');assert.equal(await page.locator('#document').evaluate(async el=>el.files[0].text()),'synthetic-evidence-document-'+width);await shot('document-filled-unapproved-refused')
+   // A mutation after the server scan is independently refused in the content world.
+   await page.goto(origin+'/portal/1');await page.addScriptTag({path:'public/portal-extension/scan.js'});const scan=await page.evaluate(()=>scanPortalPage()),plan=await (await v1(token.token,`/v1/questionnaires/${capture.id}/fill-plan`,{draft_id:draft.id,recipient:'buyer@customer.test',page:{id:'step-1',...scan}})).json()
+   await page.locator('#access').evaluate(el=>el.id='changed-after-scan');const refused=await page.evaluate(plan=>applyPortalPlan(plan),plan);assert.equal(refused.results[0].state,'refused')
+   const recapture=await (await v1(token.token,'/v1/questionnaires/captures',{name:'Reviewed recapture '+width,program_id:program.id,previous_id:capture.id,pages:[pages[0],recapturedPage,pages[2]]},201)).json()
+   let fresh=await post('/api/questionnaires/'+recapture.id+'/drafts',{})
+   for(const [index,value,sourceId] of [[1,'monthly',source.id],[2,JSON.stringify(['security','legal']),source.id],[3,'true',source.id],[4,'',documentSource.id]])fresh=await post(`/api/questionnaires/${recapture.id}/drafts/${fresh.id}/edit`,{snapshot_hash:fresh.snapshot_hash,question_id:questions[index].id,source_id:sourceId,answer_value:value,mapping_confirm:'yes',reason:'Reviewed changed capture and exact source again'})
+   await post(`/api/questionnaires/${recapture.id}/drafts/${fresh.id}/approve`,{snapshot_hash:fresh.snapshot_hash,reviewer_person_id:reviewer.id,recipient:'buyer@customer.test',expires_on:'2026-12-01',reason:'Fresh exact decision after portal option change'},200)
+   await page.goto(origin+'/portal/2');await page.addScriptTag({path:'public/portal-extension/scan.js'});await page.evaluate(()=>document.querySelector('#cadence').add(new Option('Weekly','weekly')))
+   const freshPlan=await (await v1(token.token,`/v1/questionnaires/${recapture.id}/fill-plan`,{draft_id:fresh.id,recipient:'buyer@customer.test',page:recapturedPage})).json(),freshResult=await page.evaluate(plan=>applyPortalPlan(plan),freshPlan)
+   assert.ok(freshResult.results.every(r=>r.state==='filled'));assert.equal(await page.locator('#cadence').inputValue(),'monthly');assert.ok(!await page.evaluate(()=>window.submitted));await shot('recaptured-reapproved-filled')
+   await page.goto(origin+'/app/questionnaires/'+recapture.id);await page.getByRole('link',{name:'Previous capture and decisions'}).waitFor();await shot('recapture-history')
+   await page.goto(origin+'/app/questionnaires/'+capture.id);await shot('fill-history')
+   await page.goto(origin+'/popup.html');await shot('extension-popup-layout')
+   await context.close();console.log('PASS ANSWER-002 Chromium production scanner and applier: three pages, exact text, choices, document bytes, changed and unapproved refusal, no submission, history at '+width)
+  }
+ }finally{await browser?.close();if(server)await new Promise(done=>server.close(done))}
+}

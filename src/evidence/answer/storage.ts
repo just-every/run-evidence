@@ -1,3 +1,4 @@
+import { portalDocument, assertPortalDocuments, type PortalDocument } from './portal-documents'
 import { assertDependencies,carryDependencies,type Replacement } from '../agent/promises'
 import type { Bindings } from '../../auth.server'
 import { auditStatement,text,type Actor,type Input } from '../door'
@@ -5,10 +6,10 @@ import { boundedBody,MAX_FILE,Refusal } from '../upload'
 import { sha } from '../archive/format'
 import { validDate } from '../model'
 import { requirePerson } from '../program/people'
-import { readQuestionnaire,exportAnswers,choiceValues,type Mapping,type Question } from './format'
+import { readQuestionnaire,exportAnswers,validChoice,type Mapping,type Question } from './format'
 import { sources,assertSources,type Source } from './sources'
 export interface Questionnaire {id:string;program_id:string;name:string;filename:string;media_type:string;size:number;sha256:string;object_key:string;format:string;mapping_json:string;questions_json:string;created_by:string;created_at:string}
-export interface Answer {id:string;answer:string;state:'cited'|'flagged'|'conflicting';reason:string;citations:Source[];mapping?:{value:string;format:string;reason:string}}
+export interface Answer {document?:PortalDocument;id:string;answer:string;state:'cited'|'flagged'|'conflicting';reason:string;citations:Source[];mapping?:{value:string;format:string;reason:string}}
 export interface Draft {id:string;questionnaire_id:string;revision:number;snapshot_json:string;snapshot_hash:string;created_by:string;created_at:string}
 export const questionnaireList=async(env:Bindings,program?:string)=>(await (program?env.DB.prepare('SELECT * FROM questionnaires WHERE program_id=? ORDER BY created_at,rowid').bind(program):env.DB.prepare('SELECT * FROM questionnaires ORDER BY created_at,rowid')).all<Questionnaire>()).results
 export async function questionnaire(env:Bindings,id:string){const r=await env.DB.prepare('SELECT * FROM questionnaires WHERE id=?').bind(id).first<Questionnaire>();if(!r)throw new Refusal('Questionnaire not found.',404);return r}
@@ -27,7 +28,7 @@ export async function uploadQuestionnaire(env:Bindings,request:Request,actor:Act
 }
 const words=(s:string)=>new Set(s.toLowerCase().match(/[a-z]{4,}/g)?.filter(w=>!['what','does','your','with','that','this','have','from','please','describe','provide','which','when'].includes(w))??[])
 export function extractiveAnswers(questions:Question[],selected:Source[]):Answer[]{return questions.map(q=>{
- const terms=words(q.question),matches=selected.filter(s=>{const found=[...words(s.quote)].filter(w=>terms.has(w));return found.length>=2})
+ const terms=words(q.question),matches=selected.filter(s=>s.kind!=='exhibit').filter(s=>{const found=[...words(s.quote)].filter(w=>terms.has(w));return found.length>=2})
  if(!/^(?:text|free.?text|narrative)$/i.test(q.format))return {id:q.id,answer:'',state:'flagged',reason:'Required non-text answer format needs reviewed mapping; no value is inferred.',citations:[]}
  if(matches.some(s=>['fail','unknown'].includes(s.state)))return {id:q.id,answer:'',state:'conflicting',reason:'Matching evidence includes a failure or unknown; reconcile the contradiction.',citations:matches}
  const match=matches[0];return match?{id:q.id,answer:match.quote,state:'cited',reason:'Exact source excerpt; reviewer must assess relevance.',citations:[match]}:{id:q.id,answer:'',state:'flagged',reason:'No authorized matching source passage.',citations:[]}
@@ -42,10 +43,13 @@ export async function appendDraft(env:Bindings,q:string,answers:Answer[],actor:A
   if(a.state!=='cited')return a.answer!==''
   if(!a.citations.length)return true
   const q=questions[i]
+  if(q.format==='file'&&(q as any).portal)return !a.document||a.citations.length!==1||a.citations[0].kind!=='exhibit'||a.citations[0].source_id!==a.document.receipt_id||a.answer!==a.document.filename||a.citations[0].quote!==a.document.filename||!!a.mapping
+  if(a.document)return true
   if(/^(?:text|free.?text|narrative)$/i.test(q.format))return !!a.mapping||a.answer!==a.citations.map(c=>c.quote).join('\n\n')
-  return !a.mapping||a.mapping.format!==q.format||a.mapping.value!==a.answer||!choiceValues(q.format).includes(a.answer)||!a.mapping.reason.trim()
+  return !a.mapping||a.mapping.format!==q.format||a.mapping.value!==a.answer||!validChoice(q,a.answer)||!a.mapping.reason.trim()
  }))throw new Refusal('Each answer needs exact cited excerpts or an explicit reviewed mapping to its declared choice format; otherwise flag it.')
  await assertSources(env,answers.flatMap(a=>a.citations),now)
+ await assertPortalDocuments(env,answers)
  const stats={cited:answers.filter(a=>a.state==='cited').length,flagged:answers.filter(a=>a.state==='flagged').length,conflicting:answers.filter(a=>a.state==='conflicting').length,total:questions.length},snapshot=JSON.stringify({questions,answers,stats,template_sha256:row.sha256}),hash=await fingerprint(snapshot),id=crypto.randomUUID()
  await env.DB.batch([env.DB.prepare('INSERT INTO questionnaire_drafts SELECT ?,?,COALESCE(max(revision),0)+1,?,?,?,? FROM questionnaire_drafts WHERE questionnaire_id=?').bind(id,q,snapshot,hash,actor.name,now.toISOString(),q),...(previous?[carryDependencies(env,'answer',previous.id,id,replacement)]:[]),auditStatement(env,actor,'questionnaire.drafted','questionnaire:'+q,now,'succeeded',JSON.stringify(stats),{revision:hash})]);return draftOf(env,q,id)
 }
@@ -55,14 +59,19 @@ export async function editDraft(env:Bindings,q:string,id:string,input:Input,acto
  const s=JSON.parse(row.snapshot_json),answer=s.answers.find((a:Answer)=>a.id===input.question_id),question=s.questions.find((q:Question)=>q.id===input.question_id)
  if(!answer||!question)throw new Refusal('Question not found.')
  const src=(await sources(env,now)).find(s=>s.id===input.source_id)
- delete answer.mapping
+ delete answer.mapping;delete answer.document
  if(input.flag==='yes')Object.assign(answer,{answer:'',state:'flagged',reason:text(input,'reason',500),citations:[]})
  else {
   if(!src)throw new Refusal('Select an authorized source passage.')
-  if(/^(?:text|free.?text|narrative)$/i.test(question.format))Object.assign(answer,{answer:src.quote,state:'cited',reason:'Reviewer selected exact source passage',citations:[src]})
+  if(src.kind==='exhibit'&&question.format!=='file')throw new Refusal('An exhibit filename is only a document selection, not a cited text answer.')
+  if(question.format==='file'&&question.portal){
+   if(src.kind!=='exhibit'||input.mapping_confirm!=='yes')throw new Refusal('Select an exhibit and explicitly confirm the exact document for this portal field.')
+   const document=await portalDocument(env,src.source_id);if(src.quote!==document.filename)throw new Refusal('Select the exact exhibit filename as the source passage.')
+   Object.assign(answer,{answer:document.filename,state:'cited',reason:text(input,'reason',500),citations:[src],document})
+  }else if(/^(?:text|free.?text|narrative)$/i.test(question.format))Object.assign(answer,{answer:src.quote,state:'cited',reason:'Reviewer selected exact source passage',citations:[src]})
   else {
-   const value=text(input,'answer_value',100),reason=text(input,'reason',500)
-   if(input.mapping_confirm!=='yes'||!choiceValues(question.format).includes(value))throw new Refusal('Explicitly confirm that the cited passage supports this exact declared choice. Unknown formats must stay flagged.')
+   const value=text(input,'answer_value',question.portal?10000:100),reason=text(input,'reason',500)
+   if(input.mapping_confirm!=='yes'||!validChoice(question,value))throw new Refusal('Explicitly confirm that the cited passage supports this exact declared choice. Unknown formats must stay flagged.')
    Object.assign(answer,{answer:value,state:'cited',reason:'Reviewer mapped cited passage to declared choice',citations:[src],mapping:{value,format:question.format,reason}})
   }
  }
@@ -71,15 +80,15 @@ export async function editDraft(env:Bindings,q:string,id:string,input:Input,acto
 export async function approveDraft(env:Bindings,q:string,id:string,input:Input,actor:Actor,now:Date){const dependencies=await assertDependencies(env,'answer',id,now,input);const row=await draftOf(env,q,id),snapshot=JSON.parse(row.snapshot_json),reviewer=await requirePerson(env,input.reviewer_person_id,'named security/legal reviewer'),recipient=text(input,'recipient',254),expiry=text(input,'expires_on',10),reason=text(input,'reason',1000)
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)||!validDate(expiry)||expiry<now.toISOString().slice(0,10))throw new Refusal('Name the exact recipient email and a current or future expiry date.')
  if(input.snapshot_hash!==row.snapshot_hash||await fingerprint(row.snapshot_json)!==row.snapshot_hash||(await env.DB.prepare('SELECT max(revision) AS n FROM questionnaire_drafts WHERE questionnaire_id=?').bind(q).first<{n:number}>())?.n!==row.revision)throw new Refusal('Review the exact latest answer set.',409)
- await assertSources(env,snapshot.answers.flatMap((a:Answer)=>a.citations),now)
+ await assertSources(env,snapshot.answers.flatMap((a:Answer)=>a.citations),now);await assertPortalDocuments(env,snapshot.answers)
  if(await env.DB.prepare('SELECT 1 FROM questionnaire_approvals WHERE draft_id=?').bind(id).first())throw new Refusal('This draft is already approved.',409)
  const saved=await env.DB.batch([env.DB.prepare("INSERT INTO questionnaire_approvals SELECT ?,?,?,?,?,?,?,? WHERE (SELECT COUNT(*) FROM promise_dependencies WHERE subject_kind='answer' AND subject_id=?)=? AND NOT EXISTS(SELECT 1 FROM promise_dependencies WHERE subject_kind='answer' AND subject_id=? AND id NOT IN (SELECT value FROM json_each(?)))").bind(id,row.snapshot_hash,reviewer.id,recipient,expiry,reason,actor.name,now.toISOString(),id,dependencies.rows.length,id,JSON.stringify(dependencies.rows.map(r=>r.id))),auditStatement(env,actor,'questionnaire.approved','questionnaire:'+q,now,'succeeded','recipient '+recipient+'; reviewer '+reviewer.name,{reason,revision:row.snapshot_hash})]);if(!saved[0].meta.changes)throw new Refusal('Dependencies changed during approval. Review again.',409);return {approved:true}
 }
 export async function approvedExport(env:Bindings,q:string,id:string,recipient:string,actor:Actor,now:Date){await assertDependencies(env,'answer',id,now);const row=await draftOf(env,q,id),approval=await env.DB.prepare('SELECT * FROM questionnaire_approvals WHERE draft_id=?').bind(id).first<any>(),snapshot=JSON.parse(row.snapshot_json)
  if(!approval||approval.snapshot_hash!==row.snapshot_hash||approval.recipient!==recipient||approval.expires_on<now.toISOString().slice(0,10))throw new Refusal('An unexpired exact approval for this recipient is required.',409)
  if((await env.DB.prepare('SELECT max(revision) AS n FROM questionnaire_drafts WHERE questionnaire_id=?').bind(q).first<{n:number}>())?.n!==row.revision)throw new Refusal('A newer draft needs its own decision.',409)
- await assertSources(env,snapshot.answers.flatMap((a:Answer)=>a.citations),now)
- const original=await questionnaire(env,q),out=new Map<string,string>(snapshot.answers.map((a:Answer)=>[a.id,a.state==='cited'?a.answer+(a.mapping?'':'\n'+a.citations.map(c=>`Source ${c.kind}:${c.source_id} revision ${c.revision}, period ${c.period_from} to ${c.period_to||'not specified'}`).join('\n')):`FLAGGED (${a.state}): ${a.reason}`]))
+ await assertSources(env,snapshot.answers.flatMap((a:Answer)=>a.citations),now);await assertPortalDocuments(env,snapshot.answers)
+ const original=await questionnaire(env,q);if(original.format==='portal')throw new Refusal('Portal questionnaires fill through the scoped browser extension; there is no buyer file template to export.',409);const out=new Map<string,string>(snapshot.answers.map((a:Answer)=>[a.id,a.state==='cited'?a.answer+(a.mapping?'':'\n'+a.citations.map(c=>`Source ${c.kind}:${c.source_id} revision ${c.revision}, period ${c.period_from} to ${c.period_to||'not specified'}`).join('\n')):`FLAGGED (${a.state}): ${a.reason}`]))
  const bytes=exportAnswers(original.filename,await templateBytes(env,original),JSON.parse(original.mapping_json),out)
  await auditStatement(env,actor,'questionnaire.exported','questionnaire:'+q,now,'succeeded','approved recipient '+recipient,{revision:row.snapshot_hash}).run();return {bytes,filename:original.filename,media_type:original.media_type,citations:{questionnaire_id:q,template_sha256:original.sha256,draft_id:id,snapshot_hash:row.snapshot_hash,recipient,approved_at:approval.approved_at,answers:snapshot.answers}}
 }
