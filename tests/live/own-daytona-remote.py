@@ -112,9 +112,12 @@ class Server:
                 fields = line.split()
                 if fields[3] == '0A' and int(fields[1].split(':')[1],16) == self.port:
                     inodes.add(fields[9])
-        owners = set()
+        owners, accounted = set(), set()
         for directory in Path('/proc').iterdir():
             if not directory.name.isdigit():
+                continue
+            identity = self.process_identity(int(directory.name))
+            if identity is None or identity[2] != str(self.checkout):
                 continue
             try:
                 for fd in (directory/'fd').iterdir():
@@ -124,8 +127,15 @@ class Server:
                         continue
                     if target.startswith('socket:[') and target[8:-1] in inodes:
                         owners.add(int(directory.name))
+                        accounted.add(target[8:-1])
             except FileNotFoundError:
                 continue
+            except PermissionError:
+                raise RuntimeError('listener_owned_descriptors_unreadable') from None
+        # Inspect only our checkout's descriptors. Every kernel listener inode
+        # must still be attributed; an unseen or replacement owner is refused.
+        if inodes - accounted:
+            raise RuntimeError('listener_identity_unproven')
         return owners
 
     def alive(self):
@@ -293,5 +303,5 @@ if __name__ == '__main__':
     try:
         run()
     except Exception as error:
-        event('failed', error_type=type(error).__name__, reason=failure_reason(error))
+        event('failed', error_type=type(error).__name__, errno=getattr(error,'errno',None), reason=failure_reason(error))
         raise SystemExit(1)  # Never traceback with private request context.
