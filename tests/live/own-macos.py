@@ -6,6 +6,8 @@ links and session cookies remain in memory. EVIDENCE_OWN_SHA optionally selects
 the public candidate after demonstrating the exact README start independently.
 """
 import datetime
+import base64
+import gzip
 import importlib.util
 import json
 import os
@@ -78,7 +80,17 @@ def main():
         assert list(state.rglob('*.sqlite')), 'local D1 persistence files absent'
         assert any('r2' in p.parts for p in state.rglob('*') if p.is_file()), 'local R2 persistence files absent'
         server = start(['npx','--no-install','rer','dev'], checkout)
-        Owner(server.link).reconcile(expected)
+        owner = Owner(server.link)
+        owner.reconcile(expected)
+        if os.environ.get('EVIDENCE_OWN_EXPORT') == '1':
+            # Synthetic acceptance business data only; portable export excludes credentials.
+            artifacts = {
+                'source.evidence': owner.request('GET','/api/archive/export')[2],
+                'source-journal.json': json.dumps(owner.json('GET','/api/archive/journal')).encode(),
+                'source-manifest.json': json.dumps(owner.json('GET','/api/archive/manifest')).encode(),
+            }
+            for name, payload in artifacts.items():
+                print('OWN_ARTIFACT ' + name + ' ' + base64.b64encode(gzip.compress(payload)).decode(), flush=True)
         actual = subprocess.check_output(['git','rev-parse','HEAD'], cwd=checkout, text=True).strip()
         event('complete', sha=actual, assertions=['Native setup', 'Retained receipt facts',
               'Original exhibit digest', 'Evaluated test run persists across own-process restart',

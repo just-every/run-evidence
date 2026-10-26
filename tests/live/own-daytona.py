@@ -26,6 +26,7 @@ def main():
     assert not subprocess.check_output(['git','status','--porcelain','--untracked-files=no'], cwd=repo), 'commit tracked changes first'
     output = Path(os.environ['EVIDENCE_OWN_ARTIFACTS']).resolve()
     assert not output.is_relative_to(repo), 'business artifacts must stay outside checkout'
+    output = output / 'ubuntu'
     output.mkdir(parents=True, exist_ok=True, mode=0o700)
     sha = os.environ.get('EVIDENCE_OWN_SHA', subprocess.check_output(['git','rev-parse','HEAD'], cwd=repo, text=True).strip())
     assert re.fullmatch('[a-f0-9]{40}', sha)
