@@ -66,8 +66,10 @@ class Server:
             raise RuntimeError('runtime_identity_missing')
         _, _, directory, command_line = self.identity
         arguments = shlex.split(command_line)
-        if directory != str(self.checkout) or '--foreground' not in arguments or 'dev' not in arguments or not any(
-                argument.endswith('/bin/rer.mjs') for argument in arguments):
+        checks = dict(checkout=directory == str(self.checkout), foreground='--foreground' in arguments,
+                      dev='dev' in arguments, executable=any(argument.endswith('/bin/rer.mjs') for argument in arguments))
+        if not all(checks.values()):
+            event('runtime_identity_refused', checks=checks)
             self.identity = None
             raise RuntimeError('runtime_identity_refused')
         if self.foreground and os.getpgid(self.identity[0]) != self.process.pid:

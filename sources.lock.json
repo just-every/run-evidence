@@ -8137,7 +8137,7 @@
       "executable": false
     },
     "tests/live/own-daytona-remote.py": {
-      "sha256": "07d6e1b07c40ec1001123f2f1b58b81f276d4d079ad06f96f716c1ff52e5d175",
+      "sha256": "127c3de089ded6e6f1f65a25d3c8cf84f753f1cb685ca1f499dc210d32d67141",
       "executable": false
     },
     "tests/live/own-daytona.py": {
