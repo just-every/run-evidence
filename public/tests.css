@@ -149,7 +149,7 @@
 }
 @media (max-width: 1320px) {
  .tests-workspace { grid-template-columns: minmax(0, 1fr) 372px; }
- 
+
  .rer-themed .tests-table :is(th, td) { padding-left: 6px; padding-right: 6px; }
  .rer-themed .tests-table .avatar { display: none; }
 }
