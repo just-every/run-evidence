@@ -115,7 +115,7 @@ try {
   assert.match(csv, /source-reported by KnowBe4/); assert.match(csv, /manual: approved internal course/)
   const exported = await get('/api/training/export')
   assert.deepEqual([...new Set(exported.completions.map(c => c.source))].sort(), ['evidence', 'internal', 'knowbe4'])
-  assert.deepEqual(exported.attempts.filter(a => a.email === 'nina@northstar.test').map(a => [a.revision, a.score, a.passed]), [[1, 70, 0], [1, 100, 1]])
+  assert.deepEqual(exported.attempts.filter(a => a.email === 'nina@northstar.test').map(a => [a.revision, a.score, a.passed]), [[course('security-awareness').revision, 70, 0], [course('security-awareness').revision, 100, 1]])
   assert.equal(exported.completions.filter(c => c.email === 'omar@northstar.test').length, 0)
   await app.clock('2026-10-29T15:00:00Z')
   await trainingBrowser(app, ownerCookie, course('security-awareness').quiz.map(q => q.answer))

@@ -8178,7 +8178,7 @@
       "executable": false
     },
     "tests/helpers/migrate-journey.mjs": {
-      "sha256": "ceaf7bda794c877deaf139a38a954b36a2ee1f2f38908515425c54a815eb0b9e",
+      "sha256": "f2e38676b27f579a9987489ff7b1768941135bf846371ef1d72177104619945d",
       "executable": false
     },
     "tests/helpers/model-fixture.mjs": {
@@ -8482,7 +8482,7 @@
       "executable": false
     },
     "tests/training.mjs": {
-      "sha256": "56839f938a174769404c9103933e48a6d9dfc1206568a3205c02e41f8587edde",
+      "sha256": "8c338ddfda40f22d95ca31b01b6e334e7c43d7774938c5452539dc873ba1ab92",
       "executable": false
     },
     "tests/trust-browser.mjs": {

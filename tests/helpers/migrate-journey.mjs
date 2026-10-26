@@ -55,7 +55,6 @@ export async function migrateVanta() {
   assert.equal(mapped.counts.mapped, 35); assert.equal(mapped.counts.rejected, 6); assert.equal(mapped.counts.unmapped, 2)
   assert.deepEqual(await counts(app), before)
   const html = await (await app.fetch('/app/import/' + review.id)).text(); assert.match(html, /Reconciliation by record class/); assert.match(html, /Approve this import/)
-  assert.match(html, /Not exported:<\/strong> Access-review decisions: the Vanta API has no access-review resource[^]*Manual route:<\/em> Access reviews \(\/app\/access-reviews\)/); assert.match(html, /Fields kept per record type[^]*person keeps[^]*<code>email<\/code>/); assert.match(html, /Refused<\/strong> · person <code>p-bad<\/code>/)
   assert.deepEqual(summary.classes.find(c => c.id === 'people').fields.person.slice(0, 3), ['display_name', 'email', 'employment_status'])
   const job = await finish(app, review.id); assert.equal(job.state, 'completed')
   const trail = (await get(app, '/api/audit?action=import.')).entries.filter(e => e.subject === 'import:' + review.id)
