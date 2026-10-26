@@ -3501,7 +3501,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "48baefa3edb2985278871909a44a020f6fd6e5c3a31fe1dc807802b1f485b6d6",
+      "sha256": "aceed5b20060552f798c8eaf317ab7ce112dbf006b2c72e9d2fabb580bbf895a",
       "executable": false
     },
     "AGENTS.md": {
@@ -3517,7 +3517,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "b8da646908e773ec08a516b5f0f4f41142b45fd3173f5340bf52610579692c8f",
+      "sha256": "7d0e14ef9898ca657338a61ca93b4ee5b4b95168c6f6898535f2ef1ca854f0ba",
       "executable": false
     },
     "DEMO.md": {
@@ -3601,7 +3601,7 @@
       "executable": false
     },
     "docs/TRUST-UPDATES.md": {
-      "sha256": "c30dcbf5efd10478e64aded19cf3c062c32ebb4b57c1631dd2399bbadd9ce62c",
+      "sha256": "fa1338b7724057d4e1cbca3e3e16fbc61d3d35e998c30a1300ae7a3638878ae8",
       "executable": false
     },
     "docs/USDP-CITATIONS.md": {
@@ -6493,7 +6493,7 @@
       "executable": false
     },
     "src/evidence/trust/delivery.ts": {
-      "sha256": "2ba73c7cf7371b2d847e4539e23bc47b7cccc349476b8c5f756f84c5bd665f69",
+      "sha256": "724a05130c7de207e80b67df5ebf80c0fd1aa5a7e284da2b3742ec7fc0f5d49a",
       "executable": false
     },
     "src/evidence/trust/events.ts": {
@@ -6533,7 +6533,7 @@
       "executable": false
     },
     "src/evidence/trust/subscribers.ts": {
-      "sha256": "4a9d75cf7796808acd2d48a93bc27c821eacaae1c6b0071f60f97f68e5534258",
+      "sha256": "d67c988e8fa108720a97bf3ef80a869ae93a170bf04c3a012768a82281a59c66",
       "executable": false
     },
     "src/evidence/trust/updates.ts": {
@@ -7917,7 +7917,7 @@
       "executable": false
     },
     "tests/helpers/engagement-browser.mjs": {
-      "sha256": "d713818295368b9439b7469791d1f0d66b7d93d3dcf4b81403e09227dc9921fd",
+      "sha256": "fe91d820c687f8e9451d13b6a4aac9eda030a0a6048df6f45d97838b63614261",
       "executable": false
     },
     "tests/helpers/engagement-journey.mjs": {
@@ -8097,7 +8097,7 @@
       "executable": false
     },
     "tests/helpers/trust-journey.mjs": {
-      "sha256": "8b5726028685d172c8e8aa374948adf4bb06ee201b1675e4fba5f58373c5be1f",
+      "sha256": "fc30c9008f90619872769f90e5d694434f6fe67ecf24f0e6843eef983c350f1d",
       "executable": false
     },
     "tests/helpers/vendor-journey.mjs": {
@@ -8241,11 +8241,11 @@
       "executable": false
     },
     "tests/trust-browser.mjs": {
-      "sha256": "98dac5e99998712478458785e647a10bdd07bc6786865d0c5484de37ad365f56",
+      "sha256": "79f00cc712e8b90b96d07f1d3b033174e3df812efa7d33616582a8a04e6b08c4",
       "executable": false
     },
     "tests/trust.mjs": {
-      "sha256": "077bc0eed9ddc1c654a76753f5ca46778ef40ca3dacf69974e6f91459c554142",
+      "sha256": "ad7f5c38dd991fda6e5522a875e855f173a408b1b139fcc993f33e5275d1fe60",
       "executable": false
     },
     "tests/vendor-browser.mjs": {

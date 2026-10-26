@@ -16,7 +16,7 @@ export async function engagementBrowser(app,{cookie,program,leaver,stage='open',
    res.writeHead(response.status,out);res.end(Buffer.from(await response.arrayBuffer()))
   }catch{res.writeHead(500);res.end('Transport unavailable')}})
   await new Promise(done=>server.listen(0,'127.0.0.1',done));origin='http://127.0.0.1:'+server.address().port
-  browser=await chromium.launch({headless:true,args:['--use-mock-keychain','--password-store=basic']});await mkdir(output,{recursive:true})
+  browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH?{executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH}:{}),args:['--use-mock-keychain','--password-store=basic',...(process.platform==='linux'?['--no-sandbox']:[])]});await mkdir(output,{recursive:true})
   for(const width of [1440,390]){
    const context=await browser.newContext({viewport:{width,height:1000}})
    if(cookie)await context.addCookies(cookie.split('; ').map(pair=>{const i=pair.indexOf('=');return{name:pair.slice(0,i),value:pair.slice(i+1),url:origin}}))

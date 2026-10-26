@@ -1,8 +1,26 @@
-// TRUST-003 through public HTTP doors. Mail submission is the runtime's network
+// TRUST-003 and TRUST-005 through public HTTP doors. Mail submission is the runtime's network
 // edge; signed Resend events below represent the provider's delivery and bounce edge.
 import assert from 'node:assert/strict'
 import { createHmac,generateKeyPairSync,sign } from 'node:crypto'
 import { runtime } from './runtime.mjs'
+
+// Both providers run the same public flow. Only the external mail transport is
+// controlled, including definitive rejection and an ambiguous provider outage.
+export async function trustRuntime(provider='resend') {
+ let app
+ const edge=async request=>{
+  const expected=provider==='sendgrid'?'https://api.sendgrid.com/v3/mail/send':'https://api.resend.com/emails'
+  if(request.url!==expected)return
+  const wire=await request.json(),message=provider==='sendgrid'?{to:wire.personalizations[0].to.map(r=>r.email),subject:wire.subject,text:wire.content.find(c=>c.type==='text'+'/'+'plain')?.value,html:wire.content.find(c=>c.type==='text'+'/'+'html')?.value,headers:wire.headers}:wire
+  app.messages.push(message)
+  if(message.subject==='Rejected notification proof')return Response.json({message:'Synthetic rejection'},{status:400})
+  if(message.subject==='Uncertain notification proof')return new Response(null,{status:503})
+  return provider==='sendgrid'?new Response(null,{status:202,headers:{'x-message-id':crypto.randomUUID()}}):Response.json({id:crypto.randomUUID()})
+ }
+ app=await runtime({origin:'https://127.0.0.1:8787',settings:{MAIL_PROVIDER:provider,MAIL_API_KEY:'synthetic-evidence-2'},...(provider==='resend'?{mailOutbound:edge}:{outbound:edge})})
+ return app
+}
+
 export async function trustJourney(app,{browserProof}={}) {
  let now='2026-10-30T12:00:00.000Z',eventSequence=0
  const provider=app.harnessState().settings.MAIL_PROVIDER,pair=generateKeyPairSync('ec',{namedCurve:'prime256v1'})
@@ -40,6 +58,11 @@ export async function trustJourney(app,{browserProof}={}) {
  await app.clock(now);const ownerCookie=await app.signin()
  assert.equal((await app.fetch('/api/trust',{headers:{cookie:''}})).status,401)
  assert.equal((await app.fetch('/api/trust/settings',{method:'POST',headers:{origin:'https://foreign.test','content-type':'application'+'/'+'json'},body:'{}'})).status,403)
+ const initial=await get('/api/trust')
+ assert.equal(initial.settings.public_enabled,0);assert.equal(initial.settings.confirmations_enabled,0)
+ await visitor('/trust/subscribe',{email:'disabled@customer.test',categories:['security']},404)
+ const disabledDraft=await owner('/updates',{category:'security',title:'Disabled publication',body:'Must not send before owner authorization.',visibility:'public'},201)
+ await owner('/updates/'+disabledDraft.id+'/approve',{notify:true},409)
  await owner('/settings',{postal_address:'80 Test Street, Brisbane QLD 4000, Australia',notice_days:30,public_enabled:true,confirmations_enabled:true})
  await owner('/mail-webhooks',{provider,key})
  await owner('/categories',{name:'Assurance operations',slug:'assurance-operations'},201)
@@ -50,9 +73,24 @@ export async function trustJourney(app,{browserProof}={}) {
  const alice=await subscribe('alice@customer.test')
  if(browserProof)await browserProof(app,{cookie:'',stage:'confirmation',screens:[['opt-in','/trust/confirm/'+alice.token,'Confirm subscription']],followLink:false})
  await visitor('/trust/subscribe',{email:'unconfirmed@customer.test',categories:['subprocessors']},202)
+ const pendingMessage=mailTo('unconfirmed@customer.test').at(-1),pendingToken=pendingMessage.text.match(/\/trust\/confirm\/([a-f0-9]{64})/)[1]
+ const pendingMailCount=app.messages.length
+ await visitor('/trust/subscribe',{email:'unconfirmed@customer.test',categories:['subprocessors']},202)
+ assert.equal(app.messages.length,pendingMailCount,'repeated requests do not repeat a pending confirmation')
+ await owner('/settings',{postal_address:'80 Test Street, Brisbane QLD 4000, Australia',notice_days:30,public_enabled:true,confirmations_enabled:false})
+ await visitor('/trust/confirm/'+pendingToken,{},409)
+ await visitor('/trust/subscribe',{email:'disabled@customer.test',categories:['security']},409)
+ assert.equal(app.messages.length,pendingMailCount,'disabled authorization sends nothing')
+ await owner('/settings',{postal_address:'80 Test Street, Brisbane QLD 4000, Australia',notice_days:30,public_enabled:true,confirmations_enabled:true})
  const before=(await get('/api/trust')).subscriptions.filter(s=>s.state==='active')
  assert.equal(before.length,0,'GET confirmation must not silently opt the mailbox in')
  await visitor('/trust/confirm/'+alice.token,{},200)
+ const confirmedHistory=(await get('/api/trust/subscribers/export')).history
+ await visitor('/trust/confirm/'+alice.token,{},200)
+ assert.deepEqual((await get('/api/trust/subscribers/export')).history,confirmedHistory,'reused confirmation cannot add or change consent')
+ const withdrawnPending=await subscribe('withdrawn-pending@customer.test')
+ await visitor(new URL(withdrawnPending.message.headers['List-Unsubscribe'].slice(1,-1)).pathname,{},200)
+ await visitor('/trust/confirm/'+withdrawnPending.token,{},409)
  await owner('/subscribers',{email:'bounce@customer.test',categories:['subprocessors','security']},400)
  await owner('/subscribers',{email:'bounce@customer.test',categories:['subprocessors','security'],reason:'Contractual DPA notice obligation'},201)
  const departing=await subscribe('departing@customer.test')
@@ -74,6 +112,11 @@ export async function trustJourney(app,{browserProof}={}) {
  assert.deepEqual(evidence.deliveries.map(d=>d.recipient).sort(),['alice@customer.test','bounce@customer.test'])
  assert.ok(evidence.deliveries.every(d=>d.state==='pending'&&d.accepted_at),'provider acceptance is pending delivery evidence')
  assert.equal(app.messages.length,baseline+2)
+ for(const delivery of evidence.deliveries){
+  const sent=mailTo(delivery.recipient).find(m=>m.subject===evidence.update.title)
+  assert.ok(sent);assert.equal(sent.text.split('\n\n80 Test Street')[0],evidence.update.body+'\n\nCategory: '+evidence.update.category+'\nPublished: '+evidence.update.published_at+'\nTrust center: '+app.origin+'/trust')
+  assert.equal(sent.headers['List-Unsubscribe-Post'],'List-Unsubscribe=One-Click')
+ }
  await owner('/updates/'+draft.update.id+'/publish',{notify:true})
  assert.equal(app.messages.length,baseline+2,'repeated publication never resends')
  for(const delivery of evidence.deliveries) {
@@ -115,6 +158,21 @@ export async function trustJourney(app,{browserProof}={}) {
  const nonOwnerGrant=await app.fetch('/api/trust/customers',{method:'POST',headers:{cookie:operatorCookie,origin:app.origin,'content-type':'application'+'/'+'json'},body:JSON.stringify({email:'scope@customer.test',reason:'Admin is not owner',expires_at:'2026-12-31',read_records:[restricted.id]})});assert.equal(nonOwnerGrant.status,403)
  const customer=await owner('/customers',{email:'alice@customer.test',expires_at:'2026-12-31',reason:'Reviewed active customer contract',subscribe_subprocessors:true,read_records:[restricted.id],submit_records:[restricted.id]},201)
  const customerPath=new URL(customer.url).pathname
+ const expiredRecipient=await owner('/customers',{email:'expired-recipient@customer.test',expires_at:'2026-10-30T12:00:01.000Z',reason:'Short reviewed scope',read_records:[restricted.id]},201)
+ const differentCategory=await owner('/customers',{email:'different-category@customer.test',expires_at:'2026-12-31',reason:'Only privacy subscription',read_records:[restricted.id]},201)
+ await owner('/subscribers',{email:differentCategory.email,categories:['privacy'],reason:'Privacy notices only'},201)
+ const revokedRecipient=await owner('/customers',{email:'revoked-recipient@customer.test',expires_at:'2026-12-31',reason:'Reviewed scope then revoked',read_records:[restricted.id]},201)
+ for(const email of ['expired-recipient@customer.test','revoked-recipient@customer.test'])await owner('/subscribers',{email,categories:['security'],reason:'Contractual security notices'},201)
+ await owner('/customers/'+revokedRecipient.id+'/revoke',{})
+ now='2026-10-30T12:00:02.000Z';await app.clock(now)
+ await visitor(new URL(expiredRecipient.url).pathname+'/feed',undefined,404)
+ await owner('/settings',{postal_address:'80 Test Street, Brisbane QLD 4000, Australia',notice_days:30,public_enabled:false,confirmations_enabled:false})
+ const disabledCount=app.messages.length
+ await visitor('/trust/confirm/'+pendingToken,{},409)
+ await owner('/updates/'+restricted.id+'/publish',{notify:true},409)
+ await owner('/deliveries/dispatch',{})
+ assert.equal(app.messages.length,disabledCount,'disabled publication cannot dispatch customer mail')
+ await owner('/settings',{postal_address:'80 Test Street, Brisbane QLD 4000, Australia',notice_days:30,public_enabled:true,confirmations_enabled:true})
  await owner('/updates/'+restricted.id+'/publish',{notify:true})
  const restrictedEvidence=await get('/api/trust/updates/'+restricted.id+'/export')
  assert.deepEqual(restrictedEvidence.deliveries.map(d=>d.recipient),['alice@customer.test'],'customer-only mail checks explicit customer grants')
@@ -145,7 +203,7 @@ export async function trustJourney(app,{browserProof}={}) {
   await browserProof(app,{cookie:'',stage:'customer-read-only',screens:[['customer-feed',readOnlyPath,'Customer assurance detail']],followLink:false})
   await browserProof(app,{cookie:ownerCookie,stage:'grant',screens:[['overview','/app/trust','Named record permissions'],['submissions','/app/trust/updates/'+restricted.id,'Customer submissions']],followLink:false,issueGrant:{id:restricted.id,expires:'2026-12-31'}})
  }
- await app.clock('2026-10-30T12:00:00.002Z')
+ await app.clock('2026-10-30T12:00:03.000Z')
  assert.ok((await visitor(customerPath+'/feed')).submissions.some(s=>s.id===submitted.id),'submission survives worker restart')
  const customerAudit=await app.db.prepare("SELECT * FROM product_audit WHERE actor_id=? ORDER BY at,rowid").bind(customer.id).all()
  assert.ok(customerAudit.results.some(r=>r.action==='trust.customer-read'&&r.outcome==='succeeded'))
@@ -163,6 +221,8 @@ export async function trustJourney(app,{browserProof}={}) {
  assert.ok(!JSON.stringify(consent).includes(alice.token),'exports never include bearer credentials')
  const expiring=await owner('/customers',{email:'expiry@customer.test',expires_at:'2026-11-28',reason:'Time-bounded approved customer',read_records:[restricted.id]},201)
  now='2026-11-29T00:00:00.000Z';await app.clock(now)
+ await visitor('/trust/confirm/'+pendingToken,{},404)
+ assert.equal((await get('/api/trust')).subscriptions.find(s=>s.confirmation_id&&s.state==='pending')?.state,'pending','expired requests never establish consent')
  await visitor(new URL(expiring.url).pathname+'/feed',undefined,404)
  list=await visitor('/trust/subprocessors')
  assert.equal(list.pending.length,0);assert.equal(list.active[0].name,'Atlas Storage')
@@ -177,6 +237,17 @@ export async function trustJourney(app,{browserProof}={}) {
  await owner('/updates/'+remove.update.id+'/approve',{})
  now='2027-01-28T00:00:00.000Z';await app.clock(now)
  assert.equal((await visitor('/trust/subprocessors')).active.length,0)
+ // Failure outcomes must survive restart and cannot turn into duplicate sends.
+ for(const [title,state]of [['Rejected notification proof','failed'],['Uncertain notification proof','uncertain']]){
+  const failed=await owner('/updates',{category:'security',title,body:'Owner-approved provider outcome exercise.',visibility:'public'},201)
+  await owner('/updates/'+failed.id+'/approve',{notify:true});await owner('/updates/'+failed.id+'/publish',{notify:true})
+  const retained=await get('/api/trust/updates/'+failed.id+'/export')
+  assert.ok(retained.deliveries.length>0);assert.ok(retained.deliveries.every(d=>d.state===state&&!d.provider_message_id))
+  const count=app.messages.length
+  await app.clock(now);await owner('/deliveries/dispatch',{});await owner('/updates/'+failed.id+'/publish',{notify:true})
+  assert.equal(app.messages.length,count,'restart and repeated publication never replay '+state+' attempts')
+  assert.deepEqual(await get('/api/trust/updates/'+failed.id+'/export'),retained)
+ }
  const original=await get('/api/trust/updates/'+draft.update.id+'/export')
  assert.equal(original.notice.location,'Australia');assert.deepEqual(original.deliveries.map(d=>d.state).sort(),['bounced','delivered'])
  // The complete portable archive preserves approvals and per-recipient evidence,
@@ -208,6 +279,6 @@ export async function trustJourney(app,{browserProof}={}) {
   assert.equal((await target.fetch(customerPath+'/feed',{headers:{cookie:''}})).status,404,'revoked customer grants remain inaccessible')
   assert.equal((await target.fetch(unsubscribePath,{headers:{cookie:''}})).status,404,'subscriber bearer hashes are never archived')
  } finally { await target.close() }
- console.log('PASS TRUST-003: double opt-in, reasoned subscriptions, immediate unsubscribe, approved dated changes, signed delivery and bounce evidence, scoped publication and consent exports')
+ console.log('PASS TRUST-003 and TRUST-005: double opt-in, reasoned subscriptions, immediate unsubscribe, approved dated changes, signed delivery and bounce evidence, scoped publication and consent exports')
  return {noticeId:draft.update.id,customerOnlyId:restricted.id}
 }

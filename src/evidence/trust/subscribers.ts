@@ -1,6 +1,7 @@
 import type { Bindings } from '../../auth.server'
 import { auditStatement, text, type Actor, type Input } from '../door'
 import { Refusal } from '../upload'
+import { requireCapability } from '../archive/capabilities'
 import { confirmationMail, mailReady } from './delivery'
 import { consent, credential, emailOf, issueCredential, requireSubscriber, selectedCategories, settings, subscriberFor, visitor, type Subscription } from './model'
 export async function subscribe(env:Bindings,input:Input,now:Date) {
@@ -23,6 +24,9 @@ export async function subscribe(env:Bindings,input:Input,now:Date) {
  return {requested:true}
 }
 export async function confirm(env:Bindings,token:string,now:Date) {
+ await requireCapability(env,'shares')
+ const rules=await settings(env)
+ if(!rules.public_enabled||!rules.confirmations_enabled)throw new Refusal('Subscriptions are unavailable.',409)
  const link=await credential(env,'confirmation',token,now)
  if(!link)throw new Refusal('Confirmation link is invalid or expired.',404)
  const subscriber=await requireSubscriber(env,link.subject_id)

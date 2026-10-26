@@ -7,6 +7,7 @@ import { issueCredential, settings, type Delivery, type Update } from './model'
 export async function mailReady(env:Bindings) {
  await requireCapability(env,'mail')
  const rules=await settings(env)
+ if(!rules.public_enabled)throw new Refusal('The owner must enable trust publication before sending trust mail.',409)
  if(new URL(env.AUTH_ORIGIN).protocol!=='https:')throw new Refusal('Trust email requires the HTTPS application origin for one-click unsubscribe.',409)
  if(!rules.postal_address)throw new Refusal('Set the business postal address before sending trust mail.',409)
  if(!env.MAIL_FROM||!env.MAIL_API_KEY||!['resend','sendgrid'].includes(env.MAIL_PROVIDER??'')||env.RER_DEMO==='1'||!operatorMail(env))throw new Refusal('Configure the FOLLOWUP-001 Resend or SendGrid email provider before sending trust mail.',409)
@@ -39,7 +40,7 @@ export async function eligible(env:Bindings,row:Delivery,update:Update,now:Date)
  return update.visibility==='public'||!!await env.DB.prepare('SELECT 1 FROM trust_customer_grants g JOIN trust_grant_records r ON r.grant_id=g.id WHERE g.subscriber_id=? AND g.revoked_at IS NULL AND g.expires_at>? AND r.update_id=? AND r.can_read=1').bind(row.subscriber_id,now.toISOString(),update.id).first()
 }
 export async function flushTrustDeliveries(env:Bindings,now:Date,updateId?:string) {
- if(!await capabilityAllowed(env,'mail'))return 0
+ if(!await capabilityAllowed(env,'mail')||!(await settings(env)).public_enabled)return 0
  // A worker interruption after an external send must never turn into a resend.
  await env.DB.prepare("UPDATE trust_deliveries SET state='uncertain',detail='Interrupted after the delivery was claimed; the provider outcome is unknown and it will not be resent.',outcome_at=? WHERE state='pending' AND attempted_at IS NOT NULL AND accepted_at IS NULL AND attempted_at<?").bind(now.toISOString(),new Date(now.getTime()-5*60000).toISOString()).run()
  const rows=(await env.DB.prepare("SELECT * FROM trust_deliveries WHERE kind='update' AND state='pending' AND attempted_at IS NULL"+(updateId?' AND update_id=?':'')+' ORDER BY queued_at,id LIMIT 25').bind(...(updateId?[updateId]:[])).all<Delivery>()).results
