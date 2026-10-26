@@ -8259,7 +8259,7 @@
       "executable": false
     },
     "tests/helpers/policy-reading-browser.mjs": {
-      "sha256": "7f92b50a5065047e18d657fefa47806261af814fa9450c0bbbff78bd9a2cd587",
+      "sha256": "c2745b4e8a72e972af719b6ed83286e24ab66dfb63efe7dbe9f52b43961890de",
       "executable": false
     },
     "tests/helpers/population-browser.mjs": {

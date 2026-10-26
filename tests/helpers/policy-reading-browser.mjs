@@ -20,7 +20,7 @@ export async function policyReadingJourney(app, bridge, ownerCookie) {
   try {
    await page.goto(bridge.origin + '/app/policies/builder?program=' + program.id)
    await page.locator('form[action="/app/policies/templates/access-control"]').getByRole('button').click()
-   await page.locator('.policy-reading').waitFor()
+   await page.locator('.policy-reading').waitFor({timeout:3000})
    assert.equal(await page.locator('.policy-reading h2').filter({ hasText: /^Purpose$/ }).count(), 1)
    assert.ok(await page.locator('.policy-reading ol li').count() > 1)
    assert.doesNotMatch(await page.locator('.policy-reading').innerText(), /From the Evidence policy library|not legal advice/)
@@ -34,7 +34,7 @@ export async function policyReadingJourney(app, bridge, ownerCookie) {
    await draft.getByLabel('Policy', { exact: true }).fill(title)
    await draft.getByLabel('Text', { exact: true }).fill(body)
    await draft.getByRole('button', { name: 'Save draft revision' }).click()
-   await page.locator('.policy-reading').waitFor()
+   await page.locator('.policy-reading').waitFor({timeout:3000})
    const revisionPath = new URL(page.url()).pathname
    const expectedDigest = createHash('sha256').update(body).digest('hex')
    assert.equal(await page.locator('input[name="body_sha256"]').inputValue(), expectedDigest)
@@ -56,7 +56,7 @@ export async function policyReadingJourney(app, bridge, ownerCookie) {
    await page.getByRole('button', { name: 'Record decision on this exact text' }).click()
    await page.getByRole('button', { name: 'Publish this revision' }).click()
    await page.goto(bridge.origin + revisionPath)
-   await page.locator('.policy-reading').waitFor()
+   await page.locator('.policy-reading').waitFor({timeout:3000})
    assert.doesNotMatch(await page.locator('main').innerText(), /Review this draft for applicability|not legal advice/)
    app.setCookie(ownerCookie)
    const stored = await (await app.fetch(revisionPath.replace('/app/', '/api/'))).json()
