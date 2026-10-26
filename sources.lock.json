@@ -6304,7 +6304,7 @@
       "executable": false
     },
     "src/evidence/program/board-view.ts": {
-      "sha256": "5d77d67ccf2c3609c8dd9bfde2a28e49efb4fbd7afa977950ca7352b07cb50f8",
+      "sha256": "cc3621b43e3817d35df2570063e8be613ffbeb64882f00bfc2940a860efb4252",
       "executable": false
     },
     "src/evidence/program/board.ts": {
@@ -6420,7 +6420,7 @@
       "executable": false
     },
     "src/evidence/program/labels.ts": {
-      "sha256": "8bb958f21fe0136cecebc497d5a579a46af04fb93d4f390fcaad9b7c08bebe2f",
+      "sha256": "e770196100f508f4b7a09d566fccd7383c48610ff00504ca6c0fe3ac425396d5",
       "executable": false
     },
     "src/evidence/program/library-revision.ts": {
@@ -8324,7 +8324,7 @@
       "executable": false
     },
     "tests/helpers/readiness-browser.mjs": {
-      "sha256": "ad7e88b150425389e653e882e15a9237a67214f8073776d4d3c3b465bf8b3ca4",
+      "sha256": "accf1725ce20f021599e29af5474ad34a2d5eab0c3c8c877b24da4457326733f",
       "executable": false
     },
     "tests/helpers/readiness-fixture.mjs": {
