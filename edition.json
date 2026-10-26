@@ -3445,6 +3445,7 @@
           "tests/helpers/pdf-fixture.mjs",
           "tests/helpers/period-agent-journey.mjs",
           "tests/helpers/policy-reading-browser.mjs",
+          "tests/helpers/policy-reading-journey.mjs",
           "tests/helpers/population-browser.mjs",
           "tests/helpers/portable-browser.mjs",
           "tests/helpers/portable-fixture.mjs",

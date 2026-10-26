@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "c73a9ba2703b8f8f2bf74968dc998f63a73e74797ad1ccb401db6363e7f8d170",
+  "manifest": "b76a4400e120de36f213a7c414ba70a81e1b66cd17abe465eccaa5e439c6a968",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -3453,6 +3453,7 @@
           "tests/helpers/pdf-fixture.mjs",
           "tests/helpers/period-agent-journey.mjs",
           "tests/helpers/policy-reading-browser.mjs",
+          "tests/helpers/policy-reading-journey.mjs",
           "tests/helpers/population-browser.mjs",
           "tests/helpers/portable-browser.mjs",
           "tests/helpers/portable-fixture.mjs",
@@ -3683,7 +3684,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "c73a9ba2703b8f8f2bf74968dc998f63a73e74797ad1ccb401db6363e7f8d170",
+      "sha256": "b76a4400e120de36f213a7c414ba70a81e1b66cd17abe465eccaa5e439c6a968",
       "executable": false
     },
     "LICENSE": {
@@ -8103,7 +8104,7 @@
       "executable": false
     },
     "tests/helpers/browser-bridge.mjs": {
-      "sha256": "d24d93697514fa0050bdb0e8553400c4e37493a2ffd7471b18284e854001f05f",
+      "sha256": "1ed8429deb72705846858a2b69d7a36d098e9127acbc3d4190fbc26bf1659f4a",
       "executable": false
     },
     "tests/helpers/code-manifests-journey.mjs": {
@@ -8260,6 +8261,10 @@
     },
     "tests/helpers/policy-reading-browser.mjs": {
       "sha256": "6a3b872aa3a49f5666dbffbffdbeb07f186af3676640bc72c8492c92429991e0",
+      "executable": false
+    },
+    "tests/helpers/policy-reading-journey.mjs": {
+      "sha256": "ac74fbe4f0d0ed5bf1dd62de9e05c17c0d8c5cc857aa3cff23bea091d0ab7fc5",
       "executable": false
     },
     "tests/helpers/population-browser.mjs": {

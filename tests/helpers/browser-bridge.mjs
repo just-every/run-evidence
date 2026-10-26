@@ -19,7 +19,12 @@ export async function browserBridge(app, folder) {
    const out = Object.fromEntries(r.headers)
    if (out.location?.startsWith(app.origin)) out.location = origin + out.location.slice(app.origin.length)
    res.writeHead(r.status, out); res.end(Buffer.from(await r.arrayBuffer()))
-  } catch (error) { console.error('Browser bridge failed:', error.message); res.writeHead(500); res.end('Transport unavailable') }
+  } catch (error) {
+   if (req.aborted || res.destroyed) return
+   console.error('Browser bridge failed:', error.message)
+   if (res.headersSent) { res.destroy(error); return }
+   res.writeHead(500); res.end('Transport unavailable')
+  }
  })
  await new Promise(done => server.listen(0, '127.0.0.1', done)); origin = 'http://127.0.0.1:' + server.address().port
  const browser = await chromium.launch({ headless: true, args: ['--use-mock-keychain', '--password-store=basic'] })
