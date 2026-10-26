@@ -37,7 +37,7 @@ def main():
         sandbox = client.create(CreateSandboxFromImageParams(name=name,
             image='ubuntu:24.04', os_user='root', public=False, auto_stop_interval=0,
             auto_delete_interval=0, ttl_minutes=180, labels={'run':'sx-evidence-c-i816'},
-            resources=Resources(cpu=2, memory=4, disk=12)), timeout=300)
+            resources=Resources(cpu=2, memory=4, disk=10)), timeout=300)
         event('sandbox_created', sandbox_id=sandbox.id)
         bootstrap = ('export DEBIAN_FRONTEND=noninteractive; apt-get update -qq && '
             'apt-get install -y -qq ca-certificates curl git python3 tcpdump xz-utils && '
@@ -94,6 +94,8 @@ if __name__ == '__main__':
     try:
         main()
     except Exception as error:
+        message = str(error).replace(os.environ['DAYTONA_API_KEY'],'[private]')
+        message = re.sub(r'(https?://[^\s?#]+)[?#][^\s]+',r'\1[private]',message)
         event('failed', error_type=type(error).__name__, status=getattr(error,'status_code',None),
-              code=getattr(error,'code',None), source=getattr(error,'source',None))
+              code=getattr(error,'code',None), source=getattr(error,'source',None), message=message)
         raise SystemExit(1)
