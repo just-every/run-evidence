@@ -10,7 +10,7 @@ const args=process.argv.slice(2),verb=args.shift(),options={}
 let proxy,compiled,outputCreated=false
 try {
  while(args.length) { const key=args.shift(); if(['--yes','--dry-run','--accept-unverified-history'].includes(key)) options[key]=true; else if(['--input','--output','--config','--state','--journal'].includes(key) && args[0] && !args[0].startsWith('--')) options[key]=args.shift(); else throw Error('Unknown or missing archive argument.') }
- if(!['export','restore','journal'].includes(verb)) throw Error('Use: node scripts/archive.mjs export --output FILE [--dry-run], or restore --input FILE [--dry-run | --yes]. Optional --config PATH --state PATH select only local storage. Stop dev first.')
+ if(!['export','restore','journal'].includes(verb)) throw Error('Use: rer run archive export --output FILE [--dry-run], or restore --input FILE [--dry-run | --yes]. Optional --config PATH --state PATH select only local storage. Stop dev first.')
  if(verb==='export' && !options['--dry-run'] && !options['--output']) throw Error('Export requires --output FILE.')
  if(verb==='restore' && (!options['--input'] || (!options['--dry-run'] && !options['--yes']))) throw Error('Restore requires --input FILE and --dry-run or --yes.')
  proxy=await localStore(options['--config'] || 'wrangler.jsonc',options['--state'] || '.wrangler/state/v3');compiled=await engine()

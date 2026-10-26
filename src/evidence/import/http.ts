@@ -7,7 +7,7 @@ import { commit, jobAction, providerOf, readBundle, readSource, reviewById, revi
 import { reviewPage, shapePage } from './view'
 import { moveInPage, bundleReviewPage } from './bundle/view'
 import { BUNDLE_MAPPING_VERSION, identityReview, validateBundleMapping, type BundleMapping } from './bundle/plan'
-import { importedRecords, reconcile, recordsCsv } from './bundle/records'
+import { importedRecords, reconcile, mappedExisting, recordsCsv } from './bundle/records'
 import { classes, type Provider } from './bundle/classes'
 import type { BundleSummary } from './bundle/parse'
 import type { Mapping, Review } from './types'
@@ -82,10 +82,10 @@ export function importHandler(clock:()=>Date=()=>new Date()){
     const cls=url.searchParams.get('class')??undefined;if(cls&&!classes.some(c=>c.id===cls))throw new Refusal('Unknown record class.')
     if(action==='records')return json({records:await importedRecords(env,{review:review.id,class:cls})})
     if(action==='export'||action==='export.csv'){
-     const records=await importedRecords(env,{review:review.id,class:cls}),csv=action==='export.csv'
+     const records=await importedRecords(env,{review:review.id,class:cls}),csv=action==='export.csv',job=review.job_id?await jobAction(env,review,session,'read'):undefined
      await auditStatement(env,{id:session.operatorId,name:session.operator.displayName},'import.exported','import:'+review.id,clock(),'succeeded',csv?'csv':'json').run()
      if(csv)return new Response(recordsCsv(records),{headers:{...headers,'content-type':'text/csv; charset=utf-8','content-disposition':`attachment; filename="import-${review.id.slice(0,8)}.csv"`}})
-     return json({format:'evidence-import-export',version:1,review:{id:review.id,incumbent:provider,received_at:review.staged_at,approved_at:review.approved_at,archive_sha256:review.archive_sha256,exported_at:summary.exported_at??null},reconciliation:reconcile(review,summary,await importedRecords(env,{review:review.id})),records})
+     return json({format:'evidence-import-export',version:1,review:{id:review.id,incumbent:provider,received_at:review.staged_at,approved_at:review.approved_at,archive_sha256:review.archive_sha256,exported_at:summary.exported_at??null},reconciliation:reconcile(review,summary,await importedRecords(env,{review:review.id}),{mappedExisting:await mappedExisting(env,review,job),pending:!!review.approved_at&&(!job||['queued','applying','failed'].includes(job.state))}),records})
     }
     if(action?.startsWith('exhibit/')){
      const record=(await importedRecords(env,{review:review.id,class:'exhibits'})).find(r=>r.id===action.slice(8)&&r.file&&r.incumbent!=='Drata')
@@ -94,7 +94,7 @@ export function importHandler(clock:()=>Date=()=>new Date()){
      return download(bytes,record.file!.name.replace(/[^\w.-]+/g,'_').slice(0,120)||'exhibit')
     }
     if(action)return json({error:'Method not allowed.'},405)
-    const job=review.job_id?await jobAction(env,review,session,'read'):undefined,records=await importedRecords(env,{review:review.id}),rec=reconcile(review,summary,records)
+    const job=review.job_id?await jobAction(env,review,session,'read'):undefined,records=await importedRecords(env,{review:review.id}),rec=reconcile(review,summary,records,{mappedExisting:await mappedExisting(env,review,job),pending:!!review.approved_at&&(!job||['queued','applying','failed'].includes(job.state))})
     const groups=provider==='Drata'?[]:await identityReview(env,await readBundle(env,review))
     if(api)return json({review,summary,reconciliation:rec,identity_groups:groups,mapping:review.mapping_json?JSON.parse(review.mapping_json):null,job})
     if(provider!=='Drata')return bundleReviewPage(review,summary,rec,groups,review.mapping_json?JSON.parse(review.mapping_json) as BundleMapping:null,job,records,cls,session.operator.displayName)

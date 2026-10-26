@@ -6,17 +6,23 @@ Evidence is an MIT audit-evidence desk for one business: write controls, keep pr
 
 ## Run
 
-Install Git, then run one line. It installs the shared command, clones Evidence and starts it:
+Install Git, then install the shared command:
 
 ```sh
-npx -y @runeditrun/rer dev just-every/run-evidence
+curl -fsSL https://runeditrun.com/install.sh | sh
 ```
 
-Without Node, `curl -fsSL https://runeditrun.com/install.sh | sh -s -- dev just-every/run-evidence` brings its own and does the same.
+Run the PATH line printed by the installer, then start Evidence:
+
+```sh
+rer dev just-every/run-evidence
+```
+
+If you already have Node 22 or later, `npx -y @runeditrun/rer dev just-every/run-evidence` is an alternative.
 
 To start it again later, run `cd run-evidence && rer dev`.
 
-`rer dev` installs the pinned dependencies, selects Node 22.20.0, applies the D1 migrations, prepares a local owner and starts the app. Open its private `RER_OPEN` link on this computer, then confirm first-run setup. The installed `/` is the Lobby; the desk is `/app`. The printed `RER_SITE` address opens the run site and on-site guides. Keep that link private. Local sign-in uses the private owner link and sends no email; no Cloudflare or model account is needed. To use your own mailbox locally, run `npx -y @runeditrun/rer install just-every/run-evidence`, then `rer setup --owner-email you@example.com` from the checkout before the first launch. Stop with `rer dev --stop`.
+`rer dev` installs the pinned dependencies, selects Node 22.20.0, applies the D1 migrations, prepares a local owner and starts the app. Open its private `RER_OPEN` link on this computer, then confirm first-run setup. The installed `/` is the Lobby; the desk is `/app`. The printed `RER_SITE` address opens the run site and on-site guides. Keep that link private. Local sign-in uses the private owner link and sends no email; no Cloudflare or model account is needed. To use your own mailbox locally, run `rer install just-every/run-evidence`, then `rer setup --owner-email you@example.com` from the checkout before the first launch. Stop with `rer dev --stop`.
 
 ## Run site and guides
 
@@ -33,14 +39,14 @@ The [getting started guide](docs/GETTING-STARTED.md) introduces the owner journe
 5. **Agent preparation.** Open Agent preparation, grant a prepare-only token, and give it to your agent privately. The [commands](docs/AGENT-COMMANDS.md) read the desk and propose an audit folder. Review the exact proposal in the app and approve or reject it. Only the owner session can issue the folder; decisions are recorded.
 6. **Move in from Drata.** Open Move in, select an audit-evidence ZIP with its HTML manifest, and review the dry run and control mappings. Approve admission only after reviewing counts, missing files and digests. The batch journal records changes. Undo removes active import links while preserving original files, receipts and later decisions. [Supported shape and limits](docs/DRATA-IMPORT.md) distinguish documented-shape fixtures from a verified customer export.
 
-For a second, empty installation, run `npx -y @runeditrun/rer dev just-every/run-evidence --dir evidence-restore` for a separate directory. It selects a free port and has separate local state. Never reset your only copy to test restore.
+For a second, empty installation, run `rer dev just-every/run-evidence --dir evidence-restore` for a separate directory. It selects a free port and has separate local state. Never reset your only copy to test restore.
 
 The local archive CLI works with dev stopped:
 
 ```sh
-node scripts/archive.mjs export --output exports/evidence.evidence
-node scripts/archive.mjs restore --input exports/evidence.evidence --dry-run
-node scripts/archive.mjs restore --input exports/evidence.evidence --yes
+rer run archive export --output exports/evidence.evidence
+rer run archive restore --input exports/evidence.evidence --dry-run
+rer run archive restore --input exports/evidence.evidence --yes
 ```
 
 Restore requires an empty Evidence database and exhibit bucket. Destination authentication may already exist. Metadata is limited to 8 MiB and 20,000 rows; each exhibit to 10 MiB. HTTP restore stages up to 64 MiB of files; CLI restore has no aggregate file limit. Base's generic `rer export` is separate from this complete evidence archive.
@@ -53,18 +59,18 @@ Create a private mode-0600 file outside the checkout with `CLOUDFLARE_ACCOUNT_ID
 
 ```sh
 rer dev --stop
-rer deploy --dry-run
+rer deploy --dry-run --env-file /absolute/path/to/private-deploy.env
 rer deploy --environment production --env-file /absolute/path/to/private-deploy.env
 ```
 
-The dry run builds and validates without provider requests. The real command provisions D1 and R2, applies migrations, deploys the Worker and claims the first owner. Open the printed application address, sign in through the delivered email link and finish setup. Reuse the same environment and private deployment state for subsequent deployments. Builds and deployment do not run tests. This repository's validation uses local Cloudflare runtimes; live provider delivery is outside this first release's test boundary.
+The dry run builds and validates, then reads the target secret bindings using the supplied Cloudflare credentials. It does not deploy. The real command provisions D1 and R2, applies migrations, deploys the Worker and claims the first owner. Open the printed application address, sign in through the delivered email link and finish setup. Reuse the same environment and private deployment state for subsequent deployments. Builds and deployment do not run tests. This repository's validation uses local Cloudflare runtimes; live provider delivery is outside this first release's test boundary.
 
 ## Develop
 
 ```sh
 rer build
-pnpm typecheck
-node tests/evidence.mjs
+rer run typecheck
+rer run test:evidence
 rer verify
 ```
 

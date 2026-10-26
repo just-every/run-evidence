@@ -1,3 +1,6 @@
+import { sourceIdentity } from '../base/provenance/identity'
+import type { ImportJob } from '../base/types'
+import type { Mapping } from '../types'
 import type { Bindings } from '../../../auth.server'
 import type { Review } from '../types'
 import { classes } from './classes'
@@ -16,15 +19,25 @@ export async function importedRecords(env: Bindings, filter: { review?: string; 
  }
  return out
 }
-export interface Reconciled extends ClassSummary { active: number; unlinked: number; reconciled: boolean | null }
+// Zero-effect mappings are still processed source decisions, not new controls.
+export async function mappedExisting(env: Bindings, review: Review, job?: ImportJob) {
+ if (!job || JSON.parse(review.summary_json).provider !== 'Drata' || !review.mapping_json) return 0
+ const mapped = (JSON.parse(review.mapping_json) as Mapping[]).filter(m => m.action === 'existing')
+ if (!mapped.length) return 0
+ const done = new Set((await env.DB.prepare('SELECT source_identity FROM ik_d1_entries WHERE job_id=? AND ordinal<?').bind(job.id, job.checkpoint).all<{ source_identity: string }>()).results.map(r => r.source_identity))
+ return mapped.filter(m => done.has(sourceIdentity(job.destination, job.namespace, 'control', m.source_id))).length
+}
+export interface Reconciled extends ClassSummary { active: number; unlinked: number; mapped_existing: number; pending: number; reconciled: boolean | null }
 // Source, admitted, unsupported and refused per class; after approval the admitted figure is the retained
 // additions and `active` the links still live (undo moves them to `unlinked`, never deleting the additions).
-export function reconcile(review: Review, summary: { classes: ClassSummary[] }, records: ImportedRecord[]): Reconciled[] {
+export function reconcile(review: Review, summary: { classes: ClassSummary[] }, records: ImportedRecord[], options: { mappedExisting?: number; pending?: boolean } = {}): Reconciled[] {
  return summary.classes.map(c => {
   const mine = records.filter(r => r.class === c.id), approved = !!review.approved_at && review.job_id
   const admitted = approved ? mine.length : c.admitted, active = mine.filter(r => r.active).length
-  const unsupported = approved ? c.source - admitted - c.refused : c.unsupported
-  return { ...c, admitted, unsupported, active, unlinked: mine.length - active, reconciled: approved ? admitted + unsupported + c.refused === c.source : null }
+  const mapped_existing = approved && c.id === 'frameworks_controls' ? options.mappedExisting ?? 0 : 0
+  const unsupported = approved && !options.pending ? Math.max(0, c.source - admitted - mapped_existing - c.refused) : c.unsupported
+  const pending = approved && options.pending ? Math.max(0, c.source - admitted - mapped_existing - c.refused - unsupported) : 0
+  return { ...c, admitted, unsupported, mapped_existing, pending, active, unlinked: mine.length - active, reconciled: approved ? admitted + mapped_existing + unsupported + pending + c.refused === c.source : null }
  })
 }
 const csvCell = (v: unknown) => '"' + String(v ?? '').replace(/"/g, '""').replace(/^([=+\-@\t\r])/, "'$1") + '"'

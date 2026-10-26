@@ -1,3 +1,4 @@
+import { problem } from '../problem'
 import { operatorAuth, runtimeBindings, type Bindings } from '../../auth.server'
 import { when } from '../format'
 import { Refusal } from '../upload'
@@ -12,12 +13,12 @@ import { course } from '../training/courses'
 // The employee and contractor door (ATTEST-001): a signed-in person sees only
 // their own assignments and acknowledges the exact published text. It is
 // matched to People by sign-in email; it opens no owner page or record.
-const json = (data: unknown, status = 200) => Response.json(data, { status, headers })
 export function memberHandler(clock: () => Date) {
  return async (request: Request, original: Bindings): Promise<Response | null> => {
   const url = new URL(request.url)
   if (!/^\/(?:api\/)?me(?:\/|$)/.test(url.pathname)) return null
   const env = runtimeBindings(original), isApi = url.pathname.startsWith('/api/')
+  const json = (data: unknown, status = 200): Response | Promise<Response> => !isApi && status >= 400 ? problem((data as { error: string }).error, status, '/me', true) : Response.json(data, { status, headers })
   if (url.origin !== env.AUTH_ORIGIN || (request.headers.has('host') && request.headers.get('host')?.toLowerCase() !== url.host.toLowerCase())) return json({ error: 'Invalid host.' }, 403)
   if (request.headers.get('sec-fetch-site') === 'cross-site' || (request.headers.has('origin') && request.headers.get('origin') !== env.AUTH_ORIGIN) || (!['GET', 'HEAD'].includes(request.method) && request.headers.get('origin') !== env.AUTH_ORIGIN)) return json({ error: 'Same-origin request required.' }, 403)
   const session = await operatorAuth(env).getSession(request)

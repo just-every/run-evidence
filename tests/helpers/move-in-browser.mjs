@@ -7,7 +7,7 @@ import { vantaZip } from '../fixtures/vanta/bundle.mjs'
 import { secureframeZip } from '../fixtures/secureframe/bundle.mjs'
 
 // Runs after the ordinary owner proof journey in the same disposable checkout.
-export async function moveInAndPrepare(page, origin, width, capture, scratch) {
+export async function moveInAndPrepare(page, origin, width, capture, scratch, now = () => new Date()) {
  await page.goto(origin+'/app/import')
  await capture(page,`${width}-move-in`)
  await page.getByRole('link',{name:'Supported export shape'}).click()
@@ -62,7 +62,7 @@ export async function moveInAndPrepare(page, origin, width, capture, scratch) {
 
  await page.goto(origin+'/app/agent')
  await page.getByLabel('Agent label').fill('Audit preparation assistant')
- const expires=new Date(Date.now()+86400000).toISOString().slice(0,16)
+ const expires=new Date(now().getTime()+86400000).toISOString().slice(0,16)
  await page.getByLabel('Expiry (UTC)').fill(expires)
  await capture(page,`${width}-agent-access`)
  await page.getByRole('button',{name:'Grant prepare-only access'}).click()
@@ -76,10 +76,10 @@ export async function moveInAndPrepare(page, origin, width, capture, scratch) {
   assert.equal(code,0,'agent command succeeds');assert.ok(!output.includes(token),'CLI does not disclose credential')
   return JSON.parse(output)
  }
- const desk=await cli('desk'),today=new Date().toISOString().slice(0,10)
+ const desk=await cli('desk'),today=now().toISOString().slice(0,10)
  const input=join(scratch,'.cache','folder-input.json')
  await mkdir(join(scratch,'.cache'),{recursive:true})
- await writeFile(input,JSON.stringify({reviewer_label:'Quarterly audit reviewer',period_from:today,period_to:today,expires_at:new Date(Date.now()+3600000).toISOString(),control_ids:[desk.controls[0].id]}))
+ await writeFile(input,JSON.stringify({reviewer_label:'Quarterly audit reviewer',period_from:today,period_to:today,expires_at:new Date(now().getTime()+3600000).toISOString(),control_ids:[desk.controls[0].id]}))
  const {proposal}=await cli('prepare-folder',['--input',input]);await unlink(input)
  assert.ok((await cli('proposals')).proposals.some(row=>row.id===proposal.id))
  await page.goto(origin+'/app/agent/proposals/'+proposal.id)
@@ -94,7 +94,7 @@ export async function moveInAndPrepare(page, origin, width, capture, scratch) {
  for(const button of await page.getByRole('button',{name:'Revoke access',exact:true}).all()) { await button.click(); break }
  // LOG-001: the import, its undo and the agent approval are on the owner's audit.
  await page.goto(origin+'/app/audit')
- const audit=await page.locator('main').innerText()
- for(const action of ['import.commit','import.undo','agent.proposal-approved']) assert.ok(audit.includes(action),action)
+ const audit=await (await page.request.get(origin+'/api/audit')).json()
+ for(const action of ['import.commit','import.undo','agent.proposal-approved']) assert.ok(audit.entries.some(entry=>entry.action===action),action)
  await capture(page,`${width}-audit`)
 }

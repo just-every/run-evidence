@@ -28,6 +28,7 @@ export async function trainingBrowser(app, ownerCookie, right) {
    assert.equal(forbidden.status(), 403)
    assert.match(forbidden.headers()['content-type'], /text\/html/)
    await capture(page, 'owner-access-refused')
+   const missing = await page.goto(origin + '/me/training/missing-course'); assert.equal(missing.status(), 404); assert.match(missing.headers()['content-type'], /text\/html/)
    await page.goto(origin + '/me/training/security-awareness')
    assert.equal(await page.getByRole('group').count(), right.length)
    assert.equal(await page.getByRole('link', { name: 'Audit', exact: true }).count(), 0)

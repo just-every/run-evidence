@@ -98,7 +98,8 @@ try{
   const exported=await(await app.fetch('/api/audit/export')).json()
   assert.equal(exported.format,'evidence-audit');assert.deepEqual(exported.entries.filter(e=>e.action==='audit.exported').map(e=>e.detail).sort(),['csv','json'])
   assert.doesNotMatch(JSON.stringify(exported),/token=|Bearer |session=|"cookie"/i)
-  const html=await(await app.fetch('/app/audit?outcome=refused')).text();assert.match(html,/import\.undo/);assert.match(html,/href="\/app\/audit"/)
+  assert.ok((await trail('?outcome=refused')).some(e=>e.action==='import.undo'))
+  const auditPage=await app.fetch('/app/audit?outcome=refused');assert.equal(auditPage.status,200);assert.match(auditPage.headers.get('content-type'),/text\/html/)
   const later=(await rows(app,'receipts')).find(r=>r.origin==='manually-asserted'),form=new FormData();form.set('file',new File(['Corrected owner evidence'],'corrected.txt'));form.set('source','Corrected review');form.set('covered_from','2026-10-01');form.set('covered_to','2026-10-31');form.set('supersedes',later.id)
   assert.equal((await app.fetch('/app/requirements/'+later.requirement_id+'/uploads',{method:'POST',headers:{origin:app.origin},body:form})).status,303)
   const replacement=(await rows(app,'receipts')).find(r=>r.supersedes===later.id),receipts=await trail('?action=receipt.')
@@ -123,9 +124,12 @@ try{
  await scenario('A Drata control that duplicates an existing proof requirement is resolved onto it, and the reconciliation shows each class',async()=>{
   const second=await(await upload(app,await fixture())).json(),sid=second.review.id,existing=(await rows(app,'requirements'))[0].id
   const map=second.summary.controls.map((c,i)=>i===0?{source_id:c.id,action:'existing',requirement_id:existing,covered_from:'2026-09-01',covered_to:'2026-09-30'}:{source_id:c.id,action:'skip'})
-  const saved=await post(app,'/api/import/'+sid+'/mapping',{mapping:map});assert.equal(saved.status,200)
+  const saved=await post(app,'/api/import/'+sid+'/mapping',{mapping:map});assert.equal(saved.status,200);const fingerprint=(await saved.json()).review.fingerprint
+  assert.equal((await post(app,'/api/import/'+sid+'/commit',{fingerprint,approve:'commit'})).status,200)
   const view=await(await app.fetch('/api/import/'+sid)).json(),by=Object.fromEntries(view.reconciliation.map(c=>[c.id,c]))
   assert.equal(by.frameworks_controls.source,2);assert.equal(by.exhibits.source,3)
+  assert.equal(by.frameworks_controls.mapped_existing,1);assert.equal(by.frameworks_controls.admitted,0);assert.equal(by.frameworks_controls.unsupported,1)
+  const exported=await(await app.fetch('/api/import/'+sid+'/export')).json();assert.deepEqual(exported.reconciliation,view.reconciliation)
   assert.match(await(await app.fetch('/app/import/'+sid)).text(),/Reconciliation by record class/)
  })
  await scenario('MIGRATE-001 / Vanta: an API-pages export is previewed, identities are resolved by the owner, every record class reconciles as source, admitted, unsupported and refused, exhibits keep bytes and digest, imported history stays distinct from a reconnected source, and export, restore and undo keep the additions',migrateVanta)

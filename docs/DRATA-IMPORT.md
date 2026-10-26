@@ -131,6 +131,6 @@ in the archive stream and preserve missing-source descriptors. The archive must
 never recreate auth sessions, execute a plan, infer an approval, or automatically
 resume a job. Existing active links and all undo/history state restore as data.
 
-Parent-run integration command: `node tests/import.mjs`. It uses the real
+Parent-run integration command: `rer run test:import`. It uses the real
 workerd/D1/R2 runtime in `tests/helpers/runtime.mjs`, including full owner archive
 export/restore. No package/dependency changes are required by this kit.

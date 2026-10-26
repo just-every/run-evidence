@@ -6,15 +6,21 @@ Evidence keeps audit evidence for one business. You write the controls, add proo
 
 These commands work on macOS, Linux or Windows with WSL2.
 
-One line installs the shared Run Edit Run command, clones Evidence into `run-evidence` and starts it:
+First install the shared Run Edit Run command:
 
 ```sh
-curl -fsSL https://runeditrun.com/install.sh | sh -s -- dev just-every/run-evidence
+curl -fsSL https://runeditrun.com/install.sh | sh
 ```
 
-Git is required; rer brings Node and pnpm. Already have Node 22 or later? `npx -y @runeditrun/rer dev just-every/run-evidence` does the same. If the installer prints a line that puts `rer` on your PATH, run that line too.
+Run the PATH line printed by the installer, then clone and start Evidence:
 
-To start it again later, run the same line from the same folder, or `cd run-evidence && rer dev`.
+```sh
+rer dev just-every/run-evidence
+```
+
+Git is required; rer brings Node and pnpm. If you already have Node 22 or later, `npx -y @runeditrun/rer dev just-every/run-evidence` is an alternative.
+
+To start it again later, run `cd run-evidence && rer dev`.
 
 `rer dev` installs the pinned dependencies, selects the required Node version, applies local migrations, prepares a local owner and starts the app. Open the private `RER_OPEN` link it prints on this computer. Keep this link private: it signs you in as the local owner.
 
@@ -22,7 +28,7 @@ To start it again later, run the same line from the same folder, or `cd run-evid
 
 On **Finish setup**, review the owner name and email. Select **I confirm this owner account is ready to use.**, then **Finish setup**. The **Proof desk** is the main workspace.
 
-No external email is sent during local development. Email sign-in uses the local development outbox. No provider account is needed to run locally. To use your own mailbox as the local owner, run `npx -y @runeditrun/rer install just-every/run-evidence`, then this from the checkout before the first launch:
+No external email is sent during local development. Use the private development browser’s account chooser to review invited people’s tasks. A local invitation does not admit a fresh browser through the private development gate. No provider account is needed to run locally. To use your own mailbox as the local owner, run `rer install just-every/run-evidence`, then this from the checkout before the first launch:
 
 ```sh
 rer setup --owner-email you@example.com

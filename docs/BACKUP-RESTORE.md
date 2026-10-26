@@ -24,7 +24,7 @@ The current v10 archive has no total-archive ceiling: archives of any total size
 
 Never reset the only installation to test a backup. Prepare a separate Evidence checkout and local database/bucket. Destination owner authentication may already exist, and remains the destination’s own identity after restore.
 
-For an online preparation, start a separate installation with `npx -y @runeditrun/rer dev just-every/run-evidence --dir evidence-restore`, open its private local owner link and complete setup. For an outage recovery, use the already prepared checkout and dependencies in the recovery set; the local archive command opens only local D1/R2 bindings and does not contact the lost hosted installation.
+For an online preparation, start a separate installation with `rer dev just-every/run-evidence --dir evidence-restore`, open its private local owner link and complete setup. For an outage recovery, use the already prepared checkout and dependencies in the recovery set; the local archive command opens only local D1/R2 bindings and does not contact the lost hosted installation.
 
 Stop the development process from its own terminal with **Ctrl-C** before local archive commands. Do not run two processes against the same local storage while recovering.
 
@@ -39,15 +39,15 @@ The final admission is transactional. Receipt facts, original actor provenance, 
 From the source checkout, while it is stopped:
 
 ```sh
-node scripts/archive.mjs export --output /private/backups/evidence.evidence
-node scripts/archive.mjs journal --output /private/backups/evidence-journal.json
+rer run archive export --output /private/backups/evidence.evidence
+rer run archive journal --output /private/backups/evidence-journal.json
 ```
 
 From the separate empty destination checkout, using the archive and latest journal copied into the recovery environment:
 
 ```sh
-node scripts/archive.mjs restore --input /private/backups/evidence.evidence --journal /private/backups/evidence-journal.json --dry-run
-node scripts/archive.mjs restore --input /private/backups/evidence.evidence --journal /private/backups/evidence-journal.json --yes
+rer run archive restore --input /private/backups/evidence.evidence --journal /private/backups/evidence-journal.json --dry-run
+rer run archive restore --input /private/backups/evidence.evidence --journal /private/backups/evidence-journal.json --yes
 ```
 
 Inspect the dry run before the confirming command. `--config PATH` and `--state PATH` select the destination’s local configuration and storage; they never select remote bindings. If no later journal can be recovered, the dry run remains explicitly unverified. Only after investigating that gap, add `--accept-unverified-history` to acknowledge recovery without a verified later journal. Do not describe that recovery as protected from unknown later erasures.

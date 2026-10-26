@@ -30,7 +30,7 @@ framework it maps to, so proof attached once counts everywhere.
 Requirement and control text from AICPA, ISO and PCI SSC is licensed; Evidence
 ships reference ids and its own short summaries.
 
-`node scripts/library-check.mjs` (run by Verify) fails if any requirement lacks a
+`rer run check:library` (run by Verify) fails if any requirement lacks a
 control, any control lacks proof or a test, or any catalogue test lacks
 per-provider remediation steps.
 

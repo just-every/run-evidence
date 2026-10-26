@@ -7,7 +7,7 @@ export interface ShellFacts { programs: ShellProgram[]; selected: ShellProgram |
 let readFacts: () => Promise<ShellFacts | null> = async () => null
 export const provideShellFacts = (reader: typeof readFacts) => { readFacts = reader }
 export const shellFacts = () => readFacts()
-export type NavKey = 'desk' | 'programs' | 'tests' | 'remediation' | 'vulnerabilities' | 'policies' | 'people' | 'vendors' | 'risks' | 'connections' | 'folders' | 'agent' | 'import' | 'archive' | 'audit' | 'operations' | 'roles'
+export type NavKey = 'desk' | 'programs' | 'tests' | 'remediation' | 'vulnerabilities' | 'policies' | 'people' | 'vendors' | 'risks' | 'connections' | 'folders' | 'agent' | 'import' | 'archive' | 'audit' | 'operations' | 'roles' | 'inventory' | 'access-reviews' | 'training' | 'trust' | 'populations'
 export interface PageOptions {
  member?: boolean
  active?: NavKey
@@ -26,7 +26,12 @@ const work: [NavKey, string, string, IconName][] = [
  ['vulnerabilities', '/app/vulnerabilities', 'Vulnerabilities', 'bug'],
  ['policies', '/app/policies', 'Policies', 'document'],
  ['people', '/app/people', 'People', 'people'],
+ ['training', '/app/training', 'Training', 'document'],
+ ['access-reviews', '/app/access-reviews', 'Access reviews', 'shield'],
+ ['inventory', '/app/inventory', 'Inventory', 'database'],
+ ['populations', '/app/populations', 'Populations', 'people'],
  ['vendors', '/app/vendors', 'Vendors', 'building'],
+ ['trust', '/app/trust', 'Trust updates', 'shield'],
  ['risks', '/app/risks', 'Risks', 'scale'],
  ['connections', '/app/connections', 'Connections', 'plug'],
 ]
