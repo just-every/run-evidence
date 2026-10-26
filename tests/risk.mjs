@@ -206,7 +206,7 @@ try {
     const restored = await target.fetch('/api/archive/restore',{method:'POST',headers:{origin:target.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore', 'x-evidence-erasure-history':'unverified acknowledged'},body:legacy})
     assert.equal(restored.status,200,await restored.text())
     const restoredArchive = decodeArchive(Buffer.from(await (await target.fetch('/api/archive/export')).arrayBuffer()))
-    for (const table of trustTables) assert.deepEqual(restoredArchive.allRows[table], [], 'pre-trust archives restore without trust records: ' + table)
+    for (const table of [...trustTables,'promise_dependencies','promise_reviews','promise_revisions']) assert.deepEqual(restoredArchive.allRows[table], [], 'legacy archives restore without later portable records: ' + table)
     const copy = await (await target.fetch('/api/risks/'+id)).json()
     assert.equal(copy.assessments[0].score,6);assert.deepEqual(copy.methods[0].likelihood_definitions,[])
     assert.match(await (await target.fetch('/app/risks/'+id)).text(), /legacy, not recorded/)

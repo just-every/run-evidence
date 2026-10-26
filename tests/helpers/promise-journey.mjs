@@ -43,6 +43,11 @@ export async function promiseJourney(app,{browserProof}={}){
  const trust=await post('/api/trust/updates',{category:'security',title:'Quarterly access promise',body,visibility:'public'}),trustPath='/api/trust/updates/'+trust.id
  await post(trustPath+'/dependencies',link)
  for(const source of supporting)await post(trustPath+'/dependencies',source)
+ const erasure=await post('/api/privacy/requests',{kind:'exhibit',subject_id:exhibit.exhibit_id,reason:'Inspect linked customer-promise custody'})
+ assert.equal(JSON.parse(erasure.snapshot_json).supported,false);assert.equal(JSON.parse(erasure.snapshot_json).promise_linked,true)
+ await post('/api/privacy/requests/'+erasure.id+'/confirm',{snapshot_hash:erasure.snapshot_hash,confirm:'ERASE'},409)
+ assert.equal((await app.fetch('/api/receipts/'+exhibit.id+'/download')).status,200,'refused erasure preserves the original')
+ if(browserProof)await browserProof(app,{cookie,stage:'promise-erasure-fenced',followLink:false,screens:[['privacy','/app/privacy/requests/'+erasure.id,'No completed erasure is claimed']]})
  const approval={snapshot_hash:draft.snapshot_hash,reviewer_person_id:reviewer.id,recipient:'buyer@customer.test',expires_on:'2027-01-01',reason:'Reviewed exact promise and passing control'}
  await post(answer+'/approve',approval,409)
  await post(answer+'/approve',{...approval,dependency_hash:(await get(answer)).dependencies.hash},200)

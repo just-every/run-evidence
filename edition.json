@@ -2811,6 +2811,7 @@
           "migrations/core/0063_trust_updates.sql",
           "migrations/core/0064_trust_grant_scope.sql",
           "migrations/core/0065_promise_dependencies.sql",
+          "migrations/core/0066_promise_erasure_fence.sql",
           "package.json",
           "packaging.json",
           "pnpm-lock.yaml",

@@ -13,3 +13,5 @@ Choose **Prepare a fresh cited revision** to replace an exact dependency. Questi
 All dependency snapshots, review decisions and trust revision links travel in the custody archive. Older archives without this feature remain readable. Restored sharing and mail remain inactive and no customer notification is replayed. Historical questionnaire approvals and trust recipient outcomes remain available on their original review pages.
 
 No model inference, autonomous source mutation, silent external revision or independent provider verification is claimed. ANSWER-002 and ANSWER-003 must use these freshness and exact-approval gates before exposing a new reuse or outbound door.
+
+An exhibit with a retained promise dependency is not eligible for standalone erasure. Privacy previews disclose that derivative classification is unfinished and refuse execution; concurrent erasure admission also refuses new exhibit-source derivatives. ERASE-001 retains classified derivative deletion and retention disclosures.
