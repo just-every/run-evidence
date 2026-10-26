@@ -42,7 +42,7 @@ try{
  while(true){try{await stat(archive);break}catch(error){if(error.code!=='ENOENT')throw error;if(Date.now()>deadline)throw Error('Ubuntu local archive did not become available');await new Promise(resolve=>setTimeout(resolve,10000))}}
  await restoreLocalArchive(session,env.EVIDENCE_OWN_ARTIFACTS)
 }finally{
- if(closeDiagnostics)await closeDiagnostics()
+ try{if(closeDiagnostics)await closeDiagnostics()}catch(error){console.log('Diagnostic stream cleanup: '+clean(error.message))}
  // The CLI owns these exact disposable resources, including partial deployments.
  try{await rer(['--remove','--yes']);console.log(JSON.stringify({cleanup:true,worker,deployed}))}catch(error){console.log('CLEANUP FAILED: '+clean(error.message));throw error}
 }
