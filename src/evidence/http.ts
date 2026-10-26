@@ -2,6 +2,9 @@ import { operatorAuth, runtimeBindings, type Bindings } from '../auth.server'
 import { day, validDate, groups, cadences } from './model'
 import { createControl, desk, receipt, storedBytes } from './storage'
 import { boundedBody, Refusal, textField, upload } from './upload'
+import { authorize } from './authz/gate'
+import { scopedControls, unrestricted } from './authz/roles'
+import { guardRead, recordState, sensitiveIds } from './secure/records'
 import { deskPage, requirementPage, receiptPage, page, headers, escape, signedOutPage } from './view'
 const json = (data: unknown, status = 200) => Response.json(data, { status, headers })
 const redirect = (location: string) => new Response(null, { status: 303, headers: { ...headers, location } })
@@ -15,7 +18,18 @@ export function evidenceHandler(clock: () => Date = () => new Date()) {
   if (request.headers.get('sec-fetch-site') === 'cross-site' || (request.headers.has('origin') && request.headers.get('origin') !== env.AUTH_ORIGIN) || (!['GET','HEAD'].includes(request.method) && request.headers.get('origin') !== env.AUTH_ORIGIN)) return json({ error:'Same-origin request required.' },403)
   const session = await operatorAuth(env).getSession(request)
   if (!session) return isApi ? json({ error:'Owner sign-in required.' },401) : signedOutPage(request)
-  if (session.operator.role !== 'owner') return json({ error:'Owner access required.' },403)
+  const verdict = await authorize(env, session.operator, request.method, path)
+  if (!verdict.ok) return json({ error:verdict.error },verdict.status)
+  // A scoped control owner or contributor reaches only the controls the grants name.
+  const reach = verdict.delegate && !unrestricted(verdict.delegate) ? await scopedControls(env, verdict.delegate) : null
+  const reaches = async (requirementId: string) => !reach || reach.has((await env.DB.prepare('SELECT control_id FROM requirements WHERE id=?').bind(requirementId).first<{ control_id: string }>())?.control_id ?? '')
+  const operator = { id: verdict.actor.id, displayName: verdict.actor.name, email: verdict.delegate?.email }
+  // SECURE-001: a delegate sees a sensitive record only with a need-to-know grant.
+  const hideSensitive = async <T extends { receipts: { id: string }[] }>(rows: T[]) => {
+   if (!verdict.delegate) return rows
+   const sensitive = await sensitiveIds(env), held = new Set((await env.DB.prepare('SELECT receipt_id FROM record_grants WHERE email=? AND revoked_at IS NULL').bind(verdict.delegate.email).all<{ receipt_id: string }>()).results.map(r => r.receipt_id))
+   return rows.map(r => ({ ...r, receipts: r.receipts.filter(x => !sensitive.has(x.id) || held.has(x.id)) }))
+  }
   try {
    const now = clock(), selected = url.searchParams.get('date') || day(now)
    if (!validDate(selected)) throw new Refusal('Select a real UTC date.')
@@ -29,21 +43,23 @@ export function evidenceHandler(clock: () => Date = () => new Date()) {
     return redirect('/app/requirements/'+result.requirement)
    }
    const uploading = /^\/app\/requirements\/([a-f0-9-]+)\/uploads$/.exec(path)
-   if (uploading && request.method === 'POST') return redirect('/app/receipts/'+await upload(request,env,uploading[1],session.operator,now))
+   if (uploading && request.method === 'POST') { if (!await reaches(uploading[1])) return json({ error:'That requirement is outside your scope.' },403); return redirect('/app/receipts/'+await upload(request,env,uploading[1],operator,now)) }
    if (!['GET','HEAD'].includes(request.method)) return json({ error:'Method not allowed.' },405)
-   if (path === '/app' || path === '/api/desk') { const data = await desk(env,selected,now); return isApi ? json(data) : deskPage(data,session.operator.displayName) }
+   if (path === '/app' || path === '/api/desk') { const data = await desk(env,selected,now); if (reach) data.requirements = data.requirements.filter(x => reach.has(x.control_id)); data.requirements = await hideSensitive(data.requirements); return isApi ? json(data) : deskPage(data,session.operator.displayName) }
    const requirement = /^\/app\/requirements\/([a-f0-9-]+)$/.exec(path)
-   if (requirement) { const data = await desk(env,selected,now), row = data.requirements.find(x => x.id === requirement[1]); return row ? requirementPage(row,selected,session.operator.displayName,(await env.DB.prepare('SELECT id,name,email FROM people ORDER BY name').all<{ id: string; name: string; email: string }>()).results,(await env.DB.prepare('SELECT id,name FROM programs ORDER BY created_at').all<{ id: string; name: string }>()).results) : json({ error:'Requirement not found.' },404) }
+   if (requirement) { if (!await reaches(requirement[1])) return json({ error:'Requirement not found.' },404); const data = await desk(env,selected,now), row = (await hideSensitive(data.requirements)).find(x => x.id === requirement[1]); return row ? requirementPage(row,selected,session.operator.displayName,(await env.DB.prepare('SELECT id,name,email FROM people ORDER BY name').all<{ id: string; name: string; email: string }>()).results,(await env.DB.prepare('SELECT id,name FROM programs ORDER BY created_at').all<{ id: string; name: string }>()).results) : json({ error:'Requirement not found.' },404) }
    const match = /^\/(?:app|api)\/receipts\/([a-f0-9-]+)(\/download)?$/.exec(path)
    if (match) {
-    const row = await receipt(env,match[1]); if (!row) return json({ error:'Receipt not found.' },404)
+    const row = await receipt(env,match[1]); if (!row || !await reaches(row.requirement_id)) return json({ error:'Receipt not found.' },404)
+    if (!await guardRead(env, { id: verdict.actor.id, name: verdict.actor.name }, verdict.delegate, row.id, now, match[2] ? 'download' : 'view')) return json({ error:'This record is restricted. Ask the owner for a need-to-know grant.' },403)
     if (match[2]) {
+     if (verdict.delegate?.grants.every(g => g.role === 'contributor')) return json({ error:'Your role does not allow this.' },403)
      const bytes = await storedBytes(env,row)
      if (!bytes) return json({ error:'Unavailable bytes. The receipt is retained.' },410)
      return new Response(bytes, { headers: { ...headers, 'content-type':'application/octet-stream', 'content-disposition': `attachment; filename="exhibit"; filename*=UTF-8''${encodeURIComponent(row.filename).replace(/'/g,'%27')}`, 'content-length':String(bytes.byteLength), 'content-security-policy':"default-src 'none'; sandbox" } })
     }
     row.available = !!await storedBytes(env,row)
-    return isApi ? json(row) : receiptPage(row,session.operator.displayName)
+    return isApi ? json(row) : receiptPage(row,session.operator.displayName,verdict.delegate ? undefined : await recordState(env,row.id))
    }
    return json({ error:'Not found.' },404)
   } catch (error) {

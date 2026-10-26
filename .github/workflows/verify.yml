@@ -1,7 +1,7 @@
 name: Verify
 on:
   push:
-    branches: [main, cloud/sx-evidence-c37, cloud/sx-evidence-g23-r4, cloud/sx-evidence-c-i816]
+    branches: [main, cloud/sx-evidence-c37, cloud/sx-evidence-g23-r4, cloud/sx-evidence-c-i816, cloud/sx-evidence-c-i822]
   pull_request:
     branches: [main]
 permissions:
@@ -9,7 +9,7 @@ permissions:
 jobs:
   verify:
     name: verify (${{ matrix.shard }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
       fail-fast: false

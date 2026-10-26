@@ -32,6 +32,8 @@
     "test:evidence": "node tests/evidence.mjs",
     "test:browser": "node tests/browser.mjs",
     "test:review": "node tests/review.mjs",
+    "test:roles": "node tests/roles.mjs",
+    "test:secure": "node tests/secure.mjs",
     "test:archive": "node tests/archive.mjs",
     "test:vulns": "node tests/vulns.mjs",
     "test:review-browser": "node tests/review-browser.mjs",

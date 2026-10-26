@@ -1,4 +1,5 @@
 import { tailoringJourney } from './helpers/tailoring-journey.mjs'
+import { interpretationJourney } from './helpers/interpret-journey.mjs'
 import { answerJourney } from './helpers/answer-journey.mjs'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
@@ -143,3 +144,4 @@ try {
 if(!process.exitCode)await answerJourney()
 
 if(!process.exitCode)await tailoringJourney()
+if(!process.exitCode)await interpretationJourney()

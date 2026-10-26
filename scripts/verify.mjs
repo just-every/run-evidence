@@ -3,11 +3,11 @@
 import { spawnSync } from 'node:child_process'
 const shards = {
  core: [['rer', 'build', '--site'], ['node', 'tests/site.mjs'], ['pnpm', 'run', 'typecheck'], ['node', 'scripts/edition-authoring/cli.mjs', 'check'], ['node', 'scripts/library-check.mjs'], ['node', 'tests/ops.mjs'], ['node', 'tests/evidence.mjs']],
- custody: [['node', 'tests/review.mjs'], ['node', 'tests/archive.mjs']],
+ custody: [['node', 'tests/review.mjs'], ['node', 'tests/archive.mjs'], ['node', 'tests/secure.mjs']],
  history: [['node', 'tests/import.mjs'], ['node', 'tests/agent.mjs']],
  program: [['node', 'tests/open.mjs'], ['node', 'tests/program.mjs'], ['node', 'tests/api.mjs'], ['node', 'tests/private-collector.mjs'], ['node', 'tests/risk.mjs'], ['node', 'tests/report.mjs'], ['node', 'tests/readiness.mjs']],
  code: [['node','tests/github.mjs']],
- people: [['node', 'tests/policy.mjs'], ['node', 'tests/handover.mjs'], ['node', 'tests/cadence.mjs'], ['node', 'tests/population.mjs'], ['node', 'tests/inventory.mjs'], ['node', 'tests/access.mjs'], ['node', 'tests/training.mjs']],
+ people: [['node', 'tests/policy.mjs'], ['node', 'tests/handover.mjs'], ['node', 'tests/roles.mjs'], ['node', 'tests/cadence.mjs'], ['node', 'tests/population.mjs'], ['node', 'tests/inventory.mjs'], ['node', 'tests/access.mjs'], ['node', 'tests/training.mjs']],
  integrations: [['node', 'tests/work.mjs'], ['node', 'tests/followup.mjs'], ['node', 'tests/trust.mjs'], ['node', 'tests/failure-notices.mjs'], ['node', 'tests/vulns.mjs']],
  cloud: [['node', 'tests/cloud.mjs']],
  clouds: [['node', 'tests/clouds.mjs']],

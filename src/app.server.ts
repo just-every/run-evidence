@@ -44,6 +44,9 @@ import { accessHandler } from './evidence/access/http'
 import { trainingHandler } from './evidence/training/http'
 import { handoverHandler } from './evidence/handover/http'
 import { vulnHandler } from './evidence/vuln/http'
+import { rolesHandler } from './evidence/authz/http'
+import { secureHandler } from './evidence/secure/http'
+import { scimHandler } from './evidence/authz/scim'
 import { lobbyResponse } from './base/lobby'
 import { setupStateResponse } from './base/setup-state'
 import { identity } from './identity'
@@ -61,7 +64,8 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
  const review = reviewHandler(clock)
  const supplier = supplierHandler(clock)
  const archive = archiveHandler(clock)
- const program = [trustHandler(clock), privacyHandler(clock), tailoringHandler(clock), answerHandler(clock), vendorReviewHandler(clock), periodAgentHandler(clock), operationsHandler(clock), frameworkHandler(clock), collectorOwnerHandler(clock), programHandler(clock), documentHandler(clock), auditHandler(clock), testHandler(clock), remedyHandler(clock), connectHandler(clock), riskHandler(clock), vendorHandler(clock), policyHandler(clock), workHandler(clock), followupHandler(clock), identityHandler(clock), attestHandler(clock), recurringReviews(clock), populationHandler(clock), inventoryHandler(clock), accessHandler(clock), trainingHandler(clock), handoverHandler(clock), vulnHandler(clock)]
+ const scim = scimHandler(clock)
+ const program = [rolesHandler(clock), secureHandler(clock), trustHandler(clock), privacyHandler(clock), tailoringHandler(clock), answerHandler(clock), vendorReviewHandler(clock), periodAgentHandler(clock), operationsHandler(clock), frameworkHandler(clock), collectorOwnerHandler(clock), programHandler(clock), documentHandler(clock), auditHandler(clock), testHandler(clock), remedyHandler(clock), connectHandler(clock), riskHandler(clock), vendorHandler(clock), policyHandler(clock), workHandler(clock), followupHandler(clock), identityHandler(clock), attestHandler(clock), recurringReviews(clock), populationHandler(clock), inventoryHandler(clock), accessHandler(clock), trainingHandler(clock), handoverHandler(clock), vulnHandler(clock)]
  const api = apiHandler(clock)
  const hooks = hookHandler(clock)
  const member = memberHandler(clock)
@@ -74,6 +78,8 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
   }
   if(path==='/trust'||path.startsWith('/trust/'))return trustPublic(request,env)
   if (path.startsWith('/collectors/')) return collectors(request, env)
+  // SCIM provisioning takes its own scoped, expiring Bearer token and opens no other door.
+  if (path.startsWith('/scim/')) return scim(request,env)
   // The public API takes Bearer tokens only, outside every owner door.
   if (path.startsWith('/v1/')) return api(request,env)
   // Tracker webhooks verify their own signatures; they carry no owner session.

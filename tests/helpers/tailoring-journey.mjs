@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import { runtime } from './runtime.mjs'
 export async function tailoringFixture(app,suffix='journey'){
  const post=async(path,body,status=201)=>{const r=await app.fetch(path,{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify(body)});assert.equal(r.status,status,path+' '+await r.clone().text());return r.json()},get=async path=>{const r=await app.fetch(path);assert.equal(r.status,200,path);return r.json()}
- const owner=await post('/api/people',{name:'Security and legal owner '+suffix,email:'reviewer-'+suffix+'@northstar.test',kind:'employee'})
+ // The named security and legal reviewer is the installation owner's own person: a name in People alone holds no reviewing role.
+ const reviewerEmail=app.harnessState().settings.OWNER_EMAIL,owner=await app.db.prepare('SELECT id,name,email FROM people WHERE email=?').bind(reviewerEmail).first()??await post('/api/people',{name:'Security and legal owner',email:reviewerEmail,kind:'employee'})
  const program=await post('/api/programs',{framework:'soc2',name:'US customer commitments '+suffix,legal_entity:'Northstar Inc',report_type:'Type II',audit_from:'2026-01-01',audit_to:'2026-12-31'})
  const framework=await post('/api/frameworks',{name:'US customer security addendum '+suffix}),materialFramework=await post('/api/frameworks',{name:'Selected framework material '+suffix}),material=await post(`/api/frameworks/${materialFramework.id}/requirements`,{ref:'REG-AC',title:'Access-control requirements',description:'Accounts must have a named owner and approved access reviews.',section:'Access'})
  const q=[]

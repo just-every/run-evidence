@@ -5,6 +5,7 @@ import { operatorMail } from './mail.server.mjs'
 import { createOwnerClaimHandler } from './modules/owner-claim/index.mjs'
 import branding from './branding.json'
 import { auditedAuthentication } from './evidence/audit/auth'
+import { loadSubjects, mfaFetch, ssoHooks, ssoProviders, type Subjects } from './evidence/authz/sso'
 
 // The edition's declared theme (public/rer-theme.css), as Base frames link it.
 const theme = { href: '/rer-theme.css', productName: branding.name, accentColor: branding.primaryColor }
@@ -36,12 +37,27 @@ export interface Bindings {
  RER_OWNER_CLAIM_INSTALLATION_ID?: string
  RER_OWNER_CLAIM_PUBLIC_KEYS?: string
  RER_DEMO?: string
+ /** AUTH-001 single sign-on: each provider is offered only when all of its bindings exist. */
+ OIDC_TRANSACTION_SECRET?: string
+ /** SECURE-001 key custody: named keys as JSON, the key new secrets use, and the switch that retires the session-derived key. */
+ CUSTODY_KEYS?: string
+ CUSTODY_CURRENT?: string
+ CUSTODY_SESSION_KEY_RETIRED?: string
+ SSO_GOOGLE_CLIENT_ID?: string
+ SSO_GOOGLE_CLIENT_SECRET?: string
+ SSO_MICROSOFT_TENANT?: string
+ SSO_MICROSOFT_CLIENT_ID?: string
+ SSO_MICROSOFT_CLIENT_SECRET?: string
+ SSO_OKTA_ISSUER?: string
+ SSO_OKTA_CLIENT_ID?: string
+ SSO_OKTA_PRIVATE_KEY?: string
 }
 
 export const runtimeBindings = (env: Bindings): Bindings => env.RER_DEV_ORIGIN && env.AUTH_LOCAL === 'true' ? { ...env, AUTH_ORIGIN: env.RER_DEV_ORIGIN } : env
 export const authConfig = (env: Bindings): AuthConfig => ({ origin: env.AUTH_ORIGIN, local: env.AUTH_LOCAL === 'true', OWNER_EMAIL: env.OWNER_EMAIL, SESSION_SECRET: env.SESSION_SECRET, SETUP_TOKEN: env.SETUP_TOKEN, MAIL_FROM: env.MAIL_FROM, branding: { productName: branding.name, accentColor: branding.primaryColor, signInPath: '/signin', theme: theme.href } })
-export function operatorAuth(env: Bindings) {
- return createOperatorAuth({ db: env.DB, config: authConfig(env), mailSender: operatorMail(env), clientIp: request => request.headers.get('CF-Connecting-IP') ?? '' })
+export function operatorAuth(env: Bindings, subjects: Subjects = {}) {
+ const providers = ssoProviders(env, subjects), sso = providers.length > 0 && !!env.OIDC_TRANSACTION_SECRET
+ return createOperatorAuth({ db: env.DB, config: { ...authConfig(env), ...(sso ? { providers, OIDC_TRANSACTION_SECRET: env.OIDC_TRANSACTION_SECRET } : {}) } as AuthConfig, mailSender: operatorMail(env), clientIp: request => request.headers.get('CF-Connecting-IP') ?? '', hooks: ssoHooks(env), ...(sso ? { fetch: mfaFetch(env) } : {}) })
 }
 
 // LOG-001: every write through the sign-in, first-run and owner-claim doors is
@@ -55,9 +71,11 @@ export async function authResponse(request: Request, original: Bindings, clock: 
 }
 
 async function authAnswer(request: Request, env: Bindings, url: URL): Promise<Response | null> {
+ // Okta and Entra callbacks resolve their provider subject through the SCIM map.
+ const subjects = url.pathname.startsWith('/auth/oidc/') ? await loadSubjects(env).catch(() => ({})) : {}
  // The shared server-rendered sign-in page: plain forms that work before any script.
  if (url.pathname === '/signin') {
-  const page = await createSignInHandler(operatorAuth(env), {
+  const page = await createSignInHandler(operatorAuth(env, subjects), {
    defaultReturnTo: '/setup',
   })(request)
   if (page) return fontDocumentResponse(page)
@@ -66,7 +84,7 @@ async function authAnswer(request: Request, env: Bindings, url: URL): Promise<Re
   const claim = createOwnerClaimHandler({ db: env.DB, authConfig: authConfig(env), clientIp: request => request.headers.get('CF-Connecting-IP') ?? '', issuer: env.RER_OWNER_CLAIM_ISSUER ?? '', installationId: env.RER_OWNER_CLAIM_INSTALLATION_ID ?? '', appOrigin: env.AUTH_ORIGIN, expectedEmail: env.OWNER_EMAIL.toLowerCase(), publicKeys: JSON.parse(env.RER_OWNER_CLAIM_PUBLIC_KEYS) })
   return fontDocumentResponse((await claim(request))!)
  }
- if (url.pathname.startsWith('/auth/')) return fontDocumentResponse(await createAuthHandler(operatorAuth(env))(request))
+ if (url.pathname.startsWith('/auth/')) return fontDocumentResponse(await createAuthHandler(operatorAuth(env, subjects))(request))
  if (url.pathname === '/setup' || url.pathname === '/app' || url.pathname.startsWith('/app/')) {
   const setup = await firstRunResponse(request, env, operatorAuth(env), { theme })
   if (setup) return setup

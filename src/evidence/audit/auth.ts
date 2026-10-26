@@ -1,5 +1,6 @@
 import type { Bindings } from '../../auth.server'
 import { auditStatement, type Actor } from '../door'
+import { ssoProviders } from '../authz/sso'
 
 // LOG-001. Authentication and authorization changes made through the shared
 // sign-in doors (Base operator auth, first run, owner claim) are recorded in
@@ -31,7 +32,9 @@ export async function auditedAuthentication(env: Bindings, request: Request, req
   const after = await snapshot(env), path = new URL(request.url).pathname, door = `${request.method} ${path}`, entries: Entry[] = []
   const operator = (id: string) => after.operators.get(id) ?? before.operators.get(id)
   const as = (id: string): Actor => ({ id, name: operator(id)?.display_name ?? 'Unknown operator' })
-  for (const [id, s] of after.sessions) if (!before.sessions.has(id)) entries.push({ actor: as(s.operator_id), action: 'auth.signed-in', subject: 'operator:' + s.operator_id, outcome: 'succeeded', detail: `${s.kind} session via ${door}`, revision: operator(s.operator_id)?.version })
+  // AUTH-001: while single sign-on is configured, the owner's email link is the break-glass door and is recorded as such.
+  const breakGlass = ssoProviders(env).length > 0
+  for (const [id, s] of after.sessions) if (!before.sessions.has(id)) entries.push({ actor: as(s.operator_id), action: breakGlass && s.kind === 'native' && operator(s.operator_id)?.role === 'owner' ? 'auth.break-glass' : 'auth.signed-in', subject: 'operator:' + s.operator_id, outcome: 'succeeded', detail: `${s.kind} session via ${door}`, revision: operator(s.operator_id)?.version })
   for (const [id, s] of before.sessions) if (!after.sessions.has(id)) entries.push({ actor: requester ?? as(s.operator_id), action: requester?.id === s.operator_id && path === '/auth/signout' ? 'auth.signed-out' : 'auth.session-revoked', subject: 'operator:' + s.operator_id, outcome: 'succeeded', detail: `${s.kind} session via ${door}`, revision: operator(s.operator_id)?.version })
   for (const [id, o] of after.operators) {
    const prior = before.operators.get(id)

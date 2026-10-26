@@ -7,6 +7,7 @@ import { requireFramework,requirements,revisionStatements,mappingStatement,empty
 import { currentMethod,score } from '../risk/storage'
 import { retainDefaultMethod } from '../risk/method-default'
 import { sha } from '../archive/format'
+import { requireReviewer } from '../authz/reviewers'
 export interface Tailoring {id:string;framework_id:string;requirement_id:string;snapshot_json:string;snapshot_hash:string;created_by:string;created_at:string}
 const fingerprint=(v:unknown)=>sha(new TextEncoder().encode(JSON.stringify(v)))
 export async function tailoringOf(env:Bindings,id:string){const r=await env.DB.prepare('SELECT * FROM tailoring_proposals WHERE id=?').bind(id).first<Tailoring>();if(!r)throw new Refusal('Tailoring proposal not found.',404);return r}
@@ -35,18 +36,27 @@ export async function tailoringContext(env:Bindings,input:Input){
  const method=await currentMethod(env)
  return {framework:{id:framework.id,name:framework.name},requirement,material,program,control,resources,policy,method}
 }
-export async function prepareTailoring(env:Bindings,input:Input,actor:Actor,now:Date){
- const context=await tailoringContext(env,input),assumptions=text(input,'assumptions',2000),likelihood=Number(input.likelihood),impact=Number(input.impact),assessment=score(context.method,likelihood,impact)
+export type Context=Awaited<ReturnType<typeof tailoringContext>>
+// The deterministic snapshot: exact passages, deadline only after an explicit phrase, and the proposed mapping, diff and scored risk.
+export async function baseSnapshot(context:Context,input:Input){
+ const assumptions=text(input,'assumptions',2000,true),likelihood=Number(input.likelihood),impact=Number(input.impact),assessment=score(context.method,likelihood,impact)
  const passage=context.requirement.description||context.requirement.title,material=context.material.description||context.material.title,date=/\b(?:by|no later than|due(?: on)?)\s+(\d{4}-\d\d-\d\d)\b/i.exec(passage)?.[1],deadline=date&&validDate(date)?date:null,ambiguous=/reasonable|appropriate|promptly|as soon|where applicable|\bmay\b/i.test(passage)
  const citations=[{kind:'contract-promise',ref:context.requirement.ref,passage,href:`/app/frameworks/${context.framework.id}/requirements/${context.requirement.id}`},{kind:'framework-requirement',ref:context.material.ref,passage:material,href:`/app/frameworks/${context.material.framework_id}/requirements/${context.material.id}`}]
  const after=context.policy.body+'\n\nCustomer promise '+context.requirement.ref+':\n'+passage+'\n\nSelected framework requirement '+context.material.ref+':\n'+material
- const snapshot={input:{...input,control_id:context.control.id,resource_ids:context.resources.map(r=>r.id)},context,context_hash:await fingerprint(context),control_selection:{mode:input.control_id?'owner-supplied candidate':'source-based recommendation',explanation:input.control_id?'The owner supplied a candidate; the exact mapping still needs review.':'Selected by shared terms across the contract, framework passage and actual inventory. This proposes applicability; it does not prove equivalence.'},citations,assumptions,ambiguous,deadline,conflicts:context.policy.body.includes(passage)?[]:['The proposed customer promise differs from the current approved policy; review the exact diff and any incompatible cadence or scope.'],mapping:{requirement_id:context.requirement.id,control_id:context.control.id},policy_diff:{before:context.policy.body,after},risk:{title:('Unmet customer promise '+context.requirement.ref).slice(0,300),scenario:'Failure to meet the cited customer promise: '+passage,likelihood,impact,...assessment},obligation:{kind:'contract-promise',body:passage,deadline},notice:'Local deterministic preparation from selected passages and inventory. Interpretation and applicability are assumptions, not legal advice. Approval creates a policy draft, a reviewed risk assessment, one mapping and one structured obligation; it never publishes policy or sends work.'}
+ return {input:{...input,control_id:context.control.id,resource_ids:context.resources.map(r=>r.id)},context,context_hash:await fingerprint(context),control_selection:{mode:input.control_id?'owner-supplied candidate':'source-based recommendation',explanation:input.control_id?'The owner supplied a candidate; the exact mapping still needs review.':'Selected by shared terms across the contract, framework passage and actual inventory. This proposes applicability; it does not prove equivalence.'},citations,assumptions,ambiguous,deadline,conflicts:context.policy.body.includes(passage)?[]:['The proposed customer promise differs from the current approved policy; review the exact diff and any incompatible cadence or scope.'],mapping:{requirement_id:context.requirement.id,control_id:context.control.id},policy_diff:{before:context.policy.body,after},risk:{title:('Unmet customer promise '+context.requirement.ref).slice(0,300),scenario:'Failure to meet the cited customer promise: '+passage,likelihood,impact,...assessment},obligation:{kind:'contract-promise',body:passage,deadline},notice:'Local deterministic preparation from selected passages and inventory. Interpretation and applicability are assumptions, not legal advice. Approval creates a policy draft, a reviewed risk assessment, one mapping and one structured obligation; it never publishes policy or sends work.'}
+}
+export async function prepareTailoring(env:Bindings,input:Input,actor:Actor,now:Date){
+ const context=await tailoringContext(env,input)
+ text(input,'assumptions',2000)
+ return storeProposal(env,context,await baseSnapshot(context,input),actor,now,'prepare only')
+}
+export async function storeProposal(env:Bindings,context:Context,snapshot:Record<string,unknown>,actor:Actor,now:Date,detail:string){
  const id=crypto.randomUUID(),json=JSON.stringify(snapshot),hash=await sha(new TextEncoder().encode(json))
  if(new TextEncoder().encode(json).length>1024*1024)throw new Refusal('Proposal exceeds 1 MiB.',413)
- await env.DB.batch([env.DB.prepare('INSERT INTO tailoring_proposals VALUES(?,?,?,?,?,?,?)').bind(id,context.framework.id,context.requirement.id,json,hash,actor.name,now.toISOString()),auditStatement(env,actor,'tailoring.prepared','tailoring:'+id,now,'succeeded','prepare only',{revision:hash})]);return tailoringOf(env,id)
+ await env.DB.batch([env.DB.prepare('INSERT INTO tailoring_proposals VALUES(?,?,?,?,?,?,?)').bind(id,context.framework.id,context.requirement.id,json,hash,actor.name,now.toISOString()),auditStatement(env,actor,'tailoring.prepared','tailoring:'+id,now,'succeeded',detail,{revision:hash})]);return tailoringOf(env,id)
 }
 export async function decideTailoring(env:Bindings,id:string,input:Input,actor:Actor,now:Date){
- const row=await tailoringOf(env,id),s=JSON.parse(row.snapshot_json),decision=text(input,'decision',20),approver=await requirePerson(env,input.approver_person_id,'named security/legal owner'),reason=text(input,'reason',1000)
+ const row=await tailoringOf(env,id),s=JSON.parse(row.snapshot_json),decision=text(input,'decision',20),approver=await requirePerson(env,input.approver_person_id,'named security/legal owner'),reason=text(input,'reason',1000),reviewerRole=await requireReviewer(env,approver)
  if(!['approved','rejected'].includes(decision)||input.snapshot_hash!==row.snapshot_hash||await sha(new TextEncoder().encode(row.snapshot_json))!==row.snapshot_hash)throw new Refusal('Decide the exact proposal fingerprint.',409)
  if(await env.DB.prepare('SELECT 1 FROM tailoring_decisions WHERE proposal_id=?').bind(id).first())throw new Refusal('This proposal already has a decision.',409)
  let policyRevision:string|null=null,riskId:string|null=null,statements:D1PreparedStatement[]=[]
@@ -78,7 +88,7 @@ export async function decideTailoring(env:Bindings,id:string,input:Input,actor:A
   for(const resource of current.resources)statements.push(env.DB.prepare("INSERT INTO risk_links VALUES(?,'asset',?,?)").bind(riskId,resource.id,at))
   statements.push(env.DB.prepare('INSERT INTO tailored_obligations VALUES(?,?,?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(),id,current.program.id,current.control.id,'contract-promise',s.obligation.body,current.requirement.ref,s.deadline,s.assumptions,at))
  }
- statements.push(env.DB.prepare('INSERT INTO tailoring_decisions VALUES(?,?,?,?,?,?,?,?,?,?)').bind(id,row.snapshot_hash,decision,approver.id,actor.id,actor.name,reason,policyRevision,riskId,now.toISOString()),auditStatement(env,actor,'tailoring.'+decision,'tailoring:'+id,now,'succeeded','named owner '+approver.name,{reason,revision:row.snapshot_hash}))
+ statements.push(env.DB.prepare('INSERT INTO tailoring_decisions VALUES(?,?,?,?,?,?,?,?,?,?)').bind(id,row.snapshot_hash,decision,approver.id,actor.id,actor.name,reason,policyRevision,riskId,now.toISOString()),auditStatement(env,actor,'tailoring.'+decision,'tailoring:'+id,now,'succeeded','named reviewer '+approver.name+' ('+reviewerRole+')',{reason,revision:row.snapshot_hash}))
  // Decision's primary key, framework revision and policy version fence the
  // same transaction; no partially applied proposal survives a refusal.
  if(decision==='approved')statements.push(env.DB.prepare('DELETE FROM tailoring_guard'))

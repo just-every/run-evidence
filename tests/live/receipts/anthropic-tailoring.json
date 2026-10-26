@@ -1,0 +1,72 @@
+{
+ "provider": "anthropic",
+ "model": "claude-sonnet-5-5",
+ "at": "2026-10-26T09:19:33.022Z",
+ "steps": [
+  {
+   "name": "with no declared flow the call is refused and nothing is sent",
+   "ok": true,
+   "detail": "status 409"
+  },
+  {
+   "name": "the flow is declared with the key sealed",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the exact declaration is reviewed and enabled",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the key is stored only as ciphertext",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the real model interprets the explicit deadline",
+   "ok": true,
+   "detail": "status 201"
+  },
+  {
+   "name": "explicit deadline: verbatim citations, policy diff, risk and obligation are present",
+   "ok": true,
+   "detail": "3 model citations"
+  },
+  {
+   "name": "the stated deadline is the source deadline",
+   "ok": true,
+   "detail": "2026-12-31"
+  },
+  {
+   "name": "the real model interprets the ambiguous obligation",
+   "ok": true,
+   "detail": "status 201"
+  },
+  {
+   "name": "ambiguous obligation: verbatim citations, policy diff, risk and obligation are present",
+   "ok": true,
+   "detail": "3 model citations"
+  },
+  {
+   "name": "the ambiguous obligation demands acknowledgement and invents no deadline",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "both calls are recorded by digest and size, with outcome sent",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "interpretation changed no program record",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "provider_statuses": [
+  200,
+  200
+ ],
+ "result": "passed"
+}

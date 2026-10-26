@@ -1,8 +1,10 @@
 import { operatorAuth, runtimeBindings, type Bindings } from '../auth.server'
 import { boundedBody, Refusal } from './upload'
 import { headers, page, escape, signedOutPage } from './view'
+import { authorize } from './authz/gate'
+import type { Delegate } from './authz/roles'
 export interface Actor { id: string; name: string }
-export interface OwnerContext { env: Bindings; actor: Actor; now: Date; url: URL; request: Request; isApi: boolean }
+export interface OwnerContext { env: Bindings; actor: Actor; now: Date; url: URL; request: Request; isApi: boolean; delegate?: Delegate }
 export interface Route { method: 'GET' | 'POST'; pattern: RegExp; errorReturn?: string; run: (context: OwnerContext, match: RegExpExecArray) => Promise<Response> }
 export type Input = Record<string, string | string[]>
 export const json = (data: unknown, status = 200) => Response.json(data, { status, headers })
@@ -22,11 +24,12 @@ export function ownerRoutes(routes: Route[], clock: () => Date) {
   if (request.headers.get('sec-fetch-site') === 'cross-site' || (request.headers.has('origin') && request.headers.get('origin') !== env.AUTH_ORIGIN) || (!['GET','HEAD'].includes(request.method) && request.headers.get('origin') !== env.AUTH_ORIGIN)) return json({ error: 'Same-origin request required.' }, 403)
   const session = await operatorAuth(env).getSession(request)
   if (!session) return isApi ? json({ error: 'Owner sign-in required.' }, 401) : signedOutPage(request)
-  if (session.operator.role !== 'owner') return json({ error: 'Owner access required.' }, 403)
+  const verdict = await authorize(env, session.operator, request.method === 'HEAD' ? 'GET' : request.method, url.pathname)
+  if (!verdict.ok) return json({ error: verdict.error }, verdict.status)
   const method = request.method === 'HEAD' ? 'GET' : request.method
   const hit = matched.find(x => x.route.method === method)
   if (!hit) return json({ error: 'Method not allowed.' }, 405)
-  const context: OwnerContext = { env, actor: { id: session.operator.id, name: session.operator.displayName }, now: clock(), url, request, isApi }
+  const context: OwnerContext = { env, actor: verdict.actor, delegate: verdict.delegate, now: clock(), url, request, isApi }
   try { return await hit.route.run(context, hit.match!) }
   catch (error) {
    // LOG-001: a refused or failed owner write is recorded with its outcome,

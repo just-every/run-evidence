@@ -29,12 +29,14 @@ const scenario=async(name,fn)=>{await fn();passed++;console.log('PASS '+name)}
 try{
  dir=await mkdtemp(join(tmpdir(),'evidence-archive-proof-'))
  app=await runtime({migrationThrough:'0007'});await app.signin()
+ // The restricted-record tables belong to every receipt read of the current Worker, so they exist from the start, as 0010 to 0029 do.
+ for(const file of ['0067_access_roles.sql','0068_secure_records_flows.sql'])await app.db.batch(unstable_splitSqlQuery(await readFile('migrations/core/'+file,'utf8')).map(sql=>app.db.prepare(sql)))
  let first,second,third,missing,raw,parsed,before,reviewPath
  await scenario('OPS-001: Prior r1 records and bytes survive additive migration and retain immutable facts',async()=>{
   const a=await createControl(app,'Access review'),b=await createControl(app,'Vendor review'),c=await createControl(app,'Data review')
   first=await upload(app,a,Buffer.alloc(2*1024*1024,11));second=await upload(app,a,Buffer.alloc(2*1024*1024,12),first.id);third=await upload(app,b,Buffer.alloc(2*1024*1024,13));missing=await upload(app,c,'missing original')
   const old=Object.fromEntries(await Promise.all(['controls','requirements','exhibits','receipts'].map(async t=>[t,await rows(app,t)])))
-  for(const file of (await readdir('migrations/core')).filter(f=>f.endsWith('.sql') && f.slice(0,4)>'0007' && !/^00(1\d|2\d)_/.test(f)).sort())await app.db.batch(unstable_splitSqlQuery(await readFile(join('migrations/core',file),'utf8')).map(sql=>app.db.prepare(sql)))
+  for(const file of (await readdir('migrations/core')).filter(f=>f.endsWith('.sql') && f.slice(0,4)>'0007' && !/^00(1\d|2\d|6[78])_/.test(f)).sort())await app.db.batch(unstable_splitSqlQuery(await readFile(join('migrations/core',file),'utf8')).map(sql=>app.db.prepare(sql)))
   for(const [table,data]of Object.entries(old))assert.deepEqual(await rows(app,table),data)
   for(const r of [first,second,third,missing]){const response=await app.fetch('/api/receipts/'+r.id+'/download');assert.equal(response.status,200);assert.equal(digest(Buffer.from(await response.arrayBuffer())),r.sha256)}
   await assert.rejects(app.db.prepare('UPDATE receipts SET source=?').bind('changed').run(),/immutable_receipt/)

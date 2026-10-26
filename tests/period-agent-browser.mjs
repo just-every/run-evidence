@@ -6,8 +6,9 @@ import { readFile,mkdir } from 'node:fs/promises'
 import { resolve,extname,join } from 'node:path'
 import { chromium } from 'playwright'
 import { runtime } from './helpers/runtime.mjs'
+import { fakeModel } from './helpers/model-fixture.mjs'
 import { periodAgentFixture } from './helpers/period-agent-journey.mjs'
-const app=await runtime(),output=resolve(process.env.EVIDENCE_BROWSER_OUTPUT??'.cache/browser/period-agent')
+const model=fakeModel(),app=await runtime({outbound:model.outbound}),output=resolve(process.env.EVIDENCE_BROWSER_OUTPUT??'.cache/browser/period-agent')
 let browser,server,origin
 try {
  const cookie=await app.signin(),fixture=await periodAgentFixture(app),base='/app/controls/'+fixture.control

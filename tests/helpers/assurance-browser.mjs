@@ -5,8 +5,9 @@ import { resolve,extname,join } from 'node:path'
 import { chromium } from 'playwright'
 import { runtime } from './runtime.mjs'
 import { tailoringFixture } from './tailoring-journey.mjs'
+import { declareAndEnable, fakeModel } from './model-fixture.mjs'
 import { questionRows } from './answer-journey.mjs'
-export async function assuranceBrowser(){const app=await runtime(),output=resolve(process.env.EVIDENCE_BROWSER_OUTPUT??'.cache/browser/assurance');let browser,server,origin
+export async function assuranceBrowser(){const model=fakeModel(),app=await runtime({outbound:model.outbound}),output=resolve(process.env.EVIDENCE_BROWSER_OUTPUT??'.cache/browser/assurance');let browser,server,origin
  try{
   const cookie=await app.signin()
   server=createServer(async(req,res)=>{try{const url=new URL(req.url,origin),path=resolve('public','.'+url.pathname)
@@ -32,6 +33,13 @@ export async function assuranceBrowser(){const app=await runtime(),output=resolv
     await page.getByLabel('Proposed likelihood').fill('2');await page.getByLabel('Proposed impact').fill('4')
     await page.getByRole('button',{name:'Prepare exact proposal'}).click();await page.getByRole('heading',{name:'Tailoring proposal',exact:true}).waitFor()
    }
+   // SECURE-001 and AGENT-006: the declared flow screen, then an interpretation drafted through it.
+   await declareAndEnable(fixture.post,{account:'org-synthetic-'+width,api_key:'synthetic-evidence-model-key-'+width});await page.goto(origin+'/app/connections/flows');await page.getByRole('heading',{name:'Declared outbound flows',exact:true}).waitFor();await capture('declared-flows')
+   await page.goto(origin+'/app/roles');await page.getByRole('heading',{name:'Roles',exact:true}).waitFor();await capture('access-roles')
+   await page.goto(origin+'/app/tailoring')
+   for(const [label,value]of Object.entries({'Receiving program':fixture.program.id,'Customer addendum':fixture.framework.id,'Customer requirement':fixture.requirements[2].id,'Selected framework or regulatory requirement':fixture.material.id,'Control hint (optional)':fixture.control,'Approved policy revision':fixture.policy.revision}))await page.getByLabel(label,{exact:true}).selectOption(value)
+   await page.getByRole('checkbox',{name:'Production customer service browser'+width,exact:true}).check()
+   await page.getByRole('button',{name:'Interpret with the declared model flow'}).click();await page.getByRole('heading',{name:'Interpretation',exact:true}).waitFor();await page.getByText('Quoted verbatim from the cited source.').first().waitFor();await capture('tailoring-interpretation')
    await prepare(1);await page.getByText('Ambiguous obligation:',{exact:false}).waitFor();await capture('tailoring-ambiguous-proposal')
    const proposalUrl=page.url();await page.getByRole('link',{name:'Original source US-2',exact:true}).click();await capture('tailoring-original-clause');await page.goto(proposalUrl)
    await page.getByLabel('Named security/legal owner',{exact:true}).selectOption(fixture.owner.id)
