@@ -22,6 +22,18 @@ async function upload(file){
   session.parts=data.parts;progress.value=Math.round((n+1)/total*100)
  }
 }
+function restoreSummary(data){
+ const labels={controls:'Controls',requirements:'Evidence requirements',receipts:'Receipts',exhibits:'Exhibits',review_folders:'Review folders',review_events:'Access events',people:'People',programs:'Programs',policies:'Policies',vendors:'Vendors',risks:'Risks',tests:'Tests'}
+ const facts=document.createElement('dl');facts.className='archive-facts'
+ const add=(label,value)=>{const row=document.createElement('div'),term=document.createElement('dt'),detail=document.createElement('dd');term.textContent=label;detail.textContent=String(value);row.append(term,detail);facts.append(row)}
+ for(const [key,label] of Object.entries(labels))if(Object.hasOwn(data.counts,key))add(label,data.counts[key].toLocaleString())
+ add('Available original files',data.available.toLocaleString())
+ add('Unavailable original files',(data.missing_count??data.missing.length).toLocaleString())
+ add('Available bytes',data.bytes.toLocaleString())
+ add('Erasure history',data.erasure_history==='verified'?'Verified against the source journal':'Unverified')
+ if(!data.dry_run)add('Review folders closed',data.folders_closed.toLocaleString())
+ result.replaceChildren(facts);result.hidden=false
+}
 async function submit(dryRun){
  const file=input.files[0];if(!file||busy||(!dryRun&&file!==reviewedFile))return
  busy=true;dryButton.disabled=true;confirmButton.disabled=true;input.disabled=true;journalInput.disabled=true;result.hidden=true
@@ -31,7 +43,7 @@ async function submit(dryRun){
   status.textContent=dryRun?'Validating every row, original file, relationship and final digest.':'Restoring verified records and originals. Execution capabilities remain inactive.'
   if(legacy)data=await request('/api/archive/restore'+(dryRun?'?dry-run=1':''),{method:'POST',headers:{'content-type':'application/octet-stream',...(!dryRun?{'x-evidence-confirm':'restore'}:{}),...(settings.acceptUnverifiedHistory?{'x-evidence-erasure-history':'unverified acknowledged'}:{}),...(settings.journal?{'x-evidence-journal':JSON.stringify(settings.journal)}:{})},body:file})
   else data=await post(`/api/archive/uploads/${session.id}/${dryRun?'validate':'restore'}`,settings,dryRun?{}:{'x-evidence-confirm':'restore'})
-  result.textContent=JSON.stringify(data,null,2);result.hidden=false
+  restoreSummary(data)
   if(dryRun){reviewedFile=file;status.textContent=`Dry run passed: ${data.counts.receipts} receipts, ${data.available} available originals and ${data.missing_count??data.missing.length} unavailable originals. Erasure history ${data.erasure_history}. ${data.requires_latest_journal?'Supply the latest journal or acknowledge unverified history before confirmation.':'Ready for confirmation.'}`;confirmButton.disabled=data.requires_latest_journal&&!ack.checked}
   else{reviewedFile=null;session=null;localStorage.removeItem(storageKey);status.textContent='Restore complete. Original history is retained. Review folders are closed; schedules, messages, collections, writes and shares are inactive until reauthorization.';await capabilities()}
  }catch(error){status.textContent=error.message||'Archive request failed. Choose the same file and run dry run to resume.'}

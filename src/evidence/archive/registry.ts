@@ -28,6 +28,7 @@ export const portableTables = Object.keys(registry)
 export const localTables = Object.keys(schema).filter(t=>!Object.hasOwn(registry,t))
 export const portableLocal:Record<string,readonly string[]> = {
  ...trustLocal,
+ credential_displays:['id','session_id','operator_id','destination','ciphertext','iv','expires_at'],
  tailoring_guard:['singleton','allowed'],
  privacy_guard:['singleton','allowed'],
  operation_recovery:['singleton','restored_at'],

@@ -163,5 +163,11 @@ try {
   await collectionScheduleBrowser(app, [(await get(path)).connection], { suffix:'-knowbe4-schema', reportExpected:['knowbe4:enrollments'] })
  })
  await scenario('COLLECTION-001: hosted collector schedules through owner doors, Cron, browser and restore', () => collectionScheduleJourney(app))
+ const originalResults = (await get('/api/training/export')).completions
+ await app.clock('2027-10-12T15:00:00Z'); await app.tick()
+ const recurring = await assignmentsOf('nina@northstar.test')
+ assert.ok(recurring.some(a => a.campaign === 'Annual awareness' && a.cycle === 'cycle-1' && a.state === 'assigned'))
+ assert.ok(recurring.some(a => a.campaign === 'Annual awareness' && a.cycle === 'cycle-0' && a.state === 'completed'))
+ assert.deepEqual((await get('/api/training/export')).completions, originalResults)
  console.log(`${passed} training public-door scenarios passed with Base invitations and member sign-in.`)
 } finally { await app.close() }

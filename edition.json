@@ -3444,6 +3444,8 @@
           "tests/helpers/program-documents-journey.mjs",
           "tests/helpers/promise-journey.mjs",
           "tests/helpers/provider-webhook-journey.mjs",
+          "tests/helpers/readable-records-browser.mjs",
+          "tests/helpers/readable-records-journey.mjs",
           "tests/helpers/readiness-browser.mjs",
           "tests/helpers/readiness-fixture.mjs",
           "tests/helpers/review-browser-archive.mjs",

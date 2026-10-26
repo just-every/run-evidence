@@ -40,7 +40,7 @@ export async function workspaceRows(env: Bindings, summaries: TestSummary[]): Pr
  const linked = controls.results as { test_id: string; id: string; name: string; library_id: string | null }[]
  return summaries.map(t => {
   const c = linked.find(x => x.test_id === t.id)
-  return { ...t, control: c ? { id: c.id, ref: c.library_id ?? c.name } : null, owner: c ? owner.get(c.id) ?? null : null, integration: integrationOf(t, source.get(t.id)), unit: unitOf(t.resource_type), run: run.get(t.id) ?? null }
+  return { ...t, control: c ? { id: c.id, ref: c.name } : null, owner: c ? owner.get(c.id) ?? null : null, integration: integrationOf(t, source.get(t.id)), unit: unitOf(t.resource_type), run: run.get(t.id) ?? null }
  })
 }
 export function filterRows(rows: WorkspaceRow[], show: Show, integration: string) {

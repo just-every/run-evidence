@@ -1,3 +1,4 @@
+import { readableRecordsJourney } from './helpers/readable-records-journey.mjs'
 // PROGRAM-003: Program -> Documents list, a document with its citations, owner input forms and approval.
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
@@ -111,3 +112,5 @@ try {
   console.log(`PASS PROGRAM-003: documents list, SoA, approval and prior revision at ${width}`)
  }
 } finally { await browser?.close(); if (server) await new Promise(done => server.close(done)); await app.close() }
+
+await readableRecordsJourney({ browser: true })

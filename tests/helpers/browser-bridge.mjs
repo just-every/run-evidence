@@ -31,6 +31,8 @@ export async function browserBridge(app, folder) {
  }
  const capture = async (page, name, mask = []) => {
   await page.evaluate(() => document.fonts.ready)
+  const missingTooltips = await page.locator('a,button,summary').evaluateAll(items => items.filter(el => el.getClientRects().length && !/[A-Za-z]/.test(el.innerText) && el.querySelector('svg,img') && !el.getAttribute('aria-describedby')).length)
+  if (missingTooltips) throw Error(name + ' has an icon-only control without a tooltip')
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)
   if (overflow) throw Error(name + ' overflows at ' + page.viewportSize().width)
   await page.screenshot({ path: join(output, page.viewportSize().width + '-' + name + '.png'), fullPage: true, mask })

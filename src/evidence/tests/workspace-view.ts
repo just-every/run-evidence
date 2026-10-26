@@ -7,22 +7,30 @@ const dotLabel: Record<TestState, string> = { failing: 'Failing', stale: 'Stale'
 const dot = (s: TestState) => `<span class="test-dot test-dot-${s.replace(' ', '-')}" role="img" aria-label="${dotLabel[s]}"></span>`
 const initial = (name: string) => `<span class="avatar" aria-hidden="true">${escape(Array.from(name)[0]?.toLocaleUpperCase() ?? '')}</span>`
 const query = (params: Record<string, string>) => '?' + new URLSearchParams(Object.entries(params).filter(([, v]) => v)).toString()
+// Resource type slugs stay in APIs; people see a noun and the correct count.
+export function resourceNoun(type: string, count = 2) {
+ const noun = type.split('.').at(-1)!.replaceAll('_',' ').replaceAll('-',' ').replace(/\biam\b/gi,'IAM').replace(/\bec2\b/gi,'EC2').replace(/\bs3\b/gi,'S3').replace(/\brds\b/gi,'RDS').replace(/\bsql\b/gi,'SQL').replace(/\bapi\b/gi,'API').replace(/\bnsg\b/gi,'network security group').replace(/\bsa key\b/gi,'service account key')
+ if (count === 1) return noun
+ const irregular: Record<string,string> = {person:'people',repository:'repositories',policy:'policies',identity:'identities'}
+ return irregular[noun] ?? (/(s|x|sh|ch)$/.test(noun) ? noun+'es' : /[^aeiou]y$/.test(noun) ? noun.slice(0,-1)+'ies' : noun+'s')
+}
 function result(r: WorkspaceRow, now: Date) {
  const run = r.run, s = state(r)
  if (s === 'stale') return `<span class="result result-stale">Stale</span><small>${r.last_run ? escape(ago(r.last_run, now)) : ''}</small>`
  if (!run) return '<span class="result result-none">Never run</span>'
  if (!run.population) return '<span class="result result-none">No items</span>'
- if (run.failed) return `<span class="result result-fail">${run.failed} failing</span><small>of ${run.population} ${escape(r.unit)}</small>`
- if (run.unknown) return `<span class="result result-unknown">${run.unknown} unknown</span><small>of ${run.population} ${escape(r.unit)}</small>`
- return `<span class="result result-pass">${run.passed} of ${run.population - run.not_applicable}</span><small>${escape(r.unit)}</small>`
+ if (run.failed) return `<span class="result result-fail">${run.failed} failing</span><small>of ${run.population} ${escape(resourceNoun(r.resource_type,run.population))}</small>`
+ if (run.unknown) return `<span class="result result-unknown">${run.unknown} unknown</span><small>of ${run.population} ${escape(resourceNoun(r.resource_type,run.population))}</small>`
+ return `<span class="result result-pass">${run.passed} of ${run.population - run.not_applicable}</span><small>${escape(resourceNoun(r.resource_type,run.population-run.not_applicable))}</small>`
 }
 function listRow(r: WorkspaceRow, selected: string, params: Record<string, string>, now: Date) {
  const s = state(r), open = r.id === selected
  return `<tr class="${open ? 'is-open' : ''}${s === 'failing' ? ' is-failing' : ''}"><td data-label="Status">${dot(s)}</td><td data-label="Test"><a class="test-link" href="${escape(query({ ...params, test: r.id }))}"${open ? ' aria-current="true"' : ''}>${escape(r.name)}</a></td><td data-label="Control" class="test-control">${r.control ? escape(r.control.ref) : '—'}</td><td data-label="Integration"><span class="integration">${icon(categoryIcon[r.category] ?? 'plug')}<span>${escape(r.integration)}</span></span></td><td data-label="Owner">${r.owner ? `<span class="owner">${initial(r.owner)}<span>${escape(r.owner)}</span></span>` : '<span class="unassigned">Unassigned</span>'}</td><td data-label="Last run" class="test-when">${r.last_run ? `${escape(usDate(r.last_run))}<small>${escape(usTime(r.last_run))}</small>` : '—'}</td><td data-label="Result" class="test-result">${result(r, now)}</td></tr>`
 }
-function runLine(run: LatestRun, unit: string) {
+function runLine(run: LatestRun, type: string) {
+ const unit = resourceNoun(type,run.population), passedUnit = resourceNoun(type,run.population-run.not_applicable)
  const failed = run.failed > 0, label = failed ? 'Failed' : run.unknown ? 'Unknown' : run.population ? 'Passed' : 'No items'
- const detail = failed ? `${run.failed} failing of ${run.population} ${unit}` : run.unknown ? `${run.unknown} unknown of ${run.population} ${unit}` : run.population ? `All ${run.population - run.not_applicable} ${unit} passed` : 'No items in scope'
+ const detail = failed ? `${run.failed} failing of ${run.population} ${unit}` : run.unknown ? `${run.unknown} unknown of ${run.population} ${unit}` : run.population ? `All ${run.population - run.not_applicable} ${passedUnit} passed` : 'No items in scope'
  return `<li class="run run-${failed ? 'fail' : run.unknown ? 'unknown' : 'pass'}"><div class="run-top"><span>${escape(usDateTime(run.started_at))}</span><span class="run-outcome">${label}</span></div><p>${escape(detail)} · ${escape(run.trigger)} run</p></li>`
 }
 // The opened test's header: its category icon, name, control and integration, and status.
@@ -54,8 +62,8 @@ function detailPanel(open: OpenTest, now: Date) {
  const head = `<div class="detail-head">${testHead(r, `<h2 id="detail-title"><a href="/app/tests/${r.id}">${escape(r.name)}</a></h2>`)}</div>`
  const nav = `<nav class="detail-tabs" aria-label="Test views">${tabs.map(([label, href]) => href ? `<a href="${href}">${label}</a>` : `<a aria-current="page" href="#detail-title">${label}</a>`).join('')}</nav>`
  const alert = failureAlert(open), task = remediationCard(open, now), steps = fixStep(r, open.entry)
- const fix = s === 'failing' ? `<section class="detail-card" aria-labelledby="fix-title"><div class="card-top">${icon('spark')}<h3 id="fix-title">How to remediate</h3></div>${steps}<div class="detail-actions"><form method="post" action="/app/tests/${r.id}/run"><button>Run now</button></form><a class="button button-secondary" href="${ob ? `/app/remediation/${ob.id}` : `/app/tests/${r.id}`}">Remediate</a></div><p class="footnote">Run now re-tests every item. This failure stays in the run history after any later pass.</p></section>` : `<section class="detail-card" aria-labelledby="fix-title"><div class="card-top">${icon('pulse')}<h3 id="fix-title">Latest run</h3></div><p>${r.run ? escape(`${usDateTime(r.run.started_at)} · ${r.run.population} ${r.unit} evaluated`) : 'This test has not run yet.'}</p><div class="detail-actions"><form method="post" action="/app/tests/${r.id}/run"><button>Run now</button></form><a class="button button-secondary" href="/app/tests/${r.id}">Open test</a></div></section>`
- const history = `<section class="detail-card detail-history" aria-labelledby="history-title"><h3 id="history-title">Run history</h3>${open.runs.length ? `<ol class="runs">${open.runs.map(run => runLine(run, r.unit)).join('')}</ol>` : '<p>No runs yet.</p>'}</section>`
+ const fix = s === 'failing' ? `<section class="detail-card" aria-labelledby="fix-title"><div class="card-top">${icon('spark')}<h3 id="fix-title">How to remediate</h3></div>${steps}<div class="detail-actions"><form method="post" action="/app/tests/${r.id}/run"><button>Run now</button></form><a class="button button-secondary" href="${ob ? `/app/remediation/${ob.id}` : `/app/tests/${r.id}`}">Remediate</a></div><p class="footnote">Run now re-tests every item. This failure stays in the run history after any later pass.</p></section>` : `<section class="detail-card" aria-labelledby="fix-title"><div class="card-top">${icon('pulse')}<h3 id="fix-title">Latest run</h3></div><p>${r.run ? escape(`${usDateTime(r.run.started_at)} · ${r.run.population} ${resourceNoun(r.resource_type,r.run.population)} evaluated`) : 'This test has not run yet.'}</p><div class="detail-actions"><form method="post" action="/app/tests/${r.id}/run"><button>Run now</button></form><a class="button button-secondary" href="/app/tests/${r.id}">Open test</a></div></section>`
+ const history = `<section class="detail-card detail-history" aria-labelledby="history-title"><h3 id="history-title">Run history</h3>${open.runs.length ? `<ol class="runs">${open.runs.map(run => runLine(run, r.resource_type)).join('')}</ol>` : '<p>No runs yet.</p>'}</section>`
  return `<aside class="test-detail${s === 'failing' ? ' is-failing' : ''}" aria-labelledby="detail-title">${s === 'failing' ? '<span class="pushpin" aria-hidden="true"></span>' : ''}${head}${nav}<div class="detail-body">${alert}${task}${fix}${history}</div></aside>`
 }
 export interface WorkspaceView { rows: WorkspaceRow[]; shown: WorkspaceRow[]; open: OpenTest | null; show: Show; integration: string }

@@ -1,3 +1,4 @@
+import { grantsFor } from './evidence/authz/roles'
 import { firstRunResponse } from './base/setup'
 import { fontDocumentResponse } from './base/font-response'
 import { createOperatorAuth, createAuthHandler, createSignInHandler, devNotFound, type AuthConfig } from './modules/operator-auth/index.mjs'
@@ -58,12 +59,7 @@ export const runtimeBindings = (env: Bindings): Bindings => env.RER_DEV_ORIGIN &
 export const authConfig = (env: Bindings): AuthConfig => ({ origin: env.AUTH_ORIGIN, local: env.AUTH_LOCAL === 'true', OWNER_EMAIL: env.OWNER_EMAIL, SESSION_SECRET: env.SESSION_SECRET, SETUP_TOKEN: env.SETUP_TOKEN, MAIL_FROM: env.MAIL_FROM, branding: { productName: branding.name, accentColor: branding.primaryColor, signInPath: '/signin', theme: theme.href } })
 export function operatorAuth(env: Bindings, subjects: Subjects = {}) {
  const providers = ssoProviders(env, subjects), sso = providers.length > 0 && !!env.OIDC_TRANSACTION_SECRET
- return createOperatorAuth({ db: env.DB, config: { ...authConfig(env), ...(sso ? { providers, OIDC_TRANSACTION_SECRET: env.OIDC_TRANSACTION_SECRET } : {}) } as AuthConfig, mailSender: operatorMail(env), clientIp: request => request.headers.get('CF-Connecting-IP') ?? '', hooks: {
-  ...ssoHooks(env),
-  afterConfirm({ operator, returnTo }: { operator: { role: string }; returnTo: string }) {
-   if (operator.role === 'member' && ['/app', '/setup'].includes(returnTo)) return { returnTo: '/me' }
-  },
- }, ...(sso ? { fetch: mfaFetch(env) } : {}) })
+ return createOperatorAuth({ db: env.DB, config: { ...authConfig(env), ...(sso ? { providers, OIDC_TRANSACTION_SECRET: env.OIDC_TRANSACTION_SECRET } : {}) } as AuthConfig, mailSender: operatorMail(env), clientIp: request => request.headers.get('CF-Connecting-IP') ?? '', hooks: ssoHooks(env), ...(sso ? { fetch: mfaFetch(env) } : {}) })
 }
 
 // LOG-001: every write through the sign-in, first-run and owner-claim doors is
@@ -71,6 +67,10 @@ export function operatorAuth(env: Bindings, subjects: Subjects = {}) {
 export async function authResponse(request: Request, original: Bindings, clock: () => Date = () => new Date()): Promise<Response | null> {
  const env = runtimeBindings(original), url = new URL(request.url)
  if (url.pathname.startsWith('/__dev/')) return devNotFound()
+ if (['GET', 'HEAD'].includes(request.method) && ['/app', '/setup'].includes(url.pathname)) {
+  const session = await operatorAuth(env).getSession(request)
+  if (session?.operator.role === 'member' && !(await grantsFor(env, session.operator.email)).length) return new Response(null, { status: 303, headers: { location: '/me', 'cache-control': 'no-store' } })
+ }
  if (['GET', 'HEAD'].includes(request.method) || !(url.pathname.startsWith('/auth/') || url.pathname === '/signin' || url.pathname === '/setup')) return authAnswer(request, env, url)
  const session = await operatorAuth(env).getSession(request).catch(() => null)
  return auditedAuthentication(env, request, session ? { id: session.operator.id, name: session.operator.displayName } : null, clock, () => authAnswer(request, env, url))
@@ -83,7 +83,7 @@ async function authAnswer(request: Request, env: Bindings, url: URL): Promise<Re
  if (url.pathname === '/signin') {
   if (['GET', 'HEAD'].includes(request.method) && !url.searchParams.has('returnTo')) {
    const session = await operatorAuth(env, subjects).getSession(request)
-   if (session?.operator.role === 'member') return new Response(null, { status: 303, headers: { location: '/me', 'cache-control': 'no-store' } })
+   if (session?.operator.role === 'member' && !(await grantsFor(env, session.operator.email)).length) return new Response(null, { status: 303, headers: { location: '/me', 'cache-control': 'no-store' } })
   }
   const page = await createSignInHandler(operatorAuth(env, subjects), {
    defaultReturnTo: '/setup',
