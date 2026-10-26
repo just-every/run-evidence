@@ -36,7 +36,8 @@ export async function policyReadingJourney(app, bridge, ownerCookie) {
    await draft.getByRole('button', { name: 'Save draft revision' }).click()
    await page.locator('.policy-reading').waitFor({timeout:3000})
    const revisionPath = new URL(page.url()).pathname
-   const expectedDigest = createHash('sha256').update(body).digest('hex')
+   // Native form submission sends textarea line endings as CRLF.
+   const submittedBody = body.replace(/\n/g,'\r\n'), expectedDigest = createHash('sha256').update(submittedBody).digest('hex')
    assert.equal(await page.locator('input[name="body_sha256"]').inputValue(), expectedDigest)
    const checkReading = async target => {
     const article = target.locator('.policy-reading')
@@ -60,7 +61,7 @@ export async function policyReadingJourney(app, bridge, ownerCookie) {
    assert.doesNotMatch(await page.locator('main').innerText(), /Review this draft for applicability|not legal advice/)
    app.setCookie(ownerCookie)
    const stored = await (await app.fetch(revisionPath.replace('/app/', '/api/'))).json()
-   assert.equal(stored.body, body); assert.equal(stored.body_sha256, expectedDigest); assert.equal(stored.approved_sha256, expectedDigest)
+   assert.equal(stored.body, submittedBody); assert.equal(stored.body_sha256, expectedDigest); assert.equal(stored.approved_sha256, expectedDigest)
 
    const person = await post('/api/people', { name, email, kind: 'employee' })
    await page.goto(bridge.origin + '/app/people')

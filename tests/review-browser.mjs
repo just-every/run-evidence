@@ -82,7 +82,7 @@ async function issue(page,origin,today,label,expiry) {
   page.waitForResponse(response=>new URL(response.url()).pathname==='/app/folders'&&response.request().method()==='POST'),
   form.locator('button[type="submit"],button:not([type])').click(),
  ])
- if(response.status()!==200){
+ if(response.status()!==303){
   const requestOrigin=response.request().headers().origin
   const observation={status:response.status(),requestOrigin:requestOrigin==='null'?'null':requestOrigin?'present':'absent',body:sanitize(await response.text())}
   await writeFile(join(output,'folder-issue-refused.json'),JSON.stringify(observation,null,2)+'\n')
@@ -91,6 +91,7 @@ async function issue(page,origin,today,label,expiry) {
  }
  assert.ok(response.request().headers().origin===origin,'successful owner form preserves its same-origin header')
  folderIssues.push({width:page.viewportSize().width,status:response.status(),requestOrigin:'same-origin'})
+ assert.equal(new URL(response.headers().location,origin).pathname,'/app/folders','issuance redirects to a GET page')
  const field=page.locator('input[readonly]')
  await field.waitFor()
  const url=await field.inputValue()

@@ -8259,7 +8259,7 @@
       "executable": false
     },
     "tests/helpers/policy-reading-browser.mjs": {
-      "sha256": "c2745b4e8a72e972af719b6ed83286e24ab66dfb63efe7dbe9f52b43961890de",
+      "sha256": "6a3b872aa3a49f5666dbffbffdbeb07f186af3676640bc72c8492c92429991e0",
       "executable": false
     },
     "tests/helpers/population-browser.mjs": {
@@ -8495,7 +8495,7 @@
       "executable": false
     },
     "tests/review-browser.mjs": {
-      "sha256": "12eed4b294a50703b6022fa6d07eecabbf721cd6737a2345e66fb11c5ed2653b",
+      "sha256": "8e5e1f1ce2b2715831b402a40a9f0d5e22c48de12696ae242bdd48bcf2eb7a3b",
       "executable": false
     },
     "tests/review.mjs": {
