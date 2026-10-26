@@ -50,6 +50,8 @@ export async function readinessJourney(page, origin, width, capture) {
  await capture(page,`${width}-readiness-missing-source`)
  await page.goto(origin+base)
  await page.getByRole('link',{name:'Board and auditor report',exact:true}).click()
+ await page.waitForURL(origin+base+'/board')
+ await page.waitForLoadState('domcontentloaded')
  await page.getByRole('heading',{name:'Requirement denominator',exact:true}).waitFor()
  assert.equal(await page.locator('section').filter({has:page.getByRole('heading',{name:'Requirement denominator',exact:true})}).locator('tbody tr').count(),current.requirements.length)
  await page.getByRole('heading',{name:'Checklist',exact:true}).waitFor()
