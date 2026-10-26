@@ -3,7 +3,7 @@ import { auditFormRefusal, retainedMultipart, scalarValues, type RefusedForm } f
 import { operatorAuth, runtimeBindings, type Bindings } from '../auth.server'
 import { day, validDate, groups, cadences } from './model'
 import { createControl, desk, receipt, storedBytes } from './storage'
-import { boundedBody, Refusal, textField, upload } from './upload'
+import { boundedBody, MAX_FILE, Refusal, textField, upload } from './upload'
 import { authorize } from './authz/gate'
 import { scopedControls, unrestricted } from './authz/roles'
 import { guardRead, recordState, sensitiveIds } from './secure/records'
@@ -58,7 +58,7 @@ export function evidenceHandler(clock: () => Date = () => new Date()) {
     if (!await reaches(uploading[1])) return json({ error:'That requirement is outside your scope.' },403)
     let values: Record<string, string> = {}
     try {
-     const retained = await retainedMultipart(request, 12 * 1024 * 1024)
+     const retained = await retainedMultipart(request, MAX_FILE + 1024 * 1024 + 65536)
      values = scalarValues(retained.form)
      return redirect('/app/receipts/'+await upload(retained.request,env,uploading[1],operator,now))
     } catch (error) {

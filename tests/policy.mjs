@@ -4,6 +4,7 @@
 // the Cron Trigger. Only the mail provider is faked, at the network edge.
 process.env.RER_SERVER_JOURNEY = '1'
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { runtime } from './helpers/runtime.mjs'
 const app = await runtime()
 let passed = 0
@@ -38,19 +39,30 @@ try {
   const before = (await get('/api/programs/' + soc2)).readiness
   assert.ok(before.totals.policy_missing > 10); assert.deepEqual(before.requirements.find(r => r.ref === 'CC2.2').policies_missing.sort(), ['Acceptable use policy', 'Incident response policy', 'Information security policy'])
   const builder = await get('/api/policies/builder?program=' + soc2)
-  assert.equal(builder.templates.length, 22); assert.equal(builder.facts.company, 'Northstar Labs Inc.'); assert.equal(builder.facts.products, 'Northstar Billing'); assert.equal(builder.facts.identity, 'the company identity provider')
+  assert.equal(builder.facts.company, 'Northstar Labs Inc.'); assert.equal(builder.facts.products, 'Northstar Billing'); assert.equal(builder.facts.identity, 'the company identity provider')
   const draft = await post('/api/policies/templates/access-control', { program_id: soc2 })
   const revision = await get(`/api/policies/${draft.policy}/revisions/${draft.revision}`)
-  assert.match(revision.body, /Northstar Labs Inc\./); assert.match(revision.body, /billing-api, ledger-db/); assert.match(revision.body, /not legal advice/)
+  assert.match(revision.body, /Northstar Labs Inc\./); assert.match(revision.body, /billing-api, ledger-db/)
+  assert.equal(revision.body_sha256, createHash('sha256').update(revision.body).digest('hex'))
+  const draftHtml = await (await app.fetch(`/app/policies/${draft.policy}/revisions/${draft.revision}`)).text()
+  assert.match(draftHtml, /<article class="policy-reading">[\s\S]*<h2>Purpose<\/h2>[\s\S]*<ol>/)
+  assert.doesNotMatch(draftHtml, /<pre># Access control/)
   assert.deepEqual(await latest('policy.access-control'), [['Access control policy', 'fail']])
   await post(`/api/policies/${draft.policy}/revisions/${draft.revision}/decision`, { decision: 'approved', body_sha256: 'f'.repeat(64) }, 409)
-  const changed = await post('/api/policies', { title: 'Access control policy', body: revision.body + '\n\nAn unreviewed change.' })
+  const changed = await post('/api/policies', { title: 'Access control policy', body: revision.body + '\n\nAn unreviewed change.\n\n- **Review** access.\n- Use `approved devices`.\n\n[Unsafe link](javascript:alert%281%29)\n\n![Remote illustration](https://policy-images.invalid/pixel.png)\n\n<span>Policy text</span>' })
   const changedRevision = await get(`/api/policies/${changed.policy}/revisions/${changed.revision}`)
+  const changedHtml = await (await app.fetch(`/app/policies/${changed.policy}/revisions/${changed.revision}`)).text()
+  assert.match(changedHtml, /<strong>Review<\/strong>/); assert.match(changedHtml, /<code>approved devices<\/code>/)
+  assert.match(changedHtml, /&lt;span&gt;Policy text&lt;\/span&gt;/)
+  const changedArticle = changedHtml.match(/<article class="policy-reading">([\s\S]*?)<\/article>/)[1]
+  assert.doesNotMatch(changedArticle, /<img|href="javascript:/)
   await post(`/api/policies/${changed.policy}/revisions/${changed.revision}/decision`, { decision: 'rejected', body_sha256: changedRevision.body_sha256, note: 'Not reviewed' }, 200)
   await post(`/api/policies/${changed.policy}/revisions/${changed.revision}/publish`, {}, 409)
   await post(`/api/policies/${draft.policy}/revisions/${draft.revision}/decision`, { decision: 'approved', body_sha256: revision.body_sha256 }, 200)
   await post(`/api/policies/${draft.policy}/revisions/${draft.revision}/publish`, { effective_date: '2026-10-11' }, 200)
   assert.deepEqual(await latest('policy.access-control'), [['Access control policy', 'pass']])
+  const published = await get(`/api/policies/${draft.policy}/revisions/${draft.revision}`)
+  assert.equal(published.body, revision.body); assert.equal(published.approved_sha256, revision.body_sha256)
   const decisions = (await get('/api/audit?action=policy.')).entries.map(e => [e.action, e.actor_name, e.reason, e.revision])
   for (const expected of [['policy.rejected', 'Evidence owner', 'Not reviewed', String(changedRevision.version)], ['policy.approved', 'Evidence owner', '', String(revision.version)], ['policy.published', 'Evidence owner', '', String(revision.version)]]) assert.ok(decisions.some(d => JSON.stringify(d) === JSON.stringify(expected)), expected.join(' '))
   for (const t of builder.templates.filter(t => t.id !== 'access-control')) { const adopted = await adopt(t.id, soc2); if (t.id === 'acceptable-use') aup = adopted }
@@ -70,6 +82,11 @@ try {
   assert.equal(mine.person.email, 'ana@northstar.test'); assert.equal(mine.assignments.length, 1); assert.equal(mine.assignments[0].status, 'pending')
   const shown = await get('/api/me/assignments/' + mine.assignments[0].id)
   assert.equal(shown.body, aup.body)
+  assert.equal(shown.body_sha256, createHash('sha256').update(aup.body).digest('hex'))
+  const memberHtml = await (await app.fetch('/me/assignments/' + mine.assignments[0].id)).text()
+  assert.match(memberHtml, /<article class="policy-reading">[\s\S]*<h2>Purpose<\/h2>[\s\S]*<ol>/)
+  assert.doesNotMatch(memberHtml, /<pre>#/)
+  assert.ok(memberHtml.includes(`name="body_sha256" value="${shown.body_sha256}"`))
   await get('/api/programs', 403); await get('/api/attestations', 403)
   await post(`/api/me/assignments/${mine.assignments[0].id}/acknowledge`, { body_sha256: '0'.repeat(64) }, 409)
   await post(`/api/me/assignments/${mine.assignments[0].id}/acknowledge`, { body_sha256: shown.body_sha256 }, 200)

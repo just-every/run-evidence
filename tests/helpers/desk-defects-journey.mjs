@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { runtime } from './runtime.mjs'
 import { browserBridge } from './browser-bridge.mjs'
+import { policyReadingJourney } from './policy-reading-browser.mjs'
 import { retainedFormsJourney } from './refused-forms-browser.mjs'
 
 // Native one-off defect probes, with mail controlled only at its network edge.
@@ -45,5 +46,6 @@ try {
   await probe('Refused form values at '+width,()=>retainedFormsJourney(page,bridge.origin,width,(p,n)=>bridge.capture(p,n),'2026-10-26'))
   await context.close()
  }
+ await probe('Owner and learner policy reading',()=>policyReadingJourney(app,bridge,cookie))
  if(failures.length)throw new AggregateError(failures,'Unresolved native defect probes: '+failures.length)
 }finally{if(bridge)await bridge.close();await app.close()}

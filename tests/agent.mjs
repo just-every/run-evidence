@@ -10,6 +10,24 @@ let active='',passed=0,ownerCookie='',credential,control,proposal,receipt
 const scenario=async(name,run)=>{active=name;await run();passed++}
 const owner=(path,body)=>app.fetch(path,{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify(body)})
 const agent=(path,body,token=credential?.token,extra={})=>app.fetch(path,{method:body===undefined?'GET':'POST',headers:{cookie:'',authorization:'Bearer '+token,...(body===undefined?{}:{'content-type':'application/json'}),...extra},...(body===undefined?{}:{body:JSON.stringify(body)})})
+const refusedAudit = async (path, call, actor) => {
+ const subject = `${actor.method ?? 'POST'} ${path}`
+ const entries = async () => (await (await app.fetch('/api/audit?action=door.refused&outcome=refused')).json()).entries.filter(e=>e.subject===subject)
+ const before = await entries()
+ const response = await call(), body = await response.clone().json()
+ assert.ok(response.status >= 400 && response.status < 500)
+ const after = await entries()
+ assert.equal(after.length,before.length+1,'one attributable refusal is retained')
+ const matches = e=>e.actor_kind===actor.kind && e.actor_name===actor.name && e.reason===body.error
+ const matching = after.filter(matches)
+ assert.equal(matching.length,before.filter(matches).length+1,'the audit names the credential or owner and refusal reason')
+ assert.ok(matching.every(e=>e.source==='product' && e.outcome==='refused' && Number.isFinite(Date.parse(e.at))))
+ if(actor.id) assert.ok(matching.some(e=>e.revision==='agent-token:'+actor.id),'credential identity is visible without its secret')
+ const text=JSON.stringify(after)
+ assert.ok(!text.includes(credential.token) && !text.includes(createHash('sha256').update(credential.token).digest('hex')))
+ return response
+}
+const refusedAgent = (path, body, extra={}) => refusedAudit(path,()=>agent(path,body,undefined,extra),{kind:'token',name:credential.grant.label,id:credential.grant.id,method:body===undefined?'GET':'POST'})
 const input=extra=>({reviewer_label:'Audit agent proposal',period_from:'2026-10-11',period_to:'2026-10-11',expires_at:'2026-10-20T12:00:00Z',control_ids:[control.control_id],...extra})
 const prepare=async(extra={})=>{const r=await agent('/api/agent/prepare-folder',input(extra));assert.equal(r.status,201);return (await r.json()).proposal}
 const upload=async()=>{
@@ -28,8 +46,9 @@ try {
   assert.equal(stored.token_hash,createHash('sha256').update(credential.token).digest('hex'))
   assert.ok(!JSON.stringify(stored).includes(credential.token))
   const listing=await (await app.fetch('/api/agent')).text();assert.ok(!listing.includes(credential.token));assert.ok(!listing.includes(stored.token_hash))
-  assert.equal((await agent('/api/agent/tokens',{label:'Escalation'},undefined,{cookie:ownerCookie,origin:app.origin})).status,403)
-  for(const path of ['/api/folders','/app/folders'])assert.equal((await agent(path,{},undefined,{cookie:ownerCookie,origin:app.origin})).status,403)
+  assert.equal((await refusedAgent('/api/agent/tokens',{label:'Escalation'},{cookie:ownerCookie,origin:app.origin})).status,403)
+  for(const path of ['/api/folders','/app/folders'])assert.equal((await refusedAgent(path,{},{cookie:ownerCookie,origin:app.origin})).status,403)
+  assert.equal((await refusedAgent('/api/archive/export',undefined,{cookie:ownerCookie})).status,403)
   assert.equal((await app.fetch('/api/agent',{headers:{origin:'https://foreign.test'}})).status,403)
  })
  await scenario('Agent inspection reports missing then verified and unavailable bytes without private storage fields',async()=>{
@@ -58,7 +77,7 @@ try {
  })
  await scenario('LOG-001 / Only exact owner approval creates one folder, is on the owner Audit with the snapshot it approved, and the reviewer sees current honest gaps',async()=>{
   const path='/api/agent/proposals/'+proposal.id+'/approve'
-  for(const extra of [{},{cookie:ownerCookie,origin:app.origin}])assert.equal((await agent(path,{snapshot_hash:proposal.snapshot_hash},undefined,extra)).status,403)
+  for(const extra of [{},{cookie:ownerCookie,origin:app.origin}])assert.equal((await refusedAgent(path,{snapshot_hash:proposal.snapshot_hash},extra)).status,403)
   assert.equal((await owner(path,{snapshot_hash:'0'.repeat(64)})).status,409)
   const count=async()=>Number((await app.db.prepare('SELECT COUNT(*) AS n FROM review_folders').first()).n),before=await count()
   const answers=await Promise.all([owner(path,{snapshot_hash:proposal.snapshot_hash}),owner(path,{snapshot_hash:proposal.snapshot_hash})]);assert.deepEqual(answers.map(r=>r.status).sort(),[201,409]);assert.equal(await count(),before+1)
@@ -80,7 +99,8 @@ try {
  await scenario('New in-scope receipts make preparation stale and require a new owner review',async()=>{
   const stale=await prepare(), before=(await (await app.fetch('/api/folders')).json()).folders.length
   await upload()
-  const refused=await owner('/api/agent/proposals/'+stale.id+'/approve',{snapshot_hash:stale.snapshot_hash})
+  const stalePath='/api/agent/proposals/'+stale.id+'/approve'
+  const refused=await refusedAudit(stalePath,()=>owner(stalePath,{snapshot_hash:stale.snapshot_hash}),{kind:'owner',name:'Evidence owner'})
   assert.equal(refused.status,409)
   assert.equal((await (await app.fetch('/api/folders')).json()).folders.length,before)
   assert.equal((await (await app.fetch('/api/agent/proposals/'+stale.id)).json()).proposal.decision,null)

@@ -10,6 +10,7 @@ import { acknowledge } from '../attest/storage'
 import { decide as decideAccess } from '../access/storage'
 import { assignedCourse, attempt } from '../training/storage'
 import { course } from '../training/courses'
+import { policyMarkdown } from '../policy/markdown'
 // The employee and contractor door (ATTEST-001): a signed-in person sees only
 // their own assignments and acknowledges the exact published text. It is
 // matched to People by sign-in email; it opens no owner page or record.
@@ -44,7 +45,7 @@ export function memberHandler(clock: () => Date) {
    if (ack) {
     const one = rows.find(r => r.id === ack[1]); if (!one) return json({ error: 'Not found.' }, 404)
     if (isApi) return json(one)
-    return page(`${one.title}, version ${one.version}`, slab(`<section aria-labelledby="policy-text"><h2 id="policy-text">${escape(one.title)} · version ${one.version}</h2><p>Effective ${escape(one.effective_date ?? '')}. Text fingerprint <code>${one.body_sha256.slice(0, 16)}…</code></p><pre>${escape(one.body)}</pre>${one.state === 'pending' ? `<form method="post" action="/me/assignments/${one.id}/acknowledge"><input type="hidden" name="body_sha256" value="${one.body_sha256}"><button>I have read and accept version ${one.version}</button></form>` : `<p>${stateChip(one.state)} ${escape(one.acknowledged_at ?? '')}</p>`}<p><a href="/me">Back to my tasks</a></p></section>`), 200, { member: true, owner: person.name })
+    return page(`${one.title}, version ${one.version}`, slab(`<section aria-labelledby="policy-text"><h2 id="policy-text">${escape(one.title)} · version ${one.version}</h2><p>Effective ${escape(one.effective_date ?? '')}. Text fingerprint <code>${one.body_sha256.slice(0, 16)}…</code></p>${policyMarkdown(one.body)}${one.state === 'pending' ? `<form method="post" action="/me/assignments/${one.id}/acknowledge"><input type="hidden" name="body_sha256" value="${one.body_sha256}"><button>I have read and accept version ${one.version}</button></form>` : `<p>${stateChip(one.state)} ${escape(one.acknowledged_at ?? '')}</p>`}<p><a href="/me">Back to my tasks</a></p></section>`), 200, { member: true, owner: person.name })
    }
    const view = rows.map(r => ({ id: r.id, title: r.title, version: r.version, due_date: r.due_date, status: r.state === 'pending' && r.due_date < today ? 'overdue' : r.state, acknowledged_at: r.acknowledged_at }))
    // Access-review items this person decides as resource owner or delegate, in open campaigns.

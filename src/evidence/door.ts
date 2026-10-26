@@ -82,5 +82,29 @@ export interface AuditContext { reason?: string; revision?: string | number }
 export function auditStatement(env: Bindings, actor: Actor & { kind?: 'owner' | 'token' | 'system' }, action: string, subject: string, at: Date, outcome: 'succeeded' | 'refused' | 'failed' | 'uncertain' = 'succeeded', detail = '', context: AuditContext = {}) {
  return env.DB.prepare('INSERT INTO product_audit(id,actor_kind,actor_id,actor_name,action,subject,outcome,detail,at,reason,revision) VALUES(?,?,?,?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), actor.kind ?? 'owner', actor.id, actor.name, action, subject, outcome, detail.slice(0, 500), at.toISOString(), (context.reason ?? '').slice(0, 1000), String(context.revision ?? '').slice(0, 100))
 }
+// Record only the admitted identity and door, never a credential, query or body.
+export async function auditDoorRefusal(env: Bindings, actor: Actor & { kind?: 'owner' | 'token' }, request: Request, now: Date, status: number, reason: string) {
+ const path = new URL(request.url).pathname.replace(/[a-f0-9]{64}/gi, '[credential]')
+ try {
+  await auditStatement(env, actor, 'door.refused', `${request.method} ${path}`, now, 'refused', `${status}: ${reason}`, { reason, ...(actor.kind === 'token' ? { revision: 'agent-token:' + actor.id } : {}) }).run()
+ } catch {
+  // Audit storage failure cannot turn a denied action into owner authority.
+  console.error('Evidence refusal audit unavailable')
+ }
+}
+// The outer owner-door guard runs before route admission. Resolve a recognized
+// prepare-only credential there without treating it as an owner session.
+export async function auditAgentOwnerRefusal(request: Request, original: Bindings, clock: () => Date) {
+ const secret = /^Bearer ([a-f0-9]{64})$/.exec(request.headers.get('authorization') ?? '')?.[1]
+ if (!secret) return
+ try {
+  const env = runtimeBindings(original)
+  const hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secret))), n => n.toString(16).padStart(2, '0')).join('')
+  const token = await env.DB.prepare('SELECT id,label FROM agent_tokens WHERE token_hash=?').bind(hash).first<{ id: string; label: string }>()
+  if (token) await auditDoorRefusal(env, { id: token.id, name: token.label, kind: 'token' }, request, clock(), 403, 'Agent credentials cannot use owner doors.')
+ } catch {
+  console.error('Evidence credential refusal audit unavailable')
+ }
+}
 export const parseList = (value: string): string[] => { try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed.map(String) : [] } catch { return [] } }
 export const uuid = /[a-f0-9-]{36}/.source

@@ -1,3 +1,4 @@
+import { auditAgentOwnerRefusal } from './evidence/door'
 import {trustHandler} from './evidence/trust/http'
 import {trustPublicHandler} from './evidence/trust/public-http'
 import { engagementHandler } from './evidence/review/engagement/http'
@@ -84,7 +85,10 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
   if (path.startsWith('/v1/')) return api(request,env)
   // Tracker webhooks verify their own signatures; they carry no owner session.
   if (path.startsWith('/hooks/')) return hooks(request,env)
-  if (request.headers.has('authorization') && (path.startsWith('/app') || path.startsWith('/api')) && !path.startsWith('/api/agent')) return Response.json({error:'Agent credentials cannot use owner doors.'}, {status:403,headers:{'cache-control':'no-store'}})
+  if (request.headers.has('authorization') && (path.startsWith('/app') || path.startsWith('/api')) && !path.startsWith('/api/agent')) {
+   await auditAgentOwnerRefusal(request,env,clock)
+   return Response.json({error:'Agent credentials cannot use owner doors.'}, {status:403,headers:{'cache-control':'no-store'}})
+  }
   const installed = runtimeBindings(env)
   const state = await setupStateResponse(request,installed)
   if (state) return state

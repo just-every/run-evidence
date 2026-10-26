@@ -1,3 +1,4 @@
+import { auditDoorRefusal, type Actor as AuditActor } from '../door'
 import { problem } from '../problem'
 import { showOnce, takeOnce } from '../credential-display'
 import { operatorAuth, runtimeBindings, type Bindings } from '../../auth.server'
@@ -15,6 +16,11 @@ export function agentHandler(clock:()=>Date=()=>new Date()) {
   if(path!=='/app/agent' && !path.startsWith('/app/agent/') && path!=='/api/agent' && !path.startsWith('/api/agent/')) return null
   const env=runtimeBindings(original),api=path.startsWith('/api/'),bearer=request.headers.get('authorization')
   const json=(value:unknown,status=200):Response|Promise<Response>=>!api&&status>=400?problem((value as {error:string}).error,status,'/app/agent'):Response.json(value,{status,headers:safeHeaders})
+  let auditActor: (AuditActor & { kind: 'owner' | 'token' }) | undefined
+  const refused = async (reason: string, status: number) => {
+   if (auditActor) await auditDoorRefusal(env,auditActor,request,clock(),status,reason)
+   return json({error:reason},status)
+  }
   try {
    if(url.origin!==env.AUTH_ORIGIN || (request.headers.has('host') && request.headers.get('host')?.toLowerCase()!==url.host.toLowerCase())) return json({error:'Invalid host.'},403)
    // Browser requests always use same-origin admission. Non-browser agent
@@ -22,8 +28,9 @@ export function agentHandler(clock:()=>Date=()=>new Date()) {
    if(request.headers.get('sec-fetch-site')==='cross-site' || (request.headers.has('origin') && request.headers.get('origin')!==env.AUTH_ORIGIN)) return json({error:'Same-origin request required.'},403)
    if(bearer!==null) {
     const secret=/^Bearer ([a-f0-9]{64})$/.exec(bearer)?.[1],token=secret?await grant(env,secret):null
-    if(!active(token,clock())) return json({error:'Agent credential expired, revoked or invalid.'},401)
-    if(!api) return json({error:'Native owner session required.'},403)
+    if(token) auditActor={id:token.id,name:token.label,kind:'token'}
+    if(!active(token,clock())) return refused('Agent credential expired, revoked or invalid.',401)
+    if(!api) return refused('Native owner session required.',403)
     let response:Response|Promise<Response>
     if(path==='/api/agent/desk' && request.method==='GET') {
      const selected=url.searchParams.get('date')||day(clock());if(!validDate(selected)) throw new Refusal('Select a real UTC date.')
@@ -32,14 +39,15 @@ export function agentHandler(clock:()=>Date=()=>new Date()) {
      const input=await folderInput(env,await inputBody(request),clock())
      response=json({proposal:await prepare(env,input,token,clock)},201)
     } else if(path==='/api/agent/proposals' && request.method==='GET') response=json({proposals:await proposals(env,token.id)})
-    else return json({error:'This credential permits inspection and preparation only.'},403)
-    if(!active(await grant(env,secret!),clock())) return json({error:'Agent credential expired or revoked.'},401)
+    else return refused('This credential permits inspection and preparation only.',403)
+    if(!active(await grant(env,secret!),clock())) return refused('Agent credential expired or revoked.',401)
     return response
    }
    if(!['GET','HEAD'].includes(request.method) && request.headers.get('origin')!==env.AUTH_ORIGIN) return json({error:'Same-origin request required.'},403)
    const session=await operatorAuth(env).getSession(request)
    if(!session) return json({error:'Native owner sign-in required.'},401)
    if(session.operator.role!=='owner' || !['native','dev'].includes(session.kind)) return json({error:'Native owner sign-in required.'},403)
+   auditActor={id:session.operator.id,name:session.operator.displayName,kind:'owner'}
    const actor=session.operator,now=clock(),display={env,sessionId:session.id,actor,now,request,url}
    if((path==='/app/agent' || path==='/api/agent') && ['GET','HEAD'].includes(request.method)) {
     const issued=!api?await takeOnce<{label?:string;token?:string;folder?:import('../review/types').Folder;url?:string}>(display):null
@@ -74,7 +82,7 @@ export function agentHandler(clock:()=>Date=()=>new Date()) {
    }
    return json({error:'Not found or method not allowed.'},405)
   } catch(error) {
-   if(error instanceof Refusal) return json({error:error.message},error.status)
+   if(error instanceof Refusal) return refused(error.message,error.status)
    // Never log errors or request metadata: these requests carry credentials.
    return json({error:'Storage unavailable; no authorization or publication was established.'},503)
   }

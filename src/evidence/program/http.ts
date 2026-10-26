@@ -33,7 +33,7 @@ async function renderControl(c: OwnerContext, controlId: string, refused?: Refus
  const tests = linked.map(t => { const results = latest.filter(o => o.test_id === t.id).map(o => o.result); return { ...t, status: results.includes('fail') ? 'failing' : results.includes('unknown') ? 'unknown' : results.length ? 'passing' : 'never run' } })
  const mappings = await controlMappings(c.env, control.id, control.library_id), owners = await ownership(c.env, control.id), scope = await scopeAt(c.env, control.id, c.now.toISOString())
  const revisions = await definitions(c.env,control.id)
- return c.isApi ? json({ control, mappings, owners, scope, requirements, tests, revisions }) : controlPage(control, mappings, owners, scope, requirements, tests, await people(c.env), c.actor.name, definitionPanel(control.id,revisions),refused)
+ return c.isApi ? json({ control, mappings, owners, scope, requirements, tests, revisions }) : controlPage(control, mappings, owners, scope, requirements, tests, await people(c.env), c.actor.name, definitionPanel(control.id,revisions),refused,c.url.searchParams.get('mapping_edition') ?? '')
 }
 
 export function programHandler(clock: () => Date) {
