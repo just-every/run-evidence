@@ -4325,7 +4325,7 @@
       "executable": false
     },
     "public/tests.css": {
-      "sha256": "a98a55bfed24f2dd73eb7ff9f1c5766fa40dde50db5e7096b2c78f9e26cc4dd1",
+      "sha256": "007ec1536a85c5206ab801627f97a9af779ce69178e68ebce46fc47830624442",
       "executable": false
     },
     "README.md": {
@@ -6661,7 +6661,7 @@
       "executable": false
     },
     "src/evidence/training/http.ts": {
-      "sha256": "fea34a38082efdb87aacd907d3a0fbe4cabfdc7f6bf9ce686a4fade18aa7385f",
+      "sha256": "22144d605e2e3a6ca14d87b80e0c093b13519cb08d339ae200e56fca9ad9e1c5",
       "executable": false
     },
     "src/evidence/training/knowbe4.ts": {

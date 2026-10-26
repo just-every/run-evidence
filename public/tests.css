@@ -29,21 +29,21 @@
 .rer-themed .tests-table th { white-space: nowrap; height: 44px; padding: 10px 8px; font-size: 13px; vertical-align: middle; border-bottom: 1px solid var(--app-row); }
 .rer-themed .tests-table td { height: 56px; padding: 8px; vertical-align: middle; color: #1d2a44; border-bottom: 1px solid var(--app-row); overflow-wrap: normal; word-break: normal; hyphens: manual; }
 .rer-themed .tests-table :is(th, td):first-child { padding-left: 14px; }
-.tests-table col.c-status { width: 54px; } .tests-table col.c-test { width: 24%; } .tests-table col.c-control { width: 72px; } .tests-table col.c-integration { width: 15%; } .tests-table col.c-owner { width: 18%; } .tests-table col.c-when { width: 14%; } .tests-table col.c-result { width: 13%; }
+.tests-table col.c-status { width: 32px; } .tests-table col.c-test { width: 25%; } .tests-table col.c-control { width: 18%; } .tests-table col.c-integration { width: 12%; } .tests-table col.c-owner { width: 12%; } .tests-table col.c-when { width: 15%; } .tests-table col.c-result { width: 13%; }
 .rer-themed .tests-table tr.is-open td { background: #f3f8fe; }
 .rer-themed .tests-table tr.is-failing td { background: var(--app-alert-wash); }
 .rer-themed .tests-table tr.is-failing .test-link { font-weight: 600; }
 .rer-themed .test-link { color: #10192d; text-decoration: none; }
 .rer-themed .test-link:hover { text-decoration: underline; }
 .rer-themed .test-link[aria-current] { font-weight: 600; }
-.rer-themed .test-control { color: var(--app-label); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rer-themed .test-control { color: var(--app-label); font-variant-numeric: tabular-nums; white-space: normal; }
 .rer-themed .integration, .rer-themed .owner { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--app-text); }
 .rer-themed .integration .icon { width: 18px; height: 18px; color: #556a8c; }
 .rer-themed .integration > span, .rer-themed .owner > span:last-child { min-width: 0; overflow-wrap: normal; }
-.rer-themed .avatar { display: grid; place-items: center; width: 28px; height: 28px; flex: none; border-radius: 50%; background: linear-gradient(140deg, #eaf2fd, #d9e7fa); color: #3557a3; font-size: 12px; font-weight: 600; box-shadow: inset 0 0 0 1px #d4e2f5; }
+.rer-themed .avatar { display: grid; place-items: center; width: 28px; height: 28px; flex: none; border-radius: 50%; background: linear-gradient(140deg, #eaf2fd, #d9e7fa); color: #3557a3; font-size: 13px; font-weight: 600; box-shadow: inset 0 0 0 1px #d4e2f5; }
 .rer-themed .unassigned { color: var(--site-soft); }
 .rer-themed .test-when { color: #526685; line-height: 1.35; }
-.rer-themed :is(.test-when, .test-result) small { display: block; color: var(--app-label); font-size: 12px; }
+.rer-themed :is(.test-when, .test-result) small { display: block; color: var(--app-label); font-size: 13px; }
 .rer-themed .test-result { line-height: 1.35; }
 .rer-themed .result { font-size: 14px; font-weight: 500; }
 .result-pass { color: #0f8a4a; } .result-fail { color: #e0282d; } .result-stale { color: #c97a00; } .result-unknown, .result-none { color: var(--app-label); }
@@ -70,24 +70,24 @@
 .rer-themed .detail-alert > div { flex: 1; min-width: 0; }
 .rer-themed .detail-alert strong { color: #e8262b; font-size: 14.5px; font-weight: 600; }
 .rer-themed .detail-alert p { margin: 3px 0 0; color: #526581; font-size: 13.5px; }
-.rer-themed .button-small { min-width: 0; min-height: 32px; padding: 5px 12px; font-size: 12.5px; font-weight: 500; flex: none; }
+.rer-themed .button-small { min-width: 0; min-height: 32px; padding: 5px 12px; font-size: 13px; font-weight: 500; flex: none; }
 .rer-themed .button-small .icon { width: 13px; height: 13px; }
 .rer-themed .detail-card { padding: 14px 16px; border: 1px solid var(--app-hairline); border-radius: 10px; background: rgba(255, 255, 255, .75); }
 .rer-themed .card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .rer-themed .card-top .icon { width: 18px; height: 18px; color: var(--site-link); }
 .rer-themed .card-top h3 { margin: 0; font-size: 15px; }
-.rer-themed .card-top .state { margin-left: auto; min-height: 24px; padding: 2px 9px; font-size: 12px; }
+.rer-themed .card-top .state { margin-left: auto; min-height: 24px; padding: 2px 9px; font-size: 13px; }
 .rer-themed .detail-card p { margin: 0; color: #435979; font-size: 14px; line-height: 1.45; }
 .rer-themed .detail-card .task-action { margin-bottom: 4px; color: var(--site-ink); font-size: 15.5px; font-weight: 600; }
-.rer-themed .task-meta { display: grid; grid-template-columns: minmax(0, 1fr) max-content max-content; margin: 14px 0 0; }
-.rer-themed .task-meta > div { min-width: 0; padding: 0 12px; border-left: 1px solid var(--app-hairline); }
+.rer-themed .task-meta { display: flex; flex-wrap: wrap; gap: 12px; margin: 14px 0 0; }
+.rer-themed .task-meta > div { min-width: max-content; flex: 1 1 100px; }
 .rer-themed .task-meta > div:first-child { padding-left: 0; border-left: 0; }
-.rer-themed .task-meta dt { margin-bottom: 6px; color: var(--app-label); font-size: 12px; }
+.rer-themed .task-meta dt { margin-bottom: 6px; color: var(--app-label); font-size: 13px; }
 .rer-themed .task-meta dd { display: flex; align-items: flex-start; gap: 8px; margin: 0; color: #3a4f72; font-size: 13.5px; line-height: 1.35; }
 .rer-themed .task-meta dd > .icon { width: 17px; height: 17px; margin-top: 1px; color: #687c98; }
 .rer-themed .task-meta dd span { white-space: nowrap; }
 .rer-themed .task-meta .owner > span:last-child { white-space: normal; }
-.rer-themed .task-meta dd small { display: block; color: var(--app-label); font-size: 12px; }
+.rer-themed .task-meta dd small { display: block; color: var(--app-label); font-size: 13px; }
 .rer-themed .task-meta .owner { color: #3a4f72; }
 .rer-themed .fix { margin: 4px 0 12px; padding: 12px 14px; border-radius: 8px; background: linear-gradient(125deg, #f4f9ff, #eff6fd); }
 .rer-themed .fix h4 { margin: 0 0 4px; color: var(--site-ink); font-size: 13px; font-weight: 600; }
@@ -139,8 +139,8 @@
 /* Results at the list's density: one line per item, the source said once above. */
 .rer-themed .results-slab table { font-size: 13.5px; }
 .rer-themed .results-slab td { padding-block: 7px; vertical-align: middle; overflow-wrap: normal; }
-.rer-themed .results-slab td .state { min-height: 24px; padding: 2px 9px; font-size: 12px; }
-.rer-themed .source-chip { display: inline-block; padding: 1px 8px; border: 1px solid var(--app-hairline); border-radius: 999px; color: var(--app-label); font-size: 12px; white-space: nowrap; }
+.rer-themed .results-slab td .state { min-height: 24px; padding: 2px 9px; font-size: 13px; }
+.rer-themed .source-chip { display: inline-block; padding: 1px 8px; border: 1px solid var(--app-hairline); border-radius: 999px; color: var(--app-label); font-size: 13px; white-space: nowrap; }
 @media (min-width: 761px) { .rer-themed .results-slab td:not(:nth-child(1)):not(:nth-child(3)) { white-space: nowrap; } }
 .rer-themed .tests-empty { margin-bottom: 16px; }
 @media (max-width: 1500px) {
@@ -149,7 +149,7 @@
 }
 @media (max-width: 1320px) {
  .tests-workspace { grid-template-columns: minmax(0, 1fr) 372px; }
- .tests-table col.c-control { width: 60px; } .tests-table col.c-owner { width: 16%; }
+ 
  .rer-themed .tests-table :is(th, td) { padding-left: 6px; padding-right: 6px; }
  .rer-themed .tests-table .avatar { display: none; }
 }
@@ -175,7 +175,7 @@
  .rer-themed .tests-table td:nth-child(n+3) { grid-column: span 1; }
  .rer-themed .tests-table td:nth-child(3), .rer-themed .tests-table td:nth-child(5), .rer-themed .tests-table td:nth-child(7) { grid-column: 2; }
  .rer-themed .tests-table td:nth-child(4), .rer-themed .tests-table td:nth-child(6) { grid-column: 3; }
- .rer-themed .tests-table td:nth-child(n+3)::before { content: attr(data-label); display: block; margin-bottom: 2px; color: var(--app-label); font-size: 12px; }
+ .rer-themed .tests-table td:nth-child(n+3)::before { content: attr(data-label); display: block; margin-bottom: 2px; color: var(--app-label); font-size: 13px; }
  .rer-themed .detail-head { margin: 0 14px 10px; gap: 12px; flex-wrap: wrap; }
  .rer-themed .detail-icon { width: 48px; height: 48px; }
  .rer-themed .detail-icon .icon { width: 26px; height: 26px; }
