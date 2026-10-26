@@ -171,7 +171,8 @@ try {
   assert.match(reviewText,/fingerprint/i,'reviewer sees fingerprint caveat')
   await capture(viewer.page,`${width}-reviewer`)
   await viewer.page.locator('a[href$="/view"]').first().click()
-  assert.match(await viewer.page.locator('main').textContent(),/manually-asserted/,'reviewer receipt retains origin')
+  const receiptRecord=await viewer.context.request.get(viewer.page.url().replace(/\/view$/,''))
+  assert.equal((await receiptRecord.json()).origin,'manually-asserted','reviewer receipt retains origin through its record door')
   const downloadLink=await viewer.page.locator('a[href$="/download"]').getAttribute('href')
   const staleDownload=new URL(downloadLink,source.origin).href
   const [file]=await Promise.all([viewer.page.waitForEvent('download'),viewer.page.locator('a[href$="/download"]').click()])

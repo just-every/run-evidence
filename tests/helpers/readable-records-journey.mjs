@@ -30,7 +30,7 @@ try{
  await app.fetch(review,{headers:{cookie:''}})
  await app.fetch(review+'/receipts/'+receipt.split('/').at(-1)+'/download',{headers:{cookie:''}})
  await check('Reviewer receipt has file names without internal identifiers',async()=>{const html=plain(await(await app.fetch(review+'/receipts/'+receipt.split('/').at(-1)+'/view',{headers:{cookie:''}})).text());assert.doesNotMatch(html,uuid);assert.ok(!html.includes('Receipt JSON'))})
- await check('Folder access log names the folder and file',async()=>{const html=plain(await(await app.fetch('/app/folders/events')).text());assert.doesNotMatch(html,uuid);assert.match(html,/Cedar Ridge annual review/);assert.match(html,/access-review.txt/)})
+ await check('Folder access log names the folder and file',async()=>{const html=plain(await(await app.fetch('/app/folders/events')).text());assert.doesNotMatch(html,uuid);assert.match(html,/Cedar Ridge annual review/);assert.match(html,/access-review.txt/);assert.match(html,/Quarterly access review/)})
  await post('/api/trust/settings',{postal_address:'Cedar Ridge Health Analytics, Inc., 80 Test Street, Brisbane QLD 4000, Australia',notice_days:30,public_enabled:true,confirmations_enabled:false},200)
  await post('/api/trust/categories',{name:'Assurance operations',slug:'assurance-operations'})
  const update=await post('/api/trust/updates',{category:'assurance-operations',title:'Annual assurance review',body:'Our annual assurance review is underway.',visibility:'public'})

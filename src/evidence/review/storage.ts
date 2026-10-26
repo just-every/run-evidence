@@ -38,14 +38,17 @@ export async function events(env: Bindings, folder?: string) {
  return (await (folder?query.bind(folder):query).all<ReviewEvent>()).results
 }
 // Resolve owner-facing labels without changing the access-event API or retained log.
-export type NamedReviewEvent = ReviewEvent & { folder_name: string | null; exhibit_name: string | null }
+export type NamedReviewEvent = ReviewEvent & { folder_name: string | null; exhibit_name: string | null; control_names: string[] }
 export async function eventNames(env: Bindings, rows: ReviewEvent[]): Promise<NamedReviewEvent[]> {
- const [folders, exhibits] = await Promise.all([
+ const [folders, exhibits, controls] = await Promise.all([
   env.DB.prepare('SELECT id,reviewer_label FROM review_folders').all<{id:string;reviewer_label:string}>(),
   env.DB.prepare('SELECT id,filename FROM exhibits').all<{id:string;filename:string}>(),
+  env.DB.prepare('SELECT r.exhibit_id,c.name FROM receipts r JOIN requirements q ON q.id=r.requirement_id JOIN controls c ON c.id=q.control_id').all<{exhibit_id:string;name:string}>(),
  ])
  const folderNames = new Map(folders.results.map(r=>[r.id,r.reviewer_label])), exhibitNames = new Map(exhibits.results.map(r=>[r.id,r.filename]))
- return rows.map(row=>({...row,folder_name:row.folder_id ? folderNames.get(row.folder_id) ?? 'Unavailable folder' : null,exhibit_name:row.exhibit_id ? exhibitNames.get(row.exhibit_id) ?? 'Unavailable exhibit' : null}))
+ const controlNames = new Map<string,string[]>()
+ for(const row of controls.results)controlNames.set(row.exhibit_id,[...new Set([...(controlNames.get(row.exhibit_id)??[]),row.name])])
+ return rows.map(row=>({...row,control_names:row.exhibit_id?controlNames.get(row.exhibit_id)??[]:[],folder_name:row.folder_id ? folderNames.get(row.folder_id) ?? 'Unavailable folder' : null,exhibit_name:row.exhibit_id ? exhibitNames.get(row.exhibit_id) ?? 'Unavailable exhibit' : null}))
 }
 // Whole inclusive receipt interval must be contained in the folder interval.
 // A receipt spanning either boundary is excluded, including direct downloads.
