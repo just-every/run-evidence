@@ -6,6 +6,7 @@ import { validChoice } from '../answer/format'
 export async function validateFeatureRecords(env:Store,id:string) {
  await validateManifestArchive(env,id)
  const t=(name:string)=>staged(id,name)
+ for(const [kind,table]of [['person','people'],['vendor','vendors'],['engagement','audit_engagements']])if(await env.DB.prepare(`SELECT 1 FROM ${t('privacy_exhibit_scopes')} s WHERE s.kind=? AND NOT EXISTS(SELECT 1 FROM ${t(table)} p WHERE p.id=s.subject_id) LIMIT 1`).bind(kind).first())fail('Invalid retained privacy classification subject.')
  for(const table of ['privacy_requests','vendor_document_reviews','questionnaire_drafts','tailoring_proposals'])for await(const rows of pages(env,table,t(table)))for(const r of rows){
   if(typeof r.snapshot_json!=='string'||await sha(new TextEncoder().encode(r.snapshot_json))!==r.snapshot_hash)fail('Retained review fingerprint does not match.')
   let value:any;try{value=JSON.parse(r.snapshot_json)}catch{fail('Invalid retained review JSON.')}
