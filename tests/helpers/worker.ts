@@ -10,6 +10,12 @@ export default { async fetch(request: Request, env: any) {
  headers.set('host', headers.get('x-harness-host')!)
  headers.delete('x-harness-url'); headers.delete('x-harness-host')
  request = new Request(url, { method:request.method, headers, body:request.body, redirect:'manual' })
+ // Substitute only the storage-provider deletion edge. Native reads, writes,
+ // authorization and durable admission still run unchanged in workerd.
+ if(env.HARNESS_R2_DELETE_FAILURE==='true')env={...env,EXHIBITS:new Proxy(env.EXHIBITS,{get(target,key){
+  if(key==='delete')return async()=>{throw new Error('synthetic-evidence-provider-delete-interruption')}
+  const value=Reflect.get(target,key);return typeof value==='function'?value.bind(target):value
+ }})}
  const response = await withCollectionClock(()=>new Date(Date.parse(env.HARNESS_NOW)+Number(env.HARNESS_RECEIPT_OFFSET_MS??0)),()=>createAppResponse(() => new Date(env.HARNESS_NOW))(request, env))
  return response ?? new Response(null, { status:404 })
 },

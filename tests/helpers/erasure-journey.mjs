@@ -114,6 +114,15 @@ export async function erasureJourney(app) {
  row=await preview()
  await post('/api/privacy/requests/'+row.id+'/confirm',{snapshot_hash:'0'.repeat(64),confirm:'ERASE'},409)
  await post('/api/privacy/requests/'+row.id+'/confirm',{snapshot_hash:row.snapshot_hash,confirm:'yes'},409)
+ // Interrupted provider deletion retains the bytes and a durable pending
+ // receipt across a worker restart. Retrying must not repeat admission.
+ await app.setSettings({HARNESS_R2_DELETE_FAILURE:'true'})
+ const interrupted=await post('/api/privacy/requests/'+row.id+'/confirm',{snapshot_hash:row.snapshot_hash,confirm:'ERASE'})
+ assert.equal(interrupted.state,'pending');assert.equal(interrupted.completed_at,null)
+ assert.equal((await (await app.fetch('/api/privacy/requests/'+row.id)).json()).state,'pending')
+ assert.equal(await (await (await app.mf.getR2Bucket('EXHIBITS')).get(receipt.object_key)).text(),'synthetic-evidence-erasure-content')
+ await app.setSettings({HARNESS_R2_DELETE_FAILURE:undefined})
+ assert.equal((await (await app.fetch('/api/privacy/requests/'+row.id)).json()).state,'pending')
  // An actual D1 write failure after R2 deletion must leave durable pending
  // work, never a false completion; the same confirmed request can be retried.
  await app.db.prepare("CREATE TRIGGER synthetic_privacy_completion BEFORE UPDATE ON privacy_requests WHEN NEW.state='complete' BEGIN SELECT RAISE(ABORT,'synthetic-evidence-completion-failure'); END").run()

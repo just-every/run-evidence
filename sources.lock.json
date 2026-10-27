@@ -8416,7 +8416,7 @@
       "executable": false
     },
     "tests/helpers/worker.ts": {
-      "sha256": "adb98b657b3608c2572ca6ab1c5844834e9452c41fcbeb06cf718e4b98c08bdb",
+      "sha256": "eceff7a0da31cf41d7066d75bfda4c7b99a47dde0f93053d8b53e3761d53b57b",
       "executable": false
     },
     "tests/helpers/xlsx.mjs": {
