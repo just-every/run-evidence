@@ -5,8 +5,9 @@ import { sendFollowup, sent } from '../followup/send'
 // the same native engagement relationships. Closed engagements retain custody.
 export const holdPredicate = `((kind=? AND subject_id=?) OR kind='business' OR
  (kind='engagement' AND subject_id IN
-  (SELECT engagement_id FROM privacy_exhibit_engagements WHERE exhibit_id=?)))`
-export const holdParameters = (kind: string, subject: string) => [kind, subject, kind === 'exhibit' ? subject : '']
+  (SELECT engagement_id FROM privacy_exhibit_engagements WHERE exhibit_id=?)) OR
+ (kind,subject_id) IN (SELECT s.kind,s.subject_id FROM privacy_exhibit_scopes s WHERE s.exhibit_id=?))`
+export const holdParameters = (kind: string, subject: string) => [kind, subject, kind === 'exhibit' ? subject : '', kind === 'exhibit' ? subject : '']
 export interface OverdueHold { id: string; kind: string; subject_id: string; reason: string; authorized_by: string; authorized_name: string; review_on: string }
 export async function overdueHolds(env: Bindings, now: Date) {
  return (await env.DB.prepare(`SELECT id,kind,subject_id,reason,authorized_by,authorized_name,review_on
