@@ -3552,7 +3552,7 @@
       "executable": false
     },
     ".github/workflows/verify.yml": {
-      "sha256": "74b6091d1d08d73806796742b35fe0e0a5f5b9ddd9f79078410f6f1c13c89135",
+      "sha256": "6ba3b2fa1848b7d7029e0c23bffb9cc8f49d012b92a3ba59f6a9dd359962e01b",
       "executable": false
     },
     ".gitignore": {
@@ -4100,7 +4100,7 @@
       "executable": false
     },
     "public/portal-extension/manifest.json": {
-      "sha256": "4fa019e0b07e490a90363b9919ce4cfb3126b50c9d4d6d89134661fcd717e4e4",
+      "sha256": "3745fded60142b92f8c8bca5cfdf635fc36183f325572d16aea883f6a94b910a",
       "executable": false
     },
     "public/portal-extension/popup.html": {
@@ -4545,6 +4545,10 @@
     },
     "scripts/generate-edition.mjs": {
       "sha256": "e4efa1d0809d9d244cb2fc22bb7282b659aa89aed6c0dab4a350b53ea9d43a6f",
+      "executable": false
+    },
+    "scripts/install-portal-browsers.mjs": {
+      "sha256": "dfc023f1ab230d9c551dbe749fff39cce0b4b32bb27f0ffc5d030580926634c9",
       "executable": false
     },
     "scripts/install.mjs": {
@@ -8076,7 +8080,7 @@
       "executable": false
     },
     "tests/helpers/answer-journey.mjs": {
-      "sha256": "0c673c423da8f59df08554e1aa89675ce2b43240993ae65e0fd9989b33d2a974",
+      "sha256": "ebaf03bc2f6b5aeafa8e2c464bb7529143b8923823ff42133b36a34822ce0ebf",
       "executable": false
     },
     "tests/helpers/archive-display-browser.mjs": {
