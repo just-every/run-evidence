@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "9c8e8839e190d880fa5e5bfd1b8b139529cc7919a0e04c40c5cce428c97cb13f",
+  "manifest": "87a6b8256fb48083bb139a63871e3c1abb50ff7b4bb307fd21e93e5082340b8e",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2826,6 +2826,8 @@
           "migrations/core/0067_access_roles.sql",
           "migrations/core/0068_secure_records_flows.sql",
           "migrations/core/0069_credential_displays.sql",
+          "migrations/core/0070_engagement_holds.sql",
+          "migrations/core/0071_privacy_classifications.sql",
           "package.json",
           "packaging.json",
           "pnpm-lock.yaml",
@@ -2857,6 +2859,7 @@
           "public/portal-extension/popup.html",
           "public/portal-extension/popup.js",
           "public/portal-extension/scan.js",
+          "public/privacy.css",
           "public/rer-theme.css",
           "public/review.css",
           "public/review.js",
@@ -3067,6 +3070,7 @@
           "src/evidence/credential-display.ts",
           "src/evidence/door.ts",
           "src/evidence/erase/archive.ts",
+          "src/evidence/erase/holds.ts",
           "src/evidence/erase/http.ts",
           "src/evidence/erase/storage.ts",
           "src/evidence/followup/channels.ts",
@@ -3476,6 +3480,7 @@
           "tests/helpers/runtime.mjs",
           "tests/helpers/shortcut-webhook-journey.mjs",
           "tests/helpers/site-runtime.mjs",
+          "tests/helpers/step.mjs",
           "tests/helpers/tailoring-journey.mjs",
           "tests/helpers/tracker-fields-browser.mjs",
           "tests/helpers/tracker-fixture.mjs",
@@ -3564,7 +3569,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "d5d9174bf283c3a43c805a2ecc4d33ee1625ab46c932c12dee587e7c938c950a",
+      "sha256": "9423b4f76a5693fedbe85c0976d7e87c7977119ca9fc74f9a57e8e87015afc05",
       "executable": false
     },
     "AGENTS.md": {
@@ -3580,7 +3585,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "3ec3d19be3a97caa26146cdedef574203f5e5a5c84f7a6a4b171e9b47fbbfc8d",
+      "sha256": "40c0fc7849a93d58cb6a4fe2c5a6f0f1409a90fdbc6a160d32bb0e7ec876a630",
       "executable": false
     },
     "DEMO.md": {
@@ -3688,7 +3693,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "9c8e8839e190d880fa5e5bfd1b8b139529cc7919a0e04c40c5cce428c97cb13f",
+      "sha256": "87a6b8256fb48083bb139a63871e3c1abb50ff7b4bb307fd21e93e5082340b8e",
       "executable": false
     },
     "LICENSE": {
@@ -3984,7 +3989,7 @@
       "executable": false
     },
     "migrations/core/0071_privacy_classifications.sql": {
-      "sha256": "2ec93da9b36925df9ce95f59288f9acfe82e1d34e570882c958dbb2e8fa5f8f5",
+      "sha256": "8af18f93916a5c0c0790107f117df2d19070dac92cd3afebc2267d0f025bd7a7",
       "executable": false
     },
     "ONBOARDING.md": {
@@ -4121,6 +4126,10 @@
     },
     "public/portal-extension/scan.js": {
       "sha256": "38c8eb01eee9429dc1e7ddcf0a11d3f41ab445cecfa714597fa0aae7f116955a",
+      "executable": false
+    },
+    "public/privacy.css": {
+      "sha256": "9c3634e47f6b6c0c515a67bc815c6230c9c494c5c6b5b1d24fd078d66576dea4",
       "executable": false
     },
     "public/rer-theme.css": {
@@ -5260,15 +5269,15 @@
       "executable": false
     },
     "src/evidence/erase/holds.ts": {
-      "sha256": "5924d018ad69d92c09b4a79b795e294ec46e3a6d15735e9283aeba51f7bcd10c",
+      "sha256": "e1f604a09632097fc543cd4c901432791d4a57600a0837c14290e1d1a393b136",
       "executable": false
     },
     "src/evidence/erase/http.ts": {
-      "sha256": "f0f3a391bad1e961c8ba52cd1b48116d85be16d7ff55f9b5cc0211d029c0db04",
+      "sha256": "0bd6da453992438e212ce40fee36da4e462fb8508ec6b6997e7b5880398d238b",
       "executable": false
     },
     "src/evidence/erase/storage.ts": {
-      "sha256": "785610c1c065b60a1e200086b07918c1bf55f1ae19c510f908f8f6e849b734e7",
+      "sha256": "9165a9b7228c61d5a638bf77d12f1b432a5b4229dbdf74536d78d1f3c4290723",
       "executable": false
     },
     "src/evidence/followup/channels.ts": {
@@ -8184,7 +8193,7 @@
       "executable": false
     },
     "tests/helpers/erasure-journey.mjs": {
-      "sha256": "abb7706ed2af51e2156c8faeea05be2844cc5c784e4d4cb7bb93915db9dbb2d2",
+      "sha256": "90c0d2f7458ce33946a8f30621077ea9aed33605ac3550ea2bc8fea5c436ffda",
       "executable": false
     },
     "tests/helpers/extended-programs-journey.mjs": {
@@ -8580,7 +8589,7 @@
       "executable": false
     },
     "tests/vendor-browser.mjs": {
-      "sha256": "956cc8e83a407d6ca613f401e0903691414dfbbacf85be044a7128d5ee7520f4",
+      "sha256": "dd25d28e5784578047dcd944dd8a4b3f4e9b7942e36a727f163dfefb3ca76921",
       "executable": false
     },
     "tests/vulns.mjs": {
