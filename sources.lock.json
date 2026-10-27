@@ -3567,7 +3567,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "da319120dbbe4739d1d824f24d5213a7b34b5a3f2859fdb3088ca4585c76e1fb",
+      "sha256": "105674c79ca04deb768c47b4cf38643613caa449350a25e50f6136b193d75542",
       "executable": false
     },
     "AGENTS.md": {
@@ -3583,7 +3583,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "ede4c2b5a71cb95fae15f81174aeb0fcd2f4ca1a0fa88e80607bfc55c14ca536",
+      "sha256": "c398122c9436e449344ed7d2a8f0dd7ca82aefe3a4026da090c737cdb21b740d",
       "executable": false
     },
     "DEMO.md": {
@@ -8183,7 +8183,7 @@
       "executable": false
     },
     "tests/helpers/erasure-journey.mjs": {
-      "sha256": "cd92fa8e3284510b323a4dc3821bbabe10e80595f12ee8d7ee51031843ca9153",
+      "sha256": "77052cd501b120fa523571eb876a18197e09bad1c6b326146ae9d2c44b2cd5aa",
       "executable": false
     },
     "tests/helpers/extended-programs-journey.mjs": {
@@ -8415,7 +8415,7 @@
       "executable": false
     },
     "tests/helpers/worker.ts": {
-      "sha256": "adb98b657b3608c2572ca6ab1c5844834e9452c41fcbeb06cf718e4b98c08bdb",
+      "sha256": "eceff7a0da31cf41d7066d75bfda4c7b99a47dde0f93053d8b53e3761d53b57b",
       "executable": false
     },
     "tests/helpers/xlsx.mjs": {
