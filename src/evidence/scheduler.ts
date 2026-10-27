@@ -1,3 +1,4 @@
+import { holdReviewReminders } from './erase/storage'
 import {flushTrustDeliveries} from './trust/delivery'
 import {withCollectionClock} from './connect/clock'
 import { configurationFailures } from './ops/configuration'
@@ -33,7 +34,7 @@ async function scheduledWorkImpl(env: Bindings, now: Date) {
  if (missing.length) throw new Error('Required configuration is missing or invalid: ' + missing.join(', '))
  // An unused installation has no scheduled product work. Avoid manufacturing
  // operational records that would race the empty-destination restore door.
- const active=await env.DB.prepare('SELECT EXISTS(SELECT 1 FROM controls) OR EXISTS(SELECT 1 FROM connections) OR EXISTS(SELECT 1 FROM programs) OR EXISTS(SELECT 1 FROM people) OR EXISTS(SELECT 1 FROM policies) OR EXISTS(SELECT 1 FROM trust_deliveries) AS active').first<{active:number}>()
+ const active=await env.DB.prepare('SELECT EXISTS(SELECT 1 FROM controls) OR EXISTS(SELECT 1 FROM connections) OR EXISTS(SELECT 1 FROM programs) OR EXISTS(SELECT 1 FROM people) OR EXISTS(SELECT 1 FROM policies) OR EXISTS(SELECT 1 FROM trust_deliveries) OR EXISTS(SELECT 1 FROM privacy_holds WHERE released_at IS NULL) AS active').first<{active:number}>()
  if(!active?.active)return {}
  const outcome: Record<string, number | string> = {}
  const deadline = Date.now() + EXECUTION_TIMEOUT_MS
@@ -55,6 +56,7 @@ async function scheduledWorkImpl(env: Bindings, now: Date) {
  await step('risk acceptances', scoped => escalateRiskAcceptances(scoped, now))
  await step('weekly digest', scoped => weeklyDigest(scoped, now))
  await step('attestation reminders', scoped => attestationReminders(scoped, now))
+ await step('privacy hold reviews', scoped => holdReviewReminders(scoped, now))
  await step('review reminders', async scoped => (await reviewReminders(scoped, now)) + (await vendorReminders(scoped, now)) + (await documentReminders(scoped, now)))
  await step('handovers', scoped => handoverWork(scoped, now))
  await step('readiness snapshots', scoped => snapshotReadiness(scoped, now))

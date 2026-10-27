@@ -48,6 +48,7 @@ export async function scopedSubmissionReceipt(env:Bindings,e:Engagement,r:AuditR
 export async function submit(env:Bindings,e:Engagement,r:AuditRequest,input:Input,actor:Actor,now:Date){
  if(e.closed_at||r.closed_at)throw new Refusal('Request is closed.',409)
  const row=await scopedSubmissionReceipt(env,e,r,text(input,'receipt_id')),id=crypto.randomUUID()
+ if(await env.DB.prepare('SELECT 1 FROM privacy_erased_exhibits WHERE exhibit_id=?').bind(row.exhibit_id).first())throw new Refusal('Erasure is already confirmed for this exhibit.',409)
  const result=await env.DB.batch([env.DB.prepare('INSERT INTO audit_submissions(id,request_id,receipt_id,revision,actor_id,actor_name,at) SELECT ?,?,?,COALESCE((SELECT MAX(revision) FROM audit_submissions WHERE request_id=?),0)+1,?,?,? WHERE EXISTS(SELECT 1 FROM audit_requests r JOIN audit_engagements e ON e.id=r.engagement_id WHERE r.id=? AND r.closed_at IS NULL AND e.closed_at IS NULL)').bind(id,r.id,row.id,r.id,actor.id,actor.name,now.toISOString(),r.id),env.DB.prepare("INSERT INTO product_audit(id,actor_kind,actor_id,actor_name,action,subject,outcome,detail,at,reason,revision) SELECT ?,'owner',?,?,'audit.request.submitted',?,'succeeded','',?,'',? WHERE EXISTS(SELECT 1 FROM audit_submissions WHERE id=?)").bind(crypto.randomUUID(),actor.id,actor.name,r.id,now.toISOString(),row.id,id)])
  if(!result[0].meta.changes)throw new Refusal('Request is closed.',409)
  return {id,receipt_id:row.id}

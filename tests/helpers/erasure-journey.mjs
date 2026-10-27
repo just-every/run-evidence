@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { runtime } from './runtime.mjs'
 export async function erasureJourney(app) {
- const post=async(path,body,status=200)=>{const r=await app.fetch(path,{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify(body)});assert.equal(r.status,status,path+' '+await r.clone().text());return r.json()}
+ const post=async(path,body,status=200)=>{const r=await app.fetch(path,{method:'POST',headers:{origin:app.origin,'content-type':'application'+'/'+'json'},body:JSON.stringify(body)});assert.equal(r.status,status,path+' '+await r.clone().text());return r.json()}
  const control=await app.fetch('/app/controls',{method:'POST',headers:{origin:app.origin,'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({name:'Erasure review',group:'Data',proof:'Erasure original',cadence:'monthly'})})
  assert.equal(control.status,303)
  const requirement=control.headers.get('location').split('/').at(-1),form=new FormData()
@@ -12,10 +12,70 @@ export async function erasureJourney(app) {
  const controlId=(await (await app.fetch('/api/desk')).json()).requirements.find(q=>q.id===requirement).control_id
  const folder=await post('/api/folders',{reviewer_label:'Erasure share',period_from:'2026-10-11',period_to:'2026-10-11',expires_at:'2026-12-01T12:00:00Z',control_ids:[controlId]},201),share=new URL(folder.review_url).pathname
  assert.equal((await app.fetch(share+'/exhibits',{headers:{cookie:''}})).status,200)
+ const person=await post('/api/people',{name:'synthetic-evidence-reviewer',email:'privacy-reviewer@example.test',kind:'employee'},201)
+ const engagement=await post('/api/audit-engagements',{name:'synthetic-evidence-engagement',period_from:'2026-10-11',period_to:'2026-10-11',control_ids:[controlId]},201)
+ const otherEngagement=await post('/api/audit-engagements',{name:'synthetic-evidence-unrelated',period_from:'2026-10-11',period_to:'2026-10-11',control_ids:[controlId]},201)
+ const request=await post('/api/audit-engagements/'+engagement.id+'/requests',{requests:JSON.stringify([{title:'Retained exhibit',control_id:controlId,owner_person_id:person.id,due_date:'2026-10-15'}])},201)
+ const submissionDoor='/api/audit-engagements/'+engagement.id+'/requests/'+request.ids[0]+'/submissions'
+ await post(submissionDoor,{receipt_id:receipt.id},201)
  const preview=()=>post('/api/privacy/requests',{kind:'exhibit',subject_id:receipt.exhibit_id,reason:'Owner verified request; remove original'},201)
  console.log('ERASE-001: preview and exact hold review')
  const before=Buffer.from(await (await app.fetch('/api/archive/export')).arrayBuffer())
  let row=await preview();assert.ok(!row.snapshot_json.includes('synthetic-evidence-private-name'));assert.ok(!row.snapshot_json.includes('synthetic-evidence-erasure-source'))
+ const unrelated=await post('/api/privacy/holds',{kind:'engagement',subject_id:otherEngagement.id,reason:'Unrelated engagement hold',review_on:'2026-10-11'},201)
+ assert.deepEqual(JSON.parse((await preview()).snapshot_json).holds,[],'an unrelated engagement does not hold this exhibit')
+ const inherited=await post('/api/privacy/holds',{kind:'engagement',subject_id:engagement.id,reason:'Keep the submitted original for dispute',review_on:'2026-10-11'},201)
+ const inheritedPlan=JSON.parse((await preview()).snapshot_json)
+ assert.deepEqual(inheritedPlan.holds.map(h=>h.id),[inherited.id])
+ assert.equal(inheritedPlan.holds[0].reason,'Keep the submitted original for dispute')
+ assert.equal(inheritedPlan.holds[0].authorized_name,'Evidence owner')
+ await post('/api/privacy/requests/'+row.id+'/confirm',{snapshot_hash:row.snapshot_hash,confirm:'ERASE'},409)
+ assert.equal((await app.fetch(uploaded.headers.get('location')+'/download')).status,200)
+ assert.deepEqual((await (await app.fetch('/api/desk')).json()).privacy_reviews,[],'review date itself is not overdue')
+ await app.tick()
+ assert.equal((await app.db.prepare("SELECT count(*) AS n FROM followups WHERE kind='privacy-hold-review'").first()).n,0)
+ await app.clock('2026-10-12T15:00:00Z')
+ const reviews=(await (await app.fetch('/api/desk')).json()).privacy_reviews
+ assert.deepEqual(new Set(reviews.map(h=>h.id)),new Set([inherited.id,unrelated.id]))
+ const privacy=await (await app.fetch('/api/privacy')).json()
+ assert.equal(privacy.holds.find(h=>h.id===inherited.id).review_state,'overdue')
+ assert.equal(privacy.holds.find(h=>h.id===inherited.id).released_at,null)
+ const review=await preview()
+ await post('/api/privacy/requests/'+review.id+'/confirm',{snapshot_hash:review.snapshot_hash,confirm:'ERASE'},409)
+ assert.equal((await app.fetch(uploaded.headers.get('location')+'/download')).status,200,'overdue holds still protect their bytes')
+ await app.tick();await app.tick()
+ const notices=(await app.db.prepare("SELECT recipient,subject_id,state FROM followups WHERE kind='privacy-hold-review' ORDER BY subject_id").all()).results
+ assert.deepEqual(notices.map(n=>n.subject_id),['privacy-hold:'+inherited.id,'privacy-hold:'+unrelated.id].sort())
+ assert.ok(notices.every(n=>n.recipient==='owner@example.test'&&n.state==='accepted'))
+ const notice=app.messages.find(m=>m.subject==='Legal hold review overdue'&&m.text.includes(inherited.id))
+ assert.deepEqual(notice.to,['owner@example.test']);assert.match(notice.text,/remains active/)
+ // Restart the worker while retaining its stores; the durable cycle prevents resend.
+ await app.clock('2026-10-12T15:05:00Z');await app.tick()
+ assert.equal(app.messages.filter(m=>m.subject==='Legal hold review overdue').length,2)
+ await post('/api/privacy/holds/'+inherited.id+'/release',{reason:''},400)
+ await app.db.prepare("CREATE TRIGGER synthetic_hold_release_audit BEFORE INSERT ON product_audit WHEN NEW.action='privacy.hold-released' BEGIN SELECT RAISE(ABORT,'synthetic-evidence-release-audit-failure'); END").run()
+ await post('/api/privacy/holds/'+inherited.id+'/release',{reason:'Dispute resolved by authorizer'},503)
+ assert.equal((await (await app.fetch('/api/privacy')).json()).holds.find(h=>h.id===inherited.id).released_at,null,'failed audit leaves the hold active')
+ await app.db.prepare('DROP TRIGGER synthetic_hold_release_audit').run()
+ await post('/api/privacy/holds/'+inherited.id+'/release',{reason:'Dispute resolved by authorizer'})
+ await post('/api/privacy/holds/'+unrelated.id+'/release',{reason:'Unrelated dispute resolved'})
+ const releaseAudit=(await (await app.fetch('/api/audit')).json()).entries.find(a=>a.action==='privacy.hold-released'&&a.subject==='hold:'+inherited.id)
+ assert.deepEqual([releaseAudit.actor_name,releaseAudit.reason,releaseAudit.outcome],['Evidence owner','Dispute resolved by authorizer','succeeded'])
+ assert.deepEqual((await (await app.fetch('/api/desk')).json()).privacy_reviews,[])
+ await app.tick();assert.equal(app.messages.filter(m=>m.subject==='Legal hold review overdue').length,2)
+ // A signed-in member with no privacy authority is refused every current door.
+ await post('/api/roles/invitations',{email:'privacy-member@example.test',display_name:'Privacy member'},202)
+ const token=new URL(app.messages.at(-1).html.match(/href="([^"]*\/auth\/confirm\?token=[^"]+)"/)[1].replaceAll('&amp;','&'),app.origin).searchParams.get('token')
+ const memberResponse=await app.fetch('/auth/confirm',{method:'POST',headers:{cookie:'',origin:app.origin,'content-type':'application'+'/'+'json'},body:JSON.stringify({token})})
+ assert.equal(memberResponse.status,303)
+ const memberCookie=memberResponse.headers.getSetCookie().map(s=>s.split(';')[0]).join('; ')
+ for(const delegated of [false,true]) {
+  if(delegated)await post('/api/roles/grants',{email:'privacy-member@example.test',role:'compliance_manager',scope_kind:'business',reason:'Program work does not grant privacy authority'},201)
+ for(const prefix of ['/api','/app'])for(const [method,path] of [['GET','/privacy'],['GET','/privacy/requests/'+row.id],['POST','/privacy/requests'],['POST','/privacy/requests/'+row.id+'/confirm'],['POST','/privacy/holds'],['POST','/privacy/holds/'+inherited.id+'/release']]) {
+  const response=await app.fetch(prefix+path,{method,headers:{cookie:memberCookie,origin:app.origin,...(method==='POST'?{'content-type':'application'+'/'+'json'}:{})},...(method==='POST'?{body:'{}'}:{})})
+  assert.equal(response.status,403,method+' '+prefix+path)
+ }
+ }
  const hold=await post('/api/privacy/holds',{kind:'exhibit',subject_id:receipt.exhibit_id,reason:'Preserve for dispute',review_on:'2027-01-01'},201)
  await post('/api/privacy/requests/'+row.id+'/confirm',{snapshot_hash:row.snapshot_hash,confirm:'ERASE'},409)
  assert.equal((await app.fetch(uploaded.headers.get('location')+'/download')).status,200)
@@ -29,6 +89,8 @@ export async function erasureJourney(app) {
  await app.db.prepare("CREATE TRIGGER synthetic_privacy_completion BEFORE UPDATE ON privacy_requests WHEN NEW.state='complete' BEGIN SELECT RAISE(ABORT,'synthetic-evidence-completion-failure'); END").run()
  await post('/api/privacy/requests/'+row.id+'/confirm',{snapshot_hash:row.snapshot_hash,confirm:'ERASE'},503)
  assert.equal((await (await app.fetch('/api/privacy/requests/'+row.id)).json()).state,'pending')
+ await post(submissionDoor,{receipt_id:receipt.id},409)
+ await post('/api/privacy/holds',{kind:'engagement',subject_id:engagement.id,reason:'Too late for confirmed deletion',review_on:'2027-01-01'},503)
  assert.equal((await app.fetch('/api/archive/export')).status,400,'pending erasure cannot be exported into an offline copy')
  await app.db.prepare('DROP TRIGGER synthetic_privacy_completion').run()
  const final=await post('/api/privacy/requests/'+row.id+'/confirm',{snapshot_hash:row.snapshot_hash,confirm:'ERASE'})
@@ -61,6 +123,8 @@ export async function erasureJourney(app) {
   console.log('ERASE-001: restoring current erased archive')
   const r=await restored.fetch('/api/archive/restore',{method:'POST',headers:{origin:restored.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:exported});assert.equal(r.status,200,await r.clone().text())
   assert.equal((await (await restored.fetch('/api/privacy/requests/'+row.id)).json()).state,'complete')
+  const restoredHolds=(await (await restored.fetch('/api/privacy')).json()).holds
+  assert.equal(restoredHolds.find(h=>h.id===inherited.id).release_reason,'Dispute resolved by authorizer')
   assert.equal((await restored.fetch(uploaded.headers.get('location')+'/download')).status,410)
  }finally{await restored.close()}
  console.log('PASS ERASE-001: reviewed exhibit erasure, holds, exact confirmation, tombstone custody, old-archive refusal and populated restore')

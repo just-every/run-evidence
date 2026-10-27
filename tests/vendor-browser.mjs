@@ -42,7 +42,7 @@ try {
   } catch { res.writeHead(500); res.end('Transport unavailable') }
  })
  await new Promise(done => server.listen(0, '127.0.0.1', done)); origin = 'http://127.0.0.1:' + server.address().port
- browser = await chromium.launch({ headless: true, args: ['--use-mock-keychain', '--password-store=basic'] })
+ browser = await chromium.launch({ headless: true, executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH, args: ['--no-sandbox', '--use-mock-keychain', '--password-store=basic'] })
  await mkdir(output, { recursive: true })
  for (const width of [1440, 390]) {
   const supplierPath = new URL(links[width].url).pathname
@@ -193,10 +193,19 @@ try {
   const holdForm=page.locator('form[action="/app/privacy/holds"]')
   await holdForm.getByLabel('Scope').selectOption('business')
   await holdForm.getByLabel('Reason').fill('Preserve records for review')
-  await holdForm.getByLabel('Review on').fill('2027-01-01')
+  await app.clock('2026-11-02T15:00:00Z')
+  await holdForm.getByLabel('Review on').fill('2026-11-02')
   await holdForm.getByRole('button').click()
   await page.getByText('Preserve records for review').first().waitFor()
-  await capture('privacy-hold')
+  await app.clock('2026-11-03T15:00:00Z')
+  await page.reload()
+  if(width===1440)await page.getByText('overdue · hold remains active',{exact:false}).first().waitFor()
+  await capture('privacy-hold-overdue')
+  await page.goto(origin+'/app')
+  if(width===1440)await page.getByRole('heading',{name:'Overdue legal hold reviews'}).waitFor()
+  await capture('privacy-desk-overdue')
+  const iconControls=await page.locator('button,a,summary').evaluateAll(elements=>elements.filter(e=>!e.textContent.trim()&&!e.querySelector('input')).map(e=>e.outerHTML))
+  if(width===1440)assert.deepEqual(iconControls,[],'the touched desk uses visible words for every control')
   assert.deepEqual(errors, [])
   await context.close()
   console.log(`PASS VENDOR-001: register, diligence page and supplier link screens at ${width}`)
