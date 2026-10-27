@@ -24,12 +24,18 @@ export async function erasureJourney(app) {
  const unrelatedHold=await post('/api/privacy/holds',{kind:'engagement',subject_id:unrelated.id,reason:'Unrelated dispute',review_on:'2026-10-11'},201)
  assert.deepEqual(JSON.parse((await preview()).snapshot_json).holds,[])
  const engagement=await post('/api/audit-engagements',{name:'Retained erasure audit',period_from:'2026-10-11',period_to:'2026-10-11',control_ids:[controlId]},201)
+ const requestOwner=await post('/api/people',{name:'Erasure request owner',email:'erasure-request@example.test',kind:'employee'},201)
+ const request=await post('/api/audit-engagements/'+engagement.id+'/requests',{requests:JSON.stringify([{control_id:controlId,title:'Retain submitted original',owner_person_id:requestOwner.id,due_date:'2026-10-11'}])},201)
+ const submissionDoor='/api/audit-engagements/'+engagement.id+'/requests/'+request.ids[0]+'/submissions'
+ await post(submissionDoor,{receipt_id:receipt.id},201)
  const engagementHold=await post('/api/privacy/holds',{kind:'engagement',subject_id:engagement.id,reason:'Preserve engagement evidence',review_on:'2026-10-11'},201)
  const held=await preview(),retention=JSON.parse(held.snapshot_json).holds
  assert.deepEqual(retention.map(h=>({id:h.id,kind:h.kind,subject:h.subject_id,reason:h.reason,authorizer:h.authorized_name,review:h.review_on})),[{id:engagementHold.id,kind:'engagement',subject:engagement.id,reason:'Preserve engagement evidence',authorizer:'Evidence owner',review:'2026-10-11'}])
  await post('/api/privacy/requests/'+held.id+'/confirm',{snapshot_hash:held.snapshot_hash,confirm:'ERASE'},409)
  assert.equal(await (await app.fetch(uploaded.headers.get('location')+'/download')).text(),'synthetic-evidence-erasure-content')
  assert.deepEqual((await (await app.fetch('/api/privacy')).json()).overdue_holds,[],'the review date itself is not overdue')
+ await app.tick()
+ assert.equal((await app.db.prepare("SELECT count(*) AS n FROM followups WHERE kind='privacy-hold-review'").first()).n,0)
  await app.clock('2026-10-12T15:00:00Z')
  const overdue=await (await app.fetch('/api/desk')).json()
  assert.deepEqual(overdue.overdue_holds.map(h=>h.id).sort(),[engagementHold.id,unrelatedHold.id].sort())
@@ -49,12 +55,14 @@ export async function erasureJourney(app) {
  const invitation=new URL(app.messages.at(-1).html.match(/href="([^"]*\/auth\/confirm\?token=[^"]+)"/)[1].replaceAll('&amp;','&'),app.origin)
  const signed=await app.fetch('/auth/confirm',{method:'POST',headers:{cookie:'',origin:app.origin,'content-type':'application'+'/'+'json'},body:JSON.stringify({token:invitation.searchParams.get('token')})});assert.equal(signed.status,303)
  const member=signed.headers.getSetCookie().map(x=>x.split(';')[0]).join('; ')
- await post('/api/roles/grants',{email:'privacy-member@example.test',role:'compliance_manager',scope_kind:'business',reason:'Program access without privacy authority'},201)
+ for(const delegated of [false,true]) {
+ if(delegated)await post('/api/roles/grants',{email:'privacy-member@example.test',role:'compliance_manager',scope_kind:'business',reason:'Program access without privacy authority'},201)
  const memberDesk=await app.fetch('/api/desk',{headers:{cookie:member}});assert.equal(memberDesk.status,200);assert.deepEqual((await memberDesk.json()).overdue_holds,[],'delegated desk reads disclose no hold details')
  for(const prefix of ['/api','/app']) for(const [tail,method] of [['','GET'],['/classifications','POST'],['/requests','POST'],['/requests/'+held.id,'GET'],['/requests/'+held.id+'/confirm','POST'],['/holds','POST'],['/holds/'+engagementHold.id+'/release','POST']]){
   const path=prefix+'/privacy'+tail
   const response=await app.fetch(path,{method,headers:{cookie:member,origin:app.origin,'content-type':'application'+'/'+'json'},...(method==='POST'?{body:'{}'}:{})})
   assert.equal(response.status,403,path)
+ }
  }
  await post('/api/privacy/holds/'+engagementHold.id+'/release',{reason:''},400)
  await app.db.prepare("CREATE TRIGGER synthetic_hold_release_audit BEFORE INSERT ON product_audit WHEN NEW.action='privacy.hold-released' BEGIN SELECT RAISE(ABORT,'synthetic-evidence-release-audit-failure'); END").run()
@@ -63,6 +71,9 @@ export async function erasureJourney(app) {
  await app.db.prepare('DROP TRIGGER synthetic_hold_release_audit').run()
  await post('/api/privacy/holds/'+engagementHold.id+'/release',{reason:'Engagement dispute resolved'})
  await post('/api/privacy/holds/'+unrelatedHold.id+'/release',{reason:'Separate dispute resolved'})
+ const releaseAudit=(await (await app.fetch('/api/audit')).json()).entries.find(a=>a.action==='privacy.hold-released'&&a.subject==='hold:'+engagementHold.id)
+ assert.deepEqual([releaseAudit.actor_name,releaseAudit.reason,releaseAudit.outcome],['Evidence owner','Engagement dispute resolved','succeeded'])
+ await app.tick();assert.equal(app.messages.filter(m=>m.subject==='Legal hold review overdue').length,2)
  assert.deepEqual((await (await app.fetch('/api/desk')).json()).overdue_holds,[])
  assert.ok(!(await (await app.fetch('/app')).text()).includes('Legal hold reviews overdue'))
  console.log('ERASE-001: engagement cascade, overdue desk, attributed reminders and every member refusal verified')
@@ -134,6 +145,8 @@ export async function erasureJourney(app) {
  await post('/api/privacy/requests/'+row.id+'/confirm',{snapshot_hash:row.snapshot_hash,confirm:'ERASE'},503)
  assert.equal((await (await app.fetch('/api/privacy/requests/'+row.id)).json()).state,'pending')
  await post('/api/privacy/holds',{kind:'engagement',subject_id:engagement.id,reason:'Too late for a pending erasure',review_on:'2027-01-01'},409)
+ await post(submissionDoor,{receipt_id:receipt.id},409)
+ await assert.rejects(app.db.prepare("INSERT INTO audit_submissions(id,request_id,receipt_id,revision,actor_id,actor_name,at) SELECT 'synthetic-erasure-race',request_id,receipt_id,revision+1,actor_id,actor_name,at FROM audit_submissions WHERE request_id=? LIMIT 1").bind(request.ids[0]).run(),/erasure_already_confirmed/)
  await post('/api/privacy/classifications',{kind:'person',subject_id:otherPerson.id,exhibit_id:receipt.exhibit_id,reason:'Too late to classify'},409)
  for(const [kind,subject_id]of [['person',person.id],['vendor',vendor.id]])await post('/api/privacy/holds',{kind,subject_id,reason:'Too late for entity hold',review_on:'2027-01-01'},409)
  assert.equal((await app.fetch('/api/archive/export')).status,400,'pending erasure cannot be exported into an offline copy')

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "87a6b8256fb48083bb139a63871e3c1abb50ff7b4bb307fd21e93e5082340b8e",
+  "manifest": "5d27a0dadc25a1aafe020c81316dc5062e76948ca3a9b8cb9eb5fe700895191e",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2828,6 +2828,7 @@
           "migrations/core/0069_credential_displays.sql",
           "migrations/core/0070_engagement_holds.sql",
           "migrations/core/0071_privacy_classifications.sql",
+          "migrations/core/0072_submission_erasure_fence.sql",
           "package.json",
           "packaging.json",
           "pnpm-lock.yaml",
@@ -3569,7 +3570,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "20ddaa12cbb3ac147dfef65256a04739c062b6e72da8255e5c27c3fafa22dc61",
+      "sha256": "acb769b67587d7fd197c923dd0e03f7b98b08dbc00639cfc959701e2a6f52f4c",
       "executable": false
     },
     "AGENTS.md": {
@@ -3585,7 +3586,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "40c0fc7849a93d58cb6a4fe2c5a6f0f1409a90fdbc6a160d32bb0e7ec876a630",
+      "sha256": "dcbd18a0fb8f4ee830af5daa81a5375c30688c23a20cfe3a283835b15e7ee6ae",
       "executable": false
     },
     "DEMO.md": {
@@ -3693,7 +3694,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "87a6b8256fb48083bb139a63871e3c1abb50ff7b4bb307fd21e93e5082340b8e",
+      "sha256": "5d27a0dadc25a1aafe020c81316dc5062e76948ca3a9b8cb9eb5fe700895191e",
       "executable": false
     },
     "LICENSE": {
@@ -3990,6 +3991,10 @@
     },
     "migrations/core/0071_privacy_classifications.sql": {
       "sha256": "8af18f93916a5c0c0790107f117df2d19070dac92cd3afebc2267d0f025bd7a7",
+      "executable": false
+    },
+    "migrations/core/0072_submission_erasure_fence.sql": {
+      "sha256": "23bf48f8dac1a15e9619b417c670de58cae2dd643d011e2a8b9df8e7208c7a7c",
       "executable": false
     },
     "ONBOARDING.md": {
@@ -6557,7 +6562,7 @@
       "executable": false
     },
     "src/evidence/review/engagement/storage.ts": {
-      "sha256": "5cfd4e4ebff9d1f34eafd55a2dee4127109aee925da7b7eb7f82e80776a060e4",
+      "sha256": "3474bdbe215e36862f295a8e9fb641df1d3ca21d2914d1b75ea08b9718b1be3c",
       "executable": false
     },
     "src/evidence/review/engagement/validate.ts": {
@@ -6633,7 +6638,7 @@
       "executable": false
     },
     "src/evidence/scheduler.ts": {
-      "sha256": "4dce2cefb004d94fb8e26c982aacb78d97ea6cdd3f118a14d415c034ce13c6cf",
+      "sha256": "256d3ebf1e41aa73743beee070524386f2c76d857f7aa5618e1e4f425e64a18e",
       "executable": false
     },
     "src/evidence/secure/flows.ts": {
@@ -8193,7 +8198,7 @@
       "executable": false
     },
     "tests/helpers/erasure-journey.mjs": {
-      "sha256": "415c8e1109eb19615eccfbabb0686f7a77d6f6cd15a7c45ddd7c199f43aa802f",
+      "sha256": "b3943160a737fdf4ec603556102823a7bc9914cb2f55a139044a723f8e771365",
       "executable": false
     },
     "tests/helpers/extended-programs-journey.mjs": {
@@ -8505,7 +8510,7 @@
       "executable": false
     },
     "tests/ops.mjs": {
-      "sha256": "e764344af1391fd14ce223b68c0a5b4a81ebe303e9a02c60b54b9125f6d01841",
+      "sha256": "bef6e9a13da3dceba15ff3134c3d91080923d9da38bc2928e8c65338bae3d271",
       "executable": false
     },
     "tests/period-agent-browser.mjs": {
