@@ -1,6 +1,7 @@
 import type { Bindings } from '../../auth.server'
 import { auditStatement, text, oneOf, type Actor, type Input } from '../door'
 import { overdueHolds } from './holds'
+import { personPlan,personStatements,personCounts } from './person'
 import { validDate } from '../model'
 import { Refusal } from '../upload'
 import { sha } from '../archive/format'
@@ -31,7 +32,9 @@ async function snapshot(env:Bindings,kind:string,subject:string):Promise<any> {
 }
 export async function preview(env:Bindings,input:Input,actor:Actor,now:Date) {
  const kind=oneOf(input,'kind',kinds),subject=kind==='business'?'business':text(input,'subject_id',128),reason=text(input,'reason',500)
- const plan=await snapshot(env,kind,subject),body=JSON.stringify(plan),hash=await sha(new TextEncoder().encode(body)),id=crypto.randomUUID()
+ const plan=await snapshot(env,kind,subject),body=JSON.stringify(plan)
+ if(new TextEncoder().encode(body).length>240*1024)throw new Refusal('The complete erasure preview exceeds its retained-record limit. No incomplete selection is admitted.',409)
+ const hash=await sha(new TextEncoder().encode(body)),id=crypto.randomUUID()
  await env.DB.batch([env.DB.prepare('INSERT INTO privacy_requests(id,kind,subject_id,snapshot_json,snapshot_hash,reason,requested_by,requested_name,requested_at) VALUES(?,?,?,?,?,?,?,?,?)').bind(id,kind,subject,body,hash,reason,actor.id,actor.name,now.toISOString()),auditStatement(env,actor,'privacy.previewed','privacy:'+id,now,'succeeded',kind,{reason,revision:hash})])
  return requestOf(env,id)
 }
@@ -122,14 +125,28 @@ export async function classify(env:Bindings,input:Input,actor:Actor,now:Date) {
 async function entitySnapshot(env:Bindings,kind:string,subject:string,holds:any[],hold_history:any[]):Promise<any> {
  const table:Record<string,string>={person:'people',vendor:'vendors',engagement:'audit_engagements'}
  const exists=kind==='business'||!!await env.DB.prepare(`SELECT 1 FROM ${table[kind]} WHERE id=?`).bind(subject).first()
- const selected=(await env.DB.prepare(`SELECT e.id FROM exhibits e WHERE NOT EXISTS(SELECT 1 FROM privacy_erased_exhibits x WHERE x.exhibit_id=e.id) AND (?='business' OR EXISTS(SELECT 1 FROM privacy_exhibit_scopes s WHERE s.exhibit_id=e.id AND s.kind=? AND s.subject_id=?) OR (?='engagement' AND EXISTS(SELECT 1 FROM privacy_exhibit_engagements a WHERE a.exhibit_id=e.id AND a.engagement_id=?))) ORDER BY e.id LIMIT 51`).bind(kind,kind,subject,kind,subject).all<{id:string}>()).results
- const items=[]
- for(const e of selected.slice(0,50))items.push(await snapshot(env,'exhibit',e.id))
- const unclassified=kind==='business'?(await env.DB.prepare('SELECT e.id FROM exhibits e WHERE NOT EXISTS(SELECT 1 FROM privacy_erased_exhibits x WHERE x.exhibit_id=e.id) AND NOT EXISTS(SELECT 1 FROM privacy_exhibit_scopes s WHERE s.exhibit_id=e.id) AND NOT EXISTS(SELECT 1 FROM privacy_exhibit_engagements a WHERE a.exhibit_id=e.id) ORDER BY e.id LIMIT 51').all<{id:string}>()).results:[]
+ const selected=(await env.DB.prepare(`SELECT e.id FROM exhibits e WHERE NOT EXISTS(SELECT 1 FROM privacy_erased_exhibits x WHERE x.exhibit_id=e.id) AND (?='business' OR EXISTS(SELECT 1 FROM privacy_exhibit_scopes s WHERE s.exhibit_id=e.id AND s.kind=? AND s.subject_id=?) OR (?='engagement' AND EXISTS(SELECT 1 FROM privacy_exhibit_engagements a WHERE a.exhibit_id=e.id AND a.engagement_id=?))) ORDER BY e.id LIMIT 201`).bind(kind,kind,subject,kind,subject).all<{id:string}>()).results
+ const items=await entityItems(env,selected.slice(0,200).map(e=>e.id))
+ const unclassified=kind==='business'?(await env.DB.prepare('SELECT e.id FROM exhibits e WHERE NOT EXISTS(SELECT 1 FROM privacy_erased_exhibits x WHERE x.exhibit_id=e.id) AND NOT EXISTS(SELECT 1 FROM privacy_exhibit_scopes s WHERE s.exhibit_id=e.id) AND NOT EXISTS(SELECT 1 FROM privacy_exhibit_engagements a WHERE a.exhibit_id=e.id) ORDER BY e.id LIMIT 201').all<{id:string}>()).results:[]
  const retained=items.filter(p=>p.holds.length).map(p=>({exhibit_id:p.subject,holds:p.holds}))
  const deletions=items.filter(p=>!p.holds.length&&p.supported)
+ const profile=kind==='person'?await personPlan(env,subject,holds,retained):null
  const unsupported=items.filter(p=>!p.holds.length&&!p.supported).map(p=>({exhibit_id:p.subject,reason:p.remaining||'Imported exhibit requires linked-import retirement.'}))
- return {kind,subject,holds,hold_history,items,retained,unsupported,unclassified:unclassified.map(e=>e.id),supported:exists&&selected.length>0&&selected.length<=50&&!unclassified.length&&!unsupported.length,deletions:deletions.map(p=>p.subject),remaining:'Only the listed classified native exhibits can be erased. Entity profiles, other related records, imported originals, mirrored comments and actor anonymization remain unimplemented. This request can never claim whole-entity completion.',limit:selected.length>50?'More than 50 exhibits: no batch can execute.':''}
+ return {kind,subject,holds,hold_history,items,retained,unsupported,unclassified:unclassified.map(e=>e.id),profile,supported:exists&&(selected.length>0||!!profile)&&selected.length<=200&&!unclassified.length&&!unsupported.length,deletions:deletions.map(p=>p.subject),remaining:'Only the listed classified native exhibits and eligible person profile can be erased. Entity profiles other than the listed person profile, other related records, imported originals, mirrored comments and attribution outside the listed audit stores remain unimplemented. This request can never claim whole-entity completion.',limit:selected.length>200?'More than 200 exhibits: no batch can execute.':''}
+}
+async function entityItems(env:Bindings,ids:string[]):Promise<any[]> {
+ const encode=(fields:string[])=>`json_object(${fields.flatMap(f=>["'"+f+"'",f]).join(',')})`
+ const rows=(await env.DB.prepare(`SELECT e.id,e.object_key,e.size,r.id AS receipt_id,r.origin,r.requirement_id,r.sha256,
+  (SELECT json_group_array(${encode(['id','kind','subject_id','reason','authorized_by','authorized_name','review_on','created_at','released_at','released_by','release_reason'])}) FROM (SELECT h.* FROM privacy_holds h WHERE (h.kind='exhibit' AND h.subject_id=e.id) OR h.kind='business' OR (h.kind='engagement' AND EXISTS(SELECT 1 FROM privacy_exhibit_engagements a WHERE a.engagement_id=h.subject_id AND a.exhibit_id=e.id)) OR EXISTS(SELECT 1 FROM privacy_exhibit_scopes s WHERE s.exhibit_id=e.id AND s.kind=h.kind AND s.subject_id=h.subject_id) ORDER BY h.id)) AS hold_json,
+  (SELECT json_group_array(${encode(['exhibit_id','kind','subject_id','reason','classified_by','classified_name','classified_at'])}) FROM (SELECT * FROM privacy_exhibit_scopes WHERE exhibit_id=e.id ORDER BY kind,subject_id)) AS classification_json,
+  (SELECT json_group_array(${encode(['id','closed_at'])}) FROM (SELECT f.id,f.closed_at FROM review_folders f JOIN review_folder_controls fc ON fc.folder_id=f.id JOIN requirements q ON q.control_id=fc.control_id WHERE q.id=r.requirement_id ORDER BY f.id)) AS folder_json,
+  EXISTS(SELECT 1 FROM import_additions WHERE kind='receipt' AND id=r.id) AS imported,
+  (EXISTS(SELECT 1 FROM promise_dependencies WHERE json_extract(source_json,'$.kind')='exhibit' AND json_extract(source_json,'$.source_id')=r.id) OR EXISTS(SELECT 1 FROM questionnaire_sources WHERE kind='exhibit' AND source_id=r.id)) AS promise_linked
+  FROM exhibits e JOIN receipts r ON r.exhibit_id=e.id WHERE e.id IN (SELECT value FROM json_each(?)) ORDER BY e.id`).bind(JSON.stringify(ids)).all<any>()).results
+ return rows.map(({hold_json,classification_json,folder_json,imported:importFlag,promise_linked:promiseFlag,...exhibit})=>{
+  const hold_history=JSON.parse(hold_json),classifications=JSON.parse(classification_json),folders=JSON.parse(folder_json),holds=hold_history.filter((h:any)=>!h.released_at),imported=!!importFlag,promise_linked=!!promiseFlag
+  return {kind:'exhibit',subject:exhibit.id,holds,hold_history,classifications,supported:!imported&&!promise_linked,promise_linked,remaining:promise_linked?'Customer-promise derivatives require classified erasure under ERASE-001. This exhibit is not standalone; no erasure is available.':'',imported,erased:false,exhibit,folders,actions:{R2:1,D1_fields:2,live_shares:folders.filter((f:any)=>!f.closed_at).length},retained:'Opaque receipt IDs, digest, size, dates and attribution remain. External downloads and offline archives cannot be recalled. Request deletion from their custodians. No model index or provider-side copy is created by this upload door.'}
+ })
 }
 async function executeEntity(env:Bindings,row:Erasure,actor:Actor,now:Date) {
  const original=JSON.parse(row.snapshot_json)
@@ -145,21 +162,21 @@ async function executeEntity(env:Bindings,row:Erasure,actor:Actor,now:Date) {
    const body=JSON.stringify(plan)
    children.push({id:crypto.randomUUID(),plan,body,hash:await sha(new TextEncoder().encode(body))})
   }
-  const statements=[env.DB.prepare("INSERT INTO privacy_guard(singleton,allowed) SELECT 1,CASE WHEN EXISTS(SELECT 1 FROM privacy_requests WHERE id=? AND state='preview') AND EXISTS(SELECT 1 FROM portable_state WHERE singleton=1 AND generation=?) THEN 1 ELSE 0 END").bind(row.id,generation?.generation??-1),env.DB.prepare("UPDATE privacy_requests SET state='pending',confirmed_at=?,counts_json=? WHERE id=? AND state='preview'").bind(now.toISOString(),JSON.stringify({child_requests:children.map(c=>c.id)}),row.id)]
-  // Admit every child and tombstone in the same transaction before deleting any
-  // object. A failed audit or race rolls back the entire batch admission.
-  for(const child of children) {
-   const p=child.plan
-   statements.push(
-    env.DB.prepare("INSERT INTO privacy_requests(id,kind,subject_id,snapshot_json,snapshot_hash,reason,requested_by,requested_name,requested_at,state,confirmed_at) VALUES(?,'exhibit',?,?,?,?,?,?,?,'pending',?)").bind(child.id,p.subject,child.body,child.hash,row.reason,actor.id,actor.name,now.toISOString(),now.toISOString()),
-    env.DB.prepare('INSERT INTO privacy_erased_exhibits(exhibit_id,request_id,recorded_at) VALUES(?,?,?)').bind(p.subject,child.id,now.toISOString()),
-    env.DB.prepare("INSERT INTO portable_journal(lineage,sequence,recorded_at,receipt) SELECT lineage,COALESCE((SELECT max(sequence) FROM portable_journal WHERE lineage=portable_state.lineage),0)+1,?,? FROM portable_state WHERE singleton=1").bind(now.toISOString(),child.id),
-    env.DB.prepare("UPDATE review_folders SET closed_at=? WHERE closed_at IS NULL AND id IN (SELECT f.id FROM review_folders f JOIN review_folder_controls fc ON fc.folder_id=f.id JOIN requirements q ON q.control_id=fc.control_id WHERE q.id=?)").bind(now.toISOString(),p.exhibit.requirement_id),
-    env.DB.prepare("UPDATE exhibits SET filename='Erased exhibit',media_type=('application'||'/'||'octet-stream') WHERE id=?").bind(p.subject),
-    env.DB.prepare("UPDATE receipts SET source='Erased exhibit' WHERE exhibit_id=?").bind(p.subject),
-    auditStatement(env,actor,'privacy.confirmed','privacy:'+child.id,now,'succeeded','Entity batch '+row.id,{reason:row.reason,revision:child.hash}),
-   )
-  }
+  const statements=[env.DB.prepare("INSERT INTO privacy_guard(singleton,allowed) SELECT 1,CASE WHEN EXISTS(SELECT 1 FROM privacy_requests WHERE id=? AND state='preview') AND EXISTS(SELECT 1 FROM portable_state WHERE singleton=1 AND generation=?) AND NOT EXISTS(SELECT 1 FROM people p JOIN oa_operators o ON lower(o.email)=lower(p.email) WHERE p.id=? AND o.status<>'inactive') THEN 1 ELSE 0 END").bind(row.id,generation?.generation??-1,original.profile?.action==='anonymize'?original.profile.person_id:null),env.DB.prepare("UPDATE privacy_requests SET state='pending',confirmed_at=?,counts_json=? WHERE id=? AND state='preview'").bind(now.toISOString(),JSON.stringify({child_requests:children.map(c=>c.id),anonymized:personCounts(original.profile)}),row.id)]
+  statements.push(...personStatements(env,original.profile))
+  if(original.profile?.action==='anonymize')statements.push(env.DB.prepare("INSERT INTO portable_journal(lineage,sequence,recorded_at,receipt) SELECT lineage,COALESCE((SELECT max(sequence) FROM portable_journal WHERE lineage=portable_state.lineage),0)+1,?,? FROM portable_state WHERE singleton=1").bind(now.toISOString(),row.id))
+  // Set-based admission keeps the entire reviewed selection in one D1
+  // transaction without spending one provider query per child and store.
+  const admitted=JSON.stringify(children.map(c=>({...c,audit_id:crypto.randomUUID()})))
+  statements.push(
+   env.DB.prepare("INSERT INTO privacy_requests(id,kind,subject_id,snapshot_json,snapshot_hash,reason,requested_by,requested_name,requested_at,state,confirmed_at) SELECT json_extract(value,'$.id'),'exhibit',json_extract(value,'$.plan.subject'),json_extract(value,'$.body'),json_extract(value,'$.hash'),?,?,?,?,'pending',? FROM json_each(?)").bind(row.reason,actor.id,actor.name,now.toISOString(),now.toISOString(),admitted),
+   env.DB.prepare("INSERT INTO privacy_erased_exhibits(exhibit_id,request_id,recorded_at) SELECT json_extract(value,'$.plan.subject'),json_extract(value,'$.id'),? FROM json_each(?)").bind(now.toISOString(),admitted),
+   env.DB.prepare("INSERT INTO portable_journal(lineage,sequence,recorded_at,receipt) SELECT s.lineage,COALESCE((SELECT max(sequence) FROM portable_journal WHERE lineage=s.lineage),0)+CAST(j.key AS INTEGER)+1,?,json_extract(j.value,'$.id') FROM portable_state s,json_each(?) j WHERE s.singleton=1").bind(now.toISOString(),admitted),
+   env.DB.prepare("UPDATE review_folders SET closed_at=? WHERE closed_at IS NULL AND id IN (SELECT f.id FROM review_folders f JOIN review_folder_controls fc ON fc.folder_id=f.id JOIN requirements q ON q.control_id=fc.control_id WHERE q.id IN (SELECT json_extract(value,'$.plan.exhibit.requirement_id') FROM json_each(?)))").bind(now.toISOString(),admitted),
+   env.DB.prepare("UPDATE exhibits SET filename='Erased exhibit',media_type=('application'||'/'||'octet-stream') WHERE id IN (SELECT json_extract(value,'$.plan.subject') FROM json_each(?))").bind(admitted),
+   env.DB.prepare("UPDATE receipts SET source='Erased exhibit' WHERE exhibit_id IN (SELECT json_extract(value,'$.plan.subject') FROM json_each(?))").bind(admitted),
+   env.DB.prepare("INSERT INTO product_audit(id,actor_kind,actor_id,actor_name,action,subject,outcome,detail,at,reason,revision) SELECT json_extract(value,'$.audit_id'),'owner',?,?,'privacy.confirmed','privacy:'||json_extract(value,'$.id'),'succeeded',?,?,?,json_extract(value,'$.hash') FROM json_each(?)").bind(actor.id,actor.name,'Entity batch '+row.id,now.toISOString(),row.reason,admitted),
+  )
   statements.push(auditStatement(env,actor,'privacy.confirmed','privacy:'+row.id,now,'succeeded','Classified exhibits only; entity erasure remains partial',{reason:row.reason,revision:row.snapshot_hash}),env.DB.prepare('DELETE FROM privacy_guard'))
   await env.DB.batch(statements)
   row=await requestOf(env,row.id)
@@ -168,9 +185,10 @@ async function executeEntity(env:Bindings,row:Erasure,actor:Actor,now:Date) {
  const counts={R2:0,D1_fields:0,live_shares:0}
  let pending=false
  const folders=new Set<string>()
+ let attempted=0
  for(const id of children) {
   let child=await requestOf(env,id)
-  child=await execute(env,id,{confirm:'ERASE',snapshot_hash:child.snapshot_hash},actor,now)
+  if(child.state!=='complete'&&attempted<20){attempted++;child=await execute(env,id,{confirm:'ERASE',snapshot_hash:child.snapshot_hash},actor,now)}
   if(child.state!=='complete')pending=true
   else {const p=JSON.parse(child.snapshot_json);counts.R2++;counts.D1_fields+=2;for(const f of p.folders)if(!f.closed_at)folders.add(f.id)}
  }
@@ -179,7 +197,7 @@ async function executeEntity(env:Bindings,row:Erasure,actor:Actor,now:Date) {
  try {
   await env.DB.batch([
    env.DB.prepare("INSERT INTO privacy_guard(singleton,allowed) SELECT 1,CASE WHEN EXISTS(SELECT 1 FROM privacy_requests WHERE id=? AND state='pending') THEN 1 ELSE 0 END").bind(row.id),
-   env.DB.prepare("UPDATE privacy_requests SET state='partial',counts_json=? WHERE id=? AND state='pending'").bind(JSON.stringify({...counts,child_requests:children,retained:original.retained,remaining:original.remaining}),row.id),
+   env.DB.prepare("UPDATE privacy_requests SET state='partial',counts_json=? WHERE id=? AND state='pending'").bind(JSON.stringify({...counts,child_requests:children,anonymized:personCounts(original.profile),retained:original.retained,remaining:original.remaining}),row.id),
    auditStatement(env,actor,'privacy.partially-erased','privacy:'+row.id,now,'succeeded','Classified exhibit storage absence verified; entity records remain',{reason:row.reason,revision:row.snapshot_hash}),
    env.DB.prepare('DELETE FROM privacy_guard'),
   ])

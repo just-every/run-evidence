@@ -35,8 +35,10 @@ try {
  const privacyUpload=await app.fetch(controlResponse.headers.get('location')+'/uploads',{method:'POST',headers:{origin:app.origin},body:privacyFormData})
  assert.equal(privacyUpload.status,303)
  const privacyReceipt=await (await app.fetch(privacyUpload.headers.get('location').replace('/app/','/api/'))).json()
+ const profileSubjects={}
  const entityBatches={}
  for(const width of [1440,390]) {
+  profileSubjects[width]=await api('/api/people',{name:'synthetic-evidence-profile-'+width,email:'profile-'+width+'@example.test',kind:'employee'})
   const subject=await api('/api/people',{name:'synthetic-evidence-batch-'+width,email:'batch-'+width+'@example.test',kind:'employee'})
   const originals=[]
   for(const label of ['remove','keep']) {
@@ -248,6 +250,19 @@ try {
   if(width===1440){assert.equal(await page.getByLabel('Type ERASE').count(),0);const receipt=JSON.parse(await page.locator('pre').nth(1).innerText());assert.equal(receipt.R2,1);assert.equal(receipt.retained[0].exhibit_id,entityBatches[width].originals[1].exhibit_id)}
   await page.getByText('Exact deletion receipt',{exact:true}).click()
   await capture('privacy-entity-partial')
+  await page.goto(origin+'/app/privacy')
+  const profileForm=page.locator('form[action="/app/privacy/requests"]')
+  await profileForm.getByLabel('Scope').selectOption('person')
+  await profileForm.getByLabel('Subject ID').fill(profileSubjects[width].id)
+  await profileForm.getByLabel('Reason').fill('Erase the reviewed native person profile')
+  await profileForm.getByRole('button').click()
+  if(width===1440)await page.getByText('Person profile: anonymize.',{exact:false}).waitFor()
+  await capture('privacy-person-preview')
+  await page.getByLabel('Type ERASE').fill('ERASE')
+  await page.getByRole('button',{name:'Confirm erasure',exact:true}).click()
+  await page.getByRole('heading',{name:'Erasure partial',exact:true}).waitFor()
+  if(width===1440)await page.getByText('1 person profiles anonymized',{exact:false}).waitFor()
+  await capture('privacy-person-anonymized')
   await page.goto(origin + '/app/privacy')
   const holdForm=page.locator('form[action="/app/privacy/holds"]')
   await holdForm.getByLabel('Scope').selectOption('business')

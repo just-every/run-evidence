@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "bb5aa6a01096f5dee2017cf1a797ce42c52069aeff74743c89b5bea541056e05",
+  "manifest": "2744f0df644bb31b4b29bd72fcf2f199acb02bdea69405a40a543ee8658f10c3",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2830,6 +2830,7 @@
           "migrations/core/0071_privacy_classifications.sql",
           "migrations/core/0072_partial_erasure_receipts.sql",
           "migrations/core/0073_combined_erasure_hold_fences.sql",
+          "migrations/core/0074_privacy_person_records.sql",
           "package.json",
           "packaging.json",
           "pnpm-lock.yaml",
@@ -3073,6 +3074,7 @@
           "src/evidence/erase/archive.ts",
           "src/evidence/erase/holds.ts",
           "src/evidence/erase/http.ts",
+          "src/evidence/erase/person.ts",
           "src/evidence/erase/storage.ts",
           "src/evidence/followup/channels.ts",
           "src/evidence/followup/digest.ts",
@@ -3570,7 +3572,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "59b4028ea9ad3ea07d3a1431842ab698c901293f324562d331f6e7b18496661f",
+      "sha256": "5d79eef93e144aba94fc3252b25126d6648323c047ef0cc9563bdaead99a916b",
       "executable": false
     },
     "AGENTS.md": {
@@ -3586,7 +3588,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "1845dadc501bfe59adc41404214bede5453ae9aa6b0f911697bf1e834809d354",
+      "sha256": "535065ea58db5372bc553d4bb6fd503339a34fb72f02ff34ba736d203c63c08b",
       "executable": false
     },
     "DEMO.md": {
@@ -3694,7 +3696,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "bb5aa6a01096f5dee2017cf1a797ce42c52069aeff74743c89b5bea541056e05",
+      "sha256": "2744f0df644bb31b4b29bd72fcf2f199acb02bdea69405a40a543ee8658f10c3",
       "executable": false
     },
     "LICENSE": {
@@ -3999,6 +4001,10 @@
     },
     "migrations/core/0073_combined_erasure_hold_fences.sql": {
       "sha256": "8b53d5643fee112ebf306c459df9e0af96766ec8f41b38746a81a69c0068ecae",
+      "executable": false
+    },
+    "migrations/core/0074_privacy_person_records.sql": {
+      "sha256": "12893d431cecf28319830cfe2ad13dfa199310a45ca9d46f8664281a617ec652",
       "executable": false
     },
     "ONBOARDING.md": {
@@ -4886,7 +4892,7 @@
       "executable": false
     },
     "src/evidence/archive/feature-records.ts": {
-      "sha256": "39bcdf465cc6afa2f808c96245e4ef55b833302212d44b5fc646288e05a9188b",
+      "sha256": "e0851fe4c24491bcb8d0caa3a881cb3f13c2f960796050171617c71ae17c5423",
       "executable": false
     },
     "src/evidence/archive/files.ts": {
@@ -4990,7 +4996,7 @@
       "executable": false
     },
     "src/evidence/audit/storage.ts": {
-      "sha256": "e6993663d65975a3ebcb930b4cd93aa30e243ab20b36b22a994af9cb80444bd9",
+      "sha256": "3df54717d299c97827d3aa441ae4510548e3b178e77905ca9e01495b9da1e5a3",
       "executable": false
     },
     "src/evidence/audit/view.ts": {
@@ -5278,11 +5284,15 @@
       "executable": false
     },
     "src/evidence/erase/http.ts": {
-      "sha256": "0435ab80aa057a8ed4c27664e96990cb3b23869b891620c059791a48dcecbeff",
+      "sha256": "8a6be08c4284dd7caf509aff4879f976b2404aacaa2e6a1fc1c3b9731d5cdffd",
+      "executable": false
+    },
+    "src/evidence/erase/person.ts": {
+      "sha256": "f0c9a181d5716a72b5a418ca0f8b897d206154c40b78042f4dffbf18e2cc8218",
       "executable": false
     },
     "src/evidence/erase/storage.ts": {
-      "sha256": "0b1bccd6319cf470057c73861f1b5f235fcb8e83eebc155a9579e5ac6ac45d9a",
+      "sha256": "cc9c0db20983a558e42c2f415b7b2a3e7d9053597d3a3221f73c5672f4302c68",
       "executable": false
     },
     "src/evidence/followup/channels.ts": {
@@ -6466,7 +6476,7 @@
       "executable": false
     },
     "src/evidence/program/people.ts": {
-      "sha256": "b9544f9c8640d6ee576c5c19cd5cfbc40794c59d67e39044bc5e250552529711",
+      "sha256": "0db4e8b4c3a63e5befcd78fc8d620b8f020fa7bfbe1928458075ec0925d87e11",
       "executable": false
     },
     "src/evidence/program/readiness-view.ts": {
@@ -8086,7 +8096,7 @@
       "executable": false
     },
     "tests/followup.mjs": {
-      "sha256": "5c797546649f429cbc0674035bf7ec0a768208ddf1d0ce7a16a84c6e8f2ee2f6",
+      "sha256": "00ec6bcf5dd547f9075d453dd7dfcc94479fa79969f1e081772d515a0616750a",
       "executable": false
     },
     "tests/github.mjs": {
@@ -8198,7 +8208,7 @@
       "executable": false
     },
     "tests/helpers/erasure-journey.mjs": {
-      "sha256": "a09d60756353aea19c632dab7e26b8c5f896d229326af652d21c644c6bd4623c",
+      "sha256": "9a4735d530184debd0ef298d8cf55586b1e8d90a00b341611b97a78a58388e0e",
       "executable": false
     },
     "tests/helpers/extended-programs-journey.mjs": {
@@ -8594,7 +8604,7 @@
       "executable": false
     },
     "tests/vendor-browser.mjs": {
-      "sha256": "0beb89ee2dde6518cb7d6fa3f854fba63011ba3624eecceb7f7a66f9dccede93",
+      "sha256": "86751e085e016e8c33f99ae24246893ae1830280f7b80afaed189eb34bfa53fe",
       "executable": false
     },
     "tests/vulns.mjs": {

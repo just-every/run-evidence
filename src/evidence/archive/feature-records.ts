@@ -19,6 +19,21 @@ export async function validateFeatureRecords(env:Store,id:string) {
     const expectedDeletions=value.items.filter((p:any)=>!p.holds.length&&p.supported).map((p:any)=>p.subject)
     const expectedRetained=value.items.filter((p:any)=>p.holds.length).map((p:any)=>({exhibit_id:p.subject,holds:p.holds}))
     if(JSON.stringify(value.deletions)!==JSON.stringify(expectedDeletions)||JSON.stringify(value.retained)!==JSON.stringify(expectedRetained))fail('Entity snapshot retention or deletion set does not reconcile.')
+    if(Object.hasOwn(value,'profile')) {
+     const p=value.profile
+     if(p&&(r.kind!=='person'||p.person_id!==r.subject_id||!['retain','anonymize'].includes(p.action)||!Array.isArray(p.actor_ids)||!Array.isArray(p.product_audit)||new Set(p.actor_ids).size!==p.actor_ids.length||new Set(p.product_audit).size!==p.product_audit.length))fail('Invalid person erasure plan.')
+     const expected={people:p?.action==='anonymize'?1:0,product_audit:p?.action==='anonymize'?p.product_audit.length:0}
+     if(JSON.stringify(counts.anonymized)!==JSON.stringify(expected))fail('Person anonymization counts do not reconcile.')
+    }
+    if(value.profile?.action==='anonymize') {
+     const p=value.profile,person=await env.DB.prepare(`SELECT name,email,role FROM ${t('people')} WHERE id=?`).bind(p.person_id).first<any>()
+     if(r.kind!=='person'||p.person_id!==r.subject_id||!person||person.name!=='Erased person'||person.email!==p.person_id+'@erased.invalid'||person.role!==null||!Array.isArray(p.actor_ids))fail('Person erasure contradicts the retained profile.')
+     if(await env.DB.prepare(`SELECT 1 FROM ${t('product_audit')} WHERE actor_id IN (SELECT value FROM json_each(?)) AND actor_name<>'Anonymous actor' LIMIT 1`).bind(JSON.stringify(p.actor_ids)).first())fail('Erased actor attribution must stay anonymous and opaque.')
+     for(const id of p.product_audit) {
+      const actor=await env.DB.prepare(`SELECT actor_id,actor_name FROM ${t('product_audit')} WHERE id=?`).bind(id).first<any>()
+      if(!actor||actor.actor_name!=='Anonymous actor'||!p.actor_ids.includes(actor.actor_id))fail('Erased actor attribution must stay anonymous and opaque.')
+     }
+    }
     const subjects=[],folders=new Set<string>()
     for(const childId of counts.child_requests){
      const child=await env.DB.prepare(`SELECT * FROM ${t('privacy_requests')} WHERE id=?`).bind(childId).first<any>()

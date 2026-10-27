@@ -144,7 +144,7 @@ try {
   const accepted = (await trail('?action=library.revision-accepted')).at(0)
   assert.deepEqual([accepted.reason, accepted.revision, accepted.subject], ['Reviewed the ISO A.8.5 and A.5.16 mappings', '2', 'library:2'])
   const csv = await (await app.fetch('/app/audit/export.csv?action=library.')).text()
-  assert.equal(csv.split('\r\n')[0], 'at,source,actor_kind,actor,action,subject,outcome,detail,reason,revision'); assert.match(csv, /"Reviewed the ISO A\.8\.5 and A\.5\.16 mappings","2"\r\n/)
+  assert.equal(csv.split('\r\n')[0], 'at,source,actor_kind,actor_id,actor,action,subject,outcome,detail,reason,revision'); assert.match(csv, /"Reviewed the ISO A\.8\.5 and A\.5\.16 mappings","2"\r\n/)
   // Signing out is recorded against the owner; the next sign-in reads it back.
   const ownerId = signedIn.subject.slice('operator:'.length)
   assert.equal((await app.fetch('/auth/signout', { method: 'POST', headers: { origin: app.origin, 'content-type': 'application/json' }, body: '{}' })).status < 400, true)

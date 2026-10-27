@@ -185,18 +185,21 @@ export async function erasureJourney(app) {
  await classify('vendor',vendor.id,retained.exhibit_id)
  const retainedHold=await post('/api/privacy/holds',{kind:'vendor',subject_id:vendor.id,reason:'Keep classified original through custody transfer',review_on:'2027-01-01'},201)
  const entityReceipts=await entityExhibitBatches(app,post,person,vendor,engagement,requirement,controlId)
+ entityReceipts.push(await largeEntityBatch(app,post,requirement))
+ const anonymized=await personRecords(app,post)
+ entityReceipts.push(anonymized.receipt)
  console.log('ERASE-001: re-exporting after erasure')
  const exported=Buffer.from(await (await app.fetch('/api/archive/export')).arrayBuffer())
  assert.ok(!exported.includes(Buffer.from('synthetic-evidence-erasure-content')));assert.ok(!exported.includes(Buffer.from('synthetic-evidence-private-name')));assert.ok(!exported.includes(Buffer.from('synthetic-evidence-erasure-source')))
  // Re-sign the transport after tampering, so semantic receipt validation must
  // reject incorrect counts or omitted retention before any custody admission.
- for(const mutation of ['zero-count','omit-retention','omit-plan-retention']) {
+ for(const mutation of ['zero-count','omit-retention','omit-plan-retention','zero-anonymization']) {
   const destination=await runtime()
   try {
    await destination.signin()
-   const response=await destination.fetch('/api/archive/restore',{method:'POST',headers:{origin:destination.origin,'content-type':'application'+'/'+'octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:alterEntityReceipt(exported,entityReceipts[0].id,mutation)})
+   const response=await destination.fetch('/api/archive/restore',{method:'POST',headers:{origin:destination.origin,'content-type':'application'+'/'+'octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:alterEntityReceipt(exported,mutation==='zero-anonymization'?anonymized.receipt.id:entityReceipts[0].id,mutation)})
    assert.equal(response.status,400,mutation+' must refuse custody admission')
-   assert.match(await response.text(),mutation==='omit-plan-retention'?/Entity snapshot retention or deletion set does not reconcile/:/Entity receipt counts or retention do not reconcile/)
+   assert.match(await response.text(),mutation==='zero-anonymization'?/Person anonymization counts do not reconcile/:mutation==='omit-plan-retention'?/Entity snapshot retention or deletion set does not reconcile/:/Entity receipt counts or retention do not reconcile/)
    assert.equal((await destination.db.prepare('SELECT count(*) AS n FROM receipts').first()).n,0)
   }finally{await destination.close()}
  }
@@ -207,6 +210,10 @@ export async function erasureJourney(app) {
   const r=await restored.fetch('/api/archive/restore',{method:'POST',headers:{origin:restored.origin,'content-type':'application'+'/'+'octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:exported});assert.equal(r.status,200,await r.clone().text())
   assert.equal((await (await restored.fetch('/api/privacy/requests/'+row.id)).json()).state,'complete')
   for(const expected of entityReceipts){const actual=await (await restored.fetch('/api/privacy/requests/'+expected.id)).json();assert.equal(actual.state,'partial');assert.deepEqual(JSON.parse(actual.counts_json),JSON.parse(expected.counts_json))}
+  const restoredActor=(await (await restored.fetch('/api/audit')).json()).entries.find(e=>e.action==='auth.signed-in'&&e.actor_id===anonymized.actor)
+  assert.equal(restoredActor.actor_name,'Anonymous actor')
+  const restoredPerson=(await (await restored.fetch('/api/people')).json()).people.find(p=>p.id===anonymized.person)
+  assert.deepEqual([restoredPerson.name,restoredPerson.email],['Erased person',anonymized.person+'@erased.invalid'])
   const restoredPlan=JSON.parse((await (await restored.fetch('/api/privacy/requests/'+row.id)).json()).snapshot_json)
   assert.deepEqual(restoredPlan.classifications.map(c=>[c.kind,c.subject_id]),[['person',person.id],['vendor',vendor.id]])
   assert.deepEqual((await restored.db.prepare('SELECT kind,subject_id FROM privacy_exhibit_scopes WHERE exhibit_id=? ORDER BY kind').bind(receipt.exhibit_id).all()).results,[{kind:'person',subject_id:person.id},{kind:'vendor',subject_id:vendor.id}])
@@ -309,6 +316,7 @@ function alterEntityReceipt(source,id,mutation) {
   if(frame.type==='rows'&&frame.table==='privacy_requests')for(const row of frame.rows)if(row.id===id){
    const counts=JSON.parse(row.counts_json)
    if(mutation==='zero-count')counts.R2=0
+   else if(mutation==='zero-anonymization')counts.anonymized.people=0
    else counts.retained=[]
    if(mutation==='omit-plan-retention') {const snapshot=JSON.parse(row.snapshot_json);snapshot.retained=[];row.snapshot_json=JSON.stringify(snapshot);row.snapshot_hash=createHash('sha256').update(row.snapshot_json).digest('hex')}
    row.counts_json=JSON.stringify(counts);changed++
@@ -320,4 +328,103 @@ function alterEntityReceipt(source,id,mutation) {
  }
  assert.equal(changed,1)
  return Buffer.concat(parts)
+}
+
+
+export async function largeEntityBatch(app,post,requirement) {
+ const person=await post('/api/people',{name:'synthetic-evidence-large-person',email:'large-person@example.test',kind:'employee'},201)
+ const originals=[]
+ for(let i=0;i<65;i++) {
+  const f=new FormData();f.set('source','synthetic-evidence-large-'+i);f.set('covered_from','2026-10-11');f.set('covered_to','2026-10-11');f.set('file',new File(['synthetic-evidence-large-bytes-'+i],'synthetic-evidence-large-'+i+'.txt'))
+  const uploaded=await app.fetch('/app/requirements/'+requirement+'/uploads',{method:'POST',headers:{origin:app.origin},body:f});assert.equal(uploaded.status,303)
+  const receipt=await (await app.fetch(uploaded.headers.get('location').replace('/app/','/api/'))).json();originals.push(receipt)
+  await post('/api/privacy/classifications',{kind:'person',subject_id:person.id,exhibit_id:receipt.exhibit_id,reason:'Reviewed large entity membership'},201)
+ }
+ const kept=originals.at(-1)
+ await post('/api/privacy/holds',{kind:'exhibit',subject_id:kept.exhibit_id,reason:'Keep one large-batch original',review_on:'2027-01-01'},201)
+ const request=await post('/api/privacy/requests',{kind:'person',subject_id:person.id,reason:'Erase the complete reviewed large selection'},201),plan=JSON.parse(request.snapshot_json)
+ assert.equal(plan.supported,true);assert.equal(plan.items.length,65)
+ assert.deepEqual(new Set(plan.deletions),new Set(originals.slice(0,-1).map(e=>e.exhibit_id)))
+ assert.deepEqual(plan.retained.map(e=>e.exhibit_id),[kept.exhibit_id])
+ const confirm=()=>post('/api/privacy/requests/'+request.id+'/confirm',{confirm:'ERASE',snapshot_hash:request.snapshot_hash})
+ await app.setSettings({HARNESS_R2_DELETE_FAILURE:'true'})
+ assert.equal((await confirm()).state,'pending')
+ await app.setSettings({HARNESS_R2_DELETE_FAILURE:undefined})
+ let finished=await confirm()
+ assert.equal(finished.state,'pending','one bounded retry cannot falsely finish the full selection')
+ assert.equal((await app.db.prepare("SELECT count(*) AS n FROM privacy_requests WHERE state='complete' AND id IN (SELECT value FROM json_each(?))").bind(JSON.stringify(JSON.parse(finished.counts_json).child_requests)).first()).n,20)
+ await app.setSettings({HARNESS_R2_DELETE_FAILURE:'true'})
+ assert.equal((await confirm()).state,'pending','interruption after real progress preserves all admitted children')
+ await app.setSettings({HARNESS_R2_DELETE_FAILURE:undefined})
+ for(let attempt=0;attempt<4&&finished.state==='pending';attempt++)finished=await confirm()
+ assert.equal(finished.state,'partial')
+ const counts=JSON.parse(finished.counts_json)
+ assert.deepEqual([counts.R2,counts.D1_fields,counts.child_requests.length],[64,128,64])
+ assert.deepEqual(counts.retained,plan.retained)
+ const bucket=await app.mf.getR2Bucket('EXHIBITS')
+ for(const receipt of originals.slice(0,-1))assert.equal(await bucket.get(receipt.object_key),null)
+ assert.equal(await (await bucket.get(kept.object_key)).text(),'synthetic-evidence-large-bytes-64')
+ assert.equal((await confirm()).counts_json,finished.counts_json)
+ console.log('PASS ERASE-001: 65-original reviewed selection, bounded retries, interrupted progress and exact 64-deletion receipt')
+ return finished
+}
+
+export async function personRecords(app,post) {
+ const email='synthetic-evidence-retired@example.test',name='synthetic-evidence-retired-actor'
+ const person=await post('/api/people',{name,email,kind:'employee',role:'reviewer'},201)
+ assert.equal(person.role,'reviewer')
+ await post('/api/roles/invitations',{email,display_name:name},202)
+ const token=new URL(app.messages.at(-1).html.match(/href="([^"]*\/auth\/confirm\?token=[^"]+)"/)[1].replaceAll('&amp;','&'),app.origin).searchParams.get('token')
+ const joined=await app.fetch('/auth/confirm',{method:'POST',headers:{cookie:'',origin:app.origin,'content-type':'application'+'/'+'json'},body:JSON.stringify({token})});assert.equal(joined.status,303)
+ const member=joined.headers.getSetCookie().map(s=>s.split(';')[0]).join('; ')
+ const operator=await app.db.prepare('SELECT id FROM oa_operators WHERE email=?').bind(email).first()
+ const make=()=>post('/api/privacy/requests',{kind:'person',subject_id:person.id,reason:'Reviewed removal of the retired person profile and audit labels'},201)
+ let request=await make()
+ assert.equal(JSON.parse(request.snapshot_json).profile.action,'retain','an active sign-in is never silently disabled by a partial erasure')
+ assert.match(JSON.parse(request.snapshot_json).profile.reason,/active or invited/)
+ await post('/api/privacy/requests/'+request.id+'/confirm',{snapshot_hash:request.snapshot_hash,confirm:'ERASE'})
+ assert.equal((await (await app.fetch('/api/people')).json()).people.find(p=>p.id===person.id).name,name)
+ await post('/auth/operator/status',{operatorId:operator.id,status:'inactive'})
+ assert.equal((await app.fetch('/api/desk',{headers:{cookie:member}})).status,401)
+ const hold=await post('/api/privacy/holds',{kind:'person',subject_id:person.id,reason:'Retain retired-person attribution for dispute',review_on:'2027-01-01'},201)
+ request=await make();assert.equal(JSON.parse(request.snapshot_json).profile.action,'retain')
+ await post('/api/privacy/holds/'+hold.id+'/release',{reason:'Attribution hold reviewed and released'})
+ request=await make()
+ const plan=JSON.parse(request.snapshot_json)
+ assert.equal(plan.profile.action,'anonymize');assert.deepEqual(plan.profile.actor_ids,[operator.id]);assert.ok(plan.profile.product_audit.length>0)
+ assert.ok(!request.snapshot_json.includes(name)&&!request.snapshot_json.includes(email),'the immutable plan keeps only opaque identifiers and a profile fingerprint')
+ const before=(await app.db.prepare('SELECT * FROM product_audit WHERE actor_id=? ORDER BY id').bind(operator.id).all()).results
+ await assert.rejects(app.db.prepare("UPDATE product_audit SET actor_name='Anonymous actor' WHERE actor_id=?").bind(operator.id).run(),/immutable_audit/)
+ await app.db.prepare("CREATE TRIGGER synthetic_person_audit BEFORE INSERT ON product_audit WHEN NEW.action='privacy.confirmed' BEGIN SELECT RAISE(ABORT,'synthetic-evidence-person-audit-failure'); END").run()
+ await post('/api/privacy/requests/'+request.id+'/confirm',{snapshot_hash:request.snapshot_hash,confirm:'ERASE'},503)
+ assert.equal((await (await app.fetch('/api/people')).json()).people.find(p=>p.id===person.id).name,name,'failed audit rolls back profile erasure')
+ assert.deepEqual((await app.db.prepare('SELECT * FROM product_audit WHERE actor_id=? ORDER BY id').bind(operator.id).all()).results,before)
+ await app.db.prepare('DROP TRIGGER synthetic_person_audit').run()
+ const journalBefore=await (await app.fetch('/api/archive/journal')).json()
+ const receipt=await post('/api/privacy/requests/'+request.id+'/confirm',{snapshot_hash:request.snapshot_hash,confirm:'ERASE'})
+ assert.equal(receipt.state,'partial')
+ assert.equal((await (await app.fetch('/api/archive/journal')).json()).sequence,journalBefore.sequence+1,'profile-only erasure appends its own source-journal fence')
+ assert.deepEqual(JSON.parse(receipt.counts_json).anonymized,{people:1,product_audit:before.length})
+ const after=(await app.db.prepare('SELECT * FROM product_audit WHERE actor_id=? ORDER BY id').bind(operator.id).all()).results
+ assert.deepEqual(after,before.map(e=>({...e,actor_name:'Anonymous actor'})),'every action fact and opaque actor key survives redaction')
+ const profile=(await (await app.fetch('/api/people')).json()).people.find(p=>p.id===person.id)
+ assert.deepEqual([profile.name,profile.email],['Erased person',person.id+'@erased.invalid'])
+ assert.equal((await app.db.prepare('SELECT role FROM people WHERE id=?').bind(person.id).first()).role,null,'erasure removes the stored person role as well as the visible identity')
+ const audit=(await (await app.fetch('/api/audit')).json()).entries.filter(e=>e.actor_id===operator.id)
+ assert.equal(audit.length,before.length);assert.ok(audit.every(e=>e.actor_name==='Anonymous actor'))
+ const exportedAudit=await (await app.fetch('/api/audit/export')).json()
+ assert.ok(exportedAudit.entries.filter(e=>e.actor_id===operator.id).every(e=>e.actor_name==='Anonymous actor'))
+ const csv=await (await app.fetch('/app/audit/export.csv')).text()
+ assert.ok(csv.includes(operator.id)&&csv.includes('Anonymous actor'));assert.ok(!csv.includes(name))
+ await assert.rejects(app.db.prepare("UPDATE product_audit SET outcome='failed' WHERE actor_id=?").bind(operator.id).run(),/immutable_audit/)
+ await post('/auth/operator/status',{operatorId:operator.id,status:'active'})
+ await post('/auth/magic-link',{email},202)
+ const fresh=new URL(app.messages.at(-1).html.match(/href="([^"]*\/auth\/confirm\?token=[^"]+)"/)[1].replaceAll('&amp;','&'),app.origin).searchParams.get('token')
+ const signed=await app.fetch('/auth/confirm',{method:'POST',headers:{cookie:'',origin:app.origin,'content-type':'application'+'/'+'json'},body:JSON.stringify({token:fresh})});assert.equal(signed.status,303)
+ const later=(await (await app.fetch('/api/audit')).json()).entries.filter(e=>e.actor_id===operator.id)
+ assert.equal(later.length,before.length+1);assert.ok(later.every(e=>e.actor_name==='Anonymous actor'),'later authentication cannot restore erased audit labels')
+ await post('/auth/operator/status',{operatorId:operator.id,status:'inactive'})
+ assert.deepEqual(JSON.parse((await (await app.fetch('/api/privacy/requests/'+request.id)).json()).counts_json).anonymized,{people:1,product_audit:before.length},'later audit activity cannot rewrite the immutable receipt')
+ console.log('PASS ERASE-001: held and active identity retention, atomic People and audit anonymization, exact counts and opaque accountability')
+ return {receipt,person:person.id,actor:operator.id}
 }
