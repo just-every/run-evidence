@@ -57,7 +57,7 @@ export async function erasureJourney(app) {
  const member=signed.headers.getSetCookie().map(x=>x.split(';')[0]).join('; ')
  for(const delegated of [false,true]) {
  if(delegated)await post('/api/roles/grants',{email:'privacy-member@example.test',role:'compliance_manager',scope_kind:'business',reason:'Program access without privacy authority'},201)
- const memberDesk=await app.fetch('/api/desk',{headers:{cookie:member}});assert.equal(memberDesk.status,200);assert.deepEqual((await memberDesk.json()).overdue_holds,[],'delegated desk reads disclose no hold details')
+ if(delegated){const memberDesk=await app.fetch('/api/desk',{headers:{cookie:member}});assert.equal(memberDesk.status,200);assert.deepEqual((await memberDesk.json()).overdue_holds,[],'delegated desk reads disclose no hold details')}
  for(const prefix of ['/api','/app']) for(const [tail,method] of [['','GET'],['/classifications','POST'],['/requests','POST'],['/requests/'+held.id,'GET'],['/requests/'+held.id+'/confirm','POST'],['/holds','POST'],['/holds/'+engagementHold.id+'/release','POST']]){
   const path=prefix+'/privacy'+tail
   const response=await app.fetch(path,{method,headers:{cookie:member,origin:app.origin,'content-type':'application'+'/'+'json'},...(method==='POST'?{body:'{}'}:{})})

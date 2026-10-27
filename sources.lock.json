@@ -8198,7 +8198,7 @@
       "executable": false
     },
     "tests/helpers/erasure-journey.mjs": {
-      "sha256": "b3943160a737fdf4ec603556102823a7bc9914cb2f55a139044a723f8e771365",
+      "sha256": "98a6102fadf74f5322b516463cddf758e234f7e88210f4eaf1c5d455df18ea97",
       "executable": false
     },
     "tests/helpers/extended-programs-journey.mjs": {
