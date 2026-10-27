@@ -1,0 +1,21 @@
+// ISO/IEC 42001:2023 clause and Annex A control ids with Evidence's short summaries. The standard's text is ISO material; read it from your copy.
+// [reference, summary, section]
+const C = 'Management system clauses', A = 'Annex A · '
+export const iso42001: [string, string, string][] = [
+ ['4.1','Understand the organization and its context',C],['4.2','Understand the needs and expectations of interested parties',C],['4.3','Determine the scope of the AI management system',C],['4.4','Establish the AI management system',C],
+ ['5.1','Leadership and commitment',C],['5.2','AI policy',C],['5.3','Roles, responsibilities and authorities',C],
+ ['6.1.1','Actions to address risks and opportunities',C],['6.1.2','AI risk assessment',C],['6.1.3','AI risk treatment',C],['6.1.4','AI system impact assessment',C],['6.2','AI objectives and planning to achieve them',C],['6.3','Planning of changes',C],
+ ['7.1','Resources',C],['7.2','Competence',C],['7.3','Awareness',C],['7.4','Communication',C],['7.5','Documented information',C],
+ ['8.1','Operational planning and control',C],['8.2','AI risk assessment in operation',C],['8.3','AI risk treatment in operation',C],['8.4','AI system impact assessment in operation',C],
+ ['9.1','Monitoring, measurement, analysis and evaluation',C],['9.2','Internal audit',C],['9.3','Management review',C],
+ ['10.1','Continual improvement',C],['10.2','Nonconformity and corrective action',C],
+ ['A.2.2','AI policy',A+'Policies related to AI'],['A.2.3','Alignment with other organizational policies',A+'Policies related to AI'],['A.2.4','Review of the AI policy',A+'Policies related to AI'],
+ ['A.3.2','AI roles and responsibilities',A+'Internal organization'],['A.3.3','Reporting of concerns',A+'Internal organization'],
+ ['A.4.2','Resource documentation',A+'Resources for AI systems'],['A.4.3','Data resources',A+'Resources for AI systems'],['A.4.4','Tooling resources',A+'Resources for AI systems'],['A.4.5','System and computing resources',A+'Resources for AI systems'],['A.4.6','Human resources',A+'Resources for AI systems'],
+ ['A.5.2','AI system impact assessment process',A+'Assessing impacts of AI systems'],['A.5.3','Documentation of AI system impact assessments',A+'Assessing impacts of AI systems'],['A.5.4','Assessing AI system impact on individuals or groups',A+'Assessing impacts of AI systems'],['A.5.5','Assessing societal impacts of AI systems',A+'Assessing impacts of AI systems'],
+ ['A.6.1.2','Objectives for responsible development of AI systems',A+'AI system life cycle'],['A.6.1.3','Processes for responsible design and development',A+'AI system life cycle'],['A.6.2.2','AI system requirements and specification',A+'AI system life cycle'],['A.6.2.3','Documentation of AI system design and development',A+'AI system life cycle'],['A.6.2.4','AI system verification and validation',A+'AI system life cycle'],['A.6.2.5','AI system deployment',A+'AI system life cycle'],['A.6.2.6','AI system operation and monitoring',A+'AI system life cycle'],['A.6.2.7','AI system technical documentation',A+'AI system life cycle'],['A.6.2.8','AI system recording of event logs',A+'AI system life cycle'],
+ ['A.7.2','Data for development and enhancement of AI systems',A+'Data for AI systems'],['A.7.3','Acquisition of data',A+'Data for AI systems'],['A.7.4','Quality of data for AI systems',A+'Data for AI systems'],['A.7.5','Data provenance',A+'Data for AI systems'],['A.7.6','Data preparation',A+'Data for AI systems'],
+ ['A.8.2','System documentation and information for users',A+'Information for interested parties'],['A.8.3','External reporting',A+'Information for interested parties'],['A.8.4','Communication of incidents',A+'Information for interested parties'],['A.8.5','Information for interested parties',A+'Information for interested parties'],
+ ['A.9.2','Processes for responsible use of AI systems',A+'Use of AI systems'],['A.9.3','Objectives for responsible use of AI systems',A+'Use of AI systems'],['A.9.4','Intended use of the AI system',A+'Use of AI systems'],
+ ['A.10.2','Allocating responsibilities',A+'Third-party and customer relationships'],['A.10.3','Suppliers',A+'Third-party and customer relationships'],['A.10.4','Customers',A+'Third-party and customer relationships'],
+]

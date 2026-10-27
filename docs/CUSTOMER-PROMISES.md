@@ -1,0 +1,17 @@
+# Keeping customer promises current
+
+Questionnaire draft reviews and trust update reviews can retain exact source dependencies. Select a control, immutable exhibit, approved policy revision, program audit period, approved customer obligation, SOC report review or prior approved answer. Each link retains its exact source identity, passage, revision, period, actor and time. Source selection asserts a relationship for human review; it does not establish that a control operated or infer legal equivalence.
+
+The review shows current or invalidated dependencies and the affected customer commitments. Questionnaire citations are checked separately, including recursively cited prior answers. A changed policy, superseded exhibit, changed contract requirement, unavailable original, changed control definition, newer observation, withdrawn source authority or expired evidence cannot silently retain a current promise. Observation freshness uses the existing test cadence: one and a half cadence intervals plus one hour. The provider read must also remain current. Historical evidence remains readable.
+
+An approved dependency set is frozen. The approval checks the exact dependency fingerprint as well as the answer revision or trust statement. Questionnaire approvals retain the named reviewer and exact recipient. A source-linked trust statement requires a named security and legal reviewer and a reason; the signed-in owner records the decision. The owner remains the authority while AUTH-001's additional roles are unfinished. Trust publication uses the existing approved category, visibility, consent and named-record recipient rules, with a separate explicit publication action.
+
+When a dependency changes, answer reuse, buyer-template export, citation export, trust export, publication and queued trust mail are refused. A queued delivery is retained as suppressed, not delivered. Mail that already crossed the provider boundary keeps its original version, recipient and outcome. Reading the historical review is distinct from exporting it for reuse.
+
+Choose **Prepare a fresh cited revision** to replace an exact dependency. Questionnaire preparation rebuilds the cited extractive draft from current selected passages; it does not carry a prior approval or a prior human choice mapping. Trust preparation retains a new owner-written statement with a link to the earlier statement. Other dependencies carry forward unchanged, so every remaining invalidation must be resolved. Review and approve the new exact candidate before exporting or publishing. Preparing or approving a replacement never sends it automatically.
+
+All dependency snapshots, review decisions and trust revision links travel in the custody archive. Older archives without this feature remain readable. Restored sharing and mail remain inactive and no customer notification is replayed. Historical questionnaire approvals and trust recipient outcomes remain available on their original review pages.
+
+No model inference, autonomous source mutation, silent external revision or independent provider verification is claimed. ANSWER-002 and ANSWER-003 must use these freshness and exact-approval gates before exposing a new reuse or outbound door.
+
+An exhibit with a retained promise dependency is not eligible for standalone erasure. Privacy previews disclose that derivative classification is unfinished and refuse execution; concurrent erasure admission also refuses new exhibit-source derivatives. ERASE-001 retains classified derivative deletion and retention disclosures.

@@ -4,6 +4,7 @@ import { auditStatement, type Actor } from '../door'
 import { obligations, requireObligation, type QueueRow } from '../remedy/storage'
 import { catalogueEntry } from '../tests/catalogue'
 import { testControls, type Severity } from '../tests/storage'
+import { commentStatements } from './comment-source'
 import { TrackerFailure, type Remote, type TicketRef } from './client'
 import { adapters, reference, requireDestination, requireTicket, secretOf, type DestinationRow, type TicketRow } from './storage'
 // WORK-001 synchronization. Every inbound change is read back from the tracker
@@ -76,6 +77,8 @@ async function failure(env: Bindings, t: TicketRow, destination: DestinationRow,
 }
 export async function syncTicket(env: Bindings, ticket: TicketRow, trigger: string, now: Date, row?: Row) {
  const destination = await requireDestination(env, ticket.destination_id), adapter = adapters[destination.provider], at = now.toISOString()
+ // A human field write owns this ticket until its bounded lease expires.
+ if (ticket.sync_state === 'writing fields' && ticket.last_attempt_at && now.getTime() - Date.parse(ticket.last_attempt_at) < 15 * 60000) return ticket.sync_state
  if (!ticket.remote_id || !ticket.remote_key) return ticket.sync_state
  if (destination.status !== 'active') return failure(env, ticket, destination, new TrackerFailure('unauthorized', 0, `The destination is ${destination.status}; reconnect it to resume sync.`), trigger, at)
  const o = row ?? await obligationRow(env, ticket.obligation_id, now)
@@ -108,7 +111,9 @@ export async function syncTicket(env: Bindings, ticket: TicketRow, trigger: stri
   }
  }
  const mirrored = new Set((await env.DB.prepare('SELECT remote_comment_id FROM ticket_comments WHERE ticket_id=?').bind(ticket.id).all<{ remote_comment_id: string }>()).results.map(c => c.remote_comment_id))
- for (const c of remote.comments.filter(c => !mirrored.has(c.id))) statements.push(env.DB.prepare("INSERT INTO ticket_comments(ticket_id,remote_comment_id,direction,at) VALUES(?,?,'in',?) ON CONFLICT DO NOTHING").bind(ticket.id, c.id, at), obligationEvent(env, ticket.obligation_id, 'tracker comment', { id: 'tracker', name: `${c.author} in ${adapter.name}` }, at, adapter.commentText ? c.body : `Commented in ${name} at ${c.at} (${adapter.name}'s API does not expose comment text)`))
+ try {
+ for (const c of remote.comments.filter(c => !mirrored.has(c.id))) statements.push(...commentStatements(env, ticket, c, adapter.name, trigger, at))
+ } catch (error) { if (error instanceof TrackerFailure) return failure(env, ticket, destination, error, trigger, at); throw error }
  statements.push(env.DB.prepare('UPDATE tickets SET sync_state=?,sync_error=?,remote_status=?,remote_closed=?,remote_assignee=?,remote_due=?,synced_due=?,last_synced_at=?,last_attempt_at=? WHERE id=?').bind(state, '', remote.status, remote.closed ? 1 : 0, remote.assignee, remote.due, syncedDue, at, at, ticket.id),
   env.DB.prepare('UPDATE tracker_destinations SET last_success_at=?,last_error=? WHERE id=?').bind(at, '', destination.id))
  await env.DB.batch(statements)
@@ -117,7 +122,16 @@ export async function syncTicket(env: Bindings, ticket: TicketRow, trigger: stri
 // Polling: every linked ticket is read at least every ten minutes, so tracker
 // changes reach Evidence within one 5-minute scheduler tick of that.
 export async function syncDue(env: Bindings, now: Date, limit = 50) {
- const due = (await env.DB.prepare("SELECT * FROM tickets WHERE remote_id IS NOT NULL AND (last_attempt_at IS NULL OR last_attempt_at<=?) ORDER BY last_attempt_at LIMIT ?").bind(new Date(now.getTime() - SYNC_INTERVAL + 60000).toISOString(), limit).all<TicketRow>()).results
+ // A whole-test ticket may link many obligations. Select bounded remote-ticket
+ // units, then include every linked row so closure queues one complete re-test;
+ // a row limit could split the members and evaluate only part of the test.
+ const due = (await env.DB.prepare(`SELECT t.* FROM tickets t JOIN (
+  SELECT destination_id,remote_id,MIN(COALESCE(last_attempt_at,'')) AS attempt
+  FROM tickets WHERE remote_id IS NOT NULL GROUP BY destination_id,remote_id
+  HAVING MIN(COALESCE(last_attempt_at,''))<=?
+  ORDER BY attempt,destination_id,remote_id LIMIT ?
+ ) q ON q.destination_id=t.destination_id AND q.remote_id=t.remote_id
+ ORDER BY q.attempt,t.destination_id,t.remote_id,t.id`).bind(new Date(now.getTime() - SYNC_INTERVAL + 60000).toISOString(), limit).all<TicketRow>()).results
  if (!due.length) return 0
  const rows = new Map((await obligations(env, now)).map(o => [o.id, o as Row]))
  for (const t of due) await syncTicket(env, t, 'poll', now, rows.get(t.obligation_id))

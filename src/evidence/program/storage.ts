@@ -4,6 +4,8 @@ import { Refusal } from '../upload'
 import { auditStatement, list, oneOf, parseList, text, type Actor, type Input } from '../door'
 import { edition, editionChange, frameworks, frameworkIds, latestEdition, mappedControls, type FrameworkId, type LibraryControl } from '../library'
 import { requirePerson } from './people'
+import { parseFigures, programInputs, stateOf, stateRationale } from './extended'
+import { statesAt } from '../library/extended/usdp-data'
 import { acceptedLibraryRevision } from './library-revision'
 export interface ProgramRow { id: string; framework: FrameworkId; edition: string; name: string; legal_entity: string; report_type: string | null; categories: string; products: string; teams: string; regions: string; systems: string; audit_from: string; audit_to: string; assessor: string; lead_person_id: string | null; milestones: string; created_at: string; updated_at: string }
 export const reportTypes = ['Type I', 'Type II'] as const
@@ -30,8 +32,9 @@ export async function adoptionStatements(env: Bindings, controls: LibraryControl
 function scope(input: Input, framework: FrameworkId) {
  const auditFrom = text(input, 'audit_from', 10), auditTo = text(input, 'audit_to', 10)
  if (!validDate(auditFrom) || !validDate(auditTo) || auditFrom > auditTo) throw new Refusal('The audit period needs real UTC dates, start on or before end.')
- const categories = framework === 'soc2' ? list(input, 'categories', 4) : []
- if (categories.some(c => !frameworks.soc2.categories!.includes(c))) throw new Refusal('Choose listed trust services categories.')
+ const choices = framework === 'usdp' ? undefined : frameworks[framework].categories, categories = choices ? list(input, 'categories', choices.length) : []
+ if (categories.some(c => !choices!.includes(c))) throw new Refusal(framework === 'soc2' ? 'Choose listed trust services categories.' : 'Choose listed roles.')
+ if (framework === 'iso27701' && !categories.length) throw new Refusal('Choose at least one role: controller, processor or both.')
  const milestones = list(input, 'milestones', 20).map(m => { const [date, ...name] = m.split(/\s+/); if (!validDate(date) || !name.length) throw new Refusal('Write each milestone as a date and a name, such as 2027-01-15 Fieldwork starts.'); return { date, name: name.join(' ') } })
  return {
   name: text(input, 'name', 200), legal_entity: text(input, 'legal_entity', 200),
@@ -44,19 +47,23 @@ const snapshot = (row: Record<string, unknown>) => JSON.stringify(row)
 const revisionStatement = (env: Bindings, id: string, revision: number, row: Record<string, unknown>, actor: Actor, reason: string, now: Date) => env.DB.prepare('INSERT INTO program_revisions(id,program_id,revision,snapshot_json,actor_id,actor_name,reason,at) VALUES(?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), id, revision, snapshot(row), actor.id, actor.name, reason, now.toISOString())
 
 export async function createProgram(env: Bindings, actor: Actor, input: Input, now: Date) {
- if (typeof input.framework !== 'string' || !frameworkIds.includes(input.framework as FrameworkId)) throw new Refusal('Choose SOC 2, ISO/IEC 27001, HIPAA or PCI DSS.')
+ if (typeof input.framework !== 'string' || !frameworkIds.includes(input.framework as FrameworkId)) throw new Refusal('Choose a listed framework.')
  const framework = input.framework as FrameworkId
  const editionId = typeof input.edition === 'string' && input.edition ? input.edition : latestEdition(framework).id
  if (!edition(framework, editionId)) throw new Refusal('Choose a shipped edition.')
  const fields = scope(input, framework), lead = input.lead_person_id ? (await requirePerson(env, input.lead_person_id, 'accountable lead')).id : null
+ const figures = framework === 'usdp' ? parseFigures(input) : undefined
  const id = crypto.randomUUID(), at = now.toISOString()
- const row = { id, framework, edition: editionId, ...fields, lead_person_id: lead, created_at: at, updated_at: at }
- const excluded = framework === 'soc2' ? edition(framework, editionId)!.requirements.filter(r => r.optional && !parseList(fields.categories).includes(r.optional)) : []
+ const row = { id, framework, edition: editionId, ...fields, lead_person_id: lead, created_at: at, updated_at: at, ...(figures ? { inputs: { figures } } : {}) }
+ const chosen = parseList(fields.categories), outOfScope = framework === 'soc2' || framework === 'iso27701' ? edition(framework, editionId)!.requirements.filter(r => r.optional && !chosen.includes(r.optional)) : []
+ const excluded = outOfScope.map(r => ({ ref: r.ref, rationale: framework === 'soc2' ? `Trust services category ${r.optional} is not in this report's scope.` : `The ${r.optional} role is not in this program's scope.` }))
+ const libraryRevision = await acceptedLibraryRevision(env)
+ if (figures) for (const r of edition(framework, editionId)!.requirements) { const state = statesAt(libraryRevision).find(s => s.code === stateOf(r.ref))!; if (!state.applies(figures, figures.consumers[state.code] ?? 0)) excluded.push({ ref: r.ref, rationale: stateRationale(figures, state.code, 1, libraryRevision) }) }
  await env.DB.batch([
   env.DB.prepare('INSERT INTO programs(id,framework,edition,name,legal_entity,report_type,categories,products,teams,regions,systems,audit_from,audit_to,assessor,lead_person_id,milestones,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(id, framework, editionId, row.name, row.legal_entity, row.report_type, row.categories, row.products, row.teams, row.regions, row.systems, row.audit_from, row.audit_to, row.assessor, lead, row.milestones, at, at),
   env.DB.prepare('INSERT INTO program_editions(id,program_id,edition,effective_at,change_id) VALUES(?,?,?,?,NULL)').bind(crypto.randomUUID(), id, editionId, at),
   revisionStatement(env, id, 1, row, actor, 'Program created', now),
-  ...excluded.map(r => env.DB.prepare('INSERT INTO program_applicability(id,program_id,ref,state,rationale,actor_id,actor_name,decided_at) VALUES(?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), id, r.ref, 'excluded', `Trust services category ${r.optional} is not in this report's scope.`, actor.id, actor.name, at)),
+  ...(excluded.length ? [env.DB.prepare("INSERT INTO program_applicability(id,program_id,ref,state,rationale,actor_id,actor_name,decided_at) SELECT lower(hex(randomblob(16))),?,value->>'ref','excluded',value->>'rationale',?,?,? FROM json_each(?)").bind(id, actor.id, actor.name, at, JSON.stringify(excluded))] : []),
   ...await adoptionStatements(env, mappedControls(framework, editionId, await acceptedLibraryRevision(env)), now),
   auditStatement(env, actor, 'program.created', 'program:' + id, now, 'succeeded', frameworks[framework].name + ' ' + editionId),
  ])
@@ -66,7 +73,7 @@ export async function updateProgram(env: Bindings, actor: Actor, id: string, inp
  const current = await requireProgram(env, id), fields = scope(input, current.framework), reason = text(input, 'reason', 500)
  const lead = input.lead_person_id ? (await requirePerson(env, input.lead_person_id, 'accountable lead')).id : null
  const revision = Number((await env.DB.prepare('SELECT MAX(revision) AS n FROM program_revisions WHERE program_id=?').bind(id).first<{ n: number }>())?.n ?? 0) + 1
- const row = { ...current, ...fields, lead_person_id: lead, updated_at: now.toISOString() }
+ const kept = (await programInputs(env, id)).inputs, row = { ...current, ...fields, lead_person_id: lead, updated_at: now.toISOString(), ...(Object.keys(kept).length ? { inputs: kept } : {}) }
  await env.DB.batch([
   env.DB.prepare('UPDATE programs SET name=?,legal_entity=?,report_type=?,categories=?,products=?,teams=?,regions=?,systems=?,audit_from=?,audit_to=?,assessor=?,lead_person_id=?,milestones=?,updated_at=? WHERE id=?').bind(row.name, row.legal_entity, row.report_type, row.categories, row.products, row.teams, row.regions, row.systems, row.audit_from, row.audit_to, row.assessor, lead, row.milestones, row.updated_at, id),
   revisionStatement(env, id, revision, row, actor, reason, now),

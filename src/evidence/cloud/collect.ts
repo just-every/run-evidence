@@ -1,5 +1,6 @@
+import { sourceReadTime } from '../connect/pages'
 import type { Bindings } from '../../auth.server'
-import { upsertResources, type ResourceSchema } from '../resources'
+import { upsertResources, upsertCollectedResources, type ResourceSchema } from '../resources'
 import { runForType } from '../tests/engine'
 import { unseal } from '../connect/custody'
 import { backoffUpdate, reconnectUpdate, startRun } from '../connect/runs'
@@ -10,7 +11,7 @@ import { awsConfig } from './connect'
 // are discovered and stay in the denominator: an account Evidence cannot read
 // is recorded unreadable, and its tests are unknown, never passing. Each
 // evidence class is read separately, so one denied class is a visible gap.
-export const awsRevision = 'aws-1'
+export const awsRevision = 'aws-2'
 const types: Record<string, ResourceSchema> = {
  'aws.account': { fields: { readable: 'boolean', root_mfa_enabled: 'boolean', password_min_length: 'number', s3_account_public_access_blocked: 'boolean', member: 'boolean' }, required: [] },
  'aws.iam_user': { fields: { console_access: 'boolean', mfa_enabled: 'boolean', console_mfa_ok: 'boolean', active_key_age_days: 'number' }, required: [] },
@@ -40,11 +41,12 @@ export async function runAwsCollection(env: Bindings, connection: Connection, tr
   }
  }
  try {
-  let primary: Client = awsClient(keys, clock)
-  if (config.role_arn) primary = awsClient(await assumeRole(primary, config.role_arn, config.external_id, 'evidence-collector'), clock)
+  let primary: Client = awsClient(keys, clock, connection.account)
+  if (config.role_arn) primary = awsClient(await assumeRole(primary, config.role_arn, config.external_id, 'evidence-collector'), clock, connection.account)
   const identity = await callerIdentity(primary)
   if (identity.account !== connection.account) return finish('failed', {}, 'account binding changed', reconnectUpdate(env, connection, `These credentials now reach account ${identity.account}, not ${connection.account}; reconnect deliberately.`, now))
   const members = await organizationAccounts(primary)
+  if (members && members.filter(a => a.status === 'ACTIVE').length > 50) throw new AwsFailure('unavailable','coverage','AWS account coverage incomplete: more than 50 active accounts')
   const accounts = [{ id: connection.account, name: members?.find(a => a.id === connection.account)?.name ?? 'this account', status: 'ACTIVE' }, ...(members ?? []).filter(a => a.id !== connection.account && a.status === 'ACTIVE')].slice(0, 50)
   // INVENTORY-001: lost organization-list permission must not remove known
   // member accounts or their assets from any test population.
@@ -61,7 +63,7 @@ export async function runAwsCollection(env: Bindings, connection: Connection, tr
    const member = account.id !== connection.account
    let client: Client | null = member ? null : primary, reason = ''
    if (member && config.member_role) {
-    try { client = awsClient(await assumeRole(primary, `arn:aws:iam::${account.id}:role/${config.member_role}`, config.external_id, 'evidence-collector'), clock) }
+    try { client = awsClient(await assumeRole(primary, `arn:aws:iam::${account.id}:role/${config.member_role}`, config.external_id, 'evidence-collector'), clock, account.id) }
     catch (error) { if (!(error instanceof AwsFailure) || error.kind === 'throttled') throw error; reason = `cannot assume ${config.member_role}: ${error.message}` }
    } else if (member) reason = 'no member-account read role is configured'
    coverage.accounts.push({ id: account.id, name: account.name, read: !!client, reason })
@@ -112,10 +114,11 @@ export async function runAwsCollection(env: Bindings, connection: Connection, tr
  const fresh: string[] = []
  for (const [type, schema] of Object.entries(types)) {
   const gaps = unread.get(type)!, items = out.get(type)!
-  const written = await upsertResources(env, type, schema, items, source, gaps.length ? false : 'source', now)
+  const written = await upsertCollectedResources(env, type, schema, items, source, !gaps.length, now)
+  for(const r of written.results.filter(r=>r.outcome==='rejected'))coverage.gaps.push({account:'',class:type,region:'',reason:(r.reasons??[]).join('; ')})
   fresh.push(...written.results.filter(r => r.id && r.outcome !== 'removed' && r.outcome !== 'rejected' && !placeholders.has(type + ' ' + r.uniqueId)).map(r => r.id!))
  }
- if (fresh.length) await env.DB.prepare('UPDATE resources SET observed_at=? WHERE id IN (SELECT value FROM json_each(?))').bind(at, JSON.stringify(fresh)).run()
+ if (fresh.length) await env.DB.prepare('UPDATE resources SET observed_at=? WHERE id IN (SELECT value FROM json_each(?))').bind(sourceReadTime(now), JSON.stringify(fresh)).run()
  const anyRead = coverage.accounts.some(a => a.read)
  const outcome = !anyRead ? 'failed' : coverage.gaps.length || coverage.accounts.some(a => !a.read) ? 'partial' : 'complete'
  const result = await finish(outcome, coverage, anyRead ? '' : 'no account readable', anyRead

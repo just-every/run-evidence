@@ -1,3 +1,4 @@
+import { scopedFetch } from '../ops/execution'
 import type { Severity } from '../tests/storage'
 // WORK-001 tracker adapters share one HTTP edge. Failures are classified, never
 // guessed: a lost credential, a deleted ticket and a refused field mapping are
@@ -5,11 +6,18 @@ import type { Severity } from '../tests/storage'
 export type Provider = 'vector' | 'jira' | 'linear' | 'github' | 'asana' | 'gitlab' | 'azure-boards' | 'shortcut' | 'clickup' | 'monday' | 'basecamp' | 'freshservice' | 'youtrack'
 export type FailureKind = 'unauthorized' | 'not found' | 'invalid' | 'throttled' | 'unavailable'
 export class TrackerFailure extends Error { constructor(public kind: FailureKind, public status: number, message: string, public body: unknown = null) { super(message) } }
-export interface Mapping { issue_type: string; labels: string[]; priorities: Record<Severity, string>; assignees: Record<string, string> }
+export interface Mapping { issue_type: string; due_field: string; labels: string[]; priorities: Record<Severity, string>; assignees: Record<string, string>; statuses?: Record<string, string> }
 export interface DestinationRef { provider: Provider; api_base: string; account: string; project: string; mapping: Mapping }
 export interface Draft { title: string; description: string; priority: string; due: string | null; labels: string[]; assignee: string | null }
-export interface RemoteComment { id: string; author: string; body: string; at: string }
-export interface Remote { status: string; closed: boolean; assignee: string | null; due: string | null; comments: RemoteComment[] }
+export interface RemoteComment { id: string; author: string; body: string; at: string; url?: string; truncated?: boolean }
+// Native identities are separate from display labels. Null means the provider did
+// not supply an identity; [] means explicitly unassigned. Never guess a write's
+// conflict baseline from a display name (multiple people can share one).
+export interface FieldChanges { assignee?: string | null; status?: string }
+export interface Remote { status_id: string | null; assignee_ids: string[] | null; status: string; closed: boolean; assignee: string | null; due: string | null; comments: RemoteComment[] }
+export class TrackerFieldConflict extends TrackerFailure {
+ constructor(public current: Pick<Remote, 'status_id' | 'assignee_ids'>, provider: string) { super('invalid',409,provider + ' changed the selected fields after the owner read; read the current values before writing.') }
+}
 export interface TicketRef { remote_id: string; remote_key: string }
 export interface Created { id: string; key: string; url: string }
 export interface HookRef { delivery: string; ref: string }
@@ -23,6 +31,9 @@ export interface Adapter {
  create(d: DestinationRef, secret: string, draft: Draft): Promise<Created>
  read(d: DestinationRef, secret: string, t: TicketRef): Promise<Remote>
  comment(d: DestinationRef, secret: string, t: TicketRef, body: string): Promise<string>
+ // Values have already been selected from the owner’s explicit mapping.
+ // Omitted fields stay unchanged; null assignee clears the native assignment.
+ setFields(d: DestinationRef, secret: string, t: TicketRef, fields: FieldChanges, lastRead?: Remote): Promise<void>
  setDue(d: DestinationRef, secret: string, t: TicketRef, due: string | null): Promise<void>
  // Move a closed ticket back to an open state (WORK-002 whole-test follow-through).
  reopen(d: DestinationRef, secret: string, t: TicketRef): Promise<void>
@@ -31,7 +42,7 @@ const short = (value: unknown) => String(value ?? '').replace(/\s+/g, ' ').trim(
 // One call to a tracker. Bodies are parsed as JSON when they are JSON.
 export async function call(url: string, init: RequestInit & { label: string }) {
  let response: Response
- try { response = await fetch(url, { ...init, redirect: 'manual' }) } catch { throw new TrackerFailure('unavailable', 0, `${init.label} could not be reached.`) }
+ try { response = await scopedFetch(url, { ...init, redirect: 'manual' }) } catch { throw new TrackerFailure('unavailable', 0, `${init.label} could not be reached.`) }
  let body: unknown = null
  const text = await response.text()
  try { body = text ? JSON.parse(text) : null } catch { body = text }
@@ -52,3 +63,27 @@ function problem(body: unknown): string {
  return short(b.message ?? b.error ?? '')
 }
 export const dateOnly = (value: unknown) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value) ? value.slice(0, 10) : null
+
+export const nativeId = (value: unknown): string | null => (typeof value === 'string' && value.length > 0) || (typeof value === 'number' && Number.isFinite(value)) ? String(value) : null
+export function nativeIds(values: unknown): string[] | null {
+ if (!Array.isArray(values)) return null
+ const ids = values.map(nativeId)
+ return ids.some(id => id === null) ? null : [...new Set(ids as string[])].sort()
+}
+export function numericField(value: string, provider: string): number {
+ if (!/^\d+$/.test(value) || !Number.isSafeInteger(Number(value)) || Number(value) <= 0) throw new TrackerFailure('invalid', 400, provider + ' needs a positive native numeric field identity.')
+ return Number(value)
+}
+export function stateValue(value: string, allowed: string[], provider: string): string {
+ if (!allowed.includes(value)) throw new TrackerFailure('invalid', 400, provider + ' status mapping must be one of: ' + allowed.join(', ') + '.')
+ return value
+}
+
+// Adapters that need a second native read must retain the parent's conflict
+// baseline, rather than silently adopting a newer identity before the write.
+export function assertFieldBaseline(previous: Remote | undefined, current: Pick<Remote, 'status_id' | 'assignee_ids'>, fields: FieldChanges, provider: string): void {
+ if (!previous) return
+ const changedAssignee = fields.assignee !== undefined && (current.assignee_ids === null || previous.assignee_ids === null || JSON.stringify([...current.assignee_ids].sort()) !== JSON.stringify([...previous.assignee_ids].sort()))
+ const changedStatus = fields.status !== undefined && (current.status_id === null || previous.status_id === null || current.status_id !== previous.status_id)
+ if (changedAssignee || changedStatus) throw new TrackerFieldConflict(current, provider)
+}

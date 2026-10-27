@@ -30,7 +30,7 @@ framework it maps to, so proof attached once counts everywhere.
 Requirement and control text from AICPA, ISO and PCI SSC is licensed; Evidence
 ships reference ids and its own short summaries.
 
-`node scripts/library-check.mjs` (run by Verify) fails if any requirement lacks a
+`rer run check:library` (run by Verify) fails if any requirement lacks a
 control, any control lacks proof or a test, or any catalogue test lacks
 per-provider remediation steps.
 
@@ -82,3 +82,14 @@ Archive version 6 carries current program records and verified original populati
 authenticate and restored connections stay inactive until reconnected. The
 existing limits (8 MiB metadata, 20,000 rows) now count observations too; an
 installation past them gets an explicit refusal, never a truncated archive.
+
+## Extended and regulated programs
+
+Start these from **Programs** like any other: pick the framework and edition, name the legal entity and scope. They use the same shipped control library, so a business that already runs SOC 2 reuses its proof and tests: each program page shows which controls it shares with your other programs and how many evidence items they hold. Evidence prepares evidence; each program names the body that decides (an accredited certification body, a C3PAO, a HITRUST assessor, or counsel) and asserts no certification.
+
+- **US Data Privacy (USDP)** covers nineteen state laws. Record your annual revenue, the share of revenue from selling personal data, small-business and sensitive-data status, and consumers per state. Each state's threshold is evaluated on those figures; only states that apply keep their obligations. The others stay visible as excluded with your figures. When you change the figures, the page proposes the resulting state changes; a state's obligations are added or excluded only when you accept the change with a reason. Each requirement names its duty-level statutory section and effective date, including staged opt-out dates. The same citation appears in readiness and program JSON export. Counsel confirms applicability and the source law; see [USDP citations](USDP-CITATIONS.md) for source editions and summary limits.
+- **CMMC Level 2** shows a SPRS worksheet: 110 less the DoD Assessment Methodology weight of each requirement not implemented. A requirement counts as implemented when its mapped controls have current proof and no failing or unknown test. Record whether MFA covers all users and whether encryption is FIPS-validated, because the methodology gives partial credit. A plan of action never substitutes, and a missing system security plan (3.12.4) means the score is not valid to submit.
+- **ISO/IEC 27701** ships the 2025 standalone edition and the 2019 extension. PII controller and processor controls are separately applicable: choose the roles when you start the program. Moving a 2019 program to 2025 is a reviewable edition change; exclusions carry to their 2025 successors.
+- GDPR, ISO/IEC 42001, NIST AI RMF, NIST CSF 2.0, NIST SP 800-53 (Low and Moderate), FedRAMP Rev. 5 Moderate, CMMC Level 1 and HITRUST CSF (assessment domains) ship their requirements pre-mapped.
+
+The privacy programs keep their records as program documents with immutable revisions and named approval: USDP self-attestation (you write the officer's statement), consumer-rights requests, privacy-notice and opt-out evidence and data protection assessments; GDPR records of processing (Article 30), DPIAs and data-subject requests; ISO/IEC 27701 PII processing. CMMC and NIST SP 800-53 keep a system security plan and a plan of action; ISO/IEC 42001 and the AI RMF keep an AI system register (with impact assessments for ISO/IEC 42001); the CSF, ISO/IEC 42001 and HITRUST keep a profile, statement of applicability or readiness summary. In each, the implementation of every requirement is derived from live proof and tests, and a plan of action never makes a requirement implemented. A newly enacted or amended state law arrives as a library revision on the Control library page; accepting it proposes the resulting state change for your review. FedRAMP readiness lists the 323 controls of the Rev. 5 Moderate baseline from a published copy of FedRAMP's OSCAL profile; confirm the current baseline at fedramp.gov. Not yet shipped: HITRUST requirement statements (licensed); HITRUST readiness is by assessment domain.

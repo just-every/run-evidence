@@ -4,7 +4,7 @@ import { auditStatement, list, text, type Actor, type Input } from '../door'
 // API-001 tokens: scoped, expiring, revocable and bound to this installation.
 // Only a SHA-256 digest is stored; the token is shown once at issue. No scope
 // approves, publishes or changes roles.
-export const scopes = ['read', 'resource-push', 'evidence-push', 'test-write', 'risk-push'] as const
+export const scopes = ['read', 'resource-push', 'evidence-push', 'test-write', 'risk-push', 'portal-capture', 'portal-fill'] as const
 export type Scope = typeof scopes[number]
 export interface ApiToken { id: string; name: string; scopes: string; created_by: string; created_name: string; created_at: string; expires_at: string; revoked_at: string | null; revoked_by: string | null }
 const hex = (bytes: ArrayBuffer | Uint8Array) => Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2, '0')).join('')

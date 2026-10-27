@@ -1,3 +1,4 @@
+import {sourceFindings} from './source'
 import { done, json, ownerRoutes, readInput, uuid, type Route } from '../door'
 import { Refusal } from '../upload'
 import { admit, attachRetest, decideRetest, finding, findings, markFixed, pentestRequirement, plan, population, populationColumns, readImport } from './storage'
@@ -10,9 +11,10 @@ export function vulnHandler(clock: () => Date) {
  const routes: Route[] = [
   { method: 'GET', pattern: both('/vulnerabilities'), run: async c => {
    const list = await findings(c.env, c.now)
-   if (c.isApi) return json({ findings: list })
-   return vulnerabilitiesPage(list, await pentestRequirement(c.env), c.actor.name)
+   if (c.isApi) return json({ findings: list, source_findings:await sourceFindings(c.env,c.now) })
+   return vulnerabilitiesPage(list, await pentestRequirement(c.env), c.actor.name,await sourceFindings(c.env,c.now))
   } },
+  {method:'GET',pattern:both('/vulnerabilities/source-findings'),run:async c=>json({findings:await sourceFindings(c.env,c.now)})},
   // Without confirm: a dry run that admits nothing. With confirm and both dry-run fingerprints: admit the valid rows.
   { method: 'POST', pattern: both('/vulnerabilities/import'), run: async c => {
    const upload = await readImport(c.request)

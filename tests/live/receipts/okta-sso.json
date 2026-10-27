@@ -1,0 +1,179 @@
+{
+ "org": "integrator-5551871.okta.com",
+ "at": "2026-10-26T10:59:52.441Z",
+ "steps": [
+  {
+   "name": "test OpenID Connect app created",
+   "ok": true,
+   "detail": "status 200"
+  },
+  {
+   "name": "test group created",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "password-only enrollment policy created",
+   "ok": true,
+   "detail": "status 200"
+  },
+  {
+   "name": "enrollment rule created",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "one-factor access policy created",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "access rule set to password only",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "access policy assigned to the test app",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Okta user contributor created",
+   "ok": true,
+   "detail": "status 200"
+  },
+  {
+   "name": "Okta user contributor joined the test group",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Okta user contributor assigned to the app",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Okta user stranger created",
+   "ok": true,
+   "detail": "status 200"
+  },
+  {
+   "name": "Okta user stranger joined the test group",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Okta user stranger assigned to the app",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "SCIM provisions the contributor",
+   "ok": true,
+   "detail": "status 201"
+  },
+  {
+   "name": "SSO sign-in is enabled by the owner",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Evidence starts the Okta authorization",
+   "ok": true,
+   "detail": "status 303"
+  },
+  {
+   "name": "Okta redirects back with a code",
+   "ok": true,
+   "detail": "landed callback"
+  },
+  {
+   "name": "The provisioned contributor receives a session",
+   "ok": true,
+   "detail": "status 303"
+  },
+  {
+   "name": "The session names the SCIM-provisioned account",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "The contributor reaches no owner door",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Evidence starts the Okta authorization",
+   "ok": true,
+   "detail": "status 303"
+  },
+  {
+   "name": "Okta redirects back with a code",
+   "ok": true,
+   "detail": "landed callback"
+  },
+  {
+   "name": "An Okta user SCIM never provisioned receives no session",
+   "ok": true,
+   "detail": "status 403"
+  },
+  {
+   "name": "The owner requires a second factor",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Evidence starts the Okta authorization",
+   "ok": true,
+   "detail": "status 303"
+  },
+  {
+   "name": "Okta redirects back with a code",
+   "ok": true,
+   "detail": "landed callback"
+  },
+  {
+   "name": "A password-only Okta sign-in is refused while a second factor is required",
+   "ok": true,
+   "detail": "status 400"
+  },
+  {
+   "name": "SCIM deprovisions the contributor",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "The live session fails on the next request",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Evidence starts the Okta authorization",
+   "ok": true,
+   "detail": "status 303"
+  },
+  {
+   "name": "Okta redirects back with a code",
+   "ok": true,
+   "detail": "landed callback"
+  },
+  {
+   "name": "The deprovisioned user cannot sign in again",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "provider_statuses": [
+  "GET /.well-known/openid-configuration 200",
+  "POST /oauth2/v1/token 200",
+  "GET /oauth2/v1/keys 200",
+  "GET /.well-known/openid-configuration 200",
+  "POST /oauth2/v1/token 200",
+  "GET /.well-known/openid-configuration 200",
+  "POST /oauth2/v1/token 200",
+  "GET /.well-known/openid-configuration 200",
+  "POST /oauth2/v1/token 200"
+ ],
+ "result": "passed",
+ "cleanup": "test users, app, group and policies deleted"
+}

@@ -1,0 +1,25 @@
+CREATE TABLE questionnaires(id TEXT PRIMARY KEY,program_id TEXT NOT NULL REFERENCES programs(id),name TEXT NOT NULL,filename TEXT NOT NULL,media_type TEXT NOT NULL,size INTEGER NOT NULL,sha256 TEXT NOT NULL,object_key TEXT NOT NULL,format TEXT NOT NULL,mapping_json TEXT NOT NULL,questions_json TEXT NOT NULL,created_by TEXT NOT NULL,created_at TEXT NOT NULL);
+CREATE TABLE questionnaire_sources(id TEXT PRIMARY KEY,kind TEXT NOT NULL,source_id TEXT NOT NULL,quote TEXT NOT NULL,registered_by TEXT NOT NULL,registered_at TEXT NOT NULL);
+CREATE TABLE questionnaire_drafts(id TEXT PRIMARY KEY,questionnaire_id TEXT NOT NULL REFERENCES questionnaires(id),revision INTEGER NOT NULL,snapshot_json TEXT NOT NULL,snapshot_hash TEXT NOT NULL,created_by TEXT NOT NULL,created_at TEXT NOT NULL,UNIQUE(questionnaire_id,revision));
+CREATE TABLE questionnaire_approvals(draft_id TEXT PRIMARY KEY REFERENCES questionnaire_drafts(id),snapshot_hash TEXT NOT NULL,reviewer_person_id TEXT NOT NULL REFERENCES people(id),recipient TEXT NOT NULL,expires_on TEXT NOT NULL,reason TEXT NOT NULL,approved_by TEXT NOT NULL,approved_at TEXT NOT NULL);
+CREATE TRIGGER questionnaires_update BEFORE UPDATE ON questionnaires BEGIN SELECT RAISE(ABORT,'immutable_questionnaire'); END;
+CREATE TRIGGER questionnaires_delete BEFORE DELETE ON questionnaires BEGIN SELECT RAISE(ABORT,'retained_questionnaire'); END;
+CREATE TRIGGER questionnaire_sources_update BEFORE UPDATE ON questionnaire_sources BEGIN SELECT RAISE(ABORT,'immutable_questionnaire_source'); END;
+CREATE TRIGGER questionnaire_sources_delete BEFORE DELETE ON questionnaire_sources BEGIN SELECT RAISE(ABORT,'retained_questionnaire_source'); END;
+CREATE TRIGGER questionnaire_drafts_update BEFORE UPDATE ON questionnaire_drafts BEGIN SELECT RAISE(ABORT,'immutable_questionnaire_draft'); END;
+CREATE TRIGGER questionnaire_drafts_delete BEFORE DELETE ON questionnaire_drafts BEGIN SELECT RAISE(ABORT,'retained_questionnaire_draft'); END;
+CREATE TRIGGER questionnaire_approvals_update BEFORE UPDATE ON questionnaire_approvals BEGIN SELECT RAISE(ABORT,'immutable_questionnaire_approval'); END;
+CREATE TRIGGER questionnaire_approvals_delete BEFORE DELETE ON questionnaire_approvals BEGIN SELECT RAISE(ABORT,'retained_questionnaire_approval'); END;
+
+CREATE TRIGGER generation_questionnaires_insert AFTER INSERT ON questionnaires BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
+CREATE TRIGGER generation_questionnaires_update AFTER UPDATE ON questionnaires BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
+CREATE TRIGGER generation_questionnaires_delete AFTER DELETE ON questionnaires BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
+CREATE TRIGGER generation_questionnaire_sources_insert AFTER INSERT ON questionnaire_sources BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
+CREATE TRIGGER generation_questionnaire_sources_update AFTER UPDATE ON questionnaire_sources BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
+CREATE TRIGGER generation_questionnaire_sources_delete AFTER DELETE ON questionnaire_sources BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
+CREATE TRIGGER generation_questionnaire_drafts_insert AFTER INSERT ON questionnaire_drafts BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
+CREATE TRIGGER generation_questionnaire_drafts_update AFTER UPDATE ON questionnaire_drafts BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
+CREATE TRIGGER generation_questionnaire_drafts_delete AFTER DELETE ON questionnaire_drafts BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
+CREATE TRIGGER generation_questionnaire_approvals_insert AFTER INSERT ON questionnaire_approvals BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
+CREATE TRIGGER generation_questionnaire_approvals_update AFTER UPDATE ON questionnaire_approvals BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;
+CREATE TRIGGER generation_questionnaire_approvals_delete AFTER DELETE ON questionnaire_approvals BEGIN UPDATE portable_state SET generation=generation+1 WHERE singleton=1; END;

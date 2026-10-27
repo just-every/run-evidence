@@ -1,8 +1,11 @@
+import { problem } from './problem'
 import { operatorAuth, runtimeBindings, type Bindings } from '../auth.server'
 import { boundedBody, Refusal } from './upload'
 import { headers, page, escape, signedOutPage } from './view'
+import { authorize } from './authz/gate'
+import type { Delegate } from './authz/roles'
 export interface Actor { id: string; name: string }
-export interface OwnerContext { env: Bindings; actor: Actor; now: Date; url: URL; request: Request; isApi: boolean }
+export interface OwnerContext { env: Bindings; actor: Actor; now: Date; url: URL; request: Request; isApi: boolean; sessionId: string; delegate?: Delegate }
 export interface Route { method: 'GET' | 'POST'; pattern: RegExp; errorReturn?: string; run: (context: OwnerContext, match: RegExpExecArray) => Promise<Response> }
 export type Input = Record<string, string | string[]>
 export const json = (data: unknown, status = 200) => Response.json(data, { status, headers })
@@ -22,11 +25,12 @@ export function ownerRoutes(routes: Route[], clock: () => Date) {
   if (request.headers.get('sec-fetch-site') === 'cross-site' || (request.headers.has('origin') && request.headers.get('origin') !== env.AUTH_ORIGIN) || (!['GET','HEAD'].includes(request.method) && request.headers.get('origin') !== env.AUTH_ORIGIN)) return json({ error: 'Same-origin request required.' }, 403)
   const session = await operatorAuth(env).getSession(request)
   if (!session) return isApi ? json({ error: 'Owner sign-in required.' }, 401) : signedOutPage(request)
-  if (session.operator.role !== 'owner') return json({ error: 'Owner access required.' }, 403)
+  const verdict = await authorize(env, session.operator, request.method === 'HEAD' ? 'GET' : request.method, url.pathname)
+  if (!verdict.ok) return isApi ? json({ error: verdict.error }, verdict.status) : problem(verdict.error, verdict.status, '/me', true)
   const method = request.method === 'HEAD' ? 'GET' : request.method
   const hit = matched.find(x => x.route.method === method)
   if (!hit) return json({ error: 'Method not allowed.' }, 405)
-  const context: OwnerContext = { env, actor: { id: session.operator.id, name: session.operator.displayName }, now: clock(), url, request, isApi }
+  const context: OwnerContext = { env, sessionId: session.id, actor: verdict.actor, delegate: verdict.delegate, now: clock(), url, request, isApi }
   try { return await hit.route.run(context, hit.match!) }
   catch (error) {
    // LOG-001: a refused or failed owner write is recorded with its outcome,
@@ -77,6 +81,30 @@ export const oneOf = <T extends string>(input: Input, key: string, values: reado
 export interface AuditContext { reason?: string; revision?: string | number }
 export function auditStatement(env: Bindings, actor: Actor & { kind?: 'owner' | 'token' | 'system' }, action: string, subject: string, at: Date, outcome: 'succeeded' | 'refused' | 'failed' | 'uncertain' = 'succeeded', detail = '', context: AuditContext = {}) {
  return env.DB.prepare('INSERT INTO product_audit(id,actor_kind,actor_id,actor_name,action,subject,outcome,detail,at,reason,revision) VALUES(?,?,?,?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), actor.kind ?? 'owner', actor.id, actor.name, action, subject, outcome, detail.slice(0, 500), at.toISOString(), (context.reason ?? '').slice(0, 1000), String(context.revision ?? '').slice(0, 100))
+}
+// Record only the admitted identity and door, never a credential, query or body.
+export async function auditDoorRefusal(env: Bindings, actor: Actor & { kind?: 'owner' | 'token' }, request: Request, now: Date, status: number, reason: string) {
+ const path = new URL(request.url).pathname.replace(/[a-f0-9]{64}/gi, '[credential]')
+ try {
+  await auditStatement(env, actor, 'door.refused', `${request.method} ${path}`, now, 'refused', `${status}: ${reason}`, { reason, ...(actor.kind === 'token' ? { revision: 'agent-token:' + actor.id } : {}) }).run()
+ } catch {
+  // Audit storage failure cannot turn a denied action into owner authority.
+  console.error('Evidence refusal audit unavailable')
+ }
+}
+// The outer owner-door guard runs before route admission. Resolve a recognized
+// prepare-only credential there without treating it as an owner session.
+export async function auditAgentOwnerRefusal(request: Request, original: Bindings, clock: () => Date) {
+ const secret = /^Bearer ([a-f0-9]{64})$/.exec(request.headers.get('authorization') ?? '')?.[1]
+ if (!secret) return
+ try {
+  const env = runtimeBindings(original)
+  const hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secret))), n => n.toString(16).padStart(2, '0')).join('')
+  const token = await env.DB.prepare('SELECT id,label FROM agent_tokens WHERE token_hash=?').bind(hash).first<{ id: string; label: string }>()
+  if (token) await auditDoorRefusal(env, { id: token.id, name: token.label, kind: 'token' }, request, clock(), 403, 'Agent credentials cannot use owner doors.')
+ } catch {
+  console.error('Evidence credential refusal audit unavailable')
+ }
 }
 export const parseList = (value: string): string[] => { try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed.map(String) : [] } catch { return [] } }
 export const uuid = /[a-f0-9-]{36}/.source

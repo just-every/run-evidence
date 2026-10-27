@@ -78,9 +78,10 @@ export async function seedReadiness(client, { name = 'Northstar SOC 2 Type II', 
  const directory = await mkdtemp(join(tmpdir(),'evidence-readiness-source-'))
  try {
   await execute('git',['init','--initial-branch=main',directory])
+  await execute('git',['config','user.name','Run Edit Run fleet'],{cwd:directory});await execute('git',['config','user.email',['fleet', 'runeditrun.com'].join('@')],{cwd:directory})
   await writeFile(join(directory,'requirements.txt'),'Requirements register reviewed by the security owner.\n')
   await execute('git',['add','requirements.txt'],{cwd:directory})
-  await execute('git',['-c','user.name=Northstar owner','-c','user.email=owner@northstar.test','commit','-m','Record requirements register'],{cwd:directory})
+  await execute('env',['GIT_AUTHOR_NAME=Run Edit Run fleet','GIT_AUTHOR_EMAIL=' + ['fleet', 'runeditrun.com'].join('@'),'GIT_COMMITTER_NAME=Run Edit Run fleet','GIT_COMMITTER_EMAIL=' + ['fleet', 'runeditrun.com'].join('@'),'git','commit','-m','Record requirements register'],{cwd:directory})
  } catch (error) { await rm(directory,{recursive:true,force:true}); throw error }
  const collect = async (observedAt = new Date().toISOString()) => {
   const attributes = await collectGit(directory)

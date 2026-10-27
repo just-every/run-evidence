@@ -1,3 +1,4 @@
+import {sourceAuthorities,sourceAuthorityGap} from '../connect/source-authority'
 import type { Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
 import { auditStatement, parseList, type Actor } from '../door'
@@ -123,7 +124,7 @@ export interface ControlTestStatus { tests: number; pass: number; fail: number; 
 export async function controlTestStatus(env: Bindings, now: Date) {
  const links = (await env.DB.prepare('SELECT tc.test_id,tc.control_id,t.cadence,t.revision,t.resource_type FROM test_controls tc JOIN tests t ON t.id=tc.test_id WHERE t.enabled=1').all<{ test_id: string; control_id: string; cadence: 'hourly' | 'daily'; revision: number; resource_type: string }>()).results
  const population = (await env.DB.prepare('SELECT id,type FROM resources WHERE removed_at IS NULL').all<{id:string; type:string}>()).results
- const latest = await latestResults(env), out = new Map<string, ControlTestStatus>()
+ const latest = await latestResults(env), authorities=await sourceAuthorities(env), out = new Map<string, ControlTestStatus>()
  for (const link of links) {
   const status = out.get(link.control_id) ?? { tests: 0, pass: 0, fail: 0, unknown: 0, notApplicable: 0, untested: 0, failingSources: [] }
   status.tests++
@@ -134,7 +135,8 @@ export async function controlTestStatus(env: Bindings, now: Date) {
    // Readiness never carries a pass across a missed run, revised definition,
    // changed resource, or stale collector, even before the next cron runs.
    const stale = o.revision !== link.revision || now.getTime() - Date.parse(o.observed_at) > CADENCE_MS[link.cadence] * 1.5 || o.resource_updated_at > o.observed_at || (o.source_kind === 'source-observed' && (!o.source_observed_at || now.getTime() - Date.parse(o.source_observed_at) > CADENCE_MS[link.cadence] * 1.5 + 3600000))
-   if (o.result === 'fail') { status.fail++; if (!status.failingSources.includes(o.source_label)) status.failingSources.push(o.source_label) }
+   if(o.source_kind==='source-observed'&&sourceAuthorityGap(o.source_ref,authorities))status.unknown++
+   else if (o.result === 'fail') { status.fail++; if (!status.failingSources.includes(o.source_label)) status.failingSources.push(o.source_label) }
    else if (stale || o.result === 'unknown') status.unknown++
    else if (o.result === 'pass') status.pass++
    else status.notApplicable++

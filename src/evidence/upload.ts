@@ -15,7 +15,15 @@ export async function boundedBody(request: Request, limit: number) {
 }
 export const textField = (form: FormData, key: string, max = 300) => { const value = form.get(key); if (typeof value !== 'string' || !value.trim() || value.length > max) throw new Refusal(`Provide ${key} (at most ${max} characters).`); return value.trim() }
 // `extra` lets the public API label a pushed receipt in the same transaction.
-export async function upload(request: Request, env: Bindings, requirement: string, operator: { id: string; displayName: string }, now: Date, extra?: (receipt: string) => D1PreparedStatement[]) {
+function restrictedRecord(env: Bindings, receipt: string, operator: { id: string; displayName: string; email?: string }, reason: FormDataEntryValue | null, now: Date) {
+ const why = typeof reason === 'string' && reason.trim() ? reason.trim().slice(0, 500) : 'Marked sensitive at upload', at = now.toISOString()
+ return [
+  env.DB.prepare("INSERT INTO record_classes(receipt_id,class,reason,set_by,set_name,set_at) VALUES(?,'sensitive',?,?,?,?)").bind(receipt, why, operator.id, operator.displayName, at),
+  ...(operator.email ? [env.DB.prepare('INSERT INTO record_grants(id,receipt_id,email,reason,granted_by,granted_name,granted_at) VALUES(?,?,?,?,?,?,?)').bind(crypto.randomUUID(), receipt, operator.email.toLowerCase(), 'Uploaded this record', operator.id, operator.displayName, at)] : []),
+  env.DB.prepare("INSERT INTO product_audit(id,actor_kind,actor_id,actor_name,action,subject,outcome,detail,at) VALUES(?,'owner',?,?,'record.classified',?,'succeeded','sensitive at upload',?)").bind(crypto.randomUUID(), operator.id, operator.displayName, 'receipt:' + receipt, at),
+ ]
+}
+export async function upload(request: Request, env: Bindings, requirement: string, operator: { id: string; displayName: string; email?: string }, now: Date, extra?: (receipt: string) => D1PreparedStatement[]) {
  if (!request.headers.get('content-type')?.startsWith('multipart/form-data;')) throw new Refusal('Use a file upload form.')
  const bytes = await boundedBody(request, MAX_FILE + 65536)
  let form: FormData
@@ -29,11 +37,13 @@ export async function upload(request: Request, env: Bindings, requirement: strin
  if (effective !== null && !validDate(effective)) throw new Refusal('Effective date must be a real UTC date.')
  const parent = await env.DB.prepare('SELECT id FROM requirements WHERE id=?').bind(requirement).first()
  if (!parent) throw new Refusal('Requirement not found.', 404)
+ // SECURE-001: a record marked sensitive at upload stays private, and its uploader is its first need-to-know holder.
+ const sensitive = form.get('sensitivity') === 'sensitive'
  const supersedes = form.get('supersedes') || null
  if (supersedes) {
   if (typeof supersedes !== 'string' || !await env.DB.prepare('SELECT id FROM receipts WHERE id=? AND requirement_id=? AND NOT EXISTS(SELECT 1 FROM receipts n WHERE n.supersedes=receipts.id)').bind(supersedes,requirement).first()) throw new Refusal('Replacement must name a current receipt for this requirement.', 409)
  }
- return appendReceipt(env, { requirement, bytes: await file.arrayBuffer(), filename: file.name, mediaType: file.type, origin: 'manually-asserted', source, from, to, effective: effective as string | null, supersedes: supersedes as string | null }, operator, now, extra).then(r => r.id)
+ return appendReceipt(env, { requirement, bytes: await file.arrayBuffer(), filename: file.name, mediaType: file.type, origin: 'manually-asserted', source, from, to, effective: effective as string | null, supersedes: supersedes as string | null }, operator, now, sensitive ? receipt => [...(extra?.(receipt) ?? []), ...restrictedRecord(env, receipt, operator, form.get('sensitivity_reason'), now)] : extra).then(r => r.id)
 }
 // Custody for one exhibit: write fresh bytes, read them back, digest what was
 // stored and append the immutable exhibit and receipt (VULN-002 reports use it too).

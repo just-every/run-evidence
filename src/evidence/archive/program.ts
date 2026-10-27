@@ -21,6 +21,7 @@ export const programColumns = {
  control_scope:['id','control_id','asset','action','reason','effective_at','actor_id','actor_name'],
  requirement_schedules:['id','requirement_id','cadence','anchor','fiscal_start_month','window_start','program_id','reminder_lead_days','owner_person_id','effective_from','actor_id','actor_name','reason'],
  receipt_effective_dates:['receipt_id','effective_date'],
+ record_classes:['receipt_id','class','reason','set_by','set_name','set_at'],
  renewal_overrides:['id','requirement_id','cycle_due','due_date','reason','actor_id','actor_name','at'],
  followups:['id','kind','subject_id','cycle_key','recipient','state','detail','created_at','attempted_at','channel'],
  product_audit:['id','actor_kind','actor_id','actor_name','action','subject','outcome','detail','at'],

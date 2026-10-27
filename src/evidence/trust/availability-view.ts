@@ -1,0 +1,1 @@
+export const noticeMailRequirement = (secureOrigin: boolean) => secureOrigin ? '' : '<p role="status">Subprocessor notices include email notifications and withdrawal links. This local address uses HTTP. Configure an HTTPS application address before approving a subprocessor notice.</p>'

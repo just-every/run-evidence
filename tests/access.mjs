@@ -118,6 +118,7 @@ try {
   assert.deepEqual([receipt.sha256, receipt.origin, receipt.covered_from, receipt.covered_to], [attached.sha256, 'manually-asserted', '2026-10-01', '2026-12-31'])
   assert.equal(Buffer.from(await (await app.fetch(`/api/receipts/${attached.receipt}/download`)).arrayBuffer()).toString(), exhibit.toString())
   assert.match((await attach('u4', 409)).error, /already evidenced/)
+  if (process.env.EVIDENCE_ACCESS_BROWSER === '1') { const { accessRecordsBrowser } = await import('./helpers/access-records-browser.mjs'); await accessRecordsBrowser(app,cookies.owner,'/app/access-reviews/'+review.id) }
   const page = await (await app.fetch('/app/access-reviews/' + review.id)).text()
   assert.match(page, /Fran Former \(proposed match\) · left 2026-10-11/); assert.match(page, new RegExp(`/app/receipts/${attached.receipt}`))
  })

@@ -1,3 +1,4 @@
+import { readPageStream, retainFields } from '../connect/pages'
 import type { CatalogueEntry } from '../tests/catalogue'
 import { googleToken, OAuthFailure, serviceAccount } from '../oauth'
 import { cloudCall, CloudFailure, type Item, type ScopedCloud } from './scoped'
@@ -8,19 +9,33 @@ import { cloudCall, CloudFailure, type Item, type ScopedCloud } from './scoped'
 const label = 'Google Cloud'
 const scope = 'https://www.googleapis.com/auth/cloud-platform.read-only'
 const DAY = 86400000
+const record = (value: unknown): value is Record<string, any> => !!value && typeof value === 'object' && !Array.isArray(value)
+const named = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0
+const strings = (value: unknown): value is string[] => Array.isArray(value) && value.every(named)
+function drift(field: string): never { throw new CloudFailure('unavailable', `Google Cloud schema drift: ${field}`) }
+function rows(body: unknown, field: string, optional = false): Record<string, any>[] {
+ if (!record(body)) drift(field + ' response')
+ if (optional && body[field] === undefined) return []
+ if (!Array.isArray(body[field]) || !body[field].every(record)) drift(field + ' must be an array of records')
+ return body[field]
+}
+function bindings(body: unknown) {
+ const result = rows(body, 'bindings')
+ if (!result.every(b => named(b.role) && strings(b.members))) drift('IAM binding role or members')
+ return result
+}
 const world = (members: unknown) => Array.isArray(members) && members.some(m => m === 'allUsers' || m === 'allAuthenticatedUsers')
-async function all<T>(url: string, token: string, key: string, limit = 20) {
- const items: T[] = []; let page: string | null = '', pages = 0
- while (page !== null && pages++ < limit) {
-  const body = await cloudCall(url + (page ? (url.includes('?') ? '&' : '?') + 'pageToken=' + encodeURIComponent(page) : ''), token, label)
-  if (!body) return items
-  items.push(...((body[key] as T[] | undefined) ?? [])); page = typeof body.nextPageToken === 'string' ? body.nextPageToken : null
- }
- return items
+async function all<T>(url:string,token:string,key:string,limit=20) {
+ return readPageStream<T>(url,'',async page=>{
+  const body=await cloudCall(url+(page?(url.includes('?')?'&':'?')+new URLSearchParams({pageToken:page}).toString():''),token,label)
+  const items=rows(body,key),next=body!.nextPageToken
+  if(next!==undefined&&next!==''&&!named(next))drift('nextPageToken')
+  return {items:retainFields(items,['projectId','name','lifecycleState','iamConfiguration','publicAccessPrevention','email','settings','backupConfiguration','enabled','ipConfiguration','ipv4Enabled','authorizedNetworks','value','requireSsl','sslMode','network','direction','disabled','sourceRanges','allowed','IPProtocol','ports']) as T[],next:typeof next==='string'&&next?next:null}
+ },limit,message=>new CloudFailure('unavailable','Google Cloud '+message.replace('repeated continuation','repeated page token')))
 }
 const adminPorts = (allowed: { IPProtocol?: string; ports?: string[] }[] | undefined) => (allowed ?? []).some(a => a.IPProtocol === 'all' || (a.IPProtocol === 'tcp' && (!a.ports?.length || a.ports.some(p => { const [from, to] = p.split('-').map(Number); return [22, 3389].some(port => from <= port && port <= (to ?? from)) }))))
 export const gcp: ScopedCloud = {
- name: 'Google Cloud', scopeLabel: 'projects', revision: 'gcp-1', scopeType: 'gcp.project',
+ name: 'Google Cloud', scopeLabel: 'projects', revision: 'gcp-2', scopeType: 'gcp.project',
  credential: 'A service account key (JSON) with Viewer and Security Reviewer granted on the organization or folder', permissions: ['roles/viewer', 'roles/iam.securityReviewer', 'roles/browser at the organization or folder to list projects'],
  fields: [],
  types: {
@@ -32,30 +47,43 @@ export const gcp: ScopedCloud = {
  },
  account: (_config, secret) => { try { return serviceAccount(secret).client_email.toLowerCase() } catch (error) { if (error instanceof OAuthFailure) throw new CloudFailure('unauthorized', error.message); throw error } },
  async authorize(_config, secret, now) { try { return await googleToken(secret, scope, null, now, 'Google refused the service account key') } catch (error) { if (error instanceof OAuthFailure) throw new CloudFailure(error.kind, error.message); throw error } },
- async discover(token) { const projects = await all<{ projectId: string; name?: string; lifecycleState?: string }>('https://cloudresourcemanager.googleapis.com/v1/projects?filter=lifecycleState%3AACTIVE&pageSize=500', token, 'projects'); return { scopes: projects.map(p => ({ id: p.projectId, name: `${p.name ?? p.projectId} (${p.projectId})` })), complete: true } },
+ async discover(token) { const projects = await all<{ projectId: string; name?: string; lifecycleState?: string }>('https://cloudresourcemanager.googleapis.com/v1/projects?filter=lifecycleState%3AACTIVE&pageSize=500', token, 'projects'); if (!projects.every(p => named(p.projectId) && /^[a-z][a-z0-9-]{4,61}[a-z0-9]$/.test(p.projectId) && (p.name === undefined || named(p.name)))) drift('project identity'); return { scopes: projects.map(p => ({ id: p.projectId, name: `${p.name ?? p.projectId} (${p.projectId})` })), complete: true } },
  classes: [
   { name: 'IAM policy and audit logging', types: ['gcp.project'], async read(token, project) {
    const policy = await cloudCall(`https://cloudresourcemanager.googleapis.com/v1/projects/${encodeURIComponent(project.id)}:getIamPolicy`, token, label, { method: 'POST', body: JSON.stringify({ options: { requestedPolicyVersion: 3 } }) }) ?? {}
+   bindings(policy)
+   if (policy.auditConfigs !== undefined && (!Array.isArray(policy.auditConfigs) || !policy.auditConfigs.every(a => record(a) && named(a.service) && Array.isArray(a.auditLogConfigs) && a.auditLogConfigs.every((c: unknown) => record(c) && ['ADMIN_READ', 'DATA_READ', 'DATA_WRITE'].includes(c.logType))))) drift('audit log configuration')
    const audit = ((policy.auditConfigs as { service: string; auditLogConfigs?: { logType: string }[] }[] | undefined) ?? []).find(a => a.service === 'allServices'), types = new Set((audit?.auditLogConfigs ?? []).map(c => c.logType))
    return { 'gcp.project': [{ uniqueId: project.id, displayName: project.name, attributes: { public_iam: ((policy.bindings as { members?: string[] }[] | undefined) ?? []).some(b => world(b.members)), data_access_logs: types.has('DATA_READ') && types.has('DATA_WRITE') } }] }
   } },
   { name: 'Cloud Storage', types: ['gcp.bucket'], async read(token, project) {
    const buckets = await all<{ name: string; iamConfiguration?: { publicAccessPrevention?: string } }>(`https://storage.googleapis.com/storage/v1/b?project=${encodeURIComponent(project.id)}&maxResults=1000`, token, 'items')
    const items: Item[] = []
-   for (const b of buckets.slice(0, 200)) { const iam = await cloudCall(`https://storage.googleapis.com/storage/v1/b/${encodeURIComponent(b.name)}/iam`, token, label) ?? {}; const prevention = b.iamConfiguration?.publicAccessPrevention === 'enforced'; items.push({ uniqueId: `${project.id}/${b.name}`, displayName: `${b.name} (${project.id})`, attributes: { public_access_prevention: prevention, public: !prevention && ((iam.bindings as { members?: string[] }[] | undefined) ?? []).some(x => world(x.members)) } }) }
+   if (buckets.length > 200) throw new CloudFailure('unavailable', 'Google Cloud storage coverage incomplete: more than 200 buckets')
+   if (!buckets.every(b => named(b.name) && record(b.iamConfiguration) && ['enforced', 'inherited'].includes(b.iamConfiguration.publicAccessPrevention as string))) drift('bucket identity or public access prevention')
+   for (const b of buckets) { const iam = await cloudCall(`https://storage.googleapis.com/storage/v1/b/${encodeURIComponent(b.name)}/iam`, token, label) ?? {}; bindings(iam); const prevention = b.iamConfiguration?.publicAccessPrevention === 'enforced'; items.push({ uniqueId: `${project.id}/${b.name}`, displayName: `${b.name} (${project.id})`, attributes: { public_access_prevention: prevention, public: !prevention && ((iam.bindings as { members?: string[] }[] | undefined) ?? []).some(x => world(x.members)) } }) }
    return { 'gcp.bucket': items }
   } },
   { name: 'Service account keys', types: ['gcp.sa_key'], async read(token, project, now) {
    const accounts = await all<{ email: string; name: string }>(`https://iam.googleapis.com/v1/projects/${encodeURIComponent(project.id)}/serviceAccounts?pageSize=100`, token, 'accounts'), items: Item[] = []
-   for (const a of accounts.slice(0, 200)) for (const k of ((await cloudCall(`https://iam.googleapis.com/v1/${a.name}/keys?keyTypes=USER_MANAGED`, token, label))?.keys as { name: string; validAfterTime?: string; disabled?: boolean }[] | undefined) ?? []) if (!k.disabled) items.push({ uniqueId: `${project.id}/${k.name.split('/').pop()}`, displayName: `${a.email} key ${k.name.split('/').pop()!.slice(0, 8)}`, attributes: { account: a.email, age_days: k.validAfterTime ? Math.floor((now.getTime() - Date.parse(k.validAfterTime)) / DAY) : null } })
+   if (accounts.length > 200) throw new CloudFailure('unavailable', 'Google Cloud key coverage incomplete: more than 200 service accounts')
+   for (const a of accounts) {
+    if (!named(a.email) || !named(a.name) || !a.name.startsWith(`projects/${project.id}/serviceAccounts/`) || /[?#\\\x00-\x1f]/.test(a.name)) drift('service account identity or parent')
+    for (const k of rows(await cloudCall(`https://iam.googleapis.com/v1/${a.name}/keys?keyTypes=USER_MANAGED`, token, label), 'keys', true)) {
+     if (!named(k.name) || !k.name.startsWith(a.name + '/keys/') || (k.disabled !== undefined && typeof k.disabled !== 'boolean') || !named(k.validAfterTime) || !Number.isFinite(Date.parse(k.validAfterTime))) drift('service account key identity, status or creation time')
+     if (!k.disabled) items.push({ uniqueId: `${project.id}/${k.name.split('/').pop()}`, displayName: `${a.email} key ${k.name.split('/').pop()!.slice(0, 8)}`, attributes: { account: a.email, age_days: Math.floor((now.getTime() - Date.parse(k.validAfterTime)) / DAY) } })
+    }
+   }
    return { 'gcp.sa_key': items }
   } },
   { name: 'Cloud SQL', types: ['gcp.sql_instance'], async read(token, project) {
-   const instances = ((await cloudCall(`https://sqladmin.googleapis.com/v1/projects/${encodeURIComponent(project.id)}/instances`, token, label))?.items as { name: string; settings?: { backupConfiguration?: { enabled?: boolean }; ipConfiguration?: { ipv4Enabled?: boolean; authorizedNetworks?: { value: string }[]; requireSsl?: boolean; sslMode?: string } } }[] | undefined) ?? []
+   const instances = await all<{ name: string; settings?: { backupConfiguration?: { enabled?: boolean }; ipConfiguration?: { ipv4Enabled?: boolean; authorizedNetworks?: { value: string }[]; requireSsl?: boolean; sslMode?: string } } }>(`https://sqladmin.googleapis.com/v1/projects/${encodeURIComponent(project.id)}/instances`, token, 'items')
+   if (!instances.every(i => named(i.name) && record(i.settings) && record(i.settings.backupConfiguration) && typeof i.settings.backupConfiguration.enabled === 'boolean' && record(i.settings.ipConfiguration) && typeof i.settings.ipConfiguration.ipv4Enabled === 'boolean' && (i.settings.ipConfiguration.authorizedNetworks === undefined || Array.isArray(i.settings.ipConfiguration.authorizedNetworks) && i.settings.ipConfiguration.authorizedNetworks.every(n => record(n) && named(n.value))) && (typeof i.settings.ipConfiguration.requireSsl === 'boolean' || ['ALLOW_UNENCRYPTED_AND_ENCRYPTED', 'ENCRYPTED_ONLY', 'TRUSTED_CLIENT_CERTIFICATE_REQUIRED'].includes(i.settings.ipConfiguration.sslMode as string)))) drift('SQL identity, backup, public network or SSL configuration')
    return { 'gcp.sql_instance': instances.map(i => { const ip = i.settings?.ipConfiguration; return { uniqueId: `${project.id}/${i.name}`, displayName: `${i.name} (${project.id})`, attributes: { backups_enabled: i.settings?.backupConfiguration?.enabled === true, public_ip_open: ip?.ipv4Enabled === true && (ip.authorizedNetworks ?? []).some(n => n.value === '0.0.0.0/0'), ssl_required: ip?.requireSsl === true || ip?.sslMode === 'ENCRYPTED_ONLY' || ip?.sslMode === 'TRUSTED_CLIENT_CERTIFICATE_REQUIRED' } } }) }
   } },
   { name: 'Firewall rules', types: ['gcp.firewall'], async read(token, project) {
    const rules = await all<{ name: string; network?: string; direction?: string; disabled?: boolean; sourceRanges?: string[]; allowed?: { IPProtocol?: string; ports?: string[] }[] }>(`https://compute.googleapis.com/compute/v1/projects/${encodeURIComponent(project.id)}/global/firewalls`, token, 'items')
+   if (!rules.every(r => named(r.name) && named(r.network) && ['INGRESS', 'EGRESS'].includes(r.direction as string) && (r.disabled === undefined || typeof r.disabled === 'boolean') && (r.direction === 'EGRESS' || strings(r.sourceRanges)) && (r.allowed === undefined || Array.isArray(r.allowed) && r.allowed.every(a => record(a) && named(a.IPProtocol) && (a.ports === undefined || strings(a.ports)))))) drift('firewall identity, direction, source or allowed ports')
    return { 'gcp.firewall': rules.map(r => ({ uniqueId: `${project.id}/${r.name}`, displayName: `${r.name} (${project.id})`, attributes: { network: String(r.network ?? '').split('/').pop() ?? '', open_admin_ports: r.direction !== 'EGRESS' && !r.disabled && (r.sourceRanges ?? []).some(s => s === '0.0.0.0/0' || s === '::/0') && adminPorts(r.allowed) } })) }
   } },
  ],

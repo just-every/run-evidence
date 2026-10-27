@@ -1,3 +1,4 @@
+import { mailConfigurationFailures } from './mail-configuration.mjs'
 import type { Bindings } from '../../auth.server'
 import { isLoopbackHost, normalizeEmail } from '../../modules/operator-auth/index.mjs'
 
@@ -15,6 +16,7 @@ export function configurationFailures(env: Bindings): string[] {
  try { normalizeEmail(env.OWNER_EMAIL) } catch { bad('OWNER_EMAIL') }
  if (typeof env.SESSION_SECRET !== 'string' || env.SESSION_SECRET.length < 32 || env.SESSION_SECRET.length > 1024) bad('SESSION_SECRET')
  if (env.SETUP_TOKEN !== undefined && (typeof env.SETUP_TOKEN !== 'string' || env.SETUP_TOKEN.length < 32 || env.SETUP_TOKEN.length > 1024)) bad('SETUP_TOKEN')
+ failures.push(...mailConfigurationFailures(env))
  return failures
 }
 export function configurationRefusal(settings: string[]) {

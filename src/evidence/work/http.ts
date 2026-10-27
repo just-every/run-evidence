@@ -1,3 +1,6 @@
+import { readFields, writeFields } from './fields'
+import { fieldsPage } from './fields-view'
+import { registerBasecampWebhook } from './basecamp-webhook'
 import { registerAsanaWebhook } from './asana-webhook'
 import { done, json, oneOf, ownerRoutes, readInput, text, uuid, type Route } from '../door'
 import { connectDestination, destinations, requireDestination, requireTicket, revokeDestination, rotateDestination, safeDestination, updateMapping, type TicketRow } from './storage'
@@ -18,6 +21,7 @@ export function workHandler(clock: () => Date) {
    const tickets = (await c.env.DB.prepare('SELECT k.*,r.display_name AS resource_name,t.name AS test_name FROM tickets k JOIN obligations o ON o.id=k.obligation_id JOIN resources r ON r.id=o.resource_id JOIN tests t ON t.id=o.test_id WHERE k.destination_id=? ORDER BY k.created_at DESC LIMIT 200').bind(row.id).all<TicketRow & { resource_name: string; test_name: string }>()).results
    return c.isApi ? json({ destination: safeDestination(row), tickets }) : trackerPage(row, tickets, c.actor.name)
   } },
+  { method: 'POST', pattern: both(`/trackers/${id}/basecamp-webhook`), run: async (c,m) => done(c, '/app/trackers/'+m[1], await registerBasecampWebhook(c.env,c.actor,m[1],c.now),201) },
   { method: 'POST', pattern: both(`/trackers/${id}/asana-webhook`), run: async (c,m) => done(c, '/app/trackers/'+m[1], await registerAsanaWebhook(c.env,c.actor,m[1],c.now),201) },
   { method: 'POST', pattern: both(`/trackers/${id}/mapping`), run: async (c, m) => { await updateMapping(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/trackers/' + m[1], { saved: true }) } },
   { method: 'POST', pattern: both(`/trackers/${id}/rotate`), run: async (c, m) => { await rotateDestination(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/trackers/' + m[1], { rotated: true }) } },
@@ -26,6 +30,8 @@ export function workHandler(clock: () => Date) {
   { method: 'POST', pattern: both(`/tests/${id}/ticket-settings`), run: async (c, m) => { await saveSettings(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/tests/' + m[1] + '#test-tickets', { saved: true }) } },
   { method: 'POST', pattern: both('/tickets/defaults'), run: async c => { await saveSettings(c.env, c.actor, null, await readInput(c.request), c.now); return done(c, '/app/trackers', { saved: true }) } },
   { method: 'POST', pattern: both(`/tests/${id}/tickets`), run: async (c, m) => done(c, '/app/tests/' + m[1] + '#test-tickets', await createForTest(c.env, c.actor, m[1], c.now), 201) },
+  { method: 'GET', pattern: both(`/tickets/${id}/fields`), run: async (c,m) => { const data=await readFields(c.env,m[1]); return c.isApi ? json({ ...data, destination: safeDestination(data.destination) }) : fieldsPage(data,c.actor.name) } },
+  { method: 'POST', pattern: both(`/tickets/${id}/fields`), run: async (c,m) => { const result=await writeFields(c.env,c.actor,m[1],await readInput(c.request),c.now); const ticket=await requireTicket(c.env,m[1]); return done(c,'/app/remediation/'+ticket.obligation_id+'#tickets-title',result) } },
   { method: 'POST', pattern: both(`/tickets/${id}/sync`), run: async (c, m) => { const t = await requireTicket(c.env, m[1]); const state = await syncTicket(c.env, t, 'owner', c.now); return done(c, '/app/remediation/' + t.obligation_id + '#tickets-title', { state }) } },
   { method: 'POST', pattern: both(`/tickets/${id}/resolve`), run: async (c, m) => { const t = await requireTicket(c.env, m[1]); await resolveConflict(c.env, c.actor, m[1], oneOf(await readInput(c.request), 'keep', ['evidence', 'tracker'] as const), c.now); return done(c, '/app/remediation/' + t.obligation_id + '#tickets-title', { resolved: true }) } },
  ]

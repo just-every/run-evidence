@@ -1,6 +1,16 @@
+import {trustTables} from '../trust/archive'
+import {evidenceDecisionTables} from '../review/engagement/archive'
+import { sharingTables } from '../review/engagement/archive'
+import { auditTables } from '../review/engagement/archive'
+import { codeManifestTables } from '../connect/manifest-schema'
+import { tailoringTables } from '../agent/tailoring-archive'
+import { answerTables } from '../answer/archive'
+import { privacyTables } from '../erase/archive'
 import { fail,pathOK,Reader } from './format'
 import { assertSchema,auditColumnsBefore,businessRows,portableTables,registry,quote,staged,type Store } from './registry'
 import { backfillRunLibraryRevisions,libraryTables } from './program'
+import { vendorTables,vendorReviewTables } from '../vendor/archive'
+import { documentTables } from '../program/documents/archive'
 import { frame,newHash,readFrame,objectDigest } from './framing'
 import { BlobStage } from './blob-stage'
 import { createStages,stageRows,validateForeignKeys } from './staging'
@@ -13,7 +23,7 @@ import { fileQuery,assertBucket } from './files'
 export interface RestoreOptions {journal?:unknown;acceptUnverifiedHistory?:boolean}
 export async function decodePortable(env:Store,session:Session,reader:Reader,first:{data:any;bytes:Uint8Array;prefix:Uint8Array},options:RestoreOptions={}) {
  const head=first.data
- if(head?.format!=='evidence-custody'||head.version!==10||!head.source||typeof head.source.lineage!=='string'||! /^[a-zA-Z0-9_-]{16,128}$/.test(head.source.lineage)||!Number.isSafeInteger(head.source.sequence)||head.source.sequence<0||!Number.isSafeInteger(head.source.generation)||!Number.isFinite(Date.parse(head.created_at))||![[],libraryTables,[...libraryTables,'inventory_decisions','inventory_group_events']].some(absent => [registry.product_audit,auditColumnsBefore].some(audit => JSON.stringify(head.tables)===JSON.stringify(Object.fromEntries(Object.entries(registry).filter(([t]) => !absent.includes(t)).map(([t,c]) => [t,t==='product_audit'?audit:c]))))))fail('Unsupported or incomplete portable archive registry.')
+ if(head?.format!=='evidence-custody'||head.version!==10||!head.source||typeof head.source.lineage!=='string'||! /^[a-zA-Z0-9_-]{16,128}$/.test(head.source.lineage)||!Number.isSafeInteger(head.source.sequence)||head.source.sequence<0||!Number.isSafeInteger(head.source.generation)||!Number.isFinite(Date.parse(head.created_at))||![[],libraryTables,[...libraryTables,'inventory_decisions','inventory_group_events']].flatMap(absent => [absent,[...absent,'operation_steps']].flatMap(prior=>[prior,[...prior,'period_investigations','period_investigation_decisions']]).flatMap(prior=>[prior,[...prior,...vendorTables]]).flatMap(prior=>[prior,[...prior,...documentTables]])).flatMap(prior=>[prior,[...prior,...privacyTables]]).flatMap(prior=>[prior,[...prior,...vendorReviewTables]]).flatMap(prior=>[prior,[...prior,...answerTables]]).flatMap(prior=>[prior,[...prior,...tailoringTables]]).flatMap(prior=>[prior,[...prior,...codeManifestTables]]).flatMap(prior=>[prior,[...prior,...auditTables]]).flatMap(prior=>[prior,[...prior,...sharingTables]]).flatMap(prior=>[prior,[...prior,...evidenceDecisionTables]]).flatMap(prior=>[prior,[...prior,...trustTables]]).flatMap(prior=>[prior,[...prior,'trust_grant_records','trust_submissions']]).some(absent => [registry.product_audit,auditColumnsBefore].some(audit => JSON.stringify(head.tables)===JSON.stringify(Object.fromEntries(Object.entries(registry).filter(([t]) => !absent.includes(t)&&(t!=='privacy_exhibit_scopes'||Object.hasOwn(head.tables,t))&&(!['promise_dependencies','promise_reviews','promise_revisions'].includes(t)||Object.hasOwn(head.tables,'promise_dependencies')||Object.hasOwn(head.tables,'promise_reviews'))).map(([t,c]) => [t,t==='product_audit'?audit:c]))))))fail('Unsupported or incomplete portable archive registry.')
  const sourceTables=Object.keys(head.tables)
  await checkHistory(env,head.source,options.journal,options.acceptUnverifiedHistory)
  await env.DB.prepare("UPDATE portable_sessions SET state='validating',header=?,error=NULL WHERE id=?").bind(JSON.stringify(head),session.id).run()
@@ -70,14 +80,14 @@ export async function admitPortable(env:Store,session:Session,options:RestoreOpt
   await assertBucket(env,true,session.id)
   const counts=portableTables.map(t=>businessRows(t)),groups:string[]=[];for(let i=0;i<counts.length;i+=10)groups.push('('+counts.slice(i,i+10).join('+')+')')
   const statements=[env.DB.prepare('PRAGMA defer_foreign_keys=ON'),env.DB.prepare(`INSERT INTO custody_admission(singleton,empty_check) VALUES(1,CASE WHEN (${groups.join('+')})=0 AND NOT EXISTS(SELECT 1 FROM portable_history WHERE lineage=? AND sequence>?) AND NOT EXISTS(SELECT 1 FROM portable_journal WHERE lineage=? AND sequence>?) THEN 1 ELSE 0 END)`).bind(header.source.lineage,header.source.sequence,header.source.lineage,header.source.sequence),...importRestoreTriggers.map(t=>env.DB.prepare('DROP TRIGGER IF EXISTS '+quote(t.name)))]
-  for(const table of portableTables){const cols=registry[table];const values=cols.map(c=>table==='review_folders'&&c==='closed_at'?`COALESCE(closed_at,'${now.toISOString()}')`:['connections','tracker_destinations','followup_channels'].includes(table)&&c==='status'?"'inactive after restore'":table==='connections'&&c==='next_attempt_at'?'NULL':quote(c));statements.push(env.DB.prepare(`INSERT INTO ${quote(table)}(${cols.map(quote).join(',')}) SELECT ${values.join(',')} FROM ${staged(session.id,table)}`))}
+  for(const table of portableTables){const cols=registry[table];const values=cols.map(c=>['audit_grants','trust_customer_grants'].includes(table)&&c==='revoked_at'?`COALESCE(revoked_at,'${now.toISOString()}')`:table==='operation_steps'&&c==='outcome'?"CASE WHEN outcome='running' THEN 'unknown' ELSE outcome END":table==='operation_steps'&&c==='finished_at'?`CASE WHEN outcome='running' THEN '${now.toISOString()}' ELSE finished_at END`:table==='operation_steps'&&c==='detail'?"CASE WHEN outcome='running' THEN 'Interrupted at backup; restored as Unknown. No execution is replayed.' ELSE detail END":(table==='review_folders'||table==='vendor_links')&&c==='closed_at'?`COALESCE(closed_at,'${now.toISOString()}')`:['connections','tracker_destinations','followup_channels'].includes(table)&&c==='status'?"'inactive after restore'":table==='connections'&&c==='next_attempt_at'?'NULL':quote(c));statements.push(env.DB.prepare(`INSERT INTO ${quote(table)}(${cols.map(quote).join(',')}) SELECT ${values.join(',')} FROM ${staged(session.id,table)}`))}
   // Archives older than LIBRARY-001 revisions ran every test under revision 1.
   if(!Object.hasOwn(header.tables,'run_library_revisions'))statements.push(backfillRunLibraryRevisions(env))
   statements.push(...importRestoreTriggers.map(t=>env.DB.prepare(t.sql)),...barrierStatements(env),
    env.DB.prepare('INSERT INTO portable_journal(lineage,sequence,recorded_at,receipt) SELECT lineage,sequence,recorded_at,receipt FROM portable_journal_stage s WHERE session_id=? AND NOT EXISTS(SELECT 1 FROM portable_journal j WHERE j.lineage=s.lineage AND j.sequence=s.sequence)').bind(session.id),
    env.DB.prepare('UPDATE portable_state SET lineage=?,generation=generation+1 WHERE singleton=1').bind(header.source.lineage),
    env.DB.prepare('INSERT INTO portable_history(lineage,sequence,checked_at) VALUES(?,?,?) ON CONFLICT(lineage) DO UPDATE SET sequence=max(sequence,excluded.sequence),checked_at=excluded.checked_at').bind(header.source.lineage,history.sequence,now.toISOString()),
-   env.DB.prepare('DELETE FROM custody_admission'),env.DB.prepare("UPDATE portable_sessions SET state='complete' WHERE id=?").bind(session.id),env.DB.prepare('UPDATE portable_files SET written=0 WHERE session_id=?').bind(session.id))
+   env.DB.prepare('INSERT INTO operation_recovery(singleton,restored_at) VALUES(1,?) ON CONFLICT(singleton) DO UPDATE SET restored_at=excluded.restored_at').bind(now.toISOString()),env.DB.prepare('DELETE FROM custody_admission'),env.DB.prepare("UPDATE portable_sessions SET state='complete' WHERE id=?").bind(session.id),env.DB.prepare('UPDATE portable_files SET written=0 WHERE session_id=?').bind(session.id))
   await env.DB.batch(statements)
   const result={...JSON.parse(session.result),...history,dry_run:false,folders_closed:JSON.parse(session.result).counts.review_folders}
   await cleanupSession(env,session.id)

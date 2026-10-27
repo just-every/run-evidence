@@ -1,10 +1,12 @@
+import { sourceReadTime } from '../connect/pages'
+import { scopedFetch } from '../ops/execution'
 import type { Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
 import { auditStatement, text, type Actor, type Input } from '../door'
 import { seal, unseal } from '../connect/custody'
 import { backoffUpdate, reconnectUpdate, startRun } from '../connect/runs'
 import type { Connection } from '../connect/storage'
-import { upsertResources, type ResourceSchema } from '../resources'
+import { upsertResources, upsertCollectedResources, type ResourceSchema } from '../resources'
 import { catalogueStatements } from '../tests/storage'
 import { runForType } from '../tests/engine'
 // CLOUD-001 for clouds organized in scopes (Google Cloud projects, Azure
@@ -26,14 +28,16 @@ export interface ScopedCloud {
 // A provider HTTP read: 401 lost credential, 403 denied or API disabled, 429 throttled.
 export async function cloudCall(url: string, token: string, label: string, init: RequestInit = {}) {
  let response: Response
- try { response = await fetch(url, { ...init, headers: { authorization: 'Bearer ' + token, accept: 'application/json', ...(init.body ? { 'content-type': 'application/json' } : {}) }, redirect: 'manual', signal: AbortSignal.timeout(20000) }) } catch { throw new CloudFailure('unavailable', `${label} could not be reached`) }
- const body = await response.json().catch(() => ({})) as Record<string, unknown>
+ try { response = await scopedFetch(url, { ...init, headers: { authorization: 'Bearer ' + token, accept: 'application/json', ...(init.body ? { 'content-type': 'application/json' } : {}) }, redirect: 'manual', signal: AbortSignal.timeout(20000) }) } catch { throw new CloudFailure('unavailable', `${label} could not be reached`) }
+ const body: unknown = await response.json().catch(() => null)
+ const errorBody = body && typeof body === 'object' ? body as Record<string, unknown> : {}
  if (response.status === 401) throw new CloudFailure('unauthorized', `${label} rejected the credential`)
- if (response.status === 403) { const detail = JSON.stringify(body.error ?? ''); throw new CloudFailure(/accessNotConfigured|SERVICE_DISABLED|MissingSubscriptionRegistration/.test(detail) ? 'disabled' : 'denied', `${label} refused the read (403)`) }
+ if (response.status === 403) { const detail = JSON.stringify(errorBody.error ?? ''); throw new CloudFailure(/accessNotConfigured|SERVICE_DISABLED|MissingSubscriptionRegistration/.test(detail) ? 'disabled' : 'denied', `${label} refused the read (403)`) }
  if (response.status === 429) throw new CloudFailure('throttled', `${label} is rate limiting this credential`)
  if (response.status === 404) return null
  if (response.status !== 200) throw new CloudFailure('unavailable', `${label} answered ${response.status}`)
- return body
+ if (!body || typeof body !== 'object' || Array.isArray(body)) throw new CloudFailure('unavailable', `${label} schema drift: expected a JSON object`)
+ return body as Record<string, unknown>
 }
 export const scopedConfig = (c: Pick<Connection, 'config_json'>): Record<string, string> => { try { return JSON.parse(c.config_json) } catch { return {} } }
 function parseConfig(cloud: ScopedCloud, input: Input) {
@@ -119,11 +123,11 @@ export async function runScopedCollection(env: Bindings, connection: Connection,
  const fresh: string[] = []
  for (const [type, schema] of Object.entries(cloud.types)) {
   const items = [...out.get(type)!.values()].map(i => ({ ...i, attributes: Object.fromEntries(Object.keys(schema.fields).map(f => [f, i.attributes[f] ?? null])) }))
-  const written = await upsertResources(env, type, schema, items, source, unread.get(type)!.size ? false : 'source', now)
+  const written = await upsertCollectedResources(env, type, schema, items, source, !unread.get(type)!.size, now)
   for (const r of written.results.filter(r => r.outcome === 'rejected')) coverage.gaps.push({ account: '', class: type, region: '', reason: `${r.uniqueId} not stored: ${(r.reasons ?? []).join('; ')}` })
   fresh.push(...written.results.filter(r => r.id && r.outcome !== 'removed' && r.outcome !== 'rejected' && !placeholders.has(type + ' ' + r.uniqueId)).map(r => r.id!))
  }
- if (fresh.length) await env.DB.prepare('UPDATE resources SET observed_at=? WHERE id IN (SELECT value FROM json_each(?))').bind(at, JSON.stringify(fresh)).run()
+ if (fresh.length) await env.DB.prepare('UPDATE resources SET observed_at=? WHERE id IN (SELECT value FROM json_each(?))').bind(sourceReadTime(now), JSON.stringify(fresh)).run()
  const anyRead = coverage.accounts.some(a => a.read), outcome = !anyRead ? 'failed' : coverage.gaps.length ? 'partial' : 'complete'
  const result = await finish(outcome, coverage, anyRead ? '' : `no ${cloud.scopeLabel} readable`, anyRead
   ? env.DB.prepare('UPDATE connections SET last_attempt_at=?,last_success_at=?,next_attempt_at=NULL,backoff_seconds=0,last_error=? WHERE id=?').bind(at, at, outcome === 'partial' ? `${coverage.gaps.length} gaps` : '', connection.id)

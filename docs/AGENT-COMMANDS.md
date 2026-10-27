@@ -12,10 +12,10 @@ approve, publish a folder, create a reviewer link or act through an owner sessio
 No LLM or provider connection is involved.
 
 ```sh
-node scripts/evidence-agent.mjs desk --origin https://evidence.example --token-env EVIDENCE_AGENT_TOKEN
-node scripts/evidence-agent.mjs desk --origin https://evidence.example --token-env EVIDENCE_AGENT_TOKEN --date 2026-10-11
-node scripts/evidence-agent.mjs prepare-folder --origin https://evidence.example --token-env EVIDENCE_AGENT_TOKEN --input folder.json
-node scripts/evidence-agent.mjs proposals --origin https://evidence.example --token-env EVIDENCE_AGENT_TOKEN
+rer run agent desk --origin https://evidence.example --token-env EVIDENCE_AGENT_TOKEN
+rer run agent desk --origin https://evidence.example --token-env EVIDENCE_AGENT_TOKEN --date 2026-10-11
+rer run agent prepare-folder --origin https://evidence.example --token-env EVIDENCE_AGENT_TOKEN --input folder.json
+rer run agent proposals --origin https://evidence.example --token-env EVIDENCE_AGENT_TOKEN
 ```
 
 Never pass the credential as a command argument or commit it in a file. The CLI

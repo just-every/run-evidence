@@ -1,5 +1,6 @@
 import { capabilityAllowed } from '../archive/capabilities'
 import { operatorAuth, type Bindings } from '../../auth.server'
+import { AuthError } from '../../modules/operator-auth/index.mjs'
 import { Refusal } from '../upload'
 import { auditStatement, list, oneOf, text, type Actor, type Input } from '../door'
 import { validDate } from '../model'
@@ -96,8 +97,19 @@ export async function invite(env: Bindings, request: Request, actor: Actor, pers
  const row = await env.DB.prepare('SELECT id,name,email FROM people WHERE id=?').bind(person).first<{ id: string; name: string; email: string }>()
  if (!row) throw new Refusal('Person not found.', 404)
  if (await env.DB.prepare('SELECT 1 FROM people_departures WHERE person_id=?').bind(person).first()) throw new Refusal('This person has left.', 409)
- await operatorAuth(env).invite(request, { email: row.email, displayName: row.name, role: 'member', returnTo: '/me' })
+ try { await operatorAuth(env).invite(request, { email: row.email, displayName: row.name, role: 'member', returnTo: '/me' }) }
+ catch (error) {
+  if (!(error instanceof AuthError)) throw error
+  const messages: Record<string, string> = {
+   invitation_conflict: 'This address already has an account or a different invitation. Check its access before inviting again.',
+   mail_unavailable: 'The invitation could not be delivered. Check the sign-in mail settings before trying again.',
+   rate_limited: 'Too many invitations were requested. Wait a few minutes before trying again.',
+   email_not_allowed: 'This email address is not allowed to sign in here.',
+  }
+  throw new Refusal(messages[error.code] ?? 'The invitation could not be created. Check this person’s account access before trying again.', error.status)
+ }
  await auditStatement(env, actor, 'person.invited', 'person:' + person, now).run()
+ return { name: row.name, email: row.email }
 }
 // Each person's attestation state: the attestation test fails while any assignment is overdue.
 export async function syncAttestations(env: Bindings, now: Date) {

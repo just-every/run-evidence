@@ -1,3 +1,4 @@
+import { commentSources, type TrackerCommentSource } from '../work/comment-source'
 import type { Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
 import { auditStatement, type Actor } from '../door'
@@ -15,7 +16,7 @@ export async function slaFor(env: Bindings, category: string, severity: string, 
  const policy = await env.DB.prepare('SELECT id,days FROM sla_policies WHERE category=? AND severity=? AND effective_at<=? ORDER BY effective_at DESC,rowid DESC LIMIT 1').bind(category, severity, at.toISOString()).first<{ id: string; days: number }>()
  return policy ? { days: policy.days, id: policy.id } : { days: defaultSla[severity] ?? 30, id: null }
 }
-const event = (env: Bindings, obligation: string, kind: string, actor: Actor, at: string, body = '', observation: string | null = null) => env.DB.prepare('INSERT INTO obligation_events(id,obligation_id,kind,actor_id,actor_name,body,observation_id,at) VALUES(?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), obligation, kind, actor.id, actor.name, body, observation, at)
+export const event = (env: Bindings, obligation: string, kind: string, actor: Actor, at: string, body = '', observation: string | null = null) => env.DB.prepare('INSERT INTO obligation_events(id,obligation_id,kind,actor_id,actor_name,body,observation_id,at) VALUES(?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(), obligation, kind, actor.id, actor.name, body, observation, at)
 
 // Statements that move obligations after a run's observations are appended.
 export async function remediationStatements(env: Bindings, test: TestRow, observations: Observation[], now: Date) {
@@ -46,6 +47,21 @@ export async function requireObligation(env: Bindings, id: string) { const row =
 export async function assign(env: Bindings, actor: Actor, id: string, owner: string, nextAction: string, target: string | null, now: Date) {
  await requireObligation(env, id); const at = now.toISOString()
  await env.DB.batch([env.DB.prepare('UPDATE obligations SET owner_person_id=?,next_action=?,target_date=? WHERE id=?').bind(owner, nextAction, target, id), event(env, id, 'assigned', actor, at, nextAction + (target ? ` (target ${target})` : '')), auditStatement(env, actor, 'remediation.assigned', 'obligation:' + id, now)])
+}
+// FOLLOWUP-002: Acknowledge and Reassign from the private obligation page.
+// Neither closes anything; only a passing re-test does. The recorded person is
+// the signed-in owner session acting for the assigned person (no delegated
+// roles exist yet), and the event says so.
+export async function acknowledge(env: Bindings, actor: Actor, id: string, now: Date) {
+ const row = (await obligations(env, now)).find(o => o.id === id); if (!row) throw new Refusal('Obligation not found.', 404)
+ if (row.state === 'verified') throw new Refusal('A verified obligation needs no acknowledgement.', 409)
+ await env.DB.batch([event(env, id, 'acknowledged', actor, now.toISOString(), `Acknowledged by ${actor.name} (signed-in owner session) for ${row.owner_name ?? 'an obligation with no assigned owner'}; the obligation stays open until a passing re-test.`), auditStatement(env, actor, 'remediation.acknowledged', 'obligation:' + id, now)])
+}
+export async function reassign(env: Bindings, actor: Actor, id: string, owner: { id: string; name: string }, reason: string, now: Date) {
+ const row = (await obligations(env, now)).find(o => o.id === id); if (!row) throw new Refusal('Obligation not found.', 404)
+ if (row.state === 'verified') throw new Refusal('A verified obligation cannot be reassigned.', 409)
+ if (row.owner_person_id === owner.id) throw new Refusal('That person already owns this obligation.', 409)
+ await env.DB.batch([env.DB.prepare('UPDATE obligations SET owner_person_id=? WHERE id=?').bind(owner.id, id), event(env, id, 'reassigned', actor, now.toISOString(), `From ${row.owner_name ?? 'nobody'} to ${owner.name}: ${reason}`), auditStatement(env, actor, 'remediation.reassigned', 'obligation:' + id, now, 'succeeded', owner.name, { reason })])
 }
 export async function note(env: Bindings, actor: Actor, id: string, kind: 'comment' | 'change attached', body: string, now: Date) {
  await requireObligation(env, id)
@@ -96,7 +112,12 @@ export async function obligations(env: Bindings, now: Date) {
  const exceptions = await allExceptions(env)
  return rows.map(o => ({ ...o, sla: slaStatus(o, exceptions, now) }))
 }
-export const obligationEvents = async (env: Bindings, id: string) => (await env.DB.prepare('SELECT kind,actor_name,body,observation_id,at FROM obligation_events WHERE obligation_id=? ORDER BY at,rowid').bind(id).all<{ kind: string; actor_name: string; body: string; observation_id: string | null; at: string }>()).results
+export interface ObligationEvent { kind: string; actor_name: string; body: string; observation_id: string | null; at: string; tracker_comment?: TrackerCommentSource }
+export async function obligationEvents(env: Bindings, id: string): Promise<ObligationEvent[]> {
+ const rows = (await env.DB.prepare('SELECT id,kind,actor_name,body,observation_id,at FROM obligation_events WHERE obligation_id=? ORDER BY at,rowid').bind(id).all<ObligationEvent & { id: string }>()).results
+ const sources = await commentSources(env, id)
+ return rows.map(({ id, ...event }) => ({ ...event, ...(sources.has(id) ? { tracker_comment: sources.get(id)! } : {}) }))
+}
 // Automatic re-tests: queued by closed work, run within one scheduler tick.
 export async function runRetests(env: Bindings, now: Date, run: (testId: string, resourceIds: string[]) => Promise<{ run: string }>) {
  const { results } = await env.DB.prepare('SELECT q.id,o.test_id,o.resource_id FROM retests q JOIN obligations o ON o.id=q.obligation_id WHERE q.done_at IS NULL ORDER BY q.queued_at,q.rowid').all<{ id: string; test_id: string; resource_id: string }>()

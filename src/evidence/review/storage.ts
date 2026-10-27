@@ -3,6 +3,7 @@ import { activeControl, activeReceipt } from '../visibility'
 import type { Bindings } from '../../auth.server'
 import { gap, period, type Receipt, type Requirement } from '../model'
 import { history, receipt } from '../storage'
+import { refusePublication, withheld } from '../secure/records'
 import type { Folder, FolderInput, Grant, ReviewAction, ReviewData, ReviewEvent, ReviewReceipt } from './types'
 const folderColumns = 'id,reviewer_label,period_from,period_to,expires_at,created_at,closed_at'
 export const tokenDigest = async (token: string) => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token)))).map(n => n.toString(16).padStart(2,'0')).join('')
@@ -36,6 +37,19 @@ export async function events(env: Bindings, folder?: string) {
  const query = env.DB.prepare('SELECT id,folder_id,exhibit_id,action,outcome,occurred_at FROM review_events'+(folder?' WHERE folder_id=?':'')+' ORDER BY occurred_at DESC,id')
  return (await (folder?query.bind(folder):query).all<ReviewEvent>()).results
 }
+// Resolve owner-facing labels without changing the access-event API or retained log.
+export type NamedReviewEvent = ReviewEvent & { folder_name: string | null; exhibit_name: string | null; control_names: string[] }
+export async function eventNames(env: Bindings, rows: ReviewEvent[]): Promise<NamedReviewEvent[]> {
+ const [folders, exhibits, controls] = await Promise.all([
+  env.DB.prepare('SELECT id,reviewer_label FROM review_folders').all<{id:string;reviewer_label:string}>(),
+  env.DB.prepare('SELECT id,filename FROM exhibits').all<{id:string;filename:string}>(),
+  env.DB.prepare('SELECT r.exhibit_id,c.name FROM receipts r JOIN requirements q ON q.id=r.requirement_id JOIN controls c ON c.id=q.control_id').all<{exhibit_id:string;name:string}>(),
+ ])
+ const folderNames = new Map(folders.results.map(r=>[r.id,r.reviewer_label])), exhibitNames = new Map(exhibits.results.map(r=>[r.id,r.filename]))
+ const controlNames = new Map<string,string[]>()
+ for(const row of controls.results)controlNames.set(row.exhibit_id,[...new Set([...(controlNames.get(row.exhibit_id)??[]),row.name])])
+ return rows.map(row=>({...row,control_names:row.exhibit_id?controlNames.get(row.exhibit_id)??[]:[],folder_name:row.folder_id ? folderNames.get(row.folder_id) ?? 'Unavailable folder' : null,exhibit_name:row.exhibit_id ? exhibitNames.get(row.exhibit_id) ?? 'Unavailable exhibit' : null}))
+}
 // Whole inclusive receipt interval must be contained in the folder interval.
 // A receipt spanning either boundary is excluded, including direct downloads.
 export const insidePeriod = (folder: Folder, row: Receipt) => row.covered_from >= folder.period_from && row.covered_to <= folder.period_to
@@ -48,6 +62,8 @@ export async function scopedReceipt(env: Bindings, folder: Folder, id: string) {
  const row = await receipt(env,id)
  if (!row || !insidePeriod(folder,row)) return null
  if (!await env.DB.prepare('SELECT id FROM receipts r WHERE id=? AND '+activeReceipt('r')).bind(id).first()) return null
+ // SECURE-001: a sensitive record is never released to a reviewer until the owner publishes it.
+ if ((await withheld(env)).has(id)) { await refusePublication(env,'receipt:'+id,'review folder '+folder.id,new Date()); return null }
  const selected = await env.DB.prepare('SELECT 1 AS selected FROM requirements r JOIN review_folder_controls s ON s.control_id=r.control_id WHERE r.id=? AND s.folder_id=?').bind(row.requirement_id,folder.id).first()
  return selected ? row : null
 }
@@ -56,11 +72,11 @@ export function projectReceipt(row: Receipt, scopedIds: Set<string>): ReviewRece
 }
 export async function reviewData(env: Bindings, folder: Folder, now: Date): Promise<ReviewData> {
  const { results } = await env.DB.prepare('SELECT r.*,c.name AS control_name,c.group_name FROM requirements r JOIN controls c ON c.id=r.control_id JOIN review_folder_controls s ON s.control_id=c.id WHERE s.folder_id=? ORDER BY c.created_at,c.id,r.id').bind(folder.id).all<Requirement>()
- const requirements = []
+ const requirements = [], hold = await withheld(env)
  // Full history is internal only. Scoped rows retain full-history supersession
  // flags, but hidden receipts cannot establish coverage or unavailable bytes.
  for (const r of results) {
-  const all = await history(env,r.id), scoped = all.filter(row=>insidePeriod(folder,row)), ids = new Set(scoped.map(row=>row.id)), window = period(r.cadence,folder.period_to)
+  const all = (await history(env,r.id)).filter(row=>!hold.has(row.id)), scoped = all.filter(row=>insidePeriod(folder,row)), ids = new Set(scoped.map(row=>row.id)), window = period(r.cadence,folder.period_to)
   const scopedGap = gap(r.cadence,folder.period_to,scoped,now)
   const state = scopedGap==='missing' && gap(r.cadence,folder.period_to,all,now)==='overdue' ? 'overdue' : scopedGap
   requirements.push({ id:r.id, control_id:r.control_id, control_name:r.control_name, group_name:r.group_name, name:r.name, cadence:r.cadence, gap:state, period_from:window.from, period_to:window.to, receipts:scoped.map(row=>projectReceipt(row,ids)) })

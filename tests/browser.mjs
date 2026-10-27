@@ -55,7 +55,7 @@ try {
  await cp(root,scratch,{recursive:true,filter:path=>!['node_modules','.git','.wrangler','.rer','.seed','.cache','dist','.tanstack','.dev.vars'].includes(basename(path)) && !basename(path).startsWith('.env')})
  const socket=createServer();await new Promise(resolve=>socket.listen(0,'127.0.0.1',resolve));const port=socket.address().port;await new Promise(resolve=>socket.close(resolve))
  const origin=`http://127.0.0.1:${port}`
- console.log('Browser: rer setup in disposable checkout')
+ console.log('OPS-001: documented rer setup/dev lifecycle in disposable checkout')
  await run(['setup','--owner-email','owner@example.test','--port',String(port),'--non-interactive'])
  server=spawn(process.execPath,__rerTestEntryArgs([__rerTestEntry,'dev','--port',String(port),...queueArgs]),{cwd:scratch,env,stdio:['ignore','pipe','pipe']})
  for(const stream of [server.stdout,server.stderr])stream.on('data',chunk=>{serverOutput+=chunk})

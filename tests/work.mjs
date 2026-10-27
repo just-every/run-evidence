@@ -1,3 +1,4 @@
+import { vectorCommentPage } from './helpers/original-tracker-fixture.mjs'
 // Remediation tickets in Vector, Jira Cloud, Linear, GitHub Issues and Asana
 // through the owner's doors, signed tracker webhooks and the Cron Trigger. The
 // trackers are the only fakes: network-edge stand-ins answering each tracker's
@@ -7,7 +8,7 @@ import assert from 'node:assert/strict'
 import { createHmac } from 'node:crypto'
 import { runtime } from './helpers/runtime.mjs'
 const VECTOR = 'https://vector.example.com', JIRA = 'https://northstar.atlassian.net', TEAM = '01K0000000000000000000TEAM'
-const tracker = { clock: '2026-10-11T12:00:00Z', tokens: { vector: 'vec_token', jira: 'jira_token', linear: 'lin_key', github: 'ghp_issues', asana: 'asana_pat' }, issues: new Map(), calls: [] }
+const tracker = { clock: '2026-10-11T12:00:00Z', tokens: { vector: 'synthetic-evidence-1', jira: 'synthetic-evidence-2', linear: 'synthetic-evidence-3', github: 'synthetic-evidence-4', asana: 'synthetic-evidence-5' }, issues: new Map(), calls: [] }
 const reply = (status, body) => new Response(body === undefined ? null : JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
 let sequence = 0
 const issue = (provider, fields) => { const n = ++sequence, item = { provider, n, status: 'open', closed: false, assignee: null, due: null, comments: [], version: 1, ...fields }; tracker.issues.set(provider + ':' + item.id, item); return item }
@@ -17,11 +18,12 @@ async function fakeTrackers(request) {
  tracker.calls.push(`${request.method} ${url.origin}${url.pathname}`)
  if (url.origin === VECTOR) {
   if (auth !== 'Bearer ' + tracker.tokens.vector) return reply(401, { error: 'invalid_token' })
-  if (url.pathname === '/api/v1/metadata') return reply(200, { workspace: { name: 'Northstar' }, teams: [{ id: TEAM, name: 'Platform' }] })
+  if (url.pathname === '/api/v1/metadata') return reply(200, { workspace: { name: 'Northstar' }, teams: [{ id: TEAM, name: 'Platform' }], labels:[{id:'01K00000000000000000LABEL1',name:'evidence'},{id:'01K00000000000000000LABEL2',name:'compliance'}] })
+  if (url.pathname === '/api/v1/comments') return vectorCommentPage(url,VECTOR,find('vector',url.searchParams.get('issue')),tracker)
   if (url.pathname === '/api/v1/issues' && request.method === 'POST') { const id = 'FLW-' + (sequence + 1), i = issue('vector', { id, title: body.title, description: body.description, priority: body.priority, due: body.dueDate, status: 'Backlog (backlog)' }); return reply(201, { id: 'ulid' + i.n, identifier: id, version: 1 }) }
   const m = /^\/api\/v1\/issues\/(FLW-\d+)(\/comments)?$/.exec(url.pathname), i = m && find('vector', m[1])
   if (!i || i.deleted) return reply(404, { error: 'issue_not_found' })
-  if (m[2]) { const id = 'cmt' + (++sequence); i.comments.push({ id, author: 'Evidence API', body: body.body, at: tracker.clock }); return reply(201, { id }) }
+  if (m[2]) { const id = String(++sequence).padStart(26,'0'); i.comments.push({ id, author: 'Evidence API', body: body.body, at: tracker.clock }); return reply(201, { id }) }
   if (request.method === 'PATCH') { if (body.expectedVersion !== i.version) return reply(409, { error: 'stale_version' }); i.due = body.dueDate; i.version++; return reply(200, {}) }
   const [name, category] = /^(.*) \((\w+)\)$/.exec(i.status).slice(1)
   return reply(200, { identifier: i.id, version: i.version, status: { name, category }, assignee: i.assignee ? { name: i.assignee } : null, dueDate: i.due, activity: i.comments.map((c, k) => ({ id: 'act' + k, kind: 'comment.created', at: c.at, actor: c.author, nextValue: { id: c.id } })) })
@@ -46,6 +48,7 @@ async function fakeTrackers(request) {
   if (auth !== tracker.tokens.linear) return reply(400, { errors: [{ message: 'Authentication required, not authenticated', extensions: { type: 'authentication error' } }] })
   const q = body.query, v = body.variables
   if (q.includes('viewer')) return reply(200, { data: { viewer: { name: 'IT', organization: { name: 'Northstar' } }, team: v.team === 'team-lin' ? { id: 'team-lin', name: 'Platform' } : null } })
+  if (q.includes('issueLabels(')) return reply(200,{data:{issueLabels:{nodes:[{id:'label-evidence',name:'evidence',team:null},{id:'label-compliance',name:'compliance',team:{id:'team-lin'}}],pageInfo:{hasNextPage:false,endCursor:null}}}})
   if (q.includes('issueCreate')) { const i = issue('linear', { id: 'lin-' + (sequence + 1), key: 'PLA-' + (sequence + 1), title: v.input.title, due: v.input.dueDate ?? null, status: 'Todo (unstarted)', priority: v.input.priority }); return reply(200, { data: { issueCreate: { success: true, issue: { id: i.id, identifier: i.key, url: 'https://linear.app/northstar/issue/' + i.key } } } }) }
   if (q.includes('commentCreate')) { const i = find('linear', v.input.issueId), id = 'lc-' + (++sequence); i.comments.push({ id, author: 'IT', body: v.input.body, at: tracker.clock }); return reply(200, { data: { commentCreate: { success: true, comment: { id } } } }) }
   if (q.includes('issueUpdate')) { find('linear', v.id).due = v.input.dueDate; return reply(200, { data: { issueUpdate: { success: true } } }) }
@@ -62,14 +65,15 @@ async function fakeTrackers(request) {
   if (!i || i.deleted) return reply(i?.deleted ? 410 : 404, { message: 'Not Found' })
   if (m[2] && request.method === 'POST') { const id = ++sequence; i.comments.push({ id: String(id), author: 'evidence-bot', body: body.body, at: tracker.clock }); return reply(201, { id }) }
   if (m[2]) return reply(200, i.comments.map(c => ({ id: Number(c.id), user: { login: c.author }, body: c.body, created_at: c.at })))
-  if (request.method === 'PATCH') { if (body.state) i.closed = body.state === 'closed'; return reply(200, {}) }
-  return reply(200, { number: Number(i.id), state: i.closed ? 'closed' : 'open', state_reason: i.closed ? 'completed' : null, assignee: i.assignee ? { login: i.assignee } : null })
+  if (request.method === 'PATCH') { if (body.state) i.closed = body.state === 'closed'; if(Object.hasOwn(body,'body'))i.body=body.body; return reply(200, {}) }
+  return reply(200, { number: Number(i.id), state: i.closed ? 'closed' : 'open', state_reason: i.closed ? 'completed' : null, body:i.body, assignee: i.assignee ? { login: i.assignee } : null })
  }
  if (url.origin === 'https://app.asana.com') {
   if (auth !== 'Bearer ' + tracker.tokens.asana) return reply(401, { errors: [{ message: 'Not Authorized' }] })
   const path = url.pathname.replace('/api/1.0', '')
   if (path === '/users/me') return reply(200, { data: { name: 'IT', email: 'it@northstar.test' } })
-  if (path === '/projects/1200') return reply(200, { data: { gid: '1200', name: 'Security work' } })
+  if (path === '/projects/1200') return reply(200, { data: { gid: '1200', name: 'Security work',workspace:{gid:'100'},custom_field_settings:[{custom_field:{gid:'300',name:'Priority',resource_subtype:'enum',enum_options:['Critical','High','Medium','Low'].map((name,n)=>({gid:String(310+n),name,enabled:true}))}}] } })
+  if (path === '/workspaces/100/tags') return reply(200,{data:[{gid:'201',name:'evidence'},{gid:'202',name:'compliance'}],next_page:null})
   if (path === '/tasks' && request.method === 'POST') { const i = issue('asana', { id: String(5000 + sequence + 1), title: body.data.name, due: body.data.due_on ?? null }); return reply(201, { data: { gid: i.id, permalink_url: 'https://app.asana.com/0/1200/' + i.id } }) }
   const m = /^\/tasks\/(\d+)(\/stories)?$/.exec(path), i = m && find('asana', m[1])
   if (!i || i.deleted) return reply(404, { errors: [{ message: 'Unknown object' }] })

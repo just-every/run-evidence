@@ -7,8 +7,8 @@
 import { createRequire } from 'node:module'
 const require = createRequire(import.meta.url)
 const { build } = createRequire(require.resolve('wrangler/package.json'))('esbuild')
-const bundled = await build({ stdin: { contents: "export * from './src/evidence/library/index.ts'; export { catalogue } from './src/evidence/tests/catalogue.ts'; export { riskLibrary } from './src/evidence/risk/library.ts'; export { templates } from './src/evidence/policy/templates.ts'", resolveDir: process.cwd(), loader: 'ts' }, bundle: true, write: false, format: 'esm', platform: 'neutral' })
-const { frameworks, controlsFor, libraryControls, libraryRevisions, latestLibraryRevision, catalogue, riskLibrary, templates } = await import('data:text/javascript;base64,' + Buffer.from(bundled.outputFiles[0].text).toString('base64'))
+const bundled = await build({ stdin: { contents: "export * from './src/evidence/library/index.ts'; export { catalogue } from './src/evidence/tests/catalogue.ts'; export { riskLibrary } from './src/evidence/risk/library.ts'; export { templates } from './src/evidence/policy/templates.ts'; export { currentScopes, saqScope } from './src/evidence/program/documents/saq-scope.ts'; export { saqWording } from './src/evidence/program/documents/saq-wording.ts'", resolveDir: process.cwd(), loader: 'ts' }, bundle: true, write: false, format: 'esm', platform: 'node' })
+const { frameworks, controlsFor, libraryControls, libraryRevisions, latestLibraryRevision, catalogue, riskLibrary, templates, currentScopes, saqScope, saqWording } = await import('data:text/javascript;base64,' + Buffer.from(bundled.outputFiles[0].text).toString('base64'))
 const failures = []
 let requirements = 0
 for (const framework of Object.values(frameworks)) for (const edition of framework.editions) for (const requirement of edition.requirements) {
@@ -16,9 +16,14 @@ for (const framework of Object.values(frameworks)) for (const edition of framewo
  for (let revision = 1; revision <= latestLibraryRevision; revision++) if (!controlsFor(framework.id, edition.id, requirement.ref, revision).length) failures.push(`${framework.id} ${edition.id} ${requirement.ref} has no mapped control at library revision ${revision}`)
 }
 libraryRevisions.forEach((r, i) => {
- if (r.revision !== i + 2 || !r.changes.length) failures.push(`library revision ${r.revision} is out of sequence or empty`)
+ if (r.revision !== i + 2 || (!r.changes.length && !r.saqChanges?.length && !r.stateChanges?.length)) failures.push(`library revision ${r.revision} is out of sequence or empty`)
+ for (const x of r.saqChanges ?? []) {
+  const before = saqScope(x.type, r.revision - 1), after = saqScope(x.type, r.revision)
+  if (!currentScopes[x.type] || !x.from || !x.to || !x.removed.length || before.revision === after.revision || x.removed.some(id => !before.ids.includes(id) || after.ids.includes(id))) failures.push(`library revision ${r.revision} has an invalid SAQ change`)
+ }
  for (const x of r.changes) if (!libraryControls.some(c => c.id === x.control) || !frameworks[x.framework]?.editions[0].requirements.some(q => q.ref === x.ref)) failures.push(`library revision ${r.revision} changes unknown ${x.control} ${x.framework} ${x.ref}`)
 })
+for (const [type, scope] of Object.entries(currentScopes)) if (!scope.revision || !scope.source.startsWith('https://docs-prv.pcisecuritystandards.org/') || !scope.ids.length || new Set(scope.ids).size !== scope.ids.length || scope.ids.some(id => !saqWording[id])) failures.push(`SAQ ${type} lacks revision, provenance, unique ids or Evidence wording`)
 const ids = new Set()
 for (const control of libraryControls) {
  if (ids.has(control.id)) failures.push(`${control.id} is duplicated`); ids.add(control.id)
@@ -46,7 +51,7 @@ for (const connector of new Set(catalogue.flatMap(entry => entry.providers))) {
 const families = {
  cloud: { connectors: ['aws', 'gcp', 'azure'], classes: ['IAM and MFA', 'Public storage', 'Encryption at rest', 'Encryption in transit', 'Logging and monitoring', 'Backup', 'Network configuration'] },
  identity: { connectors: ['okta', 'google', 'entra', 'jumpcloud'], classes: ['MFA', 'Privileged roles', 'Inactive users', 'Departed users'] },
- code: { connectors: ['github'], classes: ['Branch protection', 'Required review', 'Required checks', 'Membership and MFA', 'Repository privacy', 'Dependency alerts', 'Secret alerts'] },
+ code: { connectors: ['github','gitlab','bitbucket','azuredevops'], classes: ['Branch protection', 'Required review', 'Required checks', 'Membership and MFA', 'Repository privacy', 'Dependency alerts', 'Secret alerts'] },
 }
 const ownSources = ['policies', 'attestations', 'training']
 let classes = 0

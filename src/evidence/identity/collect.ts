@@ -1,10 +1,11 @@
+import { sourceReadTime } from '../connect/pages'
 import type { Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
 import { auditStatement, text, type Actor, type Input } from '../door'
 import { seal, unseal } from '../connect/custody'
 import { backoffUpdate, reconnectUpdate, startRun } from '../connect/runs'
 import type { Connection } from '../connect/storage'
-import { upsertResources, type ResourceSchema } from '../resources'
+import { upsertResources, upsertCollectedResources, type ResourceSchema } from '../resources'
 import { catalogueStatements } from '../tests/storage'
 import { runForType } from '../tests/engine'
 import { DirectoryFailure, type Directory } from './directory'
@@ -16,7 +17,7 @@ import { jumpcloud } from './jumpcloud'
 export const directories: Record<string, Directory> = { okta, google, entra, jumpcloud }
 export const isDirectory = (provider: string) => Object.hasOwn(directories, provider)
 const DAY = 86400000
-const schema: ResourceSchema = { fields: { email: 'string', status: 'string', population: 'string', active: 'boolean', admin: 'boolean', roles: 'string', groups: 'string', mfa_enrolled: 'boolean', last_sign_in: 'string', mfa_ok: 'boolean', admin_mfa_ok: 'boolean', guest_admin: 'boolean', inactive_days: 'number', readable: 'boolean' }, required: [] }
+export const schema: ResourceSchema = { fields: { email: 'string', status: 'string', population: 'string', active: 'boolean', admin: 'boolean', roles: 'string', groups: 'string', mfa_enrolled: 'boolean', last_sign_in: 'string', mfa_ok: 'boolean', admin_mfa_ok: 'boolean', guest_admin: 'boolean', inactive_days: 'number', readable: 'boolean' }, required: [] }
 export const directoryConfig = (c: Pick<Connection, 'config_json'>): Record<string, string> => { try { return JSON.parse(c.config_json) } catch { return {} } }
 function parseConfig(directory: Directory, input: Input) {
  const config: Record<string, string> = {}
@@ -49,7 +50,7 @@ export async function rotateDirectory(env: Bindings, actor: Actor, row: Connecti
  await env.DB.batch([env.DB.prepare("UPDATE connections SET secret_ciphertext=?,secret_iv=?,status='active',rotated_at=?,revoked_at=NULL,last_error='',backoff_seconds=0,next_attempt_at=NULL WHERE id=?").bind(sealed.ciphertext, sealed.iv, now.toISOString(), row.id), auditStatement(env, actor, row.status === 'active' ? 'connection.rotated' : 'connection.reconnected', 'connection:' + row.id, now)])
 }
 export async function runDirectoryCollection(env: Bindings, connection: Connection, trigger: 'schedule' | 'manual', now: Date) {
- const directory = directories[connection.provider], started = await startRun(env, connection, connection.provider + '-1', trigger, now)
+ const directory = directories[connection.provider], started = await startRun(env, connection, connection.provider + '-2', trigger, now)
  if (!started) return { run: null, outcome: 'already running' }
  const { finish } = started, at = now.toISOString()
  if (connection.status !== 'active' || !connection.secret_ciphertext || !connection.secret_iv) return finish('failed', {}, 'connection is ' + connection.status)
@@ -63,7 +64,7 @@ export async function runDirectoryCollection(env: Bindings, connection: Connecti
   if (error.kind === 'unauthorized') return finish('failed', {}, error.message, reconnectUpdate(env, connection, `${error.message}; reconnect with a new credential.`, now))
   // Nothing read: known accounts are rewritten unread, so their tests are unknown, not carried forward.
   const known = (await env.DB.prepare('SELECT unique_id,display_name FROM resources WHERE type=? AND source_ref=? AND removed_at IS NULL').bind('identity.account', 'directory:' + connection.id).all<{ unique_id: string; display_name: string }>()).results
-  await upsertResources(env, 'identity.account', schema, known.map(k => ({ uniqueId: k.unique_id, displayName: k.display_name, attributes: { readable: false } })), { kind: 'source-observed', ref: 'directory:' + connection.id, label: `${directory.name} ${connection.account}` }, false, now)
+  await upsertCollectedResources(env, 'identity.account', schema, known.map(k => ({ uniqueId: k.unique_id, displayName: k.display_name, attributes: { readable: false } })), { kind: 'source-observed', ref: 'directory:' + connection.id, label: `${directory.name} ${connection.account}` }, false, now)
   await runForType(env, 'identity.account', now)
   return finish('failed', { gaps: [error.message] }, error.message, env.DB.prepare('UPDATE connections SET last_attempt_at=?,last_error=? WHERE id=?').bind(at, error.message, connection.id))
  }
@@ -76,11 +77,11 @@ export async function runDirectoryCollection(env: Bindings, connection: Connecti
   } }
  })
  const source = { kind: 'source-observed' as const, ref: 'directory:' + connection.id, label: `${directory.name} ${connection.account} via ${connection.label}` }
- const written = await upsertResources(env, 'identity.account', schema, items, source, read.complete ? 'source' : false, now)
+ const written = await upsertCollectedResources(env, 'identity.account', schema, items, source, read.complete, now)
  const fresh = written.results.filter(r => r.id && r.outcome !== 'removed' && r.outcome !== 'rejected').map(r => r.id!)
  // An account Evidence could not store is a gap, never a silent omission.
  for (const r of written.results.filter(r => r.outcome === 'rejected')) read.gaps.push(`account ${r.uniqueId} not stored: ${(r.reasons ?? []).join('; ')}`)
- if (fresh.length) await env.DB.prepare('UPDATE resources SET observed_at=? WHERE id IN (SELECT value FROM json_each(?))').bind(at, JSON.stringify(fresh)).run()
+ if (fresh.length) await env.DB.prepare('UPDATE resources SET observed_at=? WHERE id IN (SELECT value FROM json_each(?))').bind(sourceReadTime(now), JSON.stringify(fresh)).run()
  await proposeMatches(env, now)
  const outcome = read.gaps.length ? 'partial' : 'complete'
  const result = await finish(outcome, { accounts: read.accounts.length, populations: Object.fromEntries(['person', 'contractor', 'guest', 'service'].map(p => [p, read.accounts.filter(a => a.population === p).length])), suspended: read.accounts.filter(a => a.status !== 'active').length, gaps: read.gaps }, '', env.DB.prepare('UPDATE connections SET last_attempt_at=?,last_success_at=?,next_attempt_at=NULL,backoff_seconds=0,last_error=? WHERE id=?').bind(at, at, read.gaps.join('; '), connection.id))

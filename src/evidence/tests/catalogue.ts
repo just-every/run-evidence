@@ -1,3 +1,6 @@
+import {azuredevopsCatalogue} from '../connect/azuredevops-catalogue'
+import {bitbucketCatalogue} from '../connect/bitbucket-catalogue'
+import {gitlabCatalogue} from '../connect/gitlab-catalogue'
 import type { Criterion } from './criteria'
 import { awsCatalogue } from '../cloud/catalogue'
 import { gcpCatalogue } from '../cloud/gcp'
@@ -66,13 +69,15 @@ export const catalogue: CatalogueEntry[] = [
    api: 'gh api repos/OWNER/REPO/secret-scanning/alerts?state=open  then PATCH /repos/{owner}/{repo}/secret-scanning/alerts/{number} {"state":"resolved","resolution":"revoked"}',
   } } },
  { id: 'github.departed-members', name: 'Departed people hold no organization membership', providers: ['github'], resourceType: 'github.organization', evidenceClass: 'Departed members',
-  cadence: 'daily', category: 'identity', severity: 'high', controls: ['HR-05'], configuration: false, unsupported: true,
-  manualRequirement: 'HR-05 offboarding checklist with GitHub membership removal times, until an HRIS or identity source is connected to compare membership against.',
+  criteria: [{ attribute: 'departed_members', op: 'max', value: 0 }], cadence: 'daily', category: 'identity', severity: 'high', controls: ['HR-05'], configuration: false,
   remediation: { github: {
    console: 'Organization → People → remove the departed member, or convert them to an outside collaborator only if access is still approved.',
    api: 'gh api -X DELETE orgs/ORG/members/USERNAME',
    noTerraform: 'Membership removal is an operational action; github_membership resources can manage it if you hold membership in Terraform.',
   } } },
+ ...azuredevopsCatalogue,
+ ...bitbucketCatalogue,
+ ...gitlabCatalogue,
  ...awsCatalogue,
  ...gcpCatalogue,
  ...azureCatalogue,

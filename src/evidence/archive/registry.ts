@@ -1,14 +1,23 @@
+import {promiseColumns} from '../agent/promise-archive'
+import {trustColumns,trustLocal} from '../trust/archive'
+import { auditColumns } from '../review/engagement/archive'
+import { codeManifestColumns } from '../connect/manifest-schema'
+import { tailoringColumns } from '../agent/tailoring-archive'
+import { answerColumns } from '../answer/archive'
+import { privacyColumns } from '../erase/archive'
 import schemaData from './schema.json'
 import { columns } from './format'
 import { agentColumns } from '../agent/archive'
 import { importTableColumns } from '../import/archive-schema'
 import { programColumns, libraryColumns } from './program'
+import { vendorColumns, vendorReviewColumns } from '../vendor/archive'
+import { documentColumns } from '../program/documents/archive'
 import { fail } from './format'
 import type { Bindings } from '../../auth.server'
 export type Store = Pick<Bindings,'DB'|'EXHIBITS'> & {ARCHIVE_COPY?:(source:string,key:string,size:number,session:string)=>Promise<boolean>}
 type Definition = {columns:{name:string;type:string;pk:number}[];foreignKeys:{id:number;seq:number;table:string;from:string;to:string}[];sql:string}
 export const schema = schemaData as Record<string,Definition>
-export const registry:Record<string,readonly string[]> = {...columns,...agentColumns,...importTableColumns,...programColumns,...libraryColumns,tests:[...programColumns.tests,'remediation'],product_audit:[...programColumns.product_audit,'reason','revision']}
+export const registry:Record<string,readonly string[]> = {...columns,...promiseColumns,...agentColumns,...importTableColumns,...programColumns,...libraryColumns,period_investigations:['id','control_id','period_from','period_to','snapshot_json','snapshot_hash','created_by','created_name','created_at'],period_investigation_decisions:['investigation_id','action','snapshot_hash','reason','actor_id','actor_name','decided_at'],...vendorColumns,...documentColumns,...privacyColumns,...vendorReviewColumns,...answerColumns,...tailoringColumns,...codeManifestColumns,...auditColumns,...trustColumns,tests:[...programColumns.tests,'remediation'],product_audit:[...programColumns.product_audit,'reason','revision'],operation_steps:['id','step','scheduled_at','lease_until','finished_at','outcome','processed_count','detail']}
 // LOG-001: v10 archives written before audit reasons and revisions list
 // product_audit without them; their entries restore with both empty.
 export const auditColumnsBefore:readonly string[] = programColumns.product_audit
@@ -17,9 +26,12 @@ export const auditColumnsBefore:readonly string[] = programColumns.product_audit
 export const businessRows=(t:string,table=quote(t))=>t==='product_audit'?`(SELECT COUNT(*) FROM ${table} WHERE action NOT LIKE 'auth.%')`:`(SELECT COUNT(*) FROM ${table})`
 export const portableTables = Object.keys(registry)
 export const localTables = Object.keys(schema).filter(t=>!Object.hasOwn(registry,t))
-export const portableLocal:Record<string,string[]> = {
- // OPS-001: execution attempts belong to this installation; restoration never replays them.
- operation_steps:['id','step','scheduled_at','lease_until','finished_at','outcome','processed_count','detail'],
+export const portableLocal:Record<string,readonly string[]> = {
+ ...trustLocal,
+ credential_displays:['id','session_id','operator_id','destination','ciphertext','iv','expires_at'],
+ tailoring_guard:['singleton','allowed'],
+ privacy_guard:['singleton','allowed'],
+ operation_recovery:['singleton','restored_at'],
  portable_journal_stage:['session_id','lineage','sequence','recorded_at','receipt'],
  portable_state:['singleton','lineage','generation'], portable_journal:['lineage','sequence','recorded_at','receipt'],
  portable_history:['lineage','sequence','checked_at'], portable_capabilities:['capability','subject','authorized_by','authorized_at'],
@@ -31,11 +43,18 @@ export const quote=(s:string)=>'"'+s.replaceAll('"','""')+'"'
 export const stagePrefix=(id:string)=>'portable_stage_'+id.replaceAll('-','')+'_'
 export const staged=(id:string,t:string)=>quote(stagePrefix(id)+t)
 export const blobColumn=(t:string,c:string)=>schema[t].columns.find(v=>v.name===c)?.type.toUpperCase()==='BLOB'
-export const selectJSON=(t:string)=>`json_object(${registry[t].flatMap(c=>["'"+c+"'",blobColumn(t,c)?`CASE WHEN ${quote(c)} IS NULL THEN NULL ELSE hex(${quote(c)}) END`:quote(c)]).join(',')})`
+export function selectJSON(t:string) {
+ const fields=registry[t],value=(c:string)=>blobColumn(t,c)?`CASE WHEN ${quote(c)} IS NULL THEN NULL ELSE hex(${quote(c)}) END`:quote(c)
+ // D1 permits 32 function arguments. JSON setters retain explicit NULL values.
+ let result=`json_object(${fields.slice(0,16).flatMap(c=>["'"+c+"'",value(c)]).join(',')})`
+ for(let i=16;i<fields.length;i+=15)result=`json_set(${result},${fields.slice(i,i+15).flatMap(c=>["'$\.\""+c+"\"'",value(c)]).join(',')})`
+ return result
+}
 export async function assertSchema(env:Store) {
  const found=(await env.DB.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all<{name:string}>()).results
  const sessions=(await env.DB.prepare('SELECT id FROM portable_sessions').all<{id:string}>()).results
  const staging = new Set(sessions.flatMap(s=>portableTables.map(t=>stagePrefix(s.id)+t)))
+ const inspect:{name:string;expected:readonly string[]}[]=[]
  for(const {name} of found) {
   // Cloudflare owns this exact internal table and denies PRAGMA table_info
   // with SQLITE_AUTH. It carries platform bookkeeping, never product data.
@@ -43,17 +62,24 @@ export async function assertSchema(env:Store) {
   const expected=schema[name]?.columns.map(c=>c.name) ?? portableLocal[name] ?? engineTables[name]
   if(!expected && !staging.has(name)) fail(`Unaccounted database table: ${name}. No partial archive is allowed.`)
   if(staging.has(name)) continue
-  const actual=(await env.DB.prepare(`PRAGMA table_info(${quote(name)})`).all<{name:string}>()).results.map(c=>c.name)
-  if(actual.length!==expected.length || actual.some(c=>!expected.includes(c))) fail(`Unaccounted database columns in ${name}.`)
+  inspect.push({name,expected})
+ }
+ for(let i=0;i<inspect.length;i+=100){
+  const group=inspect.slice(i,i+100),results=await env.DB.batch<{name:string}>(group.map(({name})=>env.DB.prepare(`PRAGMA table_info(${quote(name)})`)))
+  group.forEach(({name,expected},index)=>{const actual=results[index].results.map(c=>c.name);if(actual.length!==expected.length || actual.some(c=>!expected.includes(c)))fail(`Unaccounted database columns in ${name}.`)})
  }
  for(const t of [...portableTables,...Object.keys(portableLocal)]) if(!found.some(v=>v.name===t)) fail(`Required archive table ${t} is absent. Apply all migrations.`)
 }
-export async function* pages(env:Store,table:string,source=quote(table)) {
- let position=0
+export interface ArchivePageRow {position:number;data:string;page_rows:number}
+export const pageStatement=(env:Store,table:string,source=quote(table),position=0)=>env.DB.prepare(`SELECT position,data,page_rows FROM (SELECT position,data,count(*) OVER() AS page_rows,sum(length(data)) OVER(ORDER BY position) AS bytes,row_number() OVER(ORDER BY position) AS n FROM (SELECT rowid AS position,${selectJSON(table)} AS data FROM ${source} WHERE rowid>? ORDER BY rowid LIMIT 128)) WHERE bytes<=524288 OR n=1`).bind(position)
+export async function* pages(env:Store,table:string,source=quote(table),initial?:ArchivePageRow[]) {
+ let position=0,ready=initial
  for(;;) {
-  const rows=(await env.DB.prepare(`SELECT position,data FROM (SELECT position,data,sum(length(data)) OVER(ORDER BY position) AS bytes,row_number() OVER(ORDER BY position) AS n FROM (SELECT rowid AS position,${selectJSON(table)} AS data FROM ${source} WHERE rowid>? ORDER BY rowid LIMIT 128)) WHERE bytes<=524288 OR n=1`).bind(position).all<{position:number;data:string}>()).results
+  const rows=ready??(await pageStatement(env,table,source,position).all<ArchivePageRow>()).results
+  ready=undefined
   if(!rows.length) break
   yield rows.map(r=>JSON.parse(r.data) as Record<string,string|number|null>)
   position=rows.at(-1)!.position
+  if(rows.length===rows[0].page_rows&&rows[0].page_rows<128)break
  }
 }

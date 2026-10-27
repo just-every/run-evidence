@@ -1,5 +1,36 @@
 {
   "schema": 1,
   "projectId": "just-every/evidence",
-  "sourceRepository": "https://github.com/just-every/run-evidence"
+  "name": "Evidence",
+  "sourceRepository": "https://github.com/just-every/run-evidence",
+  "license": "MIT",
+  "deployment": {
+    "target": "cloudflare-workers",
+    "artifactFile": "rer-worker-artifact.json"
+  },
+  "operations": {
+    "setup": "pnpm install --frozen-lockfile && pnpm exec rer install",
+    "build": "pnpm run build",
+    "verify": "pnpm exec rer check --profile first-party && pnpm check:deployment-spec && pnpm run verify",
+    "artifact": "node scripts/delivery/base/cli.mjs artifact --config packaging.json",
+    "recovery": "Follow docs/BACKUP-RESTORE.md and docs/OPERATIONS.md: retain the exact source, private configuration and complete Evidence custody archive; restore into a fresh empty installation, compare records and attachment bytes, and verify owner sign-in before routing traffic. Preserve all applied migration names and bytes."
+  },
+  "verification": {
+    "migrationDirectories": [
+      "migrations/core"
+    ],
+    "guidanceFiles": [
+      "AGENTS.md",
+      "CONTRACT.md",
+      "OPERATIONS.md"
+    ],
+    "testPatterns": [
+      "tests/*.mjs"
+    ]
+  },
+  "verifyWorkflow": "verify.yml",
+  "setup": {
+    "path": "rer-setup.json",
+    "sha256": "12a9e8927e5277e6b9e203de61b786d5d0cd3cb7622ea3db8c9e38fda3f78ccc"
+  }
 }

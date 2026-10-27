@@ -1,4 +1,6 @@
+import { vendorReviewJourney } from './helpers/vendor-review-journey.mjs'
 import {decodeArchive} from './helpers/portable-format.mjs'
+import {vendorJourney} from './helpers/vendor-journey.mjs'
 // Risk register, shipped library, spreadsheet import and versioned scoring
 // through the owner's doors and the Cron Trigger. Only the mail edge is faked.
 process.env.RER_SERVER_JOURNEY = '1'
@@ -189,6 +191,9 @@ try {
    assert.match(await (await prior.fetch('/app/risks/'+id)).text(), /legacy, not recorded/)
    const exported = Buffer.from(await (await prior.fetch('/api/archive/export')).arrayBuffer())
    const magic = Buffer.from('EVIDENCE-ARCHIVE\n'), decoded = decodeArchive(exported), manifest = decoded.manifest
+   // Trust records first joined the core portable registry after this legacy format.
+   const trustTables = ['trust_settings','trust_categories','trust_subscribers','trust_subscriptions','trust_consent_events','trust_customer_grants','trust_updates','trust_subprocessor_changes','trust_deliveries','trust_delivery_events','trust_grant_records','trust_submissions']
+   for (const table of trustTables) delete manifest.extensions.program.rows[table]
    manifest.version = 4; delete manifest.extensions.program.files; delete manifest.extensions.program.rows.handover_events; delete manifest.extensions.program.rows.handover_settings; for (const t of ['vuln_imports','vuln_findings','vuln_documents','vuln_events','control_revisions','requirement_revisions','run_control_definitions','custom_frameworks','custom_framework_requirements','custom_framework_revisions','custom_framework_mappings']) delete manifest.extensions.program.rows[t]; manifest.extensions.program.rows.risk_methods = []
    for (const row of manifest.extensions.program.rows.risks) delete row.library_revision
    const text = JSON.stringify(manifest), legacyEnvelope = Buffer.from(JSON.stringify({manifest:text,sha256:createHash('sha256').update(text).digest('hex')}))
@@ -200,6 +205,8 @@ try {
     await target.signin()
     const restored = await target.fetch('/api/archive/restore',{method:'POST',headers:{origin:target.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore', 'x-evidence-erasure-history':'unverified acknowledged'},body:legacy})
     assert.equal(restored.status,200,await restored.text())
+    const restoredArchive = decodeArchive(Buffer.from(await (await target.fetch('/api/archive/export')).arrayBuffer()))
+    for (const table of [...trustTables,'promise_dependencies','promise_reviews','promise_revisions']) assert.deepEqual(restoredArchive.allRows[table], [], 'legacy archives restore without later portable records: ' + table)
     const copy = await (await target.fetch('/api/risks/'+id)).json()
     assert.equal(copy.assessments[0].score,6);assert.deepEqual(copy.methods[0].likelihood_definitions,[])
     assert.match(await (await target.fetch('/app/risks/'+id)).text(), /legacy, not recorded/)
@@ -207,5 +214,8 @@ try {
 
   } finally {await prior.close()}
  })
+ await scenario('VENDOR-001: onboarding, supplier link requests and per-question answers, findings, expiring conditional approval, overdue reminders and link isolation', async () => { await vendorJourney(app, owner, get, person, runtime) })
  console.log(`${passed} risk register public-door scenarios passed with real workerd, D1 and R2.`)
 } finally { await app.close() }
+
+if(!process.exitCode)await vendorReviewJourney()

@@ -10,8 +10,8 @@ export async function collectorJourney(page, origin, width, capture) {
  const dir = await mkdtemp(join(tmpdir(), 'evidence-private-browser-')), repo = join(dir, 'service')
  try {
   await execute('git', ['init', '--initial-branch=main', repo])
-  const git = args => execute('git', args, { cwd: repo })
-  await git(['config', 'user.name', 'Northstar owner']); await git(['config', 'user.email', 'owner@northstar.test'])
+  const git = args => execute(args[0]==='commit'?'env':'git',args[0]==='commit'?['GIT_AUTHOR_NAME=Run Edit Run fleet','GIT_AUTHOR_EMAIL=' + ['fleet', 'runeditrun.com'].join('@'),'GIT_COMMITTER_NAME=Run Edit Run fleet','GIT_COMMITTER_EMAIL=' + ['fleet', 'runeditrun.com'].join('@'),'git',...args]:args,{cwd:repo})
+  await git(['config', 'user.name', 'Run Edit Run fleet']); await git(['config', 'user.email', ['fleet', 'runeditrun.com'].join('@')])
   await writeFile(join(repo, 'application.txt'), 'Private service data stays here.\n')
   await git(['add', '.']); await git(['commit', '-m', 'Private service'])
   await page.goto(origin + '/app/connections')

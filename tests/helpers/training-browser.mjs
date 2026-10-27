@@ -1,0 +1,62 @@
+import assert from 'node:assert/strict'
+import { browserBridge } from './browser-bridge.mjs'
+export async function trainingBrowser(app, ownerCookie, right) {
+ const bridge = await browserBridge(app, 'training'), { origin, capture } = bridge
+ const post = (path, body) => app.fetch(path, { method: 'POST', headers: { origin: app.origin, 'content-type': 'application/json' }, body: JSON.stringify(body) })
+ try {
+  for (const [width, name] of [[1440, 'Priya Shah'], [390, 'Jess Tran']]) {
+   app.setCookie(ownerCookie)
+   const p = await (await post('/api/people', { name, email: `learner-${width}@cedar-ridge.test`, kind: 'employee' })).json()
+   await app.tick()
+   const owner = await bridge.context(width, ownerCookie), ownerPage = await owner.newPage()
+   await ownerPage.goto(origin + '/app/people')
+   const invite = ownerPage.locator(`form[action="/app/people/${p.id}/invite"]`)
+   await invite.getByRole('button').click()
+   await ownerPage.getByRole('heading', { name: 'Invitation created', level: 1 }).waitFor()
+   await capture(ownerPage, 'invitation-created')
+   const mail = app.messages.filter(m => m.to?.includes(`learner-${width}@cedar-ridge.test`)).at(-1)
+   const token = new URL(mail.html.match(/href="([^"]*\/auth\/confirm\?token=[^"]+)"/)[1].replaceAll('&amp;', '&'), app.origin).searchParams.get('token')
+   const learner = await bridge.context(width), page = await learner.newPage()
+   // A real native invitation and explicit confirmation, never an owner session.
+   await page.goto(origin + '/auth/confirm?token=' + token)
+   await page.locator('form').getByRole('button').click()
+   await page.waitForURL('**/me')
+   assert.equal(await page.getByRole('link', { name: 'Proof desk', exact: true }).count(), 0)
+   await capture(page, 'learner-tasks')
+   await page.goto(origin + '/app'); await page.waitForURL('**/me')
+   const forbidden = await page.goto(origin + '/app/programs')
+   assert.equal(forbidden.status(), 403)
+   assert.match(forbidden.headers()['content-type'], /text\/html/)
+   await capture(page, 'owner-access-refused')
+   const missing = await page.goto(origin + '/me/training/missing-course'); assert.equal(missing.status(), 404); assert.match(missing.headers()['content-type'], /text\/html/)
+   await page.goto(origin + '/me/training/security-awareness')
+   assert.equal(await page.getByRole('group').count(), right.length)
+   assert.equal(await page.getByRole('link', { name: 'Audit', exact: true }).count(), 0)
+   await capture(page, 'course-and-assessment')
+   const answer = async answers => { for (const [i, a] of answers.entries()) await page.locator(`input[name="answers[${i}]"][value="${a}"]`).check(); await page.getByRole('button', { name: 'Submit answers' }).click() }
+   await answer(right.map((a, i) => i < 3 ? (a + 1) % 4 : a))
+   await page.getByRole('heading', { name: 'Not passed yet', level: 1 }).waitFor()
+   assert.match(await page.locator('[role=status]').innerText(), /70%/)
+   await capture(page, 'assessment-not-passed')
+   await page.goto(origin + '/me/training/security-awareness')
+   await answer(right)
+   await page.getByRole('heading', { name: 'Passed', level: 1 }).waitFor()
+   assert.match(await page.locator('[role=status]').innerText(), /100%/)
+   await capture(page, 'assessment-passed')
+   await page.getByRole('link', { name: 'Back to my tasks' }).click()
+   assert.equal(await page.getByRole('link', { name: 'Security awareness', exact: true }).count(), 0)
+   await capture(page, 'learner-completed')
+   app.setCookie(ownerCookie)
+   const record = await (await app.fetch('/api/training/export')).json()
+   assert.deepEqual(record.attempts.filter(a => a.email === `learner-${width}@cedar-ridge.test`).map(a => [a.score, a.passed]), [[70, 0], [100, 1]])
+   await ownerPage.goto(origin + '/app/training')
+   await ownerPage.getByRole('heading', { name: 'Assessment attempts' }).waitFor()
+   await capture(ownerPage, 'owner-training-results')
+   const review = ownerPage.locator('[aria-labelledby="courses-title"] details').first()
+   await review.locator('summary').click()
+   await capture(ownerPage, 'course-revision-review')
+   await learner.close(); await owner.close()
+   console.log(`PASS learner invitation, failure, retake, retained results and task isolation at ${width}`)
+  }
+ } finally { app.setCookie(ownerCookie); await bridge.close() }
+}

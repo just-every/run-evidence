@@ -1,0 +1,3 @@
+/* Keep retained previews within the available space, including long custody values. */
+.rer-themed .privacy-page pre { min-width: 0; max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; overflow-x: auto; }
+.rer-themed .privacy-page code { overflow-wrap: anywhere; word-break: break-word; }

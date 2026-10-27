@@ -1,3 +1,7 @@
+import {runForConnection} from '../tests/engine'
+import {rotateAzureDevops} from './azuredevops-collect'
+import {rotateBitbucket} from './bitbucket-collect'
+import {rotateGitlab} from './gitlab-collect'
 import type { Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
 import { auditStatement, list, text, type Actor, type Input } from '../door'
@@ -20,7 +24,7 @@ async function verify(base: string, org: string, token: string, now: Date) {
  const client = githubClient(base, token, () => now.getTime())
  try {
   const organization = await readOrganization(client, org)
-  if (!organization.readable) throw new Refusal(organization.status === 404 ? `The organization ${org} is not visible to this credential.` : `GitHub answered ${organization.status} for the organization.`)
+  if (!organization.readable) throw new Refusal(organization.reason ?? (organization.status === 404 ? `The organization ${org} is not visible to this credential.` : `GitHub answered ${organization.status} for the organization.`))
   const repos = await listRepositories(client, org)
   if (!repos) throw new Refusal('This credential cannot list the organization\'s repositories (needs Metadata: read).')
   return { scopes: organization.scopes, repos: repos.names }
@@ -48,6 +52,9 @@ export async function connectGithub(env: Bindings, actor: Actor, input: Input, n
 export async function rotateCredential(env: Bindings, actor: Actor, id: string, input: Input, now: Date) {
  const row = await requireConnection(env, id)
  if (row.provider === 'private-git') throw new Refusal('Use the collector token rotation door.', 409)
+ if (row.provider === 'azuredevops') return rotateAzureDevops(env,actor,row,input,now)
+ if (row.provider === 'bitbucket') return rotateBitbucket(env,actor,row,input,now)
+ if (row.provider === 'gitlab') return rotateGitlab(env,actor,row,input,now)
  if (row.provider === 'aws') return rotateAws(env, actor, row, input, now)
  if (row.provider === 'knowbe4') return rotateKnowBe4(env, actor, row, input, now)
  if (isDirectory(row.provider)) return rotateDirectory(env, actor, row, input, now)
@@ -64,6 +71,7 @@ export async function rotateCredential(env: Bindings, actor: Actor, id: string, 
 export async function revokeConnection(env: Bindings, actor: Actor, id: string, now: Date) {
  await requireConnection(env, id)
  await env.DB.batch([env.DB.prepare("UPDATE connections SET status='revoked',secret_ciphertext=NULL,secret_iv=NULL,collector_token_hash=NULL,revoked_at=? WHERE id=?").bind(now.toISOString(), id), auditStatement(env, actor, 'connection.revoked', 'connection:' + id, now)])
+ await runForConnection(env,id,now)
 }
 export async function selectRepositories(env: Bindings, actor: Actor, id: string, input: Input, now: Date) {
  await requireConnection(env, id)
@@ -76,4 +84,4 @@ export async function selectRepositories(env: Bindings, actor: Actor, id: string
  ])
 }
 export const repositories = async (env: Bindings, id: string) => (await env.DB.prepare('SELECT full_name,selected FROM connection_repositories WHERE connection_id=? ORDER BY full_name').bind(id).all<{ full_name: string; selected: number }>()).results
-export const runs = async (env: Bindings, id: string) => (await env.DB.prepare('SELECT * FROM collection_runs WHERE connection_id=? ORDER BY started_at DESC LIMIT 100').bind(id).all<{ id: string; trigger: string; connector_revision: string; started_at: string; finished_at: string | null; outcome: string | null; coverage_json: string; error_code: string }>()).results
+export const runs = async (env: Bindings, id: string) => (await env.DB.prepare('SELECT * FROM collection_runs WHERE connection_id=? ORDER BY started_at DESC,rowid DESC LIMIT 100').bind(id).all<{ id: string; trigger: string; connector_revision: string; started_at: string; finished_at: string | null; outcome: string | null; coverage_json: string; error_code: string }>()).results

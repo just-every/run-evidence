@@ -1,3 +1,6 @@
+import { readPageStream } from '../connect/pages'
+import { jsonShape, queryShape, restShape } from './aws-schema'
+import { scopedFetch } from '../ops/execution'
 import { sign, type Credentials } from './sigv4'
 import { at, items, list, parseXml, textAt, type XmlNode, type XmlValue } from './xml'
 // Read-only AWS calls for CLOUD-001. Every call is a Describe, List or Get;
@@ -12,11 +15,11 @@ function classify(status: number, code: string, service: string): AwsFailure {
  const kind: AwsKind = unauthorized.test(code) ? 'unauthorized' : denied.test(code) || status === 403 ? 'denied' : throttled.test(code) || status === 429 ? 'throttled' : status === 404 || /^NoSuch|NotFound/.test(code) ? 'missing' : 'unavailable'
  return new AwsFailure(kind, code || String(status), `${service} answered ${code || status}`)
 }
-export function awsClient(credentials: Credentials, now: () => Date) {
+export function awsClient(credentials: Credentials, now: () => Date, scope = 'primary') {
  async function send(service: string, region: string, method: string, url: URL, body = '', headers: Record<string, string> = {}) {
   const signed = await sign({ method, url, headers, body, region, service, credentials, now: now() })
   let response: Response
-  try { response = await fetch(url, { method, headers: signed, body: method === 'GET' ? undefined : body, redirect: 'manual', signal: AbortSignal.timeout(20000) }) }
+  try { response = await scopedFetch(url, { method, headers: signed, body: method === 'GET' ? undefined : body, redirect: 'manual', signal: AbortSignal.timeout(20000) }) }
   catch { throw new AwsFailure('unavailable', 'transport', `${service} could not be reached`) }
   return { status: response.status, text: await response.text() }
  }
@@ -26,6 +29,8 @@ export function awsClient(credentials: Credentials, now: () => Date) {
   let doc: XmlNode
   try { doc = parseXml(reply.text) } catch { throw new AwsFailure('unavailable', 'malformed', `${service} answered unreadable XML`) }
   if (reply.status !== 200) throw classify(reply.status, textAt(doc, 'ErrorResponse', 'Error', 'Code') ?? textAt(doc, 'Response', 'Errors', 'Error', 'Code') ?? '', service)
+  const drift = queryShape(params.Action, doc)
+  if (drift) throw new AwsFailure('unavailable', 'schema-drift', `AWS schema drift: ${drift}`)
   return doc
  }
  // JSON 1.1 APIs (Organizations, CloudTrail) use X-Amz-Target.
@@ -33,21 +38,23 @@ export function awsClient(credentials: Credentials, now: () => Date) {
   const reply = await send(service, region, 'POST', new URL(`https://${host}/`), JSON.stringify(body), { 'content-type': 'application/x-amz-json-1.1', 'x-amz-target': target })
   let parsed: Record<string, unknown> = {}
   try { parsed = reply.text ? JSON.parse(reply.text) : {} } catch { throw new AwsFailure('unavailable', 'malformed', `${service} answered unreadable JSON`) }
-  if (reply.status !== 200) throw classify(reply.status, String(parsed.__type ?? '').split('#').pop() ?? '', service)
+  if (reply.status !== 200) throw classify(reply.status, String(parsed && typeof parsed === 'object' ? parsed.__type ?? '' : '').split('#').pop() ?? '', service)
+  const drift = jsonShape(target, parsed)
+  if (drift) throw new AwsFailure('unavailable', 'schema-drift', `AWS schema drift: ${drift}`)
   return parsed
  }
  // REST APIs: S3 (XML) and GuardDuty (JSON).
  async function rest(service: string, region: string, url: URL, headers: Record<string, string> = {}) {
   const reply = await send(service, region, 'GET', url, '', headers)
-  if (reply.status === 200) return reply.text
+  if (reply.status === 200) { const drift = restShape(service, url, reply.text); if (drift) throw new AwsFailure('unavailable', 'schema-drift', `AWS schema drift: ${drift}`); return reply.text }
   let code = ''
   try { code = service === 's3' ? textAt(parseXml(reply.text), 'Error', 'Code') ?? '' : String((JSON.parse(reply.text) as Record<string, unknown>).__type ?? '') } catch { code = '' }
   throw classify(reply.status, code, service)
  }
- return { query, json, rest }
+ return { query, json, rest, scope }
 }
 export type Client = ReturnType<typeof awsClient>
-const bool = (v: string | null) => v === null ? null : v === 'true'
+const bool = (v: string | null) => v === 'true' ? true : v === 'false' ? false : null
 export async function callerIdentity(c: Client) {
  const doc = await c.query('sts', 'us-east-1', 'sts.amazonaws.com', { Action: 'GetCallerIdentity', Version: '2011-06-15' })
  return { account: textAt(doc, 'GetCallerIdentityResponse', 'GetCallerIdentityResult', 'Account') ?? '', arn: textAt(doc, 'GetCallerIdentityResponse', 'GetCallerIdentityResult', 'Arn') ?? '' }
@@ -58,16 +65,11 @@ export async function assumeRole(c: Client, roleArn: string, externalId: string,
  return { accessKeyId: textAt(creds, 'AccessKeyId') ?? '', secretAccessKey: textAt(creds, 'SecretAccessKey') ?? '', sessionToken: textAt(creds, 'SessionToken') ?? '' }
 }
 // Organization member accounts, or null when this account cannot list them.
-export async function organizationAccounts(c: Client) {
- const accounts: { id: string; name: string; status: string }[] = []
- let token: string | undefined, pages = 0
- try {
-  do {
-   const page = await c.json('organizations', 'us-east-1', 'organizations.us-east-1.amazonaws.com', 'AWSOrganizationsV20161128.ListAccounts', token ? { NextToken: token } : {}) as { Accounts?: { Id: string; Name: string; Status: string }[]; NextToken?: string }
-   accounts.push(...(page.Accounts ?? []).map(a => ({ id: a.Id, name: a.Name, status: a.Status }))); token = page.NextToken
-  } while (token && ++pages < 20)
- } catch (error) { if (error instanceof AwsFailure && (error.kind === 'denied' || /AWSOrganizationsNotInUse/.test(error.code))) return null; throw error }
- return accounts
+export async function organizationAccounts(c:Client) {
+ try{return await readPageStream<{id:string;name:string;status:string}>('aws:organizations:'+c.scope,'',async token=>{
+  const page=await c.json('organizations','us-east-1','organizations.us-east-1.amazonaws.com','AWSOrganizationsV20161128.ListAccounts',token?{NextToken:token}:{}) as {Accounts:{Id:string;Name:string;Status?:string;State?:string}[];NextToken?:string}
+  return {items:page.Accounts.map(a=>({id:a.Id,name:a.Name,status:a.State??a.Status!})),next:page.NextToken||null}
+ },20,m=>new AwsFailure('unavailable','pagination','AWS Organizations '+m))}catch(error){if(error instanceof AwsFailure&&(error.kind==='denied'||/AWSOrganizationsNotInUse/.test(error.code)))return null;throw error}
 }
 // IAM: root MFA, password policy and the credential report (users, MFA, keys).
 export async function readIam(c: Client, now: Date) {
@@ -81,9 +83,13 @@ export async function readIam(c: Client, now: Date) {
  let users: { name: string; console: boolean; mfa: boolean; keyAgeDays: number }[] | null = null
  try {
   const report = await c.query('iam', 'us-east-1', 'iam.amazonaws.com', { Action: 'GetCredentialReport', Version: '2010-05-08' })
-  const [header, ...rows] = atob(textAt(report, 'GetCredentialReportResponse', 'GetCredentialReportResult', 'Content') ?? '').trim().split('\n').map(line => line.split(','))
+  let csv: string
+  try { csv = atob(textAt(report, 'GetCredentialReportResponse', 'GetCredentialReportResult', 'Content') ?? '') } catch { throw new AwsFailure('unavailable','schema-drift','AWS schema drift: credential report encoding') }
+  const [header, ...rows] = csv.trim().split('\n').map(line => line.split(','))
   const col = (row: string[], name: string) => row[header.indexOf(name)] ?? ''
   const age = (row: string[], n: 1 | 2) => col(row, `access_key_${n}_active`) === 'true' && Date.parse(col(row, `access_key_${n}_last_rotated`)) ? Math.floor((now.getTime() - Date.parse(col(row, `access_key_${n}_last_rotated`))) / 86400000) : 0
+  const required = ['user','password_enabled','mfa_active','access_key_1_active','access_key_1_last_rotated','access_key_2_active','access_key_2_last_rotated']
+  if (!required.every(k => header.includes(k)) || rows.some(row => col(row,'user') !== '<root_account>' && (!col(row,'user') || !['true','false'].includes(col(row,'password_enabled')) || !['true','false'].includes(col(row,'mfa_active')) || [1,2].some(n => !['true','false'].includes(col(row,`access_key_${n}_active`)) || col(row,`access_key_${n}_active`) === 'true' && !Number.isFinite(Date.parse(col(row,`access_key_${n}_last_rotated`))))))) throw new AwsFailure('unavailable','schema-drift','AWS schema drift: credential report columns, flags or key rotation time')
   users = rows.filter(r => col(r, 'user') && col(r, 'user') !== '<root_account>').map(r => ({ name: col(r, 'user'), console: col(r, 'password_enabled') === 'true', mfa: col(r, 'mfa_active') === 'true', keyAgeDays: Math.max(age(r, 1), age(r, 2)) }))
  } catch (error) { if (!(error instanceof AwsFailure && /ReportInProgress|ReportNotPresent|ReportExpired/.test(error.code))) throw error }
  return { rootMfa: rootMfa ? String(rootMfa.value) === '1' : null, minLength, users }
@@ -94,7 +100,11 @@ export async function readS3(c: Client, account: string) {
  let accountBlock = false
  try { accountBlock = blockOf(await c.rest('s3', 'us-east-1', new URL(`https://${account}.s3-control.us-east-1.amazonaws.com/v20180820/configuration/publicAccessBlock`), { 'x-amz-account-id': account })) }
  catch (error) { if (!(error instanceof AwsFailure && error.kind === 'missing')) throw error }
- const buckets = list(at(parseXml(await c.rest('s3', 'us-east-1', new URL('https://s3.amazonaws.com/'))), 'ListAllMyBucketsResult', 'Buckets', 'Bucket')).map(b => textAt(b, 'Name') ?? '').filter(Boolean)
+ const buckets=await readPageStream<string>('aws:s3-buckets:'+c.scope,'',async token=>{
+  const doc=parseXml(await c.rest('s3','us-east-1',new URL('https://s3.amazonaws.com/'+(token?'?continuation-token='+encodeURIComponent(token):''))))
+  return {items:list(at(doc,'ListAllMyBucketsResult','Buckets','Bucket')).map(b=>textAt(b,'Name')!),next:textAt(doc,'ListAllMyBucketsResult','ContinuationToken')||null}
+ },20,m=>new AwsFailure('unavailable','pagination','AWS S3 '+m))
+ if (buckets.length > 200) throw new AwsFailure('unavailable','coverage','AWS S3 coverage incomplete: more than 200 buckets')
  const out: { name: string; region: string; attributes: Record<string, boolean | null> }[] = []
  for (const name of buckets.slice(0, 200)) {
   const path = '/' + encodeURIComponent(name)
@@ -116,36 +126,30 @@ export async function readTrailLogging(c: Client, region: string, trails: Map<st
  return logging
 }
 export const readEbsDefault = async (c: Client, region: string) => bool(textAt(await c.query('ec2', region, `ec2.${region}.amazonaws.com`, { Action: 'GetEbsEncryptionByDefault', Version: '2016-11-15' }), 'GetEbsEncryptionByDefaultResponse', 'ebsEncryptionByDefault'))
-export async function readSecurityGroups(c: Client, region: string) {
- const groups: { id: string; name: string; open: boolean }[] = []
- let next: string | null = null, pages = 0
- do {
-  const doc = await c.query('ec2', region, `ec2.${region}.amazonaws.com`, { Action: 'DescribeSecurityGroups', Version: '2016-11-15', MaxResults: '1000', ...(next ? { NextToken: next } : {}) })
-  for (const g of items(doc, 'DescribeSecurityGroupsResponse', 'securityGroupInfo')) {
-   const open = items(g, 'ipPermissions').some(p => {
-    const proto = textAt(p, 'ipProtocol'), from = Number(textAt(p, 'fromPort') ?? 0), to = Number(textAt(p, 'toPort') ?? 65535)
-    const world = items(p, 'ipRanges').some(r => textAt(r, 'cidrIp') === '0.0.0.0/0') || items(p, 'ipv6Ranges').some(r => textAt(r, 'cidrIpv6') === '::/0')
-    return world && (proto === '-1' || [22, 3389].some(port => from <= port && port <= to))
-   })
-   groups.push({ id: textAt(g, 'groupId') ?? '', name: textAt(g, 'groupName') ?? '', open })
-  }
-  next = textAt(doc, 'DescribeSecurityGroupsResponse', 'nextToken')
- } while (next && ++pages < 20)
- return { groups, complete: !next }
+export async function readSecurityGroups(c:Client,region:string) {
+ const groups=await readPageStream<{id:string;name:string;open:boolean}>(`aws:groups:${c.scope}:${region}`,'',async next=>{
+  const doc=await c.query('ec2',region,`ec2.${region}.amazonaws.com`,{Action:'DescribeSecurityGroups',Version:'2016-11-15',MaxResults:'1000',...(next?{NextToken:next}:{})})
+  return {items:items(doc,'DescribeSecurityGroupsResponse','securityGroupInfo').map(g=>({id:textAt(g,'groupId')!,name:textAt(g,'groupName')!,open:items(g,'ipPermissions').some(p=>{
+   const proto=textAt(p,'ipProtocol'),from=Number(textAt(p,'fromPort')??0),to=Number(textAt(p,'toPort')??65535)
+   const world=items(p,'ipRanges').some(r=>textAt(r,'cidrIp')==='0.0.0.0/0')||items(p,'ipv6Ranges').some(r=>textAt(r,'cidrIpv6')==='::/0')
+   return world&&(proto==='-1'||[22,3389].some(port=>from<=port&&port<=to))
+  })})),next:textAt(doc,'DescribeSecurityGroupsResponse','nextToken')||null}
+ },20,m=>new AwsFailure('unavailable','pagination','AWS security group '+m))
+ return {groups,complete:true}
 }
-export async function readDatabases(c: Client, region: string) {
- const databases: { id: string; encrypted: boolean | null; backupDays: number; public: boolean | null }[] = []
- let marker: string | null = null, pages = 0
- do {
-  const doc = await c.query('rds', region, `rds.${region}.amazonaws.com`, { Action: 'DescribeDBInstances', Version: '2014-10-31', ...(marker ? { Marker: marker } : {}) })
-  for (const d of list(at(doc, 'DescribeDBInstancesResponse', 'DescribeDBInstancesResult', 'DBInstances', 'DBInstance'))) databases.push({ id: textAt(d, 'DBInstanceIdentifier') ?? '', encrypted: bool(textAt(d, 'StorageEncrypted')), backupDays: Number(textAt(d, 'BackupRetentionPeriod') ?? 0), public: bool(textAt(d, 'PubliclyAccessible')) })
-  marker = textAt(doc, 'DescribeDBInstancesResponse', 'DescribeDBInstancesResult', 'Marker')
- } while (marker && ++pages < 20)
- return { databases, complete: !marker }
+export async function readDatabases(c:Client,region:string) {
+ const databases=await readPageStream<{id:string;encrypted:boolean|null;backupDays:number;public:boolean|null}>(`aws:rds:${c.scope}:${region}`,'',async marker=>{
+  const doc=await c.query('rds',region,`rds.${region}.amazonaws.com`,{Action:'DescribeDBInstances',Version:'2014-10-31',...(marker?{Marker:marker}:{})})
+  return {items:list(at(doc,'DescribeDBInstancesResponse','DescribeDBInstancesResult','DBInstances','DBInstance')).map(d=>({id:textAt(d,'DBInstanceIdentifier')!,encrypted:bool(textAt(d,'StorageEncrypted')),backupDays:Number(textAt(d,'BackupRetentionPeriod')),public:bool(textAt(d,'PubliclyAccessible'))})),next:textAt(doc,'DescribeDBInstancesResponse','DescribeDBInstancesResult','Marker')||null}
+ },20,m=>new AwsFailure('unavailable','pagination','AWS RDS '+m))
+ return {databases,complete:true}
 }
-export async function readGuardDuty(c: Client, region: string) {
- const detectors = (JSON.parse(await c.rest('guardduty', region, new URL(`https://guardduty.${region}.amazonaws.com/detector`))) as { detectorIds?: string[] }).detectorIds ?? []
- for (const id of detectors) if ((JSON.parse(await c.rest('guardduty', region, new URL(`https://guardduty.${region}.amazonaws.com/detector/${encodeURIComponent(id)}`))) as { status?: string }).status === 'ENABLED') return true
+export async function readGuardDuty(c:Client,region:string) {
+ const detectors=await readPageStream<string>(`aws:guardduty:${c.scope}:${region}`,'',async cursor=>{
+  const page=JSON.parse(await c.rest('guardduty',region,new URL(`https://guardduty.${region}.amazonaws.com/detector`+(cursor?'?nextToken='+encodeURIComponent(cursor):'')))) as {detectorIds:string[];nextToken?:string}
+  return {items:page.detectorIds,next:page.nextToken||null}
+ },20,m=>new AwsFailure('unavailable','pagination','AWS GuardDuty '+m))
+ for(const id of detectors)if((JSON.parse(await c.rest('guardduty',region,new URL(`https://guardduty.${region}.amazonaws.com/detector/${encodeURIComponent(id)}`))) as {status:string}).status==='ENABLED')return true
  return false
 }
 export type { XmlValue }

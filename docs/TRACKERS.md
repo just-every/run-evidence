@@ -16,23 +16,24 @@ and unchanged repeated reads do not produce duplicate state changes.
 
 Each linked ticket is polled every ten minutes by the five-minute scheduler.
 Polling remains active when a webhook is absent. The built-in poll processes at
-most fifty due ticket rows per scheduler invocation; hosted capacity above this
-batch size has not been measured. Source-read failure never fabricates a pass.
+most fifty distinct destination/remote-ticket pairs per scheduler invocation. Every
+linked item of a whole-test ticket is included together, so one closure re-tests
+the full linked population. Hosted capacity above this batch size has not been measured. Source-read failure never fabricates a pass.
 
 | Tracker | Project field and API address | Field details and official API |
 | --- | --- | --- |
 | GitLab Issues | Project ID or path; default `https://gitlab.com/api/v4` | Native assignee, labels and due date; priority is a scoped label. [Issues](https://docs.gitlab.com/api/issues/), [notes](https://docs.gitlab.com/api/notes/). |
-| Azure Boards | Project name; `https://dev.azure.com/organization` | Work-item type defaults to Task. Native priority and tags; initial deadline is description text. Reopen uses New. [Work items](https://learn.microsoft.com/rest/api/azure/devops/wit/work-items), [comments](https://learn.microsoft.com/rest/api/azure/devops/wit/comments). |
-| Shortcut | Numeric project ID; default `https://api.app.shortcut.com/api/v3` | Native deadline, labels and owners; priority is description text. Reopen uses the current workflow unstarted state. [REST API](https://developer.shortcut.com/api/rest/v3). |
+| Azure Boards | Project name; `https://dev.azure.com/organization` | Work-item type defaults to Task. Native priority and tags; map a writable DateTime due-date field (default `Microsoft.VSTS.Scheduling.DueDate`, or e.g. `Custom.RemediationDue` on your process). Create and subsequent target changes write UTC midnight, and reads compare the UTC calendar day. Invalid dates stay unknown; missing native dates show a conflict. Unsupported fields produce visible failures. Existing text-only tickets need owner conflict resolution to populate the native field. Reopen uses New. [Work items](https://learn.microsoft.com/rest/api/azure/devops/wit/work-items), [comments](https://learn.microsoft.com/rest/api/azure/devops/wit/comments). |
+| Shortcut | Numeric project ID; default `https://api.app.shortcut.com/api/v3` | Native deadline, labels and owners; priority is a mapped native Priority enum custom field. Reopen uses the current workflow unstarted state. [REST API](https://developer.shortcut.com/api/rest/v3). |
 | ClickUp | List ID; default `https://api.clickup.com/api/v2` | Native priority, tags, assignees and date-only UTC deadline. Reopen uses an open list status. [API](https://developer.clickup.com/reference/createtask). |
-| monday.com | Board ID; default `https://api.monday.com/v2` | Needs a long-text column, date column, people column and status columns titled Status and Priority, with the mapped priority labels. Description, source links and labels are written in that long-text column in the same mutation as the item, so a failed secondary update cannot create a duplicate ticket. [Items](https://developer.monday.com/api-reference/reference/items), [updates](https://developer.monday.com/api-reference/reference/updates). |
+| monday.com | Board ID; default `https://api.monday.com/v2` | Needs a long-text column, tags column, date column, people column and status columns titled Status and Priority, with the mapped priority labels. Description and source links are written in that long-text column; labels use a native tags column in the same mutation as the item, so a failed secondary update cannot create a duplicate ticket. [Items](https://developer.monday.com/api-reference/reference/items), [updates](https://developer.monday.com/api-reference/reference/updates). |
 | Basecamp | `account-id/project-id/todolist-id`; default `https://3.basecampapi.com` | OAuth bearer token; native assignee and due date. Priority/labels are description text. Date updates preserve content, description, assignees, subscribers and start date. Comment pagination follows same-account Link headers. [To-dos](https://github.com/basecamp/bc3-api/blob/master/sections/todos.md), [comments](https://github.com/basecamp/bc3-api/blob/master/sections/comments.md). |
 | Freshservice | Group ID; `https://tenant.freshservice.com/api/v2` | API key and requester account email. Native priority, tags, responder and date-only UTC deadline. Comments are private notes. Status 4/5 closes; reopen uses 2. [API](https://api.freshservice.com/v2/). |
-| YouTrack | Project ID; `https://tenant.youtrack.cloud/api` | Permanent token. Needs Priority, Due Date, Assignee and State custom fields with the configured enum names. Labels are description text; reopen uses Open. Dates use UTC midnight. [Issues](https://www.jetbrains.com/help/youtrack/devportal/resource-api-issues.html). |
+| YouTrack | Project ID; `https://tenant.youtrack.cloud/api` | Permanent token. Needs Priority, Due Date, Assignee and State custom fields with the configured enum names. Labels use native tags resolved by exact name; reopen uses Open. Dates use UTC midnight. [Issues](https://www.jetbrains.com/help/youtrack/devportal/resource-api-issues.html). |
 
 The original Vector, Jira Cloud, GitHub Issues, Linear and Asana adapters remain
 available. Their existing connection forms describe their grants and fields.
-GitHub Issues has no native due-date field; its deadline is ticket text.
+GitHub Issues has no native due-date field; its editable `Evidence due date: YYYY-MM-DD` body line is synchronized. Removing it creates a conflict; malformed dates stay unavailable. Changes preserve the other issue text. Vector and Linear labels resolve native IDs. Asana labels resolve workspace tags and Priority uses the project’s native enum custom field. Missing or ambiguous native mappings refuse creation before a ticket exists.
 
 ## Webhooks
 
@@ -51,15 +52,103 @@ are admitted once. See Asana's [webhooks guide](https://developers.asana.com/doc
 Registration requires Asana to reach the HTTPS callback on the installation;
 a purely local installation can continue polling.
 
-Provider-specific inbound webhook registration/verification for Azure Boards,
-Shortcut, monday.com, Basecamp, Freshservice and YouTrack remains unbuilt. Those
-adapters currently use polling even though their providers offer webhooks.
+For Shortcut, paste the outgoing webhook secret when connecting and configure
+the displayed callback URL in Shortcut. The exact body must carry the
+`Payload-Signature` HMAC-SHA256 header. Event UUIDs are admitted once; every linked
+story in a batch is read once, including batches with no `primary_id`.
+Payload values never establish tracker state. See the official
+[Shortcut outgoing webhook v1 schema](https://developer.shortcut.com/api/webhook/v1).
+
+Azure Boards service hooks use the displayed HTTPS callback, full resource details,
+and Basic username `evidence` with the callback password pasted at connection.
+Select work-item and comment events. [Service hooks](https://learn.microsoft.com/en-us/azure/devops/service-hooks/services/webhooks).
+
+monday callbacks require an integration-app OAuth token and the app Signing Secret.
+Create board webhooks using that app token. Signed JWTs must name the exact callback
+and be unexpired. Unsigned personal-token callbacks are refused. URL verification
+only echoes a bounded challenge and cannot change a ticket.
+[Webhooks](https://developer.monday.com/api-reference/reference/webhooks),
+[authorization](https://developer.monday.com/apps/docs/integration-authorization).
+
+Freshservice Workflow Automator supports POST with Requires Authentication: username
+`evidence` and the pasted callback password. Configure Advanced JSON as
+`{"ticket_id":"{{ticket.raw_id}}","group_id":"GROUP_ID","event":"{{Triggered event}}","updated_at":"{{ticket.modified_on}}"}`,
+replacing GROUP_ID with the connected group ID. Use the numeric raw ID rather
+than the INC display ID. [Workflow webhooks](https://support.freshservice.com/support/solutions/articles/157143-using-webhooks-with-the-workflow-automator),
+[placeholders](https://support.freshservice.com/support/solutions/articles/239543-list-of-dynamic-placeholders).
+
+YouTrack Webhook Triggers use the callback and pasted `X-YouTrack-Token` for the
+connected project. [Triggers](https://www.jetbrains.com/help/youtrack/cloud/webhook-triggers.html).
+
+Basecamp events are unsigned. Choose **Register Basecamp callback** on the
+connected destination: Evidence registers an HTTPS payload URL with a unique
+256-bit per-destination secret, sealed at rest. The full address is never shown
+in the owner page, API responses, audit or archive. Possession permits only a
+fresh authorized read of an already linked task, after exact account/project
+checks and event-ID deduplication. To-do and comment events are supported; a
+callback payload is never tracker truth. A local HTTP installation needs a
+publicly reachable HTTPS address before registration can succeed.
+
+The scheduler checks Basecamp registration hourly. Deactivation, changed URL or
+types, lost authorization, or an unavailable check destroys local callback
+authority and shows the problem on the destination page. Register again to issue
+a fresh secret. Ten-minute polling stays active as a backstop. Revocation destroys
+the secret; archive restore excludes it and leaves the destination inactive.
+Failed registration is labelled unconfirmed; check the provider before retrying,
+since a lost response may leave an unusable registration there. An interrupted
+registration can be retried after one hour. See the official
+[Basecamp webhook API](https://github.com/basecamp/bc3-api/blob/master/sections/webhooks.md).
+
 
 ## Acceptance boundaries
 
-WORK-001 remains partial. Text-only field fallbacks are labeled, and later Azure
-target-date edits are not synchronized to the description yet. The full native
-field/conflict and inbound replay matrix is still required for all thirteen
-destinations. The network fakes in the public-door journeys use documented
-provider shapes. Each tracker still has the live Gap **not yet run against a
-live account**; no provider verification or live-account operation is claimed.
+WORK-001 is done for the current built doors under the ct 19 October official-schema-fake acceptance ruling. `tests/trackers.mjs` names the clause for all thirteen
+providers, including native field requests, deadlines/conflicts, failure recovery,
+source re-tests and credential-free restore. New authenticated webhook journeys
+cover Azure Boards, monday, Freshservice and YouTrack. Mapped Evidence-origin tracker assignee/status writes now use the live human owner
+session, explicit native identities, a fresh read before writing and a confirming
+read-back. The field editor refuses a changed selected field with both values and
+UTC time in Sync history; a fresh read and explicit new decision are required.
+Unknown identities refuse writes. A read-before-write check cannot lock concurrent
+provider edits after the read. Unconfirmed writes remain uncertain.
+Separate Evidence owner/state edits do not satisfy those writes.
+Vector now reads comment bodies through the published [API-003 Comment schema](https://github.com/just-every/run-vector/blob/main/schema/api-v1.json)
+and [cursor protocol](https://github.com/just-every/run-vector/blob/main/docs/API.md).
+Its token needs `comments:read` in addition to `issues:read`, `issues:write`,
+`comments:write` and `metadata:read`. Reconnect or rotate a token without that
+scope; refused reads stay visible and retain the earlier history.
+
+Every tracker comment retains its first observed text, source display author,
+stable ID, original time normalized to UTC separately from the receipt time,
+and a source link. Where the provider does not expose a comment permalink, the
+link opens its ticket. History shows the first 2,000 UTF-16 code units and labels
+truncation; open the source for the rest. This is a retained observation, so later
+source edits do not rewrite it. Source HTML is shown as inert text. The existing
+owner-only session gates apply to the page and API; source API tokens do not
+admit this private history. Missing source times or links stay explicitly
+unavailable. Source metadata travels in the existing custody archive records.
+
+Vector pages with the linked issue filter and an unchanged limit, admits only
+matching issue comments and safe source URLs, and refuses malformed, denied,
+incomplete or looping pages without publishing a partial comment list. A read
+beyond 201 pages fails visibly. Competing syncs commit one history event and one
+source-attribution record per comment. The same matrix asserts these cases and
+all thirteen trackers' source attribution, truncation, privacy and restore.
+`tests/trackers-browser.mjs` shows those histories at 1440 and 390.
+Basecamp registration, callback replay/boundaries, hourly deactivation, polling
+backstop and secret-free restore are covered by WORK-001 journeys. Each tracker has the live Gap
+**not yet run against a live account**; no provider verification is claimed.
+
+## Human tracker field edits
+
+On an obligation, choose **Edit tracker fields**. This reads the tracker, then
+offers only the destination's explicit assignee and status mappings. Choose
+a change and enter its reason. Provider status values are native IDs except
+GitHub `open`/`closed`, GitLab `opened`/`closed`, Asana and Basecamp
+`incomplete`/`completed`, Azure Boards state names, ClickUp status strings,
+monday status indices and Freshservice numeric status values. Jira resolves
+exactly one currently available transition into the mapped destination status.
+Assignees use native user IDs, GitHub logins or Azure identity IDs.
+Missing identities or mappings are refused; names never infer identity.
+Closing from Evidence still queues a source re-test and cannot verify a failure.
+AUTH-001 inherits scoped human access before delegated roles ship.

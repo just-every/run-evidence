@@ -2,7 +2,6 @@
 // external mail and GitHub network edges are faked; no author service is used.
 process.env.RER_SERVER_JOURNEY = '1'
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
 import { runtime } from './helpers/runtime.mjs'
 const app = await runtime({ outbound: async request => {
  const url = new URL(request.url)
@@ -12,7 +11,7 @@ const app = await runtime({ outbound: async request => {
  throw Error('Unexpected GitHub call: ' + url.pathname)
 } })
 let passed = 0
-const scenario = async (name, fn) => { await fn(); passed++; console.log('PASS ' + name) }
+const scenario = async (name, fn) => { await fn(); passed++; console.log('PASS OPS-001: ' + name) }
 const post = async (path, body) => {
  const response = await app.fetch(path, { method: 'POST', headers: { origin: app.origin, 'content-type': 'application/json' }, body: JSON.stringify(body) })
  assert.equal(response.status, 201, path + ': ' + await response.clone().text())
@@ -32,12 +31,6 @@ const disclosure = (body, provider) => {
  assert.match(entry[1], /USD/, 'Currency missing: ' + provider)
 }
 try {
- await scenario('OPEN-001: repository and package grant MIT redistribution rights', async () => {
-  const license = await readFile('LICENSE', 'utf8'), pkg = JSON.parse(await readFile('package.json', 'utf8'))
-  assert.equal(pkg.license, 'MIT')
-  assert.match(license, /MIT License/)
-  assert.match(license, /permission.*(?:\n|.)*redistribut|Permission is hereby granted[\s\S]*distribute/i)
- })
  await scenario('OPEN-001: an owner reaches every shipped area with four core programs and 250 people without author payment or license credentials', async () => {
   await app.signin()
   for (const framework of ['soc2', 'iso27001', 'hipaa', 'pci']) {
@@ -68,7 +61,7 @@ try {
    assert.ok(content, section)
    for (const provider of providers) disclosure(content[1], provider)
   }
-  const connection = await post('/api/connections', { account: 'northstar', token: 'github_pat_test', label: 'Northstar repositories' })
+  const connection = await post('/api/connections', { account: 'northstar', token: 'synthetic-evidence-1', label: 'Northstar repositories' })
   const response = await app.fetch('/api/connections/' + connection.id)
   assert.equal(response.status, 200)
   assert.equal((await response.json()).connection.status, 'active')

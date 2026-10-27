@@ -1,15 +1,15 @@
 import type { Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
-import { auditStatement, done, json, oneOf, ownerRoutes, readInput, text, uuid, type Route } from '../door'
+import { auditStatement, done, json, ownerRoutes, readInput, text, uuid, type Route } from '../door'
 import { editRisk, unlinkRisk } from './edit'
 import { riskLibrary, riskLibraryRevision } from './library'
 import { libraryPage } from './library-view'
 import { escape } from '../ui'
-import { validDate } from '../model'
 import { people } from '../program/people'
 import { acceptResidual, addFromLibrary, addTreatment, assess, completeTreatment, createRisk, currentMethod, link, methods, requireRisk, setMethod } from './storage'
 import { confirmImport, dryRun, readImport } from './import'
-import { dryRunPage, registerPage, riskPage, type RiskRow, type Vendor, vendorsPage } from './view'
+import { dryRunPage, registerPage, riskPage, type RiskRow, type Vendor } from './view'
+import { vendorList } from '../vendor/http'
 const id = `(${uuid})`
 const both = (path: string) => new RegExp(`^/(?:app|api)${path}$`)
 const register = async (env: Bindings) => (await env.DB.prepare(`SELECT r.id,r.title,r.origin,r.source_label,p.name AS owner_name,(SELECT departed_at FROM people_departures d WHERE d.person_id=r.owner_person_id) AS owner_left_at,r.treatment,r.review_due,
@@ -17,7 +17,7 @@ const register = async (env: Bindings) => (await env.DB.prepare(`SELECT r.id,r.t
  (SELECT level||' ('||score||', method '||method_revision||')' FROM risk_assessments a WHERE a.risk_id=r.id AND a.kind='residual' ORDER BY a.at DESC,a.rowid DESC LIMIT 1) AS residual,
  (SELECT MAX(expires_at) FROM risk_acceptances x WHERE x.risk_id=r.id) AS accepted_until
  FROM risks r LEFT JOIN people p ON p.id=r.owner_person_id ORDER BY r.created_at,r.id`).all<RiskRow>()).results
-const vendors = async (env: Bindings) => (await env.DB.prepare('SELECT v.id,v.name,v.criticality,v.data_access,v.review_due,p.name AS owner_name,(SELECT departed_at FROM people_departures d WHERE d.person_id=v.owner_person_id) AS owner_left_at FROM vendors v LEFT JOIN people p ON p.id=v.owner_person_id ORDER BY v.name').all<Vendor>()).results
+const vendors = async (env: Bindings) => (await vendorList(env)) as Vendor[]
 const csv = (value: unknown) => { const s = String(value ?? ''); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s }
 export function riskHandler(clock: () => Date) {
  const routes: Route[] = [
@@ -71,16 +71,6 @@ export function riskHandler(clock: () => Date) {
   { method: 'POST', pattern: both(`/risks/${id}/treatments`), run: async (c, m) => { await addTreatment(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/risks/' + m[1], { added: true }, 201) } },
   { method: 'POST', pattern: both(`/risks/${id}/treatments/${id}/done`), run: async (c, m) => { await completeTreatment(c.env, c.actor, m[1], m[2], await readInput(c.request), c.now); return done(c, '/app/risks/' + m[1], { done: true }) } },
   { method: 'POST', pattern: both(`/risks/${id}/acceptances`), run: async (c, m) => { await acceptResidual(c.env, c.actor, m[1], await readInput(c.request), c.now); return done(c, '/app/risks/' + m[1], { accepted: true }, 201) } },
-  { method: 'POST', pattern: both('/vendors'), run: async c => {
-   const input = await readInput(c.request), name = text(input, 'name', 200), criticality = oneOf(input, 'criticality', ['low', 'medium', 'high', 'critical'] as const), due = typeof input.review_due === 'string' && input.review_due ? input.review_due : null
-   if (due && !validDate(due)) throw new Refusal('The review date must be a real date.')
-   if (await c.env.DB.prepare('SELECT 1 FROM vendors WHERE name=?').bind(name).first()) throw new Refusal('That vendor already exists.', 409)
-   const vendor = crypto.randomUUID(), owner = typeof input.owner_person_id === 'string' && input.owner_person_id ? input.owner_person_id : null
-   if (owner && !await c.env.DB.prepare('SELECT 1 FROM people WHERE id=?').bind(owner).first()) throw new Refusal('Choose a business owner from People.')
-   await c.env.DB.batch([c.env.DB.prepare('INSERT INTO vendors(id,name,owner_person_id,data_access,criticality,review_due,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)').bind(vendor, name, owner, text(input, 'data_access', 500, true), criticality, due, c.now.toISOString(), c.now.toISOString()), auditStatement(c.env, c.actor, 'vendor.added', 'vendor:' + vendor, c.now)])
-   return done(c, '/app/vendors', { id: vendor }, 201)
-  } },
-  { method: 'GET', pattern: both('/vendors'), run: async c => c.isApi ? json({ vendors: await vendors(c.env) }) : vendorsPage(await vendors(c.env), await people(c.env), c.actor.name) },
  ]
  return ownerRoutes(routes, clock)
 }

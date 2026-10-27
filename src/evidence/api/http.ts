@@ -1,3 +1,5 @@
+import { capturePortal, portalFillPlan, portalFillReport, portalFile } from '../answer/portal'
+import { queueEvent } from '../connect/events'
 import { runtimeBindings, type Bindings } from '../../auth.server'
 import { Refusal, upload } from '../upload'
 import { auditStatement } from '../door'
@@ -22,7 +24,13 @@ async function body(request: Request) {
 type Handler = (request: Request, env: Bindings, match: RegExpExecArray, token: { id: string; name: string; created_by: string; created_name: string }, now: Date) => Promise<Response>
 interface V1Route { method: string; pattern: RegExp; route: string; scope: Scope; run: Handler }
 const sourceOf = (token: { id: string; name: string; created_name: string }) => ({ kind: 'source-reported' as const, ref: 'api:' + token.id, label: `Source-reported via API token "${token.name}" (owner ${token.created_name})` })
+const portalActor=(token:{id:string;name:string})=>({id:token.id,name:'Portal token '+token.name,kind:'token' as const})
 const routes: V1Route[] = [
+ {method:'POST',pattern:/^\/v1\/questionnaires\/([a-f0-9-]{36})\/document$/,route:'/v1/questionnaires/{id}/document',scope:'portal-fill',run:async(request,env,m,token,now)=>portalFile(env,m[1],await body(request),portalActor(token),now)},
+ {method:'POST',pattern:/^\/v1\/questionnaires\/([a-f0-9-]{36})\/fill-reports$/,route:'/v1/questionnaires/{id}/fill-reports',scope:'portal-fill',run:async(request,env,m,token,now)=>reply(await portalFillReport(env,m[1],await body(request),portalActor(token),now),201)},
+ {method:'POST',pattern:/^\/v1\/questionnaires\/([a-f0-9-]{36})\/fill-plan$/,route:'/v1/questionnaires/{id}/fill-plan',scope:'portal-fill',run:async(request,env,m,token,now)=>reply(await portalFillPlan(env,m[1],await body(request),portalActor(token),now))},
+ {method:'POST',pattern:/^\/v1\/questionnaires\/captures$/,route:'/v1/questionnaires/captures',scope:'portal-capture',run:async(request,env,_m,token,now)=>reply(await capturePortal(env,await body(request),portalActor(token),now),201)},
+ { method:'POST',pattern:/^\/v1\/connections\/([a-f0-9-]{36})\/events$/,route:'/v1/connections/{id}/events',scope:'resource-push',run:async (request,env,m,token,now)=>reply(await queueEvent(env,m[1],token,await body(request),now),202) },
  { method: 'PUT', pattern: /^\/v1\/resource-types\/([a-z][a-z0-9_]{1,62})$/, route: '/v1/resource-types/{type}', scope: 'resource-push', run: async (request, env, m, token, now) => {
   const schema = parseSchema((await body(request)).schema)
   await declareType(env, m[1], schema, 'api:' + token.id, now)

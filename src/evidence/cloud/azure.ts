@@ -1,3 +1,4 @@
+import { readPageStream, retainFields } from '../connect/pages'
 import type { CatalogueEntry } from '../tests/catalogue'
 import { microsoftToken, OAuthFailure } from '../oauth'
 import { cloudCall, CloudFailure, type Item, type ScopedCloud } from './scoped'
@@ -7,10 +8,37 @@ import { cloudCall, CloudFailure, type Item, type ScopedCloud } from './scoped'
 // can change one.
 const label = 'Azure'
 const arm = 'https://management.azure.com'
-async function list<T>(url: string, token: string, limit = 20) {
- const items: T[] = []; let next: string | null = url, pages = 0
- while (next && pages++ < limit) { const body = await cloudCall(next, token, label); if (!body) break; items.push(...((body.value as T[] | undefined) ?? [])); next = typeof body.nextLink === 'string' && body.nextLink.startsWith(arm + '/') ? body.nextLink : null }
- return items
+// COLLECTION-001: ARM list envelopes and continuation links must be complete.
+// A missing/malformed page is not an empty inventory. Throwing preserves the
+// class's known resources as unknown through the shared scoped collector.
+const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
+function drift(field: string): never { throw new CloudFailure('unavailable', `Azure schema drift: ${field}`) }
+const named = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0
+// Only follow SQL resource paths for this subscription and parent server.
+// Successful HTTP status alone cannot establish the identity of the read.
+function sqlIdentity(item: { id: string; name: string }, subscription: string, server?: { id: string }) {
+ if (!named(item.name) || !named(item.id)) drift('SQL resource identity')
+ const parts = item.id.split('/')
+ if (parts.length !== (server ? 11 : 9) || parts[0] !== '' || parts[1].toLowerCase() !== 'subscriptions'
+  || parts[2].toLowerCase() !== subscription.toLowerCase() || parts[3].toLowerCase() !== 'resourcegroups' || !named(parts[4])
+  || parts[5].toLowerCase() !== 'providers' || parts[6].toLowerCase() !== 'microsoft.sql' || parts[7].toLowerCase() !== 'servers'
+  || !named(parts[8]) || /[?#\\\x00-\x1f]/.test(item.id)) drift('SQL resource identity or scope')
+ if (server ? parts[9].toLowerCase() !== 'databases' || parts.slice(0, 9).join('/').toLowerCase() !== server.id.toLowerCase() || parts[10] !== item.name : parts[8] !== item.name) drift('SQL resource identity or parent')
+}
+async function list<T>(url:string,token:string,limit=20) {
+ return readPageStream<T>(url,url,async next=>{
+  const body=await cloudCall(next,token,label)
+  if(!record(body)||!Array.isArray(body.value)||!body.value.every(record))drift('list value must be an array of records')
+  const link=body.nextLink;let continuation:string|null=null
+  if(link!==undefined&&link!==null&&link!==''){
+   if(typeof link!=='string')drift('nextLink must be a string')
+   let parsed:URL
+   try{parsed=new URL(link)}catch{throw new CloudFailure('unavailable','Azure pagination incomplete: invalid continuation')}
+   if(parsed.origin!==arm||parsed.username||parsed.password||parsed.hash||parsed.pathname!==new URL(url).pathname)throw new CloudFailure('unavailable','Azure pagination incomplete: unsupported continuation')
+   continuation=parsed.href
+  }
+  return {items:retainFields(body.value,['subscriptionId','displayName','state','id','name','properties','logs','category','categoryGroup','enabled','workspaceId','storageAccountId','eventHubAuthorizationRuleId','pricingTier','allowBlobPublicAccess','supportsHttpsTrafficOnly','minimumTlsVersion','publicNetworkAccess','securityRules','direction','access','sourceAddressPrefix','sourceAddressPrefixes','destinationPortRange','destinationPortRanges','sourceApplicationSecurityGroups']) as T[],next:continuation}
+ },limit,message=>new CloudFailure('unavailable','Azure '+message))
 }
 const sub = (id: string) => `${arm}/subscriptions/${encodeURIComponent(id)}`
 const openToInternet = (rule: { direction?: string; access?: string; sourceAddressPrefix?: string; sourceAddressPrefixes?: string[]; destinationPortRange?: string; destinationPortRanges?: string[] }) => {
@@ -18,7 +46,7 @@ const openToInternet = (rule: { direction?: string; access?: string; sourceAddre
  return rule.direction === 'Inbound' && rule.access === 'Allow' && sources.some(s => ['*', '0.0.0.0/0', 'Internet', 'Any'].includes(s)) && ports.some(p => { if (p === '*') return true; const [from, to] = p.split('-').map(Number); return [22, 3389].some(port => from <= port && port <= (to ?? from)) })
 }
 export const azure: ScopedCloud = {
- name: 'Microsoft Azure', scopeLabel: 'subscriptions', revision: 'azure-1', scopeType: 'azure.subscription',
+ name: 'Microsoft Azure', scopeLabel: 'subscriptions', revision: 'azure-4', scopeType: 'azure.subscription',
  credential: 'An app registration client secret; grant the app Reader and Security Reader on the subscriptions or a management group', permissions: ['Reader', 'Security Reader'],
  fields: [{ key: 'tenant_id', label: 'Directory (tenant) ID', required: true, pattern: /^[0-9a-f-]{36}$/ }, { key: 'client_id', label: 'Application (client) ID', required: true, pattern: /^[0-9a-f-]{36}$/ }],
  types: {
@@ -30,25 +58,73 @@ export const azure: ScopedCloud = {
  },
  account: config => config.tenant_id,
  async authorize(config, secret) { try { return await microsoftToken(config.tenant_id, config.client_id, secret, arm) } catch (error) { if (error instanceof OAuthFailure) throw new CloudFailure(error.kind, error.message); throw error } },
- async discover(token) { const subs = await list<{ subscriptionId: string; displayName?: string; state?: string }>(`${arm}/subscriptions?api-version=2022-12-01`, token); return { scopes: subs.filter(s => s.state !== 'Disabled').map(s => ({ id: s.subscriptionId, name: `${s.displayName ?? s.subscriptionId} (${s.subscriptionId})` })), complete: true } },
+ async discover(token) { const subs = await list<{ subscriptionId: string; displayName?: string; state?: string }>(`${arm}/subscriptions?api-version=2022-12-01`, token); if (!subs.every(s => typeof s.subscriptionId === 'string' && s.subscriptionId.length > 0 && (s.state === undefined || typeof s.state === 'string'))) drift('subscription identity or state'); return { scopes: subs.filter(s => s.state !== 'Disabled').map(s => ({ id: s.subscriptionId, name: `${s.displayName ?? s.subscriptionId} (${s.subscriptionId})` })), complete: true } },
  classes: [
-  { name: 'Activity log export', types: ['azure.subscription'], async read(token, s) { const settings = await list<unknown>(`${sub(s.id)}/providers/Microsoft.Insights/diagnosticSettings?api-version=2021-05-01-preview`, token); return { 'azure.subscription': [{ uniqueId: s.id, displayName: s.name, attributes: { activity_log_exported: settings.length > 0 } }] } } },
-  { name: 'Defender for Cloud', types: ['azure.subscription'], async read(token, s) { const plans = await list<{ name: string; properties?: { pricingTier?: string } }>(`${sub(s.id)}/providers/Microsoft.Security/pricings?api-version=2024-01-01`, token); return { 'azure.subscription': [{ uniqueId: s.id, displayName: s.name, attributes: { defender_enabled: plans.some(p => ['VirtualMachines', 'StorageAccounts', 'SqlServers'].includes(p.name) && p.properties?.pricingTier === 'Standard') } }] } } },
+  { name: 'Activity log export', types: ['azure.subscription'], async read(token, s) {
+   // ARM DiagnosticSettings 2021-05-01-preview: a setting's existence alone
+   // proves nothing. At least one enabled log must have an export destination.
+   const settings = await list<{ name: string; properties?: Record<string, unknown> }>(`${sub(s.id)}/providers/Microsoft.Insights/diagnosticSettings?api-version=2021-05-01-preview`, token)
+   for (const setting of settings) {
+    if (!named(setting.name) || !record(setting.properties) || !Array.isArray(setting.properties.logs)) drift('activity log setting identity or logs')
+    for (const log of setting.properties.logs) if (!record(log) || typeof log.enabled !== 'boolean' || !(named(log.category) || named(log.categoryGroup))) drift('activity log category or enabled flag')
+    for (const field of ['workspaceId', 'storageAccountId', 'eventHubAuthorizationRuleId']) if (setting.properties[field] !== undefined && setting.properties[field] !== null && !named(setting.properties[field])) drift('activity log export destination')
+   }
+   const exported = settings.some(setting => {
+    const p = setting.properties!
+    return ['workspaceId', 'storageAccountId', 'eventHubAuthorizationRuleId'].some(f => named(p[f])) && (p.logs as { enabled: boolean }[]).some(log => log.enabled)
+   })
+   return { 'azure.subscription': [{ uniqueId: s.id, displayName: s.name, attributes: { activity_log_exported: exported } }] }
+  } },
+  { name: 'Defender for Cloud', types: ['azure.subscription'], async read(token, s) {
+   const plans = await list<{ name: string; properties?: { pricingTier?: string } }>(`${sub(s.id)}/providers/Microsoft.Security/pricings?api-version=2024-01-01`, token)
+   if (!plans.every(p => named(p.name) && record(p.properties) && ['Free', 'Standard'].includes(p.properties.pricingTier as string)) || new Set(plans.map(p => p.name)).size !== plans.length) drift('Defender plan identity or pricingTier')
+   const required = ['VirtualMachines', 'StorageAccounts', 'SqlServers']
+   if (!required.every(name => plans.some(p => p.name === name))) drift('Defender required plan coverage')
+   return { 'azure.subscription': [{ uniqueId: s.id, displayName: s.name, attributes: { defender_enabled: required.every(name => plans.find(p => p.name === name)!.properties!.pricingTier === 'Standard') } }] }
+  } },
   { name: 'Storage accounts', types: ['azure.storage_account'], async read(token, s) {
    const accounts = await list<{ name: string; properties?: { allowBlobPublicAccess?: boolean; supportsHttpsTrafficOnly?: boolean; minimumTlsVersion?: string } }>(`${sub(s.id)}/providers/Microsoft.Storage/storageAccounts?api-version=2023-05-01`, token)
-   return { 'azure.storage_account': accounts.map(a => ({ uniqueId: `${s.id}/${a.name}`, displayName: `${a.name} (${s.id})`, attributes: { public_blob_access: a.properties?.allowBlobPublicAccess !== false, https_only: a.properties?.supportsHttpsTrafficOnly === true, min_tls_12: ['TLS1_2', 'TLS1_3'].includes(a.properties?.minimumTlsVersion ?? '') } })) }
+   return { 'azure.storage_account': accounts.map(a => {
+    if (!named(a.name) || !record(a.properties) || typeof a.properties.allowBlobPublicAccess !== 'boolean'
+     || typeof a.properties.supportsHttpsTrafficOnly !== 'boolean' || !['TLS1_0', 'TLS1_1', 'TLS1_2', 'TLS1_3'].includes(a.properties.minimumTlsVersion as string)) drift('storage account identity, public access, HTTPS or TLS version')
+    return { uniqueId: `${s.id}/${a.name}`, displayName: `${a.name} (${s.id})`, attributes: { public_blob_access: a.properties.allowBlobPublicAccess, https_only: a.properties.supportsHttpsTrafficOnly, min_tls_12: ['TLS1_2', 'TLS1_3'].includes(a.properties.minimumTlsVersion as string) } }
+   }) }
   } },
   { name: 'Azure SQL', types: ['azure.sql_server', 'azure.sql_database'], async read(token, s) {
    const servers = await list<{ id: string; name: string; properties?: { publicNetworkAccess?: string } }>(`${sub(s.id)}/providers/Microsoft.Sql/servers?api-version=2023-08-01-preview`, token), databases: Item[] = []
-   for (const server of servers.slice(0, 50)) for (const db of (await list<{ id: string; name: string }>(`${arm}${server.id}/databases?api-version=2023-08-01-preview`, token)).filter(d => d.name !== 'master')) {
-    const policy = await cloudCall(`${arm}${db.id}/backupShortTermRetentionPolicies/default?api-version=2023-08-01-preview`, token, label)
-    databases.push({ uniqueId: `${s.id}/${server.name}/${db.name}`, displayName: `${server.name}/${db.name} (${s.id})`, attributes: { backup_retention_days: (policy?.properties as { retentionDays?: number } | undefined)?.retentionDays ?? null } })
+   if (servers.length > 50) throw new CloudFailure('unavailable', 'Azure SQL coverage incomplete: more than 50 servers in a subscription')
+   for (const server of servers) {
+    sqlIdentity(server, s.id)
+    if (!record(server.properties) || !['Enabled', 'Disabled', 'SecuredByPerimeter'].includes(server.properties.publicNetworkAccess as string)) drift('SQL server publicNetworkAccess')
+    for (const db of await list<{ id: string; name: string }>(`${arm}${server.id}/databases?api-version=2023-08-01-preview`, token)) {
+     sqlIdentity(db, s.id, server)
+     if (db.name === 'master') continue
+     const policy = await cloudCall(`${arm}${db.id}/backupShortTermRetentionPolicies/default?api-version=2023-08-01-preview`, token, label)
+     if (!record(policy) || !record(policy.properties) || typeof policy.properties.retentionDays !== 'number' || !Number.isSafeInteger(policy.properties.retentionDays) || policy.properties.retentionDays < 0) drift('SQL backup retentionDays')
+     databases.push({ uniqueId: `${s.id}/${server.name}/${db.name}`, displayName: `${server.name}/${db.name} (${s.id})`, attributes: { backup_retention_days: policy.properties.retentionDays } })
+    }
    }
    return { 'azure.sql_server': servers.map(x => ({ uniqueId: `${s.id}/${x.name}`, displayName: `${x.name} (${s.id})`, attributes: { public_network: x.properties?.publicNetworkAccess !== 'Disabled' } })), 'azure.sql_database': databases }
   } },
   { name: 'Network security groups', types: ['azure.nsg'], async read(token, s) {
    const groups = await list<{ name: string; properties?: { securityRules?: { properties?: Record<string, unknown> }[] } }>(`${sub(s.id)}/providers/Microsoft.Network/networkSecurityGroups?api-version=2023-09-01`, token)
-   return { 'azure.nsg': groups.map(g => ({ uniqueId: `${s.id}/${g.name}`, displayName: `${g.name} (${s.id})`, attributes: { open_admin_ports: (g.properties?.securityRules ?? []).some(r => openToInternet((r.properties ?? {}) as never)) } })) }
+   return { 'azure.nsg': groups.map(g => {
+    if (typeof g.name !== 'string' || !g.name || !record(g.properties) || !Array.isArray(g.properties.securityRules)) drift('network security group identity or securityRules')
+    const rules = g.properties.securityRules
+    for (const rule of rules) {
+     if (!record(rule) || !record(rule.properties)) drift('network security rule properties')
+     const r = rule.properties
+     const strings = (value: unknown): value is string[] => Array.isArray(value) && value.every(v => typeof v === 'string' && v.length > 0)
+     if ((r.direction !== 'Inbound' && r.direction !== 'Outbound') || (r.access !== 'Allow' && r.access !== 'Deny')
+      || (r.sourceAddressPrefix !== undefined && (typeof r.sourceAddressPrefix !== 'string' || !r.sourceAddressPrefix))
+      || (r.sourceAddressPrefixes !== undefined && !strings(r.sourceAddressPrefixes))
+      || (r.destinationPortRange !== undefined && (typeof r.destinationPortRange !== 'string' || !r.destinationPortRange))
+      || (r.destinationPortRanges !== undefined && !strings(r.destinationPortRanges))) drift('network security rule direction, access, source or ports')
+     if (!r.sourceAddressPrefix && !(strings(r.sourceAddressPrefixes) && r.sourceAddressPrefixes.length) && !(Array.isArray(r.sourceApplicationSecurityGroups) && r.sourceApplicationSecurityGroups.length && r.sourceApplicationSecurityGroups.every(v => record(v) && typeof v.id === 'string' && v.id.length))) drift('network security rule source')
+     if (!r.destinationPortRange && !(strings(r.destinationPortRanges) && r.destinationPortRanges.length)) drift('network security rule ports')
+    }
+    return { uniqueId: `${s.id}/${g.name}`, displayName: `${g.name} (${s.id})`, attributes: { open_admin_ports: rules.some(r => openToInternet(r.properties as never)) } }
+   }) }
   } },
  ],
 }

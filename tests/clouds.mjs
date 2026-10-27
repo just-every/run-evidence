@@ -1,3 +1,5 @@
+import { step } from './helpers/step.mjs'
+import { gunzipSync } from 'node:zlib'
 // Google Cloud and Microsoft Azure connections through the owner's doors and
 // the Cron Trigger. The clouds are the only fakes: network-edge stand-ins for
 // Google OAuth (verifying the service account's RS256 assertion), Resource
@@ -7,12 +9,15 @@ process.env.RER_SERVER_JOURNEY = '1'
 import assert from 'node:assert/strict'
 import { generateKeyPairSync, randomBytes, verify as verifySignature } from 'node:crypto'
 import { runtime } from './helpers/runtime.mjs'
+import { collectionScheduleBrowser } from './helpers/collection-schedule-browser.mjs'
+import { collectionScheduleJourney } from './helpers/collection-schedule-journey.mjs'
 const pair = () => generateKeyPairSync('rsa', { modulusLength: 2048, privateKeyEncoding: { type: 'pkcs8', format: 'pem' }, publicKeyEncoding: { type: 'spki', format: 'pem' } })
 const { privateKey, publicKey } = pair()
 const SA = 'evidence-reader@ops-host.example.test', TENANT = '0e5f1c2a-2222-4333-8444-955566667777', CLIENT = '1b2c3d4e-2222-4333-8444-955566667777', AZ_SECRET = randomBytes(24).toString('base64')
 const gcpKey = JSON.stringify({ client_email: SA, private_key: privateKey })
 const ago = days => new Date(Date.parse('2026-10-11T12:00:00Z') - days * 86400000).toISOString()
 const g = {
+ responses: new Map(), statuses: new Map(), calls: [],
  projects: ['northstar-prod', 'northstar-sandbox'], denied: new Set(['northstar-sandbox:iam']), disabled: new Set(['northstar-sandbox:compute']),
  iam: { 'northstar-prod': { bindings: [{ role: 'roles/viewer', members: ['allUsers'] }, { role: 'roles/owner', members: ['user:ana@northstar.test'] }], auditConfigs: [{ service: 'allServices', auditLogConfigs: [{ logType: 'DATA_READ' }, { logType: 'DATA_WRITE' }] }] } },
  buckets: { 'northstar-prod': [{ name: 'prod-assets', prevention: 'inherited', members: ['allUsers'] }, { name: 'prod-logs', prevention: 'enforced', members: [] }], 'northstar-sandbox': [] },
@@ -21,6 +26,7 @@ const g = {
  firewalls: { 'northstar-prod': [{ name: 'allow-ssh', ranges: ['0.0.0.0/0'], ports: ['22'] }, { name: 'allow-https', ranges: ['0.0.0.0/0'], ports: ['443'] }] },
 }
 const az = {
+ responses: new Map(), statuses: new Map(), calls: [],
  subs: [['11111111-aaaa-4bbb-8ccc-000000000001', 'Production'], ['11111111-aaaa-4bbb-8ccc-000000000002', 'Development']], denied: new Set(),
  diag: { Production: 1, Development: 0 }, defender: { Production: 'Standard', Development: 'Free' },
  storage: { Production: [{ name: 'prodblobs', public: true, https: true, tls: 'TLS1_0' }], Development: [] },
@@ -38,6 +44,8 @@ async function fakeClouds(request) {
   return ok ? json({ access_token: 'gcp-access' }) : json({ error: 'invalid_grant' }, 400)
  }
  if (url.hostname.endsWith('.googleapis.com')) {
+  g.calls.push(url.href)
+  if (g.responses.has(url.href)) return json(g.responses.get(url.href),g.statuses.get(url.href)??200)
   if (auth !== 'Bearer gcp-access') return json({ error: { code: 401 } }, 401)
   const project = /projects\/([a-z0-9-]+)/.exec(url.pathname)?.[1] ?? url.searchParams.get('project')
   if (url.hostname === 'cloudresourcemanager.googleapis.com' && url.pathname === '/v1/projects') return json({ projects: g.projects.map(p => ({ projectId: p, name: p.replace('northstar-', 'Northstar '), lifecycleState: 'ACTIVE' })) })
@@ -61,11 +69,13 @@ async function fakeClouds(request) {
  }
  if (url.hostname === 'management.azure.com') {
   if (auth !== 'Bearer arm-access') return json({ error: { code: 'InvalidAuthenticationToken' } }, 401)
+  const requested = url.pathname + url.search; az.calls.push(requested)
+  if (az.responses.has(requested)) return json(az.responses.get(requested),az.statuses.get(requested)??200)
   if (url.pathname === '/subscriptions') return json({ value: az.subs.map(([subscriptionId, displayName]) => ({ subscriptionId, displayName, state: 'Enabled' })) })
   const [, id] = /^\/subscriptions\/([^/]+)/.exec(url.pathname), name = az.subs.find(s => s[0] === id)[1], path = url.pathname.slice(`/subscriptions/${id}`.length)
   if (az.denied.has(`${name}:${path}`)) return json({ error: { code: 'AuthorizationFailed' } }, 403)
-  if (path === '/providers/Microsoft.Insights/diagnosticSettings') return json({ value: Array.from({ length: az.diag[name] }, (_, i) => ({ name: 'export' + i })) })
-  if (path === '/providers/Microsoft.Security/pricings') return json({ value: [{ name: 'VirtualMachines', properties: { pricingTier: az.defender[name] } }] })
+  if (path === '/providers/Microsoft.Insights/diagnosticSettings') return json({ value: Array.from({ length: az.diag[name] }, (_, i) => ({ name: 'export' + i, properties: { workspaceId: `/subscriptions/${id}/resourceGroups/rg/providers/Microsoft.OperationalInsights/workspaces/audit`, logs: [{ category: 'Administrative', enabled: true }] } })) })
+  if (path === '/providers/Microsoft.Security/pricings') return json({ value: ['VirtualMachines', 'StorageAccounts', 'SqlServers'].map(plan => ({ name: plan, properties: { pricingTier: az.defender[name] } })) })
   if (path === '/providers/Microsoft.Storage/storageAccounts') return json({ value: az.storage[name].map(a => ({ name: a.name, properties: { allowBlobPublicAccess: a.public, supportsHttpsTrafficOnly: a.https, minimumTlsVersion: a.tls } })) })
   if (path === '/providers/Microsoft.Sql/servers') return json({ value: az.sql[name].map(x => ({ id: `/subscriptions/${id}/resourceGroups/rg/providers/Microsoft.Sql/servers/${x.name}`, name: x.name, properties: { publicNetworkAccess: x.publicAccess } })) })
   const dbs = /\/servers\/([^/]+)\/databases$/.exec(path)
@@ -85,49 +95,286 @@ const testOf = async id => (await get('/api/tests')).tests.find(t => t.catalogue
 const results = async id => Object.fromEntries((await get('/api/tests/' + (await testOf(id)).id)).latest.map(o => [o.display_name, o.result]))
 const conn = {}
 try {
- await scenario('Google Cloud and Azure are kept only after a real read that lists projects or subscriptions; credentials never appear', async () => {
-  await app.signin()
-  await owner('/api/connections', { provider: 'gcp', secret: JSON.stringify({ client_email: SA, private_key: pair().privateKey }) }, 400)
-  await owner('/api/connections', { provider: 'azure', tenant_id: TENANT, client_id: CLIENT, secret: 'wrong' }, 400)
-  conn.gcp = await owner('/api/connections', { provider: 'gcp', secret: gcpKey })
-  conn.azure = await owner('/api/connections', { provider: 'azure', tenant_id: TENANT, client_id: CLIENT, secret: AZ_SECRET })
-  assert.equal(conn.gcp.account, SA); assert.deepEqual(conn.gcp.scopes, g.projects); assert.equal(conn.azure.scopes.length, 2)
-  const visible = JSON.stringify(await get('/api/connections')) + await (await app.fetch('/app/connections/' + conn.gcp.id)).text() + JSON.stringify((await app.db.prepare('SELECT * FROM product_audit').all()).results)
-  assert.ok(!visible.includes('BEGIN PRIVATE KEY') && !visible.includes(AZ_SECRET))
-  const enabled = (await get('/api/tests')).tests.map(t => t.catalogue_id).filter(Boolean)
-  assert.ok(['gcp.bucket-public', 'gcp.firewall-admin-ports', 'azure.nsg-admin-ports', 'azure.storage-https'].every(id => enabled.includes(id))); assert.ok(!enabled.includes('gcp.mfa') && !enabled.includes('azure.encryption-at-rest'))
+ await scenario("CLOUD-001: authorize Google Cloud and Azure, observe failures and fixes, and retain denied or removed populations", async () => {
+  await step('Google Cloud and Azure are kept only after a real read that lists projects or subscriptions; credentials never appear', async () => {
+    await app.signin()
+    await owner('/api/connections', { provider: 'gcp', secret: JSON.stringify({ client_email: SA, private_key: pair().privateKey }) }, 400)
+    await owner('/api/connections', { provider: 'azure', tenant_id: TENANT, client_id: CLIENT, secret: 'wrong' }, 400)
+    conn.gcp = await owner('/api/connections', { provider: 'gcp', secret: gcpKey })
+    conn.azure = await owner('/api/connections', { provider: 'azure', tenant_id: TENANT, client_id: CLIENT, secret: AZ_SECRET })
+    assert.equal(conn.gcp.account, SA); assert.deepEqual(conn.gcp.scopes, g.projects); assert.equal(conn.azure.scopes.length, 2)
+    const visible = JSON.stringify(await get('/api/connections')) + await (await app.fetch('/app/connections/' + conn.gcp.id)).text() + JSON.stringify((await app.db.prepare('SELECT * FROM product_audit').all()).results)
+    assert.ok(!visible.includes('BEGIN PRIVATE KEY') && !visible.includes(AZ_SECRET))
+    const enabled = (await get('/api/tests')).tests.map(t => t.catalogue_id).filter(Boolean)
+    assert.ok(['gcp.bucket-public', 'gcp.firewall-admin-ports', 'azure.nsg-admin-ports', 'azure.storage-https'].every(id => enabled.includes(id))); assert.ok(!enabled.includes('gcp.mfa') && !enabled.includes('azure.encryption-at-rest'))
+   })
+   await step('Hourly reads cover every project and subscription class by class: misconfigurations fail with remediation, a denied class is a gap and unknown, a disabled API is noted', async () => {
+    await app.tick()
+    const gRun = (await get('/api/connections/' + conn.gcp.id)).runs[0], gCov = JSON.parse(gRun.coverage_json)
+    assert.equal(gRun.outcome, 'partial'); assert.deepEqual(gCov.gaps.map(x => `${x.account} ${x.class}`), ['northstar-sandbox IAM policy and audit logging']); assert.match(gCov.notes.join(), /northstar-sandbox: Firewall rules API not enabled/)
+    assert.deepEqual(await results('gcp.public-iam'), { 'Northstar prod (northstar-prod)': 'fail', 'Northstar sandbox (northstar-sandbox)': 'unknown' })
+    assert.deepEqual(await results('gcp.bucket-public'), { 'prod-assets (northstar-prod)': 'fail', 'prod-logs (northstar-prod)': 'pass' })
+    assert.deepEqual(Object.values(await results('gcp.sa-key-age')).sort(), ['fail', 'pass'])
+    for (const id of ['gcp.sql-backups', 'gcp.sql-public', 'gcp.sql-ssl']) assert.deepEqual(await results(id), { 'prod-db (northstar-prod)': 'fail' }, id)
+    assert.deepEqual(await results('gcp.firewall-admin-ports'), { 'allow-https (northstar-prod)': 'pass', 'allow-ssh (northstar-prod)': 'fail' })
+    assert.equal((await get('/api/connections/' + conn.azure.id)).runs[0].outcome, 'complete')
+    const subs = (name, id) => `${name} (${id})`, [prod, dev] = az.subs
+    assert.deepEqual(await results('azure.activity-log'), { [subs('Development', dev[0])]: 'fail', [subs('Production', prod[0])]: 'pass' })
+    assert.deepEqual(await results('azure.defender'), { [subs('Development', dev[0])]: 'fail', [subs('Production', prod[0])]: 'pass' })
+    for (const id of ['azure.storage-public', 'azure.storage-https']) assert.deepEqual(Object.values(await results(id)), ['fail'], id)
+    assert.deepEqual(Object.values(await results('azure.sql-public')), ['fail']); assert.deepEqual(Object.values(await results('azure.sql-backup-retention')), ['fail'])
+    assert.deepEqual(Object.values(await results('azure.nsg-admin-ports')), ['fail'])
+    for (const id of ['gcp.bucket-public', 'azure.storage-public']) { const t = await get('/api/tests/' + (await testOf(id)).id); assert.match(Object.values(t.entry.remediation)[0].terraform, /public/) }
+   })
+   await step('A source fix passes on the next read with history kept; a revoked read turns its resources unknown; a project no longer listed stays in the denominator', async () => {
+    g.buckets['northstar-prod'][0].prevention = 'enforced'
+    az.denied.add('Development:/providers/Microsoft.Network/networkSecurityGroups')
+    g.projects = ['northstar-prod']
+    await app.clock('2026-10-11T13:00:00Z'); await app.tick()
+    assert.equal((await results('gcp.bucket-public'))['prod-assets (northstar-prod)'], 'pass')
+    const fixed = (await get('/api/remediation')).resolved.find(o => o.resource_name === 'prod-assets (northstar-prod)')
+    assert.deepEqual((await get('/api/remediation/' + fixed.id)).observations.map(o => o.result).slice(0, 2), ['pass', 'fail'])
+    assert.deepEqual(Object.values(await results('azure.nsg-admin-ports')), ['unknown'])
+    assert.equal((await get('/api/connections/' + conn.azure.id)).runs[0].outcome, 'partial')
+    const gCov = JSON.parse((await get('/api/connections/' + conn.gcp.id)).runs[0].coverage_json)
+    assert.deepEqual(gCov.accounts.map(a => [a.id, a.read]), [['northstar-prod', true], ['northstar-sandbox', false]])
+    assert.equal((await results('gcp.public-iam'))['Northstar sandbox (northstar-sandbox)'], 'unknown')
+   })
  })
- await scenario('Hourly reads cover every project and subscription class by class: misconfigurations fail with remediation, a denied class is a gap and unknown, a disabled API is noted', async () => {
-  await app.tick()
-  const gRun = (await get('/api/connections/' + conn.gcp.id)).runs[0], gCov = JSON.parse(gRun.coverage_json)
-  assert.equal(gRun.outcome, 'partial'); assert.deepEqual(gCov.gaps.map(x => `${x.account} ${x.class}`), ['northstar-sandbox IAM policy and audit logging']); assert.match(gCov.notes.join(), /northstar-sandbox: Firewall rules API not enabled/)
-  assert.deepEqual(await results('gcp.public-iam'), { 'Northstar prod (northstar-prod)': 'fail', 'Northstar sandbox (northstar-sandbox)': 'unknown' })
-  assert.deepEqual(await results('gcp.bucket-public'), { 'prod-assets (northstar-prod)': 'fail', 'prod-logs (northstar-prod)': 'pass' })
-  assert.deepEqual(Object.values(await results('gcp.sa-key-age')).sort(), ['fail', 'pass'])
-  for (const id of ['gcp.sql-backups', 'gcp.sql-public', 'gcp.sql-ssl']) assert.deepEqual(await results(id), { 'prod-db (northstar-prod)': 'fail' }, id)
-  assert.deepEqual(await results('gcp.firewall-admin-ports'), { 'allow-https (northstar-prod)': 'pass', 'allow-ssh (northstar-prod)': 'fail' })
-  assert.equal((await get('/api/connections/' + conn.azure.id)).runs[0].outcome, 'complete')
-  const subs = (name, id) => `${name} (${id})`, [prod, dev] = az.subs
-  assert.deepEqual(await results('azure.activity-log'), { [subs('Development', dev[0])]: 'fail', [subs('Production', prod[0])]: 'pass' })
-  assert.deepEqual(await results('azure.defender'), { [subs('Development', dev[0])]: 'fail', [subs('Production', prod[0])]: 'pass' })
-  for (const id of ['azure.storage-public', 'azure.storage-https']) assert.deepEqual(Object.values(await results(id)), ['fail'], id)
-  assert.deepEqual(Object.values(await results('azure.sql-public')), ['fail']); assert.deepEqual(Object.values(await results('azure.sql-backup-retention')), ['fail'])
-  assert.deepEqual(Object.values(await results('azure.nsg-admin-ports')), ['fail'])
-  for (const id of ['gcp.bucket-public', 'azure.storage-public']) { const t = await get('/api/tests/' + (await testOf(id)).id); assert.match(Object.values(t.entry.remediation)[0].terraform, /public/) }
+ await scenario('COLLECTION-001 / Azure schema drift and incomplete pages retain known resources as unknown; recovery never rewrites a gap, removes a denominator or fabricates exhibits', async () => {
+  az.denied.clear()
+  const base = '/subscriptions/' + az.subs[1][0] + '/providers/Microsoft.Network/networkSecurityGroups', route = base + '?api-version=2023-09-01'
+  const path = '/api/connections/' + conn.azure.id
+  let minute = 0
+  const collect = async () => { await app.clock(new Date(Date.parse('2026-10-12T12:00:00Z') + minute++ * 60000).toISOString()); await owner(path + '/collect', {}, 201); return (await get(path)).runs[0] }
+  const knownName = 'dev-nsg (' + az.subs[1][0] + ')'
+  const baseline = await collect(); assert.equal(baseline.outcome, 'complete')
+  const failures = []
+  const rules = [{ properties: { direction: 'Inbound', access: 'Allow', sourceAddressPrefix: 'Internet', destinationPortRange: '22' } }]
+  const group = securityRules => ({ name: 'dev-nsg', properties: { securityRules } })
+  // ARM list envelopes are value arrays; none of these successful HTTP
+  // responses proves an empty source or a safe network security group.
+  for (const body of [null, {}, { value: {} }, { value: [null] }, { value: [{ name: 'dev-nsg' }] }, { value: [group('changed')] }, { value: [group([{ properties: { ...rules[0].properties, sourceAddressPrefix: 123 } }])] }, { value: [group([{ properties: { ...rules[0].properties, destinationPortRange: undefined } }])] }, { value: [group([{ properties: { ...rules[0].properties, direction: 'changed' } }])] }]) {
+   az.responses.set(route, body)
+   const run = await collect(); failures.push(run)
+   assert.equal(run.outcome, 'partial')
+   const gap = JSON.parse(run.coverage_json).gaps.find(g => g.account === az.subs[1][0] && g.class === 'Network security groups')
+   assert.match(gap.reason, /schema drift/)
+   assert.deepEqual(await results('azure.nsg-admin-ports'), { [knownName]: 'unknown' }, 'known identity survives malformed source')
+  }
+  for (const nextLink of ['https://outside.example.test/steal', 'not a URL', 42, 'https://management.azure.com' + route]) {
+   az.responses.set(route, { value: [], nextLink })
+   const before = az.calls.length, run = await collect(); failures.push(run)
+   assert.equal(run.outcome, 'partial'); assert.match(run.coverage_json, /pagination incomplete|schema drift/)
+   assert.ok(az.calls.length - before < 25, 'no repeated-page loop')
+   assert.deepEqual(await results('azure.nsg-admin-ports'), { [knownName]: 'unknown' })
+  }
+  // Twenty distinct pages with an outstanding continuation are incomplete.
+  az.responses.set(route, { value: [], nextLink: 'https://management.azure.com' + base + '?page=1' })
+  for (let page = 1; page <= 20; page++) az.responses.set(base + '?page=' + page, { value: [], nextLink: 'https://management.azure.com' + base + '?page=' + (page + 1) })
+  const limited = await collect(); failures.push(limited)
+  assert.equal(limited.outcome, 'partial'); assert.match(limited.coverage_json, /page limit/)
+  assert.ok(!az.calls.includes(base + '?page=20'), 'bounded collection stops at twenty pages')
+  assert.deepEqual(await results('azure.nsg-admin-ports'), { [knownName]: 'unknown' })
+  // A genuine second page is read and its failing resource is retained.
+  az.responses.clear()
+  az.responses.set(route, { value: [], nextLink: 'https://management.azure.com' + base + '?page=last' })
+  az.responses.set(base + '?page=last', { value: [group(rules)] })
+  const recovered = await collect(); assert.equal(recovered.outcome, 'complete')
+  assert.deepEqual(await results('azure.nsg-admin-ports'), { [knownName]: 'fail' })
+  // Explicit empty rules are safe; missing rules above were unknown.
+  az.responses.set(base + '?page=last', { value: [group([])] })
+  assert.equal((await collect()).outcome, 'complete')
+  assert.deepEqual(await results('azure.nsg-admin-ports'), { [knownName]: 'pass' })
+  // Subscription discovery cannot silently admit a partial scope list either.
+  const subsRoute = '/subscriptions?api-version=2022-12-01'
+  az.responses.set(subsRoute, { value: [{ subscriptionId: null }] })
+  const malformedScope = await collect(); failures.push(malformedScope)
+  assert.equal(malformedScope.outcome, 'failed'); assert.match(malformedScope.error_code, /schema drift: subscription identity/)
+  az.responses.set(subsRoute, { value: az.subs.map(([subscriptionId]) => ({ subscriptionId })), nextLink: 'https://outside.example.test/subscriptions' })
+  const lost = await collect(); failures.push(lost)
+  assert.equal(lost.outcome, 'failed'); assert.match(lost.error_code, /pagination incomplete/)
+  az.responses.clear()
+  await collect()
+  const history = (await get(path)).runs
+  for (const run of failures) assert.deepEqual(history.find(r => r.id === run.id), run, 'recovery retains the exact original gap')
+  assert.equal((await app.db.prepare('SELECT COUNT(*) AS n FROM receipts').first()).n, 0, 'no fabricated receipt')
+  const connection = (await get(path)).connection
+  await collectionScheduleBrowser(app, [connection], { suffix: '-azure-gaps', expected: ['Evidence gaps by run', 'Azure schema drift', 'Azure pagination incomplete'] })
  })
- await scenario('A source fix passes on the next read with history kept; a revoked read turns its resources unknown; a project no longer listed stays in the denominator', async () => {
-  g.buckets['northstar-prod'][0].prevention = 'enforced'
-  az.denied.add('Development:/providers/Microsoft.Network/networkSecurityGroups')
-  g.projects = ['northstar-prod']
-  await app.clock('2026-10-11T13:00:00Z'); await app.tick()
-  assert.equal((await results('gcp.bucket-public'))['prod-assets (northstar-prod)'], 'pass')
-  const fixed = (await get('/api/remediation')).resolved.find(o => o.resource_name === 'prod-assets (northstar-prod)')
-  assert.deepEqual((await get('/api/remediation/' + fixed.id)).observations.map(o => o.result).slice(0, 2), ['pass', 'fail'])
-  assert.deepEqual(Object.values(await results('azure.nsg-admin-ports')), ['unknown'])
-  assert.equal((await get('/api/connections/' + conn.azure.id)).runs[0].outcome, 'partial')
-  const gCov = JSON.parse((await get('/api/connections/' + conn.gcp.id)).runs[0].coverage_json)
-  assert.deepEqual(gCov.accounts.map(a => [a.id, a.read]), [['northstar-prod', true], ['northstar-sandbox', false]])
-  assert.equal((await results('gcp.public-iam'))['Northstar sandbox (northstar-sandbox)'], 'unknown')
+ await scenario('COLLECTION-001: activity export and Defender require typed source facts, enabled destination logs and every required plan; gaps survive recovery and restore', async () => {
+  const subscription = az.subs[0][0], path = '/api/connections/' + conn.azure.id
+  const prefix = `/subscriptions/${subscription}/providers/`, activity = prefix + 'Microsoft.Insights/diagnosticSettings?api-version=2021-05-01-preview', defender = prefix + 'Microsoft.Security/pricings?api-version=2024-01-01'
+  const collect = async () => { await app.clock(new Date(Date.parse((await get(path)).runs[0].started_at) + 60000).toISOString()); await owner(path + '/collect', {}); return (await get(path)).runs[0] }
+  const result = async catalogue => Object.entries(await results(catalogue)).find(([name]) => name.includes(subscription))[1]
+  const original = (await get(path)).runs
+  const failures = []
+  for (const [route, bodies, catalogue, field] of [
+   [activity, [{ value: [{ name: 'export' }] }, { value: [{ name: 'export', properties: { logs: {} } }] }, { value: [{ name: 'export', properties: { logs: [{ category: 'Security', enabled: 'true' }] } }] }, { value: [{ name: 'export', properties: { logs: [{ enabled: true }] } }] }, { value: [{ name: 'export', properties: { workspaceId: 42, logs: [] } }] }], 'azure.activity-log', 'Activity log export'],
+   [defender, [{ value: [] }, { value: [{ name: 'VirtualMachines', properties: { pricingTier: 'Standard' } }] }, { value: [{ name: 'VirtualMachines', properties: { pricingTier: true } }] }, { value: [{ properties: { pricingTier: 'Standard' } }] }, { value: ['VirtualMachines', 'VirtualMachines', 'StorageAccounts', 'SqlServers'].map(name => ({ name, properties: { pricingTier: 'Standard' } })) }], 'azure.defender', 'Defender for Cloud'],
+  ]) for (const body of bodies) {
+   az.responses.set(route, body)
+   const run = await collect(); failures.push(run)
+   assert.equal(run.outcome, 'partial'); assert.equal(await result(catalogue), 'unknown')
+   assert.ok(JSON.parse(run.coverage_json).gaps.some(g => g.account === subscription && g.class === field && /schema drift/.test(g.reason)))
+   az.responses.delete(route)
+  }
+  // Well-formed but disabled or destination-less settings are failures, not unknowns or passes.
+  for (const properties of [{ logs: [{ category: 'Security', enabled: true }] }, { workspaceId: 'workspace', logs: [{ categoryGroup: 'allLogs', enabled: false }] }, { workspaceId: 'workspace', logs: [] }]) {
+   az.responses.set(activity, { value: [{ name: 'export', properties }] }); await collect(); assert.equal(await result('azure.activity-log'), 'fail')
+  }
+  az.responses.delete(activity)
+  az.responses.set(defender, { value: ['VirtualMachines', 'StorageAccounts', 'SqlServers'].map(name => ({ name, properties: { pricingTier: name === 'SqlServers' ? 'Free' : 'Standard' } })) })
+  await collect(); assert.equal(await result('azure.defender'), 'fail', 'one covered class cannot stand in for all three')
+  az.responses.delete(defender)
+  await collect(); assert.equal(await result('azure.activity-log'), 'pass'); assert.equal(await result('azure.defender'), 'pass')
+  const history = (await get(path)).runs
+  for (const run of [...original, ...failures]) assert.deepEqual(history.find(r => r.id === run.id), run)
+  const target = await runtime()
+  try {
+   await target.signin()
+   const restored = await target.fetch('/api/archive/restore', { method: 'POST', headers: { origin: target.origin, 'content-type': 'application/octet-stream', 'x-evidence-confirm': 'restore', 'x-evidence-erasure-history': 'unverified acknowledged' }, body: await (await app.fetch('/api/archive/export')).arrayBuffer() })
+   assert.equal(restored.status, 200, await restored.clone().text())
+   assert.deepEqual((await (await target.fetch(path)).json()).runs, history)
+  } finally { await target.close() }
+  await collectionScheduleBrowser(app, [(await get(path)).connection], { suffix: '-azure-activity-defender', expected: ['activity log', 'Defender', 'schema drift'] })
  })
+ await scenario('COLLECTION-001: storage and SQL schema gaps preserve the known population; bounded SQL coverage, recovery and history stay honest', async () => {
+  const subscription = az.subs[0][0], path = '/api/connections/' + conn.azure.id
+  const root = '/subscriptions/' + subscription, sqlRoot = root + '/resourceGroups/rg/providers/Microsoft.Sql/servers/'
+  const storageRoute = root + '/providers/Microsoft.Storage/storageAccounts?api-version=2023-05-01'
+  const serversRoute = root + '/providers/Microsoft.Sql/servers?api-version=2023-08-01-preview'
+  const databasesRoute = sqlRoot + 'prod-sql/databases?api-version=2023-08-01-preview'
+  const retentionRoute = sqlRoot + 'prod-sql/databases/orders/backupShortTermRetentionPolicies/default?api-version=2023-08-01-preview'
+  const storage = { name: 'prodblobs', properties: { allowBlobPublicAccess: false, supportsHttpsTrafficOnly: true, minimumTlsVersion: 'TLS1_2' } }
+  const server = { id: sqlRoot + 'prod-sql', name: 'prod-sql', properties: { publicNetworkAccess: 'Disabled' } }
+  const database = { id: sqlRoot + 'prod-sql/databases/orders', name: 'orders' }
+  const failed = []
+  let minute = 0
+  const collect = async () => {
+   await app.clock(new Date(Date.parse('2026-10-13T12:00:00Z') + minute++ * 60000).toISOString())
+   await owner(path + '/collect', {}, 201)
+   return (await get(path)).runs[0]
+  }
+  const unknown = async (route, body, group, tests, reason = /schema drift/) => {
+   az.responses.set(route, body)
+   const run = await collect(); failed.push(run)
+   assert.equal(run.outcome, 'partial')
+   const gap = JSON.parse(run.coverage_json).gaps.find(g => g.account === subscription && g.class === group)
+   assert.ok(gap, group + ' names the affected class and subscription'); assert.match(gap.reason, reason)
+   for (const [test, name] of tests) assert.deepEqual(await results(test), { [name + ' (' + subscription + ')']: 'unknown' }, test + ' keeps its known population')
+   assert.equal(Object.values(await results('azure.activity-log')).filter(r => r === 'pass').length, 1, 'an unrelated readable class still has its source result')
+   az.responses.delete(route)
+  }
+  assert.equal((await collect()).outcome, 'complete')
+  const storageTests = [['azure.storage-public', 'prodblobs'], ['azure.storage-https', 'prodblobs']]
+  for (const item of [
+   { ...storage, name: undefined }, { name: storage.name },
+   ...['allowBlobPublicAccess', 'supportsHttpsTrafficOnly', 'minimumTlsVersion'].map(field => ({ ...storage, properties: { ...storage.properties, [field]: undefined } })),
+   { ...storage, properties: { ...storage.properties, allowBlobPublicAccess: 'false' } },
+   { ...storage, properties: { ...storage.properties, supportsHttpsTrafficOnly: 'true' } },
+   { ...storage, properties: { ...storage.properties, minimumTlsVersion: 'changed' } },
+  ]) await unknown(storageRoute, { value: [item] }, 'Storage accounts', storageTests)
+  az.responses.set(storageRoute, { value: [storage] })
+  assert.equal((await collect()).outcome, 'complete')
+  for (const [test] of storageTests) assert.deepEqual(Object.values(await results(test)), ['pass'])
+  const sqlTests = [['azure.sql-public', 'prod-sql'], ['azure.sql-backup-retention', 'prod-sql/orders']]
+  for (const item of [
+   { ...server, id: undefined }, { ...server, name: undefined },
+   { ...server, id: server.id.replace(subscription, az.subs[1][0]) },
+   { ...server, id: server.id + '?different=resource' }, { ...server, name: 'different-server' },
+   { ...server, properties: undefined }, { ...server, properties: { publicNetworkAccess: undefined } },
+   { ...server, properties: { publicNetworkAccess: false } }, { ...server, properties: { publicNetworkAccess: 'changed' } },
+  ]) await unknown(serversRoute, { value: [item] }, 'Azure SQL', sqlTests)
+  for (const item of [
+   { ...database, id: undefined }, { ...database, name: undefined },
+   { ...database, id: database.id.replace('/prod-sql/', '/another-server/') },
+  ]) await unknown(databasesRoute, { value: [item] }, 'Azure SQL', sqlTests)
+  for (const body of [null, {}, { properties: null }, ...[undefined, null, '7', -1, 7.5].map(retentionDays => ({ properties: { retentionDays } }))]) {
+   await unknown(retentionRoute, body, 'Azure SQL', sqlTests)
+  }
+  az.responses.set(serversRoute, { value: Array.from({ length: 51 }, (_, i) => ({ ...server, id: sqlRoot + 'sql-' + i, name: 'sql-' + i })) })
+  const before = az.calls.length, limited = await collect(); failed.push(limited)
+  assert.equal(limited.outcome, 'partial'); assert.match(limited.coverage_json, /Azure SQL coverage incomplete: more than 50/)
+  assert.ok(!az.calls.slice(before).some(p => p.startsWith(sqlRoot)), 'over-limit inventory is refused before reading a truncated subset')
+  for (const [test, name] of sqlTests) assert.deepEqual(await results(test), { [name + ' (' + subscription + ')']: 'unknown' })
+  az.responses.delete(serversRoute)
+  // At the inclusive bound, read the last server too; its failure cannot be lost.
+  const original = az.sql.Production
+  az.sql.Production = [...Array.from({ length: 49 }, (_, i) => ({ name: 'sql-' + i, publicAccess: 'Disabled', dbs: [] })), ...original]
+  assert.equal((await collect()).outcome, 'complete')
+  const atLimit = await results('azure.sql-public')
+  assert.equal(Object.keys(atLimit).length, 50); assert.equal(atLimit['prod-sql (' + subscription + ')'], 'fail')
+  az.sql.Production = original
+  az.responses.set(serversRoute, { value: [server] }); az.responses.set(retentionRoute, { properties: { retentionDays: 7 } })
+  const recovered = await collect(); assert.equal(recovered.outcome, 'complete')
+  for (const [test] of sqlTests) assert.deepEqual(Object.values(await results(test)), ['pass'])
+  const history = (await get(path)).runs
+  for (const run of failed) assert.deepEqual(history.find(r => r.id === run.id), run, 'later source reads retain the original gap')
+  await collectionScheduleBrowser(app, [(await get(path)).connection], { suffix: '-azure-storage-sql', expected: ['Storage accounts', 'Azure SQL', 'Azure schema drift', 'Azure SQL coverage incomplete'] })
+  az.responses.clear()
+ })
+ await scenario('COLLECTION-001: Google Cloud schema and continuation gaps preserve class denominators, source timestamps and original failures through recovery', async () => {
+  const path = '/api/connections/' + conn.gcp.id, project = 'northstar-prod'
+  const collect = async () => { await app.clock(new Date(Date.parse((await get(path)).runs[0].started_at) + 60000).toISOString()); await owner(path + '/collect', {}); return (await get(path)).runs[0] }
+  const checks = [
+   ['https://storage.googleapis.com/storage/v1/b?project=' + project + '&maxResults=1000', [{ items: {} }, { items: [null] }, { items: [{ name: 'prod-assets', iamConfiguration: { publicAccessPrevention: true } }] }, { items: [], nextPageToken: 3 }], 'gcp.bucket-public', 'Cloud Storage'],
+   ['https://storage.googleapis.com/storage/v1/b/prod-assets/iam', [{ bindings: [{ role: 'roles/storage.objectViewer', members: 'allUsers' }] }, { bindings: [null] }], 'gcp.bucket-public', 'Cloud Storage'],
+   ['https://cloudresourcemanager.googleapis.com/v1/projects/' + project + ':getIamPolicy', [{ bindings: {} }, { bindings: [{ role: 'roles/viewer', members: true }] }, { bindings: [], auditConfigs: [{ service: 'allServices', auditLogConfigs: [{ logType: true }] }] }], 'gcp.public-iam', 'IAM policy and audit logging'],
+   ['https://iam.googleapis.com/v1/projects/' + project + '/serviceAccounts?pageSize=100', [{ accounts: [{ name: 'projects/another-project/serviceAccounts/wrong', email: 'reader@example.test' }] }, { accounts: [{ name: null, email: 'reader@example.test' }] }], 'gcp.sa-key-age', 'Service account keys'],
+   ['https://sqladmin.googleapis.com/v1/projects/' + project + '/instances', [{ items: [{ name: 'prod-db', settings: {} }] }, { items: [{ name: 'prod-db', settings: { backupConfiguration: { enabled: 'true' }, ipConfiguration: { ipv4Enabled: true, requireSsl: true } } }] }], 'gcp.sql-ssl', 'Cloud SQL'],
+   ['https://compute.googleapis.com/compute/v1/projects/' + project + '/global/firewalls', [{ items: [{ name: 'allow-ssh', direction: 'INGRESS', network: 'default', sourceRanges: '0.0.0.0/0' }] }, { items: [{ name: 'allow-ssh', direction: 'INGRESS', network: 'default', sourceRanges: ['0.0.0.0/0'], allowed: [{ IPProtocol: 'tcp', ports: 22 }] }] }], 'gcp.firewall-admin-ports', 'Firewall rules'],
+  ]
+  const originals = []
+  for (const [url, bodies, catalogue, evidenceClass] of checks) for (const body of bodies) {
+   const before = await results(catalogue), keys = Object.keys(before).filter(k => k.includes(project))
+   assert.ok(keys.length, catalogue + ' needs a known denominator')
+   g.responses.set(url, body)
+   const run = await collect(); originals.push(run)
+   assert.equal(run.outcome, 'partial'); assert.ok(JSON.parse(run.coverage_json).gaps.some(gap => gap.class === evidenceClass && /schema drift/.test(gap.reason)))
+   const after = await results(catalogue)
+   for (const key of keys) assert.equal(after[key], 'unknown', key)
+   g.responses.delete(url)
+   await collect()
+   assert.deepEqual(await results(catalogue), before, 'only a later authorized fresh read recovers the source facts')
+  }
+  const url = 'https://storage.googleapis.com/storage/v1/b?project=' + project + '&maxResults=1000'
+  g.responses.set(url, { items: [], nextPageToken: 'repeated' }); g.responses.set(url + '&pageToken=repeated', { items: [], nextPageToken: 'repeated' })
+  const repeated = await collect(); originals.push(repeated)
+  assert.equal(repeated.outcome, 'partial'); assert.match(repeated.coverage_json, /pagination incomplete: repeated page token/)
+  g.responses.clear(); await collect()
+  const history = (await get(path)).runs
+  for (const original of originals) assert.deepEqual(history.find(r => r.id === original.id), original)
+  await collectionScheduleBrowser(app, [(await get(path)).connection], { suffix: '-gcp-schema', expected: ['Google Cloud schema drift', 'Google Cloud pagination incomplete'] })
+ })
+ await scenario('COLLECTION-001: Azure and Google Cloud resume only the interrupted page after restart, preserve original source times and never persist unexpected provider fields',async()=>{
+  let time=Math.max(...await Promise.all(Object.values(conn).map(async c=>Date.parse((await get('/api/connections/'+c.id)).runs[0].started_at))))
+  const subscription=az.subs[1][0],armPath=`/subscriptions/${subscription}/providers/Microsoft.Network/networkSecurityGroups?api-version=2023-09-01`
+  const storage='https://storage.googleapis.com/storage/v1/b?project=northstar-prod&maxResults=1000'
+  const cases=[
+   {provider:'azure',first:armPath,second:armPath+'&page=synthetic-resume-2',responses:az.responses,statuses:az.statuses,calls:az.calls,one:{value:[{name:'dev-nsg',properties:{securityRules:[]},unexpected_secret:'synthetic-evidence-private'}],nextLink:'https://management.azure.com'+armPath+'&page=synthetic-resume-2'},two:{value:[]}},
+   {provider:'gcp',first:storage,second:storage+'&pageToken=synthetic-resume-2',responses:g.responses,statuses:g.statuses,calls:g.calls,one:{items:[{name:g.buckets['northstar-prod'][0].name,iamConfiguration:{publicAccessPrevention:g.buckets['northstar-prod'][0].prevention},unexpected_secret:'synthetic-evidence-private'}],nextPageToken:'synthetic-resume-2'},two:{items:[{name:g.buckets['northstar-prod'][1].name,iamConfiguration:{publicAccessPrevention:g.buckets['northstar-prod'][1].prevention}}]}},
+  ]
+  for(const c of cases){
+   const path='/api/connections/'+conn[c.provider].id,before=c.calls.length
+   c.responses.set(c.first,c.one);c.responses.set(c.second,c.two);c.statuses.set(c.second,429)
+   time+=60000;await app.clock(new Date(time).toISOString());await owner(path+'/collect',{})
+   const interrupted=(await get(path)).runs[0],metadata=JSON.parse(interrupted.coverage_json)
+   assert.equal(interrupted.outcome,'throttled');assert.equal(metadata.resume_pages.pending,true)
+   assert.ok(Object.values(metadata.resume_pages.cursors).some(cursor=>cursor.includes('synthetic-resume-2')))
+   assert.ok(!gunzipSync(Buffer.from(metadata.resume_pages.data,'base64')).toString().includes('synthetic-evidence-private'))
+   c.statuses.delete(c.second)
+   time+=300000;await app.clock(new Date(time).toISOString());await owner(path+'/collect',{})
+   const completed=(await get(path)).runs[0],recovered=JSON.parse(completed.coverage_json)
+   assert.ok(['complete','partial'].includes(completed.outcome));assert.equal(recovered.resume_pages.pending,false)
+   assert.equal(recovered.source_read_started_at,interrupted.started_at);assert.equal(recovered.received_at,completed.finished_at)
+   assert.equal(c.calls.slice(before).filter(url=>url===c.first).length,1,'the completed first page is never fetched twice')
+   assert.equal(c.calls.slice(before).filter(url=>url===c.second).length,2,'only the throttled page retries')
+   assert.deepEqual((await get(path)).runs.find(r=>r.id===interrupted.id),interrupted)
+   c.responses.clear();c.statuses.clear()
+   await collectionScheduleBrowser(app,[(await get(path)).connection],{suffix:'-resume-'+c.provider,reportExpected:['synthetic-resume-2']})
+  }
+ })
+ await scenario('COLLECTION-001: hosted collector schedules through owner doors, Cron, browser and restore', () => collectionScheduleJourney(app))
  console.log(`${passed} Google Cloud and Azure public-door scenarios passed; the clouds are faked only at the network edge.`)
 } finally { await app.close() }

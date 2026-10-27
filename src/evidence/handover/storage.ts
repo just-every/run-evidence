@@ -8,7 +8,7 @@ import { local, settings as followupSettings, type Settings } from '../followup/
 // owner reassigns it with a reason. The manager (or the compliance owner) is
 // asked to hand over within a business-day window and escalated after it.
 // Past observations, approvals and decisions are never reattributed.
-export const kinds = ['control', 'policy', 'risk', 'treatment', 'vendor', 'obligation', 'access-item'] as const
+export const kinds = ['control', 'policy', 'risk', 'treatment', 'vendor', 'obligation', 'access-item', 'audit-request'] as const
 export type Kind = typeof kinds[number]
 export interface Held { kind: Kind; item_id: string; role: 'owner' | 'contributor' | 'reviewer'; label: string; link: string; person_id: string }
 export interface Flagged extends Held { person_name: string; person_email: string; departed_at: string; deadline: string; state: 'owner left' | 'handover overdue' | 'escalated' }
@@ -17,6 +17,7 @@ const latestOwner = 'o.rowid=(SELECT x.rowid FROM control_owners x WHERE x.contr
 // Every responsibility a person can hold today, one row per item and role
 // (separate selects: D1 caps a compound SELECT at five terms).
 const heldSql = [
+ "SELECT 'audit-request' AS kind,id AS item_id,'owner' AS role,title AS label,'/api/audit-engagements/'||engagement_id AS link,owner_person_id AS person_id FROM audit_requests WHERE closed_at IS NULL",
  `SELECT 'control' AS kind,o.control_id AS item_id,'owner' AS role,c.name AS label,'/app/controls/'||o.control_id AS link,o.owner_person_id AS person_id FROM control_owners o JOIN controls c ON c.id=o.control_id WHERE ${latestOwner}`,
  `SELECT 'control' AS kind,o.control_id AS item_id,'contributor' AS role,c.name AS label,'/app/controls/'||o.control_id AS link,j.value AS person_id FROM control_owners o JOIN controls c ON c.id=o.control_id JOIN json_each(o.contributors) j WHERE ${latestOwner}`,
  "SELECT 'policy' AS kind,id AS item_id,'owner' AS role,title AS label,'/app/policies' AS link,owner_person_id AS person_id FROM policies WHERE owner_person_id IS NOT NULL",
@@ -71,6 +72,7 @@ async function move(env: Bindings, actor: Actor, item: Flagged, to: { id: string
  else if (item.kind === 'risk') statements.push(owned('risks'))
  else if (item.kind === 'vendor') statements.push(owned('vendors'))
  else if (item.kind === 'treatment') statements.push(owned('risk_treatments'))
+ else if (item.kind === 'audit-request') statements.push(env.DB.prepare('UPDATE audit_requests SET owner_person_id=? WHERE id=? AND owner_person_id=? AND closed_at IS NULL').bind(to.id,item.item_id,item.person_id))
  else if (item.kind === 'obligation') statements.push(env.DB.prepare('UPDATE obligations SET owner_person_id=? WHERE id=? AND owner_person_id=?').bind(to.id, item.item_id, item.person_id), env.DB.prepare("INSERT INTO obligation_events(id,obligation_id,kind,actor_id,actor_name,body,observation_id,at) VALUES(?,?,'reassigned',?,?,?,NULL,?)").bind(crypto.randomUUID(), item.item_id, actor.id, actor.name, note, at))
  else {
   const subject = await env.DB.prepare('SELECT attributes_json FROM access_review_items WHERE id=?').bind(item.item_id).first<{ attributes_json: string }>()

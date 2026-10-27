@@ -1,3 +1,4 @@
+import './engagement-browser.mjs'
 import {decodeArchive} from './helpers/portable-format.mjs'
 // Real dev, two clean installations, independent owner/reviewer contexts.
 process.env.RER_SERVER_JOURNEY='1'
@@ -81,7 +82,7 @@ async function issue(page,origin,today,label,expiry) {
   page.waitForResponse(response=>new URL(response.url()).pathname==='/app/folders'&&response.request().method()==='POST'),
   form.locator('button[type="submit"],button:not([type])').click(),
  ])
- if(response.status()!==200){
+ if(response.status()!==303){
   const requestOrigin=response.request().headers().origin
   const observation={status:response.status(),requestOrigin:requestOrigin==='null'?'null':requestOrigin?'present':'absent',body:sanitize(await response.text())}
   await writeFile(join(output,'folder-issue-refused.json'),JSON.stringify(observation,null,2)+'\n')
@@ -90,10 +91,15 @@ async function issue(page,origin,today,label,expiry) {
  }
  assert.ok(response.request().headers().origin===origin,'successful owner form preserves its same-origin header')
  folderIssues.push({width:page.viewportSize().width,status:response.status(),requestOrigin:'same-origin'})
+ assert.equal(new URL(response.headers().location,origin).pathname,'/app/folders','issuance redirects to a GET page')
  const field=page.locator('input[readonly]')
  await field.waitFor()
  const url=await field.inputValue()
  assert.ok(new URL(url).pathname.startsWith('/review/'),'issued reviewer URL')
+ // Clipboard access belongs to the active window. A reviewer context may
+ // have taken focus since the owner's previous navigation.
+ await page.bringToFront()
+ await page.waitForFunction(()=>document.hasFocus())
  await page.getByRole('button',{name:'Copy link',exact:true}).click()
  await page.waitForFunction(expected=>navigator.clipboard.readText().then(actual=>actual===expected),url)
  return url
@@ -165,7 +171,8 @@ try {
   assert.match(reviewText,/fingerprint/i,'reviewer sees fingerprint caveat')
   await capture(viewer.page,`${width}-reviewer`)
   await viewer.page.locator('a[href$="/view"]').first().click()
-  assert.match(await viewer.page.locator('main').textContent(),/manually-asserted/,'reviewer receipt retains origin')
+  const receiptRecord=await viewer.context.request.get(viewer.page.url().replace(/\/view$/,''))
+  assert.equal((await receiptRecord.json()).origin,'manually-asserted','reviewer receipt retains origin through its record door')
   const downloadLink=await viewer.page.locator('a[href$="/download"]').getAttribute('href')
   const staleDownload=new URL(downloadLink,source.origin).href
   const [file]=await Promise.all([viewer.page.waitForEvent('download'),viewer.page.locator('a[href$="/download"]').click()])
@@ -229,7 +236,7 @@ try {
  console.log('PASS PORTABLE-001 and r2 browser journeys at 1440 and 390; independent review, closure, real expiry, archive round trip, zero overflow/errors.')
 } catch(error) {
  await writeFile(join(output,'failure.json'),JSON.stringify({error:sanitize(error.message),errors,measurements,comparisons},null,2)+'\n')
- throw new Error(sanitize(error.message))
+ throw new Error(sanitize(error.stack ?? error.message))
 }
 finally {
  const cleanup=await Promise.allSettled([browser?.close(),...installations.reverse().map(item=>item.close())])

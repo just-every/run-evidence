@@ -1,3 +1,4 @@
+import { scopedFetch } from '../ops/execution'
 import type { Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
 import { auditStatement, oneOf, text, type Actor, type Input } from '../door'
@@ -15,7 +16,7 @@ export const activeChannel = (env: Bindings, kind: ChannelKind) => env.DB.prepar
 export const safeChannel = ({ secret_ciphertext: _c, secret_iv: _i, ...rest }: ChannelRow) => rest
 const timeout = () => AbortSignal.timeout(10000)
 async function slackCall(token: string, method: string, body: Record<string, string>) {
- const response = await fetch('https://slack.com/api/' + method, { method: 'POST', headers: { authorization: 'Bearer ' + token, 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(body), signal: timeout() })
+ const response = await scopedFetch('https://slack.com/api/' + method, { method: 'POST', headers: { authorization: 'Bearer ' + token, 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(body), signal: timeout() })
  if (response.status === 429) return { ok: false, error: 'ratelimited' } as Record<string, unknown>
  // A server error may come after Slack acted on the message: ambiguous, never a clean failure.
  if (!response.ok) return { ok: false, error: 'http_' + response.status, ambiguous: response.status >= 500 } as Record<string, unknown>
@@ -45,7 +46,7 @@ export async function deliver(env: Bindings, channel: ChannelRow, email: string 
   const url = new URL(secret)
   if (!teamsHost(url)) return { state: 'failed', detail: 'The Teams workflow URL is not a Microsoft host.' }
   const card = { type: 'message', attachments: [{ contentType: 'application/vnd.microsoft.card.adaptive', content: { type: 'AdaptiveCard', $schema: 'http://adaptivecards.io/schemas/adaptive-card.json', version: '1.4', body: [{ type: 'TextBlock', text: message.title, weight: 'Bolder', wrap: true }, ...(email ? [{ type: 'TextBlock', text: `For ${email}`, isSubtle: true, wrap: true }] : []), { type: 'TextBlock', text: message.text, wrap: true }], actions: [{ type: 'Action.OpenUrl', title: 'Open in Evidence', url: message.link }] } }] }
-  const response = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(card), redirect: 'manual', signal: timeout() })
+  const response = await scopedFetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(card), redirect: 'manual', signal: timeout() })
   if (response.status >= 200 && response.status < 300) return { state: 'accepted', detail: `Teams accepted the message (${response.status}).` }
   if (response.status === 401 || response.status === 403 || response.status === 404) return { state: 'failed', detail: `Teams refused the workflow URL (${response.status}); reconnect it.`, revoked: true }
   return { state: response.status >= 500 ? 'uncertain' : 'failed', detail: `Teams answered ${response.status}.` }

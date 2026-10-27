@@ -11,7 +11,8 @@ import { adoptionStatements, programs } from './storage'
 export async function libraryReview(env: Bindings) {
  const accepted = await acceptedLibraryRevision(env), active = await programs(env)
  const history = (await env.DB.prepare('SELECT revision,from_revision,actor_name,reason,at FROM library_acceptances ORDER BY revision').all<{ revision: number; from_revision: number; actor_name: string; reason: string; at: string }>()).results
- const pending = libraryRevisions.filter(r => r.revision > accepted).map(r => ({ ...r, changes: r.changes.map(x => ({
+ const saqs = (await env.DB.prepare(`SELECT d.program_id,json_extract(r.facts_json,'$."saq:type".value') AS type FROM program_documents d JOIN program_document_revisions r ON r.document_id=d.id WHERE d.kind='pci-saq' AND r.revision=(SELECT MAX(v.revision) FROM program_document_revisions v WHERE v.document_id=d.id)`).all<{ program_id: string; type: string }>()).results
+ const pending = libraryRevisions.filter(r => r.revision > accepted).map(r => ({ ...r, stateChanges: (r.stateChanges ?? []).map(x => ({ ...x, programs: active.filter(p => p.framework === x.framework).map(p => ({ id: p.id, name: p.name })) })), saqChanges: (r.saqChanges ?? []).map(x => ({ ...x, programs: active.filter(p => saqs.some(s => s.program_id === p.id && s.type === x.type)).map(p => ({ id: p.id, name: p.name })) })), changes: r.changes.map(x => ({
   ...x, control_title: libraryControl(x.control)!.title, framework_name: frameworks[x.framework].name,
   requirement: latestEdition(x.framework).requirements.find(q => q.ref === x.ref)!.title,
   programs: active.filter(p => p.framework === x.framework && edition(p.framework, p.edition)!.requirements.some(q => (q.successors ?? [q.ref]).includes(x.ref))).map(p => ({ id: p.id, name: p.name })),

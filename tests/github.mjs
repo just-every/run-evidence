@@ -1,3 +1,8 @@
+import { step } from './helpers/step.mjs'
+import {githubFindingsJourney} from './helpers/github-findings-journey.mjs'
+import {azuredevopsScopeJourney,azuredevopsHistoryJourney,azuredevopsPagingJourney} from './helpers/azuredevops-journey.mjs'
+import {bitbucketScopeJourney,bitbucketHistoryJourney,bitbucketPagingJourney} from './helpers/bitbucket-journey.mjs'
+import {gitlabScopeJourney,gitlabHistoryJourney,gitlabPagingJourney,gitlabMembersJourney} from './helpers/gitlab-journey.mjs'
 // GitHub connection custody, scheduled collection and catalogue tests through
 // the owner's doors and the Cron Trigger. GitHub itself is the only fake: a
 // network-edge stand-in for api.github.com that answers the documented REST
@@ -5,6 +10,9 @@
 process.env.RER_SERVER_JOURNEY = '1'
 import assert from 'node:assert/strict'
 import { runtime } from './helpers/runtime.mjs'
+import { githubDependenciesJourney } from './helpers/github-dependencies-journey.mjs'
+import { githubMembersJourney } from './helpers/github-members-journey.mjs'
+import { githubHistoryJourney } from './helpers/github-history-journey.mjs'
 import { collectionJourney } from './helpers/collection-journey.mjs'
 import { githubFixture } from './helpers/github-fixture.mjs'
 const { github, outbound: fakeGitHub } = githubFixture()
@@ -19,78 +27,88 @@ const testByCatalogue = async id => (await get('/api/tests')).tests.find(t => t.
 const results = async id => Object.fromEntries((await get('/api/tests/' + (await testByCatalogue(id)).id)).latest.map(o => [o.display_name, o.result]))
 let connection
 try {
- await scenario('CONNECT-001: a GitHub credential is kept only after a real read check, encrypted, and never shown again', async () => {
-  await app.signin()
-  await owner('/api/connections', { account: 'northstar', token: 'github_pat_wrong' }, 400)
-  for (const api_base of ['https://169.254.169.254', 'https://ghe.internal', 'http://ghe.example.test/api/v3']) await owner('/api/connections', { account: 'northstar', token: 'github_pat_good', api_base }, 400)
-  assert.equal((await app.db.prepare('SELECT COUNT(*) AS n FROM connections').first()).n, 0)
-  connection = await owner('/api/connections', { account: 'northstar', token: 'github_pat_good', label: 'GitHub production' })
-  assert.deepEqual(connection.repositories.sort(), ['northstar/site', 'northstar/tools', 'northstar/web'])
-  const stored = await app.db.prepare('SELECT * FROM connections').first()
-  assert.ok(stored.secret_ciphertext && !stored.secret_ciphertext.includes('github_pat_good'))
-  for (const text of [JSON.stringify(await get('/api/connections')), JSON.stringify(await get('/api/connections/' + connection.id)), JSON.stringify((await app.db.prepare('SELECT * FROM product_audit').all()).results), await (await app.fetch('/app/connections/' + connection.id)).text()]) assert.ok(!text.includes('github_pat_good') && !text.includes(stored.secret_ciphertext))
-  const tests = (await get('/api/tests')).tests.filter(t => t.origin === 'catalogue')
-  assert.deepEqual(tests.map(t => t.catalogue_id).sort(), ['github.branch-protection', 'github.dependabot-critical', 'github.org-two-factor', 'github.repository-private', 'github.required-checks', 'github.required-review', 'github.secret-scanning-open'])
-  assert.ok((await get('/api/tests')).catalogue.find(e => e.id === 'github.departed-members').manualRequirement)
+ await scenario("CONNECT-001: authorize, collect, remediate and retire one GitHub connection", async () => {
+  await step('CONNECT-001: a GitHub credential is kept only after a real read check, encrypted, and never shown again', async () => {
+    await app.signin()
+    await owner('/api/connections', { account: 'northstar', token: 'synthetic-evidence-99' }, 400)
+    for (const api_base of ['https://169.254.169.254', 'https://ghe.internal', 'http://ghe.example.test/api/v3']) await owner('/api/connections', { account: 'northstar', token: 'synthetic-evidence-1', api_base }, 400)
+    github.org.login='outside-source';await owner('/api/connections',{account:'northstar',token:'synthetic-evidence-1'},400);github.org.login='northstar'
+    github.overrides.set('/orgs/northstar/repos?per_page=100&type=all',{body:[{full_name:'outside-source/web'}]});await owner('/api/connections',{account:'northstar',token:'synthetic-evidence-1'},400);github.overrides.delete('/orgs/northstar/repos?per_page=100&type=all')
+    assert.equal((await app.db.prepare('SELECT COUNT(*) AS n FROM connections').first()).n, 0)
+    connection = await owner('/api/connections', { account: 'northstar', token: 'synthetic-evidence-1', label: 'GitHub production' })
+    assert.deepEqual(connection.repositories.sort(), ['northstar/site', 'northstar/tools', 'northstar/web'])
+    const stored = await app.db.prepare('SELECT * FROM connections').first()
+    assert.ok(stored.secret_ciphertext && !stored.secret_ciphertext.includes('synthetic-evidence-1'))
+    for (const text of [JSON.stringify(await get('/api/connections')), JSON.stringify(await get('/api/connections/' + connection.id)), JSON.stringify((await app.db.prepare('SELECT * FROM product_audit').all()).results), await (await app.fetch('/app/connections/' + connection.id)).text()]) assert.ok(!text.includes('synthetic-evidence-1') && !text.includes(stored.secret_ciphertext))
+    const tests = (await get('/api/tests')).tests.filter(t => t.origin === 'catalogue')
+    assert.deepEqual(tests.map(t => t.catalogue_id).sort(), ['github.branch-protection', 'github.departed-members', 'github.dependabot-critical', 'github.org-two-factor', 'github.repository-private', 'github.required-checks', 'github.required-review', 'github.secret-scanning-open'])
+    assert.deepEqual((await get('/api/tests')).catalogue.find(e => e.id === 'github.departed-members').criteria, [{attribute:'departed_members',op:'max',value:0}])
+   })
+   await step('CONNECT-001: The scheduler reads only selected repositories and catalogue tests fail with per-provider remediation steps', async () => {
+    await owner(`/api/connections/${connection.id}/repositories`, { repositories: ['northstar/web', 'northstar/site'] }, 200)
+    await app.tick()
+    const detail = await get('/api/connections/' + connection.id)
+    assert.equal(detail.runs.length, 1); assert.equal(detail.runs[0].outcome, 'complete'); assert.equal(detail.runs[0].trigger, 'schedule')
+    assert.deepEqual(JSON.parse(detail.runs[0].coverage_json).repositories_read.sort(), ['northstar/site', 'northstar/web'])
+    assert.deepEqual(await results('github.branch-protection'), { 'northstar/site': 'fail', 'northstar/web': 'pass' })
+    assert.deepEqual(await results('github.repository-private'), { 'northstar/site': 'fail', 'northstar/web': 'pass' })
+    assert.deepEqual(await results('github.dependabot-critical'), { 'northstar/site': 'fail', 'northstar/web': 'pass' })
+    assert.deepEqual(await results('github.org-two-factor'), { 'northstar (organization)': 'fail' })
+    const branch = await get('/api/tests/' + (await testByCatalogue('github.branch-protection')).id)
+    assert.match(branch.entry.remediation.github.terraform, /github_branch_protection/); assert.match(branch.entry.remediation.github.api, /protection/)
+    assert.ok(branch.latest.every(o => o.source_kind === 'source-observed'))
+    assert.match(await (await app.fetch('/app/tests/' + branch.test.id)).text(), /How to remediate/)
+    assert.ok((await get('/api/remediation')).open.some(o => o.resource_name === 'northstar/site' && o.test_name === 'Default branch is protected'))
+    assert.ok(github.methods.length > 0 && github.methods.every(m => m === 'GET'))
+   })
+   await step('CONNECT-001: A source fix verifies on the next hourly read; revoked repository access stays in the denominator as unknown', async () => {
+    github.repos['northstar/site'].protection = { reviews: 2, checks: ['ci'] }
+    await at('2026-10-11T13:00:00Z'); await app.tick()
+    assert.deepEqual(await results('github.branch-protection'), { 'northstar/site': 'pass', 'northstar/web': 'pass' })
+    const verified = (await get('/api/remediation')).resolved.find(o => o.resource_name === 'northstar/site' && o.test_name === 'Default branch is protected')
+    const history = await get('/api/remediation/' + verified.id)
+    assert.deepEqual(history.observations.map(o => o.result).slice(0, 2), ['pass', 'fail'])
+    github.hidden.add('northstar/web')
+    await at('2026-10-11T14:00:00Z'); await app.tick()
+    const runs = (await get('/api/connections/' + connection.id)).runs
+    assert.equal(runs[0].outcome, 'partial'); assert.match(runs[0].coverage_json, /northstar\/web.*access revoked/)
+    assert.deepEqual(await results('github.branch-protection'), { 'northstar/site': 'pass', 'northstar/web': 'unknown' })
+    github.hidden.delete('northstar/web')
+   })
+   await step('CONNECT-001: Throttling backs off without fabricated runs; rotation and revocation never resurrect old authority; stale reads go unknown', async () => {
+    github.throttleUntil = Date.parse('2026-10-11T15:30:00Z')
+    await at('2026-10-11T15:00:00Z'); await app.tick()
+    let runs = (await get('/api/connections/' + connection.id)).runs
+    assert.equal(runs[0].outcome, 'throttled'); assert.ok((await get('/api/connections/' + connection.id)).connection.next_attempt_at >= '2026-10-11T15:30:00.000Z')
+    await at('2026-10-11T15:10:00Z'); await app.tick()
+    assert.equal((await get('/api/connections/' + connection.id)).runs.length, runs.length)
+    await at('2026-10-11T16:05:00Z'); await app.tick()
+    runs = (await get('/api/connections/' + connection.id)).runs; assert.equal(runs[0].outcome, 'complete')
+    github.tokens = new Set(['synthetic-evidence-2'])
+    await at('2026-10-11T17:05:00Z'); await app.tick()
+    const broken = await get('/api/connections/' + connection.id)
+    assert.equal(broken.connection.status, 'needs reconnect'); assert.equal(broken.runs[0].outcome, 'failed')
+    assert.deepEqual(await results('github.branch-protection'), { 'northstar/site': 'unknown', 'northstar/web': 'unknown' }, 'whole-credential rejection immediately withdraws current assurance')
+    await owner(`/api/connections/${connection.id}/rotate`, { token: 'synthetic-evidence-1' }, 400)
+    await owner(`/api/connections/${connection.id}/rotate`, { token: 'synthetic-evidence-2' }, 200)
+    assert.equal((await owner(`/api/connections/${connection.id}/collect`, {})).outcome, 'complete')
+    await owner(`/api/connections/${connection.id}/revoke`, {}, 200)
+    const revoked = await app.db.prepare('SELECT status,secret_ciphertext FROM connections').first()
+    assert.deepEqual(revoked, { status: 'revoked', secret_ciphertext: null })
+    assert.deepEqual(await results('github.branch-protection'), { 'northstar/site': 'unknown', 'northstar/web': 'unknown' }, 'owner revocation does not wait for the freshness window')
+    assert.equal((await owner(`/api/connections/${connection.id}/collect`, {})).outcome, 'failed')
+    const before = (await get('/api/connections/' + connection.id)).runs.length
+    await at('2026-10-11T21:00:00Z'); await app.tick()
+    assert.equal((await get('/api/connections/' + connection.id)).runs.length, before)
+    assert.deepEqual(await results('github.branch-protection'), { 'northstar/site': 'unknown', 'northstar/web': 'unknown' })
+    const latest = (await get('/api/tests/' + (await testByCatalogue('github.branch-protection')).id)).latest
+    assert.ok(latest.every(o => /stale/.test(o.reason)))
+   })
  })
- await scenario('CONNECT-001: The scheduler reads only selected repositories and catalogue tests fail with per-provider remediation steps', async () => {
-  await owner(`/api/connections/${connection.id}/repositories`, { repositories: ['northstar/web', 'northstar/site'] }, 200)
-  await app.tick()
-  const detail = await get('/api/connections/' + connection.id)
-  assert.equal(detail.runs.length, 1); assert.equal(detail.runs[0].outcome, 'complete'); assert.equal(detail.runs[0].trigger, 'schedule')
-  assert.deepEqual(JSON.parse(detail.runs[0].coverage_json).repositories_read.sort(), ['northstar/site', 'northstar/web'])
-  assert.deepEqual(await results('github.branch-protection'), { 'northstar/site': 'fail', 'northstar/web': 'pass' })
-  assert.deepEqual(await results('github.repository-private'), { 'northstar/site': 'fail', 'northstar/web': 'pass' })
-  assert.deepEqual(await results('github.dependabot-critical'), { 'northstar/site': 'fail', 'northstar/web': 'pass' })
-  assert.deepEqual(await results('github.org-two-factor'), { 'northstar (organization)': 'fail' })
-  const branch = await get('/api/tests/' + (await testByCatalogue('github.branch-protection')).id)
-  assert.match(branch.entry.remediation.github.terraform, /github_branch_protection/); assert.match(branch.entry.remediation.github.api, /protection/)
-  assert.ok(branch.latest.every(o => o.source_kind === 'source-observed'))
-  assert.match(await (await app.fetch('/app/tests/' + branch.test.id)).text(), /How to remediate/)
-  assert.ok((await get('/api/remediation')).open.some(o => o.resource_name === 'northstar/site' && o.test_name === 'Default branch is protected'))
-  assert.ok(github.methods.length > 0 && github.methods.every(m => m === 'GET'))
- })
- await scenario('CONNECT-001: A source fix verifies on the next hourly read; revoked repository access stays in the denominator as unknown', async () => {
-  github.repos['northstar/site'].protection = { reviews: 2, checks: ['ci'] }
-  await at('2026-10-11T13:00:00Z'); await app.tick()
-  assert.deepEqual(await results('github.branch-protection'), { 'northstar/site': 'pass', 'northstar/web': 'pass' })
-  const verified = (await get('/api/remediation')).resolved.find(o => o.resource_name === 'northstar/site' && o.test_name === 'Default branch is protected')
-  const history = await get('/api/remediation/' + verified.id)
-  assert.deepEqual(history.observations.map(o => o.result).slice(0, 2), ['pass', 'fail'])
-  github.hidden.add('northstar/web')
-  await at('2026-10-11T14:00:00Z'); await app.tick()
-  const runs = (await get('/api/connections/' + connection.id)).runs
-  assert.equal(runs[0].outcome, 'partial'); assert.match(runs[0].coverage_json, /northstar\/web.*access revoked/)
-  assert.deepEqual(await results('github.branch-protection'), { 'northstar/site': 'pass', 'northstar/web': 'unknown' })
-  github.hidden.delete('northstar/web')
- })
- await scenario('CONNECT-001: Throttling backs off without fabricated runs; rotation and revocation never resurrect old authority; stale reads go unknown', async () => {
-  github.throttleUntil = Date.parse('2026-10-11T15:30:00Z')
-  await at('2026-10-11T15:00:00Z'); await app.tick()
-  let runs = (await get('/api/connections/' + connection.id)).runs
-  assert.equal(runs[0].outcome, 'throttled'); assert.ok((await get('/api/connections/' + connection.id)).connection.next_attempt_at >= '2026-10-11T15:30:00.000Z')
-  await at('2026-10-11T15:10:00Z'); await app.tick()
-  assert.equal((await get('/api/connections/' + connection.id)).runs.length, runs.length)
-  await at('2026-10-11T16:05:00Z'); await app.tick()
-  runs = (await get('/api/connections/' + connection.id)).runs; assert.equal(runs[0].outcome, 'complete')
-  github.tokens = new Set(['synthetic-github_pat_rotated'])
-  await at('2026-10-11T17:05:00Z'); await app.tick()
-  const broken = await get('/api/connections/' + connection.id)
-  assert.equal(broken.connection.status, 'needs reconnect'); assert.equal(broken.runs[0].outcome, 'failed')
-  await owner(`/api/connections/${connection.id}/rotate`, { token: 'github_pat_good' }, 400)
-  await owner(`/api/connections/${connection.id}/rotate`, { token: 'synthetic-github_pat_rotated' }, 200)
-  assert.equal((await owner(`/api/connections/${connection.id}/collect`, {})).outcome, 'complete')
-  await owner(`/api/connections/${connection.id}/revoke`, {}, 200)
-  const revoked = await app.db.prepare('SELECT status,secret_ciphertext FROM connections').first()
-  assert.deepEqual(revoked, { status: 'revoked', secret_ciphertext: null })
-  assert.equal((await owner(`/api/connections/${connection.id}/collect`, {})).outcome, 'failed')
-  const before = (await get('/api/connections/' + connection.id)).runs.length
-  await at('2026-10-11T21:00:00Z'); await app.tick()
-  assert.equal((await get('/api/connections/' + connection.id)).runs.length, before)
-  assert.deepEqual(await results('github.branch-protection'), { 'northstar/site': 'unknown', 'northstar/web': 'unknown' })
-  const latest = (await get('/api/tests/' + (await testByCatalogue('github.branch-protection')).id)).latest
-  assert.ok(latest.every(o => /stale/.test(o.reason)))
- })
+ await scenario('CODE-001: normalized GitHub dependency and secret findings retain source state, unknown coverage and custody without literal secrets or invented verified closure',githubFindingsJourney)
+ await scenario('CODE-001: GitHub SPDX package metadata enters inventory without secret fields or invented manifest revisions, retaining denied scope, removals and custody history', githubDependenciesJourney)
+ await scenario('CODE-001: GitHub membership, MFA and owner-reviewed People matches preserve departed accounts, denied scope and source removal without merging people', githubMembersJourney)
+ await scenario('CODE-001: GitHub merged change reviews, exact-revision checks and deployments retain source times, gaps, cursor recovery and immutable period history', githubHistoryJourney)
  await scenario('COLLECTION-001: configurable elapsed schedules retain schema and pagination gaps, recover only on fresh reads, and survive restart and restore', collectionJourney)
  await scenario('PORTABLE-001 / CONNECT-001: a custody archive carries every program record; restored tokens and connections hold no authority', async () => {
   const program = await owner('/api/programs', { framework: 'soc2', name: 'SOC 2', legal_entity: 'Northstar', report_type: 'Type I', audit_from: '2026-10-01', audit_to: '2026-10-01' })
@@ -122,7 +140,7 @@ try {
  await scenario('INVENTORY-001: source IDs remain connection-qualified after reconnect and one connection cannot shrink another population', async () => {
   const test = await testByCatalogue('github.branch-protection')
   const original = (await get('/api/tests/' + test.id)).latest
-  const replacement = await owner('/api/connections', { account: 'northstar', token: 'synthetic-github_pat_rotated', label: 'Replacement GitHub connection' })
+  const replacement = await owner('/api/connections', { account: 'northstar', token: 'synthetic-evidence-2', label: 'Replacement GitHub connection' })
   await owner(`/api/connections/${replacement.id}/repositories`, { repositories: ['northstar/web'] }, 200)
   assert.equal((await owner(`/api/connections/${replacement.id}/collect`, {})).outcome, 'complete')
   const after = (await get('/api/tests/' + test.id)).latest
@@ -160,7 +178,7 @@ try {
    const read = async path => { const r = await lib.fetch(path); assert.equal(r.status, 200, path); return r.json() }
    const programs = {}
    for (const framework of ['soc2', 'iso27001', 'hipaa']) programs[framework] = (await send('/api/programs', { framework, name: framework + ' program', legal_entity: 'Northstar', report_type: 'Type II', audit_from: '2026-10-01', audit_to: '2027-09-30' })).id
-   const linked = await send('/api/connections', { account: 'northstar', token: 'synthetic-github_pat_rotated', label: 'GitHub org' })
+   const linked = await send('/api/connections', { account: 'northstar', token: 'synthetic-evidence-2', label: 'GitHub org' })
    await send(`/api/connections/${linked.id}/repositories`, { repositories: ['northstar/web'] }, 200)
    const receipts = async () => (await lib.db.prepare('SELECT COUNT(*) AS n FROM receipts').first()).n, stored = await receipts()
    const mfa = async () => { const test = (await read('/api/tests')).tests.find(t => t.catalogue_id === 'github.org-two-factor'); return read('/api/tests/' + test.id) }
@@ -178,7 +196,7 @@ try {
    assert.equal(await receipts(), stored)
    // Revision 2 waits as a reviewable change set; current mappings stay at revision 1.
    const review = await read('/api/library')
-   assert.equal(review.accepted, 1); assert.equal(review.latest, 2); assert.deepEqual(review.history, [])
+   assert.equal(review.accepted, 1); assert.equal(review.latest, 4); assert.deepEqual(review.history, [])
    const change = review.pending[0].changes.find(x => x.control === 'AC-13')
    assert.deepEqual([change.framework, change.ref, change.change, change.programs.map(p => p.id)], ['iso27001', 'A.5.16', 'added', [programs.iso27001]])
    const isoRow = async ref => (await read('/api/programs/' + programs.iso27001)).readiness.requirements.find(r => r.ref === ref).controls.map(c => c.library_id)
@@ -186,7 +204,7 @@ try {
    assert.match(await (await lib.fetch('/app/library')).text(), /Revision 2 · waiting for review/)
    await send('/api/library/revisions/2', {}, 400)
    await send('/api/library/revisions/2', { reason: 'x' }, 403, 'https://evil.test')
-   await send('/api/library/revisions/3', { reason: 'Not shipped' }, 404)
+   await send('/api/library/revisions/5', { reason: 'Not shipped' }, 404)
    assert.deepEqual((await send('/api/library/revisions/2', { reason: 'Reviewed with our assessor' }, 200)).accepted, 2)
    await send('/api/library/revisions/2', { reason: 'again' }, 409); await send('/api/library/revisions/1', { reason: 'back' }, 409)
    assert.ok((await isoRow('A.5.16')).includes('AC-13')); assert.ok((await isoRow('A.8.5')).includes('AC-12'))
@@ -219,5 +237,15 @@ try {
    assert.equal((await (await target.fetch('/api/library')).json()).accepted, 2)
   } finally { await lib.close(); await target.close() }
  })
- console.log(`${passed} GitHub connection public-door scenarios passed; GitHub is faked only at the network edge.`)
+ await scenario('CODE-001: GitLab inherited members require explicit People matches, preserve unknown MFA and retain departed, denied and removed account history',gitlabMembersJourney)
+ await scenario('CODE-001: GitLab owner authorization, scoped privacy and protection tests, source fixes, lost access, credential rotation and revocation',gitlabScopeJourney)
+ await scenario('CODE-001: GitLab source reviews, exact-head pipelines, deployments and dependency inventory retain unknown event times, earlier failures and custody',gitlabHistoryJourney)
+ await scenario('CODE-001 / COLLECTION-001: GitLab resumes the saved page after restart, refuses query-filter changes and inherits schedules, events and inactive restore',gitlabPagingJourney)
+ await scenario('CODE-001: Bitbucket requires audited admin-scope consent, reads only selected repositories, preserves unknown membership attributes and compares reviewed departures',bitbucketScopeJourney)
+ await scenario('CODE-001: Bitbucket real merge activity, exact-revision statuses and Pipelines readback preserve precise times, contradictory outcomes, owner production classification and custody',bitbucketHistoryJourney)
+ await scenario('CODE-001 / COLLECTION-001: Bitbucket resumes the interrupted restriction page, rejects altered filters and inherits schedules, events and inactive restore',bitbucketPagingJourney)
+ await scenario('CODE-001: Azure DevOps reads selected immutable repositories, applies only blocking in-scope policies and preserves unknown subjects, reviewed departures and revoked authority',azuredevopsScopeJourney)
+ await scenario('CODE-001: Azure Repos review and exact-commit statuses link to actual Pipelines release build artifacts with separate outcomes, prospective production classification and custody',azuredevopsHistoryJourney)
+ await scenario('CODE-001 / COLLECTION-001: Azure DevOps resumes the saved Graph page, retains denied populations and inherits schedules, events and inactive restore',azuredevopsPagingJourney)
+ console.log(`${passed} code connection public-door scenarios passed; providers are faked only at the network edge.`)
 } finally { await app.close() }

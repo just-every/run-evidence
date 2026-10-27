@@ -7,8 +7,9 @@ export interface ShellFacts { programs: ShellProgram[]; selected: ShellProgram |
 let readFacts: () => Promise<ShellFacts | null> = async () => null
 export const provideShellFacts = (reader: typeof readFacts) => { readFacts = reader }
 export const shellFacts = () => readFacts()
-export type NavKey = 'desk' | 'programs' | 'tests' | 'remediation' | 'vulnerabilities' | 'policies' | 'people' | 'vendors' | 'risks' | 'connections' | 'folders' | 'agent' | 'import' | 'archive' | 'audit'
+export type NavKey = 'desk' | 'programs' | 'tests' | 'remediation' | 'vulnerabilities' | 'policies' | 'people' | 'vendors' | 'risks' | 'connections' | 'folders' | 'agent' | 'import' | 'archive' | 'audit' | 'operations' | 'roles' | 'inventory' | 'access-reviews' | 'training' | 'trust' | 'populations'
 export interface PageOptions {
+ member?: boolean
  active?: NavKey
  owner?: string
  heading?: boolean
@@ -25,7 +26,12 @@ const work: [NavKey, string, string, IconName][] = [
  ['vulnerabilities', '/app/vulnerabilities', 'Vulnerabilities', 'bug'],
  ['policies', '/app/policies', 'Policies', 'document'],
  ['people', '/app/people', 'People', 'people'],
+ ['training', '/app/training', 'Training', 'document'],
+ ['access-reviews', '/app/access-reviews', 'Access reviews', 'shield'],
+ ['inventory', '/app/inventory', 'Inventory', 'database'],
+ ['populations', '/app/populations', 'Populations', 'people'],
  ['vendors', '/app/vendors', 'Vendors', 'building'],
+ ['trust', '/app/trust', 'Trust updates', 'shield'],
  ['risks', '/app/risks', 'Risks', 'scale'],
  ['connections', '/app/connections', 'Connections', 'plug'],
 ]
@@ -35,6 +41,8 @@ const custody: [NavKey, string, string, IconName][] = [
  ['import', '/app/import', 'Move in', 'move'],
  ['archive', '/app/archive', 'Yours', 'archive'],
  ['audit', '/app/audit', 'Audit', 'shield'],
+ ['operations', '/app/operations', 'Operations', 'pulse'],
+ ['roles', '/app/roles', 'Access', 'people'],
 ]
 function navLinks(items: typeof work, active: NavKey, failing: number) {
  return items.map(([key, href, label, glyph]) => `<a href="${href}"${active === key ? ' aria-current="page"' : ''}>${icon(glyph)}<span>${label}</span>${key === 'tests' && failing ? `<span class="nav-count" aria-label="${failing} failing">${failing}</span>` : ''}</a>`).join('')
@@ -49,5 +57,6 @@ function programSwitch(facts: ShellFacts | null) {
 export function appShell(title: string, body: string, options: PageOptions = {}, facts: ShellFacts | null = null) {
  const owner = options.owner?.trim(), active = options.active ?? 'desk', failing = facts?.failingTests ?? 0
  const account = owner ? `<span class="app-account" aria-label="${escape('Signed in as ' + owner)}"><span class="account-name">${escape(owner)}</span><span class="account-initial" aria-hidden="true">${escape(Array.from(owner)[0].toLocaleUpperCase())}</span></span>` : ''
+ if (options.member) return `<a class="skip-link" href="#main">Skip to content</a><div class="app-body"><header class="app-topbar"><a class="app-brand" href="/me"><img class="evidence-mark" src="/brand/mark.svg" width="36" height="36" alt=""><span data-rer-name>Evidence</span></a><nav aria-label="My work"><a href="/me">My tasks</a></nav>${account}</header><main id="main" class="app-main${options.className ? ' ' + escape(options.className) : ''}">${options.heading === false ? '' : `<h1>${escape(title)}</h1>`}${body}</main></div>`
  return `<a class="skip-link" href="#main">Skip to content</a><div class="app-frame"><aside class="app-rail"><a class="app-brand" href="/app"><img class="evidence-mark" src="/brand/mark.svg" width="36" height="36" alt=""><span data-rer-name>Evidence</span></a><nav class="app-nav" aria-label="Evidence">${navLinks(work, active, failing)}<span class="nav-rule" role="presentation"></span>${navLinks(custody, active, failing)}</nav></aside><div class="app-body"><header class="app-topbar">${programSwitch(facts)}${account}</header><main id="main" class="app-main${options.className ? ' ' + escape(options.className) : ''}">${options.heading === false ? '' : `<h1>${escape(title)}</h1>`}${body}<footer class="app-caveat">A stored fingerprint proves the bytes did not change, not that a control operated or that the exhibit is true. Evidence does not certify your business or replace an auditor.</footer></main></div></div>`
 }

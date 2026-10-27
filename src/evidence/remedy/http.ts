@@ -4,7 +4,7 @@ import { auditStatement, done, json, oneOf, ownerRoutes, readInput, text, uuid, 
 import { people, requirePerson } from '../program/people'
 import { catalogueEntry } from '../tests/catalogue'
 import { categories, severities } from '../tests/storage'
-import { acceptRisk, assign, markDone, note, obligationEvents, obligations, queueRetest, requireObligation } from './storage'
+import { acceptRisk, acknowledge, assign, reassign, markDone, note, obligationEvents, obligations, queueRetest, requireObligation } from './storage'
 import { obligationPage, queuePage } from './view'
 import { destinations, ticketEvents, ticketsOf } from '../work/storage'
 import { mirrorComment } from '../work/sync'
@@ -47,6 +47,9 @@ export function remedyHandler(clock: () => Date) {
   { method: 'POST', pattern: both(`/remediation/${id}/assign`), run: async (c, m) => { const input = await readInput(c.request); const owner = await requirePerson(c.env, input.owner_person_id, 'owner'); const target = typeof input.target_date === 'string' && input.target_date ? input.target_date : null
    if (target && !validDate(target)) throw new Refusal('The target date must be a real date.')
    await assign(c.env, c.actor, m[1], owner.id, text(input, 'next_action', 500, true), target, c.now); return done(c, '/app/remediation/' + m[1], { assigned: true }) } },
+  { method: 'POST', pattern: both(`/remediation/${id}/acknowledge`), run: async (c, m) => { await acknowledge(c.env, c.actor, m[1], c.now); return done(c, '/app/remediation/' + m[1], { acknowledged: true }) } },
+  { method: 'POST', pattern: both(`/remediation/${id}/reassign`), run: async (c, m) => { const input = await readInput(c.request); const owner = await requirePerson(c.env, input.owner_person_id, 'new owner')
+   await reassign(c.env, c.actor, m[1], owner, text(input, 'reason', 500), c.now); return done(c, '/app/remediation/' + m[1], { reassigned: owner.id }) } },
   { method: 'POST', pattern: both(`/remediation/${id}/comments`), run: async (c, m) => { const body = text(await readInput(c.request), 'body', 2000); await note(c.env, c.actor, m[1], 'comment', body, c.now); await mirrorComment(c.env, m[1], c.actor, body, c.now); return done(c, '/app/remediation/' + m[1], { commented: true }, 201) } },
   { method: 'POST', pattern: both(`/remediation/${id}/changes`), run: async (c, m) => { await note(c.env, c.actor, m[1], 'change attached', text(await readInput(c.request), 'body', 1000), c.now); return done(c, '/app/remediation/' + m[1], { attached: true }, 201) } },
   { method: 'POST', pattern: both(`/remediation/${id}/done`), run: async (c, m) => { await markDone(c.env, c.actor, m[1], text(await readInput(c.request), 'body', 1000, true), c.now); return done(c, '/app/remediation/' + m[1], { state: 'awaiting verification' }) } },

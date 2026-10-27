@@ -1,13 +1,20 @@
+import { trackerWriteJourney } from './helpers/tracker-write-journey.mjs'
 process.env.RER_SERVER_JOURNEY='1'
 import assert from 'node:assert/strict'
 import { readFile, readdir } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { createHmac } from 'node:crypto'
 import { runtime } from './helpers/runtime.mjs'
-import { trackerFixture, configs } from './helpers/tracker-fixture.mjs'
+import { basecampWebhookJourney } from './helpers/basecamp-webhook-journey.mjs'
+import { originalWebhookJourney } from './helpers/original-webhook-journey.mjs'
+import { providerWebhookJourney } from './helpers/provider-webhook-journey.mjs'
+import { shortcutWebhookJourney } from './helpers/shortcut-webhook-journey.mjs'
+import { nativeFieldsFixture } from './helpers/native-fields-fixture.mjs'
+import { assertNativeFieldsCreate } from './helpers/native-fields-journey.mjs'
+import { trackerFixture, configs } from './helpers/tracker-matrix.mjs'
 const require=createRequire(import.meta.url),dependency=createRequire(require.resolve('wrangler/package.json'))
 const {unstable_splitSqlQuery}=dependency('wrangler')
-const edge=trackerFixture(),app=await runtime({outbound:edge.outbound,migrationThrough:'0046'})
+const edge=trackerFixture(),native=nativeFieldsFixture(edge.outbound),app=await runtime({outbound:native.outbound,migrationThrough:'0046',origin:'https://127.0.0.1:8787'})
 const owner=async(path,body,status=201)=>{const r=await app.fetch(path,{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify(body)});const s=await r.text();assert.equal(r.status,status,path+' '+s);return s?JSON.parse(s):null}
 const get=async path=>{const r=await app.fetch(path);assert.equal(r.status,200,path);return r.json()}
 const at=async time=>{edge.state.clock=new Date(time).toISOString();await app.clock(edge.state.clock)}
@@ -15,10 +22,11 @@ const tick=async()=>assert.equal((await app.tick()).outcome,'ok','Cron must comp
 const v1=async(token,method,path,body)=>{const r=await app.fetch(path,{method,headers:{cookie:'',authorization:'Bearer '+token,'content-type':'application/json'},body:JSON.stringify(body)});const text=await r.text();assert.ok([200,201].includes(r.status),text);return JSON.parse(text)}
 const hook=(id,body,headers={})=>app.fetch('/hooks/trackers/'+id,{method:'POST',headers:{cookie:'','content-type':'application/json',...headers},body})
 const sign=(secret,body)=>createHmac('sha256',secret).update(body).digest('hex')
+const commentObligations=[]
 let passed=0
 const scenario=async(name,fn)=>{await fn();passed++;console.log('PASS WORK-001: '+name)}
 try {
- await app.signin()
+ const ownerCookie=await app.signin()
  const push=await owner('/api/api-tokens',{name:'Source',scopes:['resource-push','test-write','read'],expires_at:'2027-04-01'})
  await scenario('provider-admission migration preserves existing destinations, sealed credentials, linked tickets and foreign keys',async()=>{
   const d=await owner('/api/trackers',{provider:'asana',project:'1200',token:edge.keys.asana})
@@ -44,8 +52,9 @@ try {
  for(const [provider,c] of Object.entries(configs)) {
   await scenario(`${provider}: authorized project, mapped create, duplicate refusal, source links, two-way comments, status/assignee polling, replay, conflicts, closure re-test and visible failures`,async()=>{
    const countBefore=[...edge.issues.values()].filter(i=>i.provider===provider).length
-   const connect={provider,api_base:c.base,project:c.project,account:c.account??'',token:edge.keys[provider],hook_secret:'tracker-signing-secret',assignees:'dana@northstar.test = '+(provider==='shortcut'?'u1':'1')}
+   const connect={provider,api_base:c.base,project:c.project,account:c.account??'',token:edge.keys[provider],hook_secret:provider==='vector'?'ab'.repeat(32):'tracker-signing-secret',hook_audience:provider==='vector'?'ws-1 dst-1':'',due_field:'Custom.RemediationDue',assignees:'dana@northstar.test = '+(provider==='shortcut'?'u1':'1')}
    await owner('/api/trackers',{...connect,token:'wrong'},400)
+   if(provider==='azure-boards')await owner('/api/trackers',{...connect,due_field:'Custom/Invalid'},400)
    const dest=await owner('/api/trackers',connect)
    const type='work_'+provider.replaceAll('-','_')
    await v1(push.token,'PUT','/v1/resource-types/'+type,{schema:{fields:{secure:'boolean'}}})
@@ -57,26 +66,90 @@ try {
    await owner(`/api/remediation/${ob.id}/assign`,{owner_person_id:person.id,next_action:'Remediate',target_date:'2026-12-01'},200)
    if(provider==='monday')edge.state.rejectComments=true
    const ticket=await owner(`/api/remediation/${ob.id}/tickets`,{destination_id:dest.id})
+   assertNativeFieldsCreate({provider,calls:native.calls,base:c.base,priority:c.priority})
    if(provider==='monday')edge.state.rejectComments=false
    await owner(`/api/remediation/${ob.id}/tickets`,{destination_id:dest.id},409)
    const row=(await get('/api/remediation/'+ob.id)).tickets.find(t=>t.id===ticket.id),remote=edge.find(provider,row.remote_id)
    assert.ok(remote,provider);if(provider==='monday')assert.equal(remote.comments.length,0,'item creation must not depend on a second update call');assert.equal([...edge.issues.values()].filter(i=>i.provider===provider).length,countBefore+1)
    assert.match(remote.description,new RegExp('/app/remediation/'+ob.id));assert.match(remote.description,/AC-05/);assert.match(remote.description,/2026-12-01/)
    if(provider!=='asana')assert.equal(remote.priority,c.priority,provider)
-   if(!c.textDue)assert.equal(remote.due,'2026-12-01')
+   assert.equal(remote.due,'2026-12-01')
    assert.equal(remote.assignee,'Dana Lee')
+   await trackerWriteJourney({provider,app,owner,get,remote,ticket,destination:dest,edge,person,config:connect})
+   if(provider==='github')remote.description+='\n\nTracker context that must survive date updates.'
    await owner(`/api/remediation/${ob.id}/comments`,{body:'Fixing the source.'})
    assert.ok(remote.comments.some(c=>/Evidence owner in Evidence: Fixing the source/.test(c.body)))
-   remote.comments.push({id:'remote-note',author:'Dana Lee',body:'Source fix in progress.',at:edge.state.clock})
+   const sourceTime='2026-10-10T10:13:00Z', sourceId=provider==='vector'?'00000000000000000000000001':'remote-note'
+   remote.comments.push({id:sourceId,author:'Dana Lee',body:'Source fix in progress.',at:sourceTime})
+   const longId=provider==='vector'?'00000000000000000000000002':'remote-long-note', longBody='Owner-only source comment. '.repeat(100)+'End of source comment.'
+   remote.comments.push({id:longId,author:'Lena Ortiz',body:longBody,at:sourceTime})
+   if(provider==='vector')edge.state.vectorPageSize=1
    if(provider==='freshservice')remote.comments.push({id:'requester-note',author:'Requester',body:'Requester question.',at:edge.state.clock})
    remote.assignee='Lena Ortiz';remote.status=provider==='monday'?'Working':'In Progress'
+   if(provider==='azure-boards')remote.dueInstant='2026-12-02T01:00:00+02:00' // UTC calendar day is still December 1.
    const started=Date.parse(edge.state.clock)
    await at(started+10*60000);await tick()
    const detail=()=>get('/api/remediation/'+ob.id)
    let view=await detail(),r=view.tickets.find(t=>t.id===ticket.id)
    assert.equal(r.remote_assignee,'Lena Ortiz',provider);assert.ok(r.remote_status)
    assert.ok(Date.parse(r.last_synced_at)-started<=15*60000)
-   assert.equal(view.events.filter(e=>e.kind==='tracker comment'&&e.body==='Source fix in progress.').length,1)
+   if(provider==='azure-boards') {
+    assert.equal(r.remote_due,'2026-12-01');assert.equal(r.sync_state,'linked')
+    remote.dueInstant='invalid-date'
+    await owner('/api/tickets/'+ticket.id+'/sync',{},200)
+    const failed=(await detail()).tickets.find(t=>t.id===ticket.id)
+    assert.equal(failed.sync_state,'sync failed');assert.match(failed.sync_error,/invalid mapped date/)
+    assert.equal(remote.due,'2026-12-01');assert.equal(failed.remote_due,'2026-12-01')
+    delete remote.dueInstant
+    await owner('/api/tickets/'+ticket.id+'/sync',{},200)
+    assert.equal((await detail()).tickets.find(t=>t.id===ticket.id).sync_state,'linked')
+   }
+   if(provider==='github') {
+    remote.due='2026-02-30'
+    await owner('/api/tickets/'+ticket.id+'/sync',{},200)
+    assert.equal((await detail()).tickets.find(t=>t.id===ticket.id).sync_state,'sync failed')
+    assert.equal((await detail()).tickets.find(t=>t.id===ticket.id).remote_due,'2026-12-01')
+    remote.due='2026-12-01';await owner('/api/tickets/'+ticket.id+'/sync',{},200)
+    assert.equal((await detail()).tickets.find(t=>t.id===ticket.id).sync_state,'linked')
+   }
+   const sourceEvents=view.events.filter(e=>e.kind==='tracker comment'&&e.body==='Source fix in progress.')
+   assert.equal(sourceEvents.length,1)
+   assert.deepEqual(sourceEvents[0].tracker_comment,{id:sourceId,author:'Dana Lee',created_at:new Date(sourceTime).toISOString(),url:row.remote_url,truncated:false,received_characters:'Source fix in progress.'.length})
+   assert.match(sourceEvents[0].actor_name,/Dana Lee in /)
+   assert.notEqual(sourceEvents[0].at,sourceTime,'source time and read time remain distinct')
+   const longEvent=view.events.find(e=>e.tracker_comment?.id===longId)
+   assert.equal(longEvent.body,longBody.slice(0,2000));assert.equal(longEvent.tracker_comment.truncated,true)
+   assert.equal(longEvent.tracker_comment.received_characters,longBody.length);assert.equal(longEvent.tracker_comment.url,row.remote_url)
+   commentObligations.push(ob.id)
+   for(const path of ['/api/remediation/'+ob.id,'/app/remediation/'+ob.id]) {
+    assert.equal((await app.fetch(path,{headers:{cookie:''}})).status,401,'tracker comments remain private')
+    assert.equal((await app.fetch(path,{headers:{cookie:'',authorization:'Bearer '+push.token}})).status,403,'source-read token grants no owner-history access')
+   }
+   if(provider==='vector') {
+    const calls=native.calls.filter(c=>c.url.pathname==='/api/v1/comments'&&c.url.searchParams.get('issue')===row.remote_key)
+    assert.ok(calls.some(c=>c.url.searchParams.has('cursor')),'all comment pages must be read')
+    assert.ok(calls.every(c=>c.url.searchParams.get('limit')==='100'))
+    const pendingId='00000000000000000000000003'
+    remote.comments.push({id:pendingId,author:'Dana Lee',body:'Admit only after the complete read.',at:sourceTime})
+    for(const [flag,error] of [['vectorMalformedComment',/incomplete|malformed/],['vectorForeignComment',/foreign/],['vectorUnsafeLink',/foreign/],['vectorCursorLoop',/duplicate|pagination/]]) {
+     edge.state[flag]=true;await owner('/api/tickets/'+ticket.id+'/sync',{},200)
+     const failed=await detail();assert.equal(failed.tickets.find(t=>t.id===ticket.id).sync_state,'sync failed')
+     assert.match(failed.tickets.find(t=>t.id===ticket.id).sync_error,error)
+     assert.ok(!failed.events.some(e=>e.tracker_comment?.id===pendingId),'partial/foreign pages cannot publish a comment')
+     edge.state[flag]=false
+    }
+    edge.state.vectorCommentsDenied=true;await owner('/api/tickets/'+ticket.id+'/sync',{},200)
+    assert.equal((await detail()).tickets.find(t=>t.id===ticket.id).sync_state,'authorization lost')
+    assert.ok(!(await detail()).events.some(e=>e.tracker_comment?.id===pendingId))
+    edge.state.vectorCommentsDenied=false;await owner('/api/trackers/'+dest.id+'/rotate',{token:edge.keys.vector},200)
+    await Promise.all([owner('/api/tickets/'+ticket.id+'/sync',{},200),owner('/api/tickets/'+ticket.id+'/sync',{},200)])
+    const admitted=(await detail()).events.filter(e=>e.tracker_comment?.id===pendingId)
+    assert.equal(admitted.length,1,'competing reads commit one comment and one source attribution')
+    assert.equal(admitted[0].body,'Admit only after the complete read.')
+    assert.ok(!JSON.stringify(await detail()).includes('synthetic-evidence-unrequested-field'),'unrequested source fields never enter owner history')
+    await at(edge.state.clock);assert.deepEqual((await detail()).events.filter(e=>e.tracker_comment?.id===pendingId),admitted)
+    delete edge.state.vectorPageSize
+   }
    if(provider==='freshservice')assert.ok(view.events.some(e=>e.kind==='tracker comment'&&e.body==='Requester question.'&&e.actor_name.includes('Freshservice user 99')))
    assert.equal(view.events.filter(e=>e.kind==='tracker comment'&&/Fixing the source/.test(e.body)).length,0)
    const events=async()=> (await detail()).events
@@ -89,7 +162,7 @@ try {
     const count=await events();assert.equal((await hook(dest.id,body,headers)).status,200);assert.deepEqual(await events(),count)
    } else {await owner('/api/tickets/'+ticket.id+'/sync',{},200);await owner('/api/tickets/'+ticket.id+'/sync',{},200)}
    assert.deepEqual(await events(),before,'identical read caused duplicate state change')
-   if(!c.textDue) {
+   {
     remote.due='2026-12-02'
     await owner(`/api/remediation/${ob.id}/assign`,{owner_person_id:person.id,next_action:'Remediate',target_date:'2026-12-03'},200)
     await owner('/api/tickets/'+ticket.id+'/sync',{},200)
@@ -97,6 +170,26 @@ try {
     assert.equal(r.sync_state,'conflict');assert.equal(r.remote_due,'2026-12-02');assert.equal(remote.due,'2026-12-02')
     const conflict=view.events.findLast(e=>e.kind==='ticket conflict');assert.match(conflict.body,/tracker 2026-12-02, Evidence 2026-12-03/);assert.ok(conflict.at)
     await owner('/api/tickets/'+ticket.id+'/resolve',{keep:'evidence'},200);assert.equal(remote.due,'2026-12-03')
+    if(provider==='github')assert.ok(remote.description.includes('Tracker context that must survive date updates.'))
+   }
+   if(provider==='azure-boards') {
+    await owner(`/api/remediation/${ob.id}/assign`,{owner_person_id:person.id,next_action:'Remediate',target_date:'2026-12-04'},200)
+    await owner('/api/tickets/'+ticket.id+'/sync',{},200)
+    assert.equal(remote.due,'2026-12-04','later Azure target must update the native field')
+    assert.equal((await detail()).tickets.find(t=>t.id===ticket.id).remote_due,'2026-12-04')
+    await owner('/api/trackers/'+dest.id+'/mapping',{...connect,due_field:'Custom.Unsupported'},200)
+    await owner(`/api/remediation/${ob.id}/assign`,{owner_person_id:person.id,next_action:'Remediate',target_date:'2026-12-05'},200)
+    // Missing remote field creates a conflict, never a guessed date or overwrite.
+    await owner('/api/tickets/'+ticket.id+'/sync',{},200)
+    assert.equal((await detail()).tickets.find(t=>t.id===ticket.id).sync_state,'conflict')
+    await owner('/api/tickets/'+ticket.id+'/resolve',{keep:'evidence'},502)
+    assert.equal(remote.due,'2026-12-04')
+    await owner(`/api/remediation/${other.id}/tickets`,{destination_id:dest.id},400)
+    assert.equal((await get('/api/remediation/'+other.id)).tickets.find(t=>t.destination_id===dest.id).sync_state,'mapping failed')
+    await owner('/api/trackers/'+dest.id+'/mapping',connect,200)
+    await owner('/api/tickets/'+ticket.id+'/sync',{},200)
+    assert.equal((await detail()).tickets.find(t=>t.id===ticket.id).sync_state,'linked')
+    assert.equal(remote.due,'2026-12-05')
    }
    const prior=await detail(),untouched=await get('/api/remediation/'+other.id),closed=Date.parse(edge.state.clock)
    remote.closed=true
@@ -114,6 +207,15 @@ try {
    await owner('/api/trackers/'+dest.id+'/rotate',{token:edge.keys[provider]},200)
    await owner('/api/tickets/'+ticket.id+'/sync',{},200)
    assert.equal((await detail()).tickets.find(t=>t.id===ticket.id).sync_state,'linked')
+   if(['vector','linear','asana','shortcut','youtrack'].includes(provider)) {
+    const invalid=provider==='shortcut'?{priority_high:'Unavailable enum option'}:{labels:'evidence, missing-native-label'}
+    await owner('/api/trackers/'+dest.id+'/mapping',{...connect,...invalid},200)
+    await owner(`/api/remediation/${other.id}/tickets`,{destination_id:dest.id},400)
+    const mappingFailure=(await get('/api/remediation/'+other.id)).tickets.find(t=>t.destination_id===dest.id)
+    assert.equal(mappingFailure.sync_state,'mapping failed');assert.ok(mappingFailure.sync_error.length>0)
+    assert.equal([...edge.issues.values()].filter(i=>i.provider===provider).length,countBefore+1,'unresolvable native fields must refuse before ticket creation')
+    await owner('/api/trackers/'+dest.id+'/mapping',connect,200)
+   }
    edge.state.rejectCreate=provider
    await owner(`/api/remediation/${other.id}/tickets`,{destination_id:dest.id},400)
    const failed=(await get('/api/remediation/'+other.id)).tickets.find(t=>t.destination_id===dest.id)
@@ -144,6 +246,10 @@ try {
    assert.equal(groupView.runs.find(r=>r.trigger==='retest').population,2)
    const states=await Promise.all(groupItems.map(o=>get('/api/remediation/'+o.id)))
    for(const view of states){assert.equal(view.obligation.state,view.obligation.resource_name===provider+' fixed'?'verified':'open');assert.equal(view.observations[0].run_trigger,'retest')}
+   if(provider==='basecamp')await basecampWebhookJourney({app,edge,dest,ticket,remote,detail,owner,get,at,tick,cookie:ownerCookie})
+   await originalWebhookJourney({app,edge,provider,dest,remote,detail})
+   await providerWebhookJourney({app,edge,provider,dest,ticket,remote,detail,owner})
+   if(provider==='shortcut')await shortcutWebhookJourney({app,edge,dest,ticket,linked,remote,detail})
    const publicData=JSON.stringify(await get('/api/trackers'))+JSON.stringify(await detail())
    assert.ok(!publicData.includes(edge.keys[provider]));assert.ok(!publicData.includes('tracker-signing-secret'))
    if(provider==='asana') {
@@ -178,19 +284,29 @@ try {
    }
   })
  }
- await scenario('all new providers and Asana signatures restore inactive without credentials or replayed source operations',async()=>{
+ await scenario('all thirteen providers and their callback credentials restore inactive without credentials or replayed source operations',async()=>{
   const response=await app.fetch('/api/archive/export');assert.equal(response.status,200)
   const bytes=Buffer.from(await response.arrayBuffer())
-  for(const secret of [...Object.values(edge.keys),'tracker-signing-secret','asana-provider-secret'])assert.ok(!bytes.includes(secret))
+  for(const secret of [...[...edge.state.basecampHooks.values()].map(h=>new URL(h.payload_url).searchParams.get('secret')),...Object.values(edge.keys),'tracker-signing-secret','asana-provider-secret','ab'.repeat(32)])assert.ok(!bytes.includes(secret))
   const target=await runtime({outbound:edge.outbound})
   try {
    await target.signin()
    const r=await target.fetch('/api/archive/restore',{method:'POST',headers:{origin:target.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:bytes})
    assert.equal(r.status,200,await r.clone().text())
    for(const table of ['tickets','ticket_events','ticket_comments','tracker_deliveries','ticket_groups'])assert.deepEqual((await target.db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all()).results,(await app.db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all()).results,table)
+   for(const id of commentObligations) {
+    const restored=await target.fetch('/api/remediation/'+id);assert.equal(restored.status,200)
+    assert.deepEqual((await restored.json()).events.filter(e=>e.tracker_comment),(await get('/api/remediation/'+id)).events.filter(e=>e.tracker_comment),'comment source custody through the owner door')
+   }
    const destinations=(await target.db.prepare('SELECT provider,status,secret_ciphertext,hook_ciphertext FROM tracker_destinations').all()).results
    for(const d of destinations){assert.equal(d.status,'inactive after restore');assert.equal(d.secret_ciphertext,null);assert.equal(d.hook_ciphertext,null)}
+   const azure=(await target.db.prepare("SELECT mapping_json FROM tracker_destinations WHERE provider='azure-boards'").first()).mapping_json
+   assert.equal(JSON.parse(azure).due_field,'Custom.RemediationDue')
    for(const p of Object.keys(configs))assert.ok(destinations.some(d=>d.provider===p))
+   for(const h of edge.state.basecampHooks.values()) {
+    const u=new URL(h.payload_url)
+    assert.equal((await target.fetch(u.pathname+u.search,{method:'POST',headers:{cookie:'','content-type':'application/json'},body:'{}'})).status,404,'PORTABLE-001 WORK-001: restored callback has no authority')
+   }
    const calls=edge.calls.length;await target.tick();assert.equal(edge.calls.length,calls)
   } finally {await target.close()}
  })

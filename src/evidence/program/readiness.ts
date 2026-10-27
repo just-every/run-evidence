@@ -1,3 +1,6 @@
+import { engagementChecklist,evidenceDecisionChecklist } from '../review/engagement/checklist'
+import { questionnaireChecklist } from '../answer/storage'
+import { vendorObligations } from '../vendor/review-storage'
 import { pentestTotals } from '../vuln/storage'
 import { checklist } from './checklist'
 import type { Bindings } from '../../auth.server'
@@ -6,7 +9,8 @@ import { desk } from '../storage'
 import { controlsFor, edition, frameworks } from '../library'
 import { controlTestStatus, type ControlTestStatus } from '../tests/storage'
 import { obligations } from '../remedy/storage'
-import { applicability, type ProgramRow } from './storage'
+import { applicability, programs, type ProgramRow } from './storage'
+import { isCmmc2, isUsdp, programInputs, reuse, roleSummary, sprs, stateReview } from './extended'
 import { acceptedLibraryRevision } from './library-revision'
 import { libraryControl } from '../library'
 import { policyList } from '../policy/storage'
@@ -57,7 +61,9 @@ export async function readiness(env: Bindings, row: ProgramRow, now: Date) {
  // Failing tests are counted as tests, as on the Tests screen; tests_failing counts requirements.
  const failingTests = (await env.DB.prepare("SELECT DISTINCT o.test_id FROM observations o JOIN test_runs r ON r.id=o.run_id JOIN tests t ON t.id=o.test_id WHERE t.enabled=1 AND o.result='fail' AND r.started_at=(SELECT MAX(started_at) FROM test_runs x WHERE x.test_id=o.test_id)").all<{ test_id: string }>()).results.filter(r => programTests.has(r.test_id)).length
  const countReady = included.filter(r => r.ready).length
+ const cuecs=await vendorObligations(env)
  const totals = {
+  vendor_cuecs_open:cuecs.filter(c=>!c.control_id).length,
   ready: countReady, not_ready: included.length - countReady, readiness_percent: included.length ? Math.floor(100 * countReady / included.length) : null,
   requirements: requirements.length, excluded: requirements.length - included.length, included: included.length,
   unmapped: included.filter(r => r.proof === 'unmapped').length,
@@ -69,5 +75,19 @@ export async function readiness(env: Bindings, row: ProgramRow, now: Date) {
   // VULN-002: manual penetration-test findings not yet closed on approved retest evidence.
   ...await pentestTotals(env, now),
  }
- return { framework: frameworks[row.framework], requirements, totals, checklist: checklist(requirements), calculation: 'Readiness is floor(100 × ready ÷ included); an empty scope has no percentage. Ready means mapped, all proof current, every mapped control tested with fresh passing observations at the current test revision, and all required policies approved, published and current. Unknown, stale, unsupported and untested work is not ready; an exception never grants a pass. Filters narrow detail only, never the whole-program score. Counts are requirements of the program edition. Proof is current when every mapped control\'s named proof is covered or due soon for today\'s period. Testing is failing when any mapped control has a failing latest observation, unknown when any is unknown or never ran. Excluded requirements stay listed with their rationale. Open remediation counts obligations of tests mapped to in-scope controls, each with its own SLA clock. A requirement whose controls call for policies needs each one approved, published and within its review deadline. Unowned controls counts in-scope controls with no accountable owner or whose owner has left, until an owner reassigns them; it does not change the readiness percentage. Pentest findings open counts manual penetration-test findings not yet closed on approved retest evidence, and past due those whose fixed due date (report date plus the severity SLA then in force) is before today in UTC; neither changes the percentage. Nothing here certifies the business.' }
+ const areas=checklist(requirements);areas.splice(areas.findIndex(a=>a.area==='Auditor decisions'),1,await evidenceDecisionChecklist(env,[...programControls]));areas.push(...await engagementChecklist(env,[...programControls]));areas.splice(areas.findIndex(a=>a.area==='Questionnaires'),1,await questionnaireChecklist(env,row.id,now))
+ return { framework: frameworks[row.framework], requirements, totals, checklist: areas, calculation: 'Readiness is floor(100 × ready ÷ included); an empty scope has no percentage. Ready means mapped, all proof current, every mapped control tested with fresh passing observations at the current test revision, and all required policies approved, published and current. Unknown, stale, unsupported and untested work is not ready; an exception never grants a pass. Filters narrow detail only, never the whole-program score. Counts are requirements of the program edition. Proof is current when every mapped control\'s named proof is covered or due soon for today\'s period. Testing is failing when any mapped control has a failing latest observation, unknown when any is unknown or never ran. Excluded requirements stay listed with their rationale. Open remediation counts obligations of tests mapped to in-scope controls, each with its own SLA clock. A requirement whose controls call for policies needs each one approved, published and within its review deadline. Unowned controls counts in-scope controls with no accountable owner or whose owner has left, until an owner reassigns them; it does not change the readiness percentage. Pentest findings open counts manual penetration-test findings not yet closed on approved retest evidence, and past due those whose fixed due date (report date plus the severity SLA then in force) is before today in UTC; neither changes the percentage. Nothing here certifies the business.', ...await extendedReadiness(env, row, requirements, states, revision, current) }
+}
+
+// PROGRAM-004: the parts only the extended programs show. The dependency names the external body that decides or authorizes.
+async function extendedReadiness(env: Bindings, row: ProgramRow, requirements: RequirementState[], states: Map<string, ControlState>, revision: number, current: Map<string, { state: string }>) {
+ if (['soc2', 'iso27001', 'hipaa', 'pci'].includes(row.framework)) return {}
+ const inputs = (await programInputs(env, row.id)).inputs
+ return {
+  dependency: frameworks[row.framework].assessor,
+  reuse: await reuse(env, row, await programs(env), states, revision),
+  ...(isUsdp(row) ? { usdp: await stateReview(env, row, current) } : {}),
+  ...(isCmmc2(row) ? { sprs: sprs(row, requirements, inputs.sprs) } : {}),
+  ...(row.framework === 'iso27701' ? { roles: roleSummary({ requirements }, row) } : {}),
+ }
 }

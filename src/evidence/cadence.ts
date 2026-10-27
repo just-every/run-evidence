@@ -28,15 +28,21 @@ export function anchoredPeriod(schedule: Schedule, selected: string) {
  const end = addMonths(start, length)
  return { from: day(start), to: day(new Date(end.getTime() - 1)), deadline: end.getTime(), start: start.getTime() }
 }
-export interface Renewal { gap: Gap; due: string | null; anchor: Anchor; cadence: Cadence; period: { from: string; to: string } | null; lead_starts: string | null; effective_date: string | null; override: { due_date: string; reason: string; actor_name: string } | null; schedule_revision: string | null }
+export interface Renewal { expired_on: string | null; gap: Gap; due: string | null; anchor: Anchor; cadence: Cadence; period: { from: string; to: string } | null; lead_starts: string | null; effective_date: string | null; override: { due_date: string; reason: string; actor_name: string } | null; schedule_revision: string | null }
 export interface Override { cycle_due: string; due_date: string; reason: string; actor_name: string }
 // Requirement state at a selected date. Effective-date renewals run from the
 // latest current receipt's owner-asserted effective date, not its upload time.
 export function renewal(schedule: Schedule, selected: string, receipts: (Receipt & { effective_date?: string | null })[], overrides: Override[], now: Date): Renewal {
- const base = { anchor: schedule.anchor, cadence: schedule.cadence, override: null, schedule_revision: schedule.revision_id }
+ const base = { expired_on: null, anchor: schedule.anchor, cadence: schedule.cadence, override: null, schedule_revision: schedule.revision_id }
  if (schedule.anchor !== 'effective-date') {
-  const window = anchoredPeriod(schedule, selected)
-  return { ...base, gap: gapIn(window, selected, receipts, now, schedule.reminder_lead_days), due: day(new Date(window.deadline)), period: { from: window.from, to: window.to }, lead_starts: leadStart(window.start, window.deadline, schedule.reminder_lead_days), effective_date: null }
+  const window = anchoredPeriod(schedule, selected), gap = gapIn(window, selected, receipts, now, schedule.reminder_lead_days)
+  // An expired prior exhibit makes today's missing proof overdue at its expiry,
+  // while a historical selection keeps the deadline of its own period.
+  const expired = gap === 'overdue' && selected === day(now) && now.getTime() < window.deadline
+   ? receipts.filter(r => !r.superseded_by).map(r => Date.parse(r.covered_to + 'T00:00:00Z') + 86400000).filter(at => at <= now.getTime()).sort((a,b) => a-b).at(-1)
+   : undefined
+  const deadline = expired ?? window.deadline, prior = expired === undefined ? window : anchoredPeriod(schedule, day(new Date(expired - 1)))
+  return { ...base, gap, expired_on: expired === undefined ? null : day(new Date(expired)), due: day(new Date(deadline)), period: { from: window.from, to: window.to }, lead_starts: leadStart(prior.start, deadline, schedule.reminder_lead_days), effective_date: null }
  }
  const instant = selected === day(now) ? now.getTime() : Math.min(now.getTime(), Date.parse(selected + 'T00:00:00Z') + 86400000 - 1)
  const own = receipts.filter(r => r.origin !== 'imported')
