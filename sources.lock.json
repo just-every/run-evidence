@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "9c8e8839e190d880fa5e5bfd1b8b139529cc7919a0e04c40c5cce428c97cb13f",
+  "manifest": "6dc31e23d585f3bc429e0ae87087e1aaeb4342729f9251a6ba1b1450a99b69f3",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2922,6 +2922,7 @@
           "scripts/evidence-archive/local.mjs",
           "scripts/evidence-archive/storage-worker.mjs",
           "scripts/generate-edition.mjs",
+          "scripts/install-portal-browsers.mjs",
           "scripts/install.mjs",
           "scripts/installer/local.mjs",
           "scripts/installer/ui/seed.mjs",
@@ -3476,6 +3477,7 @@
           "tests/helpers/runtime.mjs",
           "tests/helpers/shortcut-webhook-journey.mjs",
           "tests/helpers/site-runtime.mjs",
+          "tests/helpers/step.mjs",
           "tests/helpers/tailoring-journey.mjs",
           "tests/helpers/tracker-fields-browser.mjs",
           "tests/helpers/tracker-fixture.mjs",
@@ -3564,7 +3566,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "523137f89d738537ea1a465d54c75499353e5f5222099c7670e1c04c12e1932e",
+      "sha256": "b9755fd411a8f76c30424810647a1c49f0d89c66af715b4ab7389f18f76c3380",
       "executable": false
     },
     "AGENTS.md": {
@@ -3580,7 +3582,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "23b0ed5cdc128d0b2ebe58212aac492ff0d73e61827cb0d5436d23df871b2b3b",
+      "sha256": "ee94c2b55faef2e1bd9d811af78d8d4da103cd12c195b3fc5fe3c2556517882f",
       "executable": false
     },
     "DEMO.md": {
@@ -3652,7 +3654,7 @@
       "executable": false
     },
     "docs/PORTAL-QUESTIONNAIRES.md": {
-      "sha256": "6347f41cb514df9cd2cd9cca33c2c86344d81ed0ead75693c7af14e8023a79c0",
+      "sha256": "06f39a145761096937632a84da2ebc59a80cedd6c18cd07c3a31fb4a6419b53b",
       "executable": false
     },
     "docs/PRIVATE-COLLECTOR.md": {
@@ -3688,7 +3690,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "9c8e8839e190d880fa5e5bfd1b8b139529cc7919a0e04c40c5cce428c97cb13f",
+      "sha256": "6dc31e23d585f3bc429e0ae87087e1aaeb4342729f9251a6ba1b1450a99b69f3",
       "executable": false
     },
     "LICENSE": {
@@ -4112,7 +4114,7 @@
       "executable": false
     },
     "public/portal-extension/scan.js": {
-      "sha256": "38c8eb01eee9429dc1e7ddcf0a11d3f41ab445cecfa714597fa0aae7f116955a",
+      "sha256": "d1c24376e29bbe20e89e445867144ce951c7a8b6ef14515d6e39b102a8bff0a6",
       "executable": false
     },
     "public/rer-theme.css": {
@@ -8080,7 +8082,7 @@
       "executable": false
     },
     "tests/helpers/answer-journey.mjs": {
-      "sha256": "ebaf03bc2f6b5aeafa8e2c464bb7529143b8923823ff42133b36a34822ce0ebf",
+      "sha256": "60869907f73996580f272b23da6438933c518e704133c6c1d12e507bcaf5fe7d",
       "executable": false
     },
     "tests/helpers/archive-display-browser.mjs": {

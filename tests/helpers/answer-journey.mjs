@@ -41,6 +41,7 @@ export async function answerJourney(){const app=await runtime();try{
   assert.equal((await app.fetch(mappedPath+'/citations?recipient=other@customer.test')).status,409)
   created.push({q,draft:mapped,path:mappedPath})
  }
+ console.log('ANSWER-001 buyer templates verified')
  // Prior cited answers retain their exact decision and recursively validate
  // every underlying source. A new draft or expiry of the parent invalidates reuse.
  const parent=created[0],prior=await post('/api/questionnaires/sources',{kind:'approved-answer',source_id:parent.draft.id+':Q1',quote:body})
@@ -92,8 +93,10 @@ export async function answerJourney(){const app=await runtime();try{
  await post(`/api/policies/${changed.policy}/revisions/${changed.revision}/decision`,{decision:'approved',body_sha256:changedRevision.body_sha256},200)
  for(const c of created.slice(1))assert.equal((await app.fetch(c.path+'/export?recipient=buyer@customer.test')).status,409,'source change invalidates reuse')
  await post(`/api/questionnaires/${current.q.id}/drafts/${edit.id}/approve`,{snapshot_hash:edit.snapshot_hash,reviewer_person_id:reviewer.id,recipient:'buyer@customer.test',expires_on:'2027-01-01',reason:'Old source'},409)
+ console.log('ANSWER-001 source and decision refusals verified; exporting custody')
  const archive=Buffer.from(await (await app.fetch('/api/archive/export')).arrayBuffer()),dest=await runtime()
  try{await dest.signin();const r=await dest.fetch('/api/archive/restore',{method:'POST',headers:{origin:dest.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:archive});assert.equal(r.status,200,await r.clone().text());const restored=await (await dest.fetch(created[1].path)).json();assert.deepEqual(restored.snapshot,(await get(created[1].path)).snapshot);assert.equal((await dest.fetch(created[1].path+'/export?recipient=buyer@customer.test')).status,409)}finally{await dest.close()}
+ console.log('ANSWER-001 custody restore verified')
  // Isolate approval expiry from the source/parent changes tested above.
  const currentQuote='Access reviews occur monthly for all users.',stableSource=await post('/api/questionnaires/sources',{kind:'policy',source_id:changed.revision,quote:currentQuote})
  const expiryFile=new FormData();for(const [k,v]of Object.entries({name:'Approval expiry isolation',program_id:program.id,id_column:'id',question_column:'question',section_column:'section',format_column:'format',answer_column:'answer'}))expiryFile.set(k,v)
@@ -328,14 +331,27 @@ async function installedPortalBrowsers({app,program,reviewer,source,quote,post,g
    assert.equal(await portal.locator('#document').evaluate(el=>el.files[0].name),'synthetic-evidence-installed.pdf')
    const history=await get('/api/questionnaires/'+qid)
    assert.equal(JSON.parse(history.questionnaire.mapping_json).portal.pages.length,3)
-   assert.ok(JSON.stringify(history).includes('portal-fill-reported'),'Every extension fill has retained history')
+   assert.equal(JSON.parse(history.questionnaire.mapping_json).portal.captured_at,'2026-11-04T15:00:00.000Z')
+   const retainedHistory=await (await app.fetch('/app/questionnaires/'+qid)).text()
+   assert.equal((retainedHistory.match(/questionnaire.portal-fill-reported/g)||[]).length,5,'Every field outcome from all three fills is retained')
    for(const width of [1440,390]){await popup.setViewportSize({width,height:1000});assert.ok(await popup.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.equal(await popup.locator('button,a,[role=button]').evaluateAll(nodes=>nodes.filter(el=>!el.textContent.trim()).length),0);await popup.screenshot({path:join(output,name+'-'+width+'-installed-popup.png'),fullPage:true})}
    await capturePages(true);await popup.locator('#import').click();await popup.waitForFunction(old=>document.querySelector('#questionnaire-id').value!==old,qid)
-   const next=await popup.locator('#questionnaire-id').inputValue(),fresh=await makeDraft(next,true)
+   const next=await popup.locator('#questionnaire-id').inputValue()
+   assert.match(await fill(2,true),/draft|approval/i,'A re-capture cannot reuse the previous approval')
+   const fresh=await makeDraft(next,true)
    await popup.locator('#draft-id').fill(fresh.id)
    assert.match(await fill(2,true),/cadence: filled/);assert.equal(await portal.locator('#cadence').inputValue(),'monthly')
    assert.match(await fill(3),/enabled: filled/);assert.equal(await portal.locator('#enabled').isChecked(),true)
    assert.equal(JSON.parse((await get('/api/questionnaires/'+next)).questionnaire.mapping_json).portal.previous_id,qid)
+   const revised=await post(`/api/questionnaires/${next}/drafts/${fresh.id}/edit`,{snapshot_hash:fresh.snapshot_hash,question_id:(await get('/api/questionnaires/'+next)).questions[0].id,source_id:source.id})
+   assert.match(await fill(1),/approval/i,'Editing invalidates the earlier exact approval')
+   await popup.locator('#draft-id').fill(revised.id)
+   assert.match(await fill(1),/approval/i,'The new revision has no approval')
+   await post(`/api/questionnaires/${next}/drafts/${revised.id}/approve`,{snapshot_hash:revised.snapshot_hash,reviewer_person_id:reviewer.id,recipient:'buyer@customer.test',expires_on:'2026-12-01',reason:'Fresh exact approval after edit'},200)
+   await popup.locator('#recipient').fill('other@customer.test');assert.match(await fill(1),/approval/i,'Wrong recipient cannot fill')
+   await popup.locator('#recipient').fill('buyer@customer.test');assert.match(await fill(1),/filled/)
+   await post('/api/api-tokens/'+token.grant.id+'/revoke',{},200)
+   assert.doesNotMatch(await fill(1),/filled/,'Revoked installation credential cannot fill')
    await popup.locator('#clear').click();await popup.waitForFunction(()=>document.querySelector('#status').textContent.includes('cleared'))
    assert.deepEqual(await popup.evaluate(()=>chrome.storage.session.get()),{})
    await context.close()
