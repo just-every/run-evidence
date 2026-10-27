@@ -3,14 +3,15 @@ import { auditStatement, text, oneOf, type Actor, type Input } from '../door'
 import { validDate } from '../model'
 import { Refusal } from '../upload'
 import { sha } from '../archive/format'
+import { holdPredicate,holdParameters,overdueHolds } from './holds'
 export const kinds = ['exhibit','person','vendor','engagement','business'] as const
 export interface Erasure { id:string;kind:string;subject_id:string;snapshot_json:string;snapshot_hash:string;reason:string;requested_by:string;requested_name:string;requested_at:string;state:string;confirmed_at:string|null;completed_at:string|null;counts_json:string }
-export async function privacy(env:Bindings) {
- return {holds:(await env.DB.prepare('SELECT * FROM privacy_holds ORDER BY created_at,rowid').all()).results,requests:(await env.DB.prepare('SELECT * FROM privacy_requests ORDER BY requested_at DESC,rowid DESC').all<Erasure>()).results}
+export async function privacy(env:Bindings,now:Date) {
+ return {overdue_holds:await overdueHolds(env,now),holds:(await env.DB.prepare('SELECT * FROM privacy_holds ORDER BY created_at,rowid').all()).results,requests:(await env.DB.prepare('SELECT * FROM privacy_requests ORDER BY requested_at DESC,rowid DESC').all<Erasure>()).results}
 }
 export async function requestOf(env:Bindings,id:string) { const row=await env.DB.prepare('SELECT * FROM privacy_requests WHERE id=?').bind(id).first<Erasure>();if(!row)throw new Refusal('Erasure request not found.',404);return row }
 async function snapshot(env:Bindings,kind:string,subject:string) {
- const hold_history=(await env.DB.prepare("SELECT * FROM privacy_holds WHERE (kind=? AND subject_id=?) OR kind='business' ORDER BY id").bind(kind,subject).all()).results
+ const hold_history=(await env.DB.prepare(`SELECT * FROM privacy_holds WHERE ${holdPredicate} ORDER BY id`).bind(...holdParameters(kind,subject)).all()).results
  const holds=hold_history.filter((h:any)=>!h.released_at)
  if(kind!=='exhibit')return {kind,subject,holds,hold_history,supported:false,remaining:'Entity relationships and provider-copy deletion are not yet classified. No deletion is available for this scope.'}
  const row=await env.DB.prepare('SELECT e.id,e.object_key,e.size,r.id AS receipt_id,r.origin,r.requirement_id,r.sha256 FROM exhibits e JOIN receipts r ON r.exhibit_id=e.id WHERE e.id=?').bind(subject).first<any>()
@@ -32,7 +33,13 @@ export async function preview(env:Bindings,input:Input,actor:Actor,now:Date) {
 export async function hold(env:Bindings,input:Input,actor:Actor,now:Date) {
  const kind=oneOf(input,'kind',kinds),subject=kind==='business'?'business':text(input,'subject_id',128),reason=text(input,'reason',500),review=text(input,'review_on',10),id=crypto.randomUUID()
  if(!validDate(review)||review<now.toISOString().slice(0,10))throw new Refusal('Choose a current or future hold review date.')
- await env.DB.batch([env.DB.prepare('INSERT INTO privacy_holds(id,kind,subject_id,reason,authorized_by,authorized_name,review_on,created_at) VALUES(?,?,?,?,?,?,?,?)').bind(id,kind,subject,reason,actor.id,actor.name,review,now.toISOString()),auditStatement(env,actor,'privacy.hold-authorized','hold:'+id,now,'succeeded',kind,{reason})]);return {id}
+ try {
+  await env.DB.batch([env.DB.prepare('INSERT INTO privacy_holds(id,kind,subject_id,reason,authorized_by,authorized_name,review_on,created_at) VALUES(?,?,?,?,?,?,?,?)').bind(id,kind,subject,reason,actor.id,actor.name,review,now.toISOString()),auditStatement(env,actor,'privacy.hold-authorized','hold:'+id,now,'succeeded',kind,{reason})])
+ } catch (error) {
+  if(error instanceof Error && error.message.includes('erasure_already_confirmed'))throw new Refusal('Erasure is already confirmed and pending. A new hold cannot reverse deletion already authorized.',409)
+  throw error
+ }
+ return {id}
 }
 export async function release(env:Bindings,id:string,input:Input,actor:Actor,now:Date) {
  const reason=text(input,'reason',500)
@@ -52,7 +59,7 @@ export async function execute(env:Bindings,id:string,input:Input,actor:Actor,now
  if(row.state==='preview') {
   if(await sha(new TextEncoder().encode(JSON.stringify(current)))!==row.snapshot_hash)throw new Refusal('The subject or holds changed. Create and review a new preview.',409)
   const statements=[
-   env.DB.prepare("INSERT INTO privacy_guard(singleton,allowed) SELECT 1,CASE WHEN EXISTS(SELECT 1 FROM privacy_requests WHERE id=? AND state='preview') AND (SELECT json_group_array(json_object('id',id,'closed_at',closed_at)) FROM (SELECT f.id,f.closed_at FROM review_folders f JOIN review_folder_controls fc ON fc.folder_id=f.id JOIN requirements q ON q.control_id=fc.control_id WHERE q.id=? ORDER BY f.id))=? AND (SELECT count(*) FROM privacy_holds WHERE (kind=? AND subject_id=?) OR kind='business')=? AND NOT EXISTS(SELECT 1 FROM promise_dependencies WHERE json_extract(source_json,'$.kind')='exhibit' AND json_extract(source_json,'$.source_id')=?) AND NOT EXISTS(SELECT 1 FROM questionnaire_sources WHERE kind='exhibit' AND source_id=?) AND NOT EXISTS(SELECT 1 FROM privacy_holds WHERE released_at IS NULL AND ((kind=? AND subject_id=?) OR kind='business')) THEN 1 ELSE 0 END").bind(id,original.exhibit.requirement_id,JSON.stringify(original.folders),row.kind,row.subject_id,original.hold_history.length,original.exhibit.receipt_id,original.exhibit.receipt_id,row.kind,row.subject_id),
+   env.DB.prepare(`INSERT INTO privacy_guard(singleton,allowed) SELECT 1,CASE WHEN EXISTS(SELECT 1 FROM privacy_requests WHERE id=? AND state='preview') AND (SELECT json_group_array(json_object('id',id,'closed_at',closed_at)) FROM (SELECT f.id,f.closed_at FROM review_folders f JOIN review_folder_controls fc ON fc.folder_id=f.id JOIN requirements q ON q.control_id=fc.control_id WHERE q.id=? ORDER BY f.id))=? AND (SELECT count(*) FROM privacy_holds WHERE ${holdPredicate})=? AND NOT EXISTS(SELECT 1 FROM promise_dependencies WHERE json_extract(source_json,'$.kind')='exhibit' AND json_extract(source_json,'$.source_id')=?) AND NOT EXISTS(SELECT 1 FROM questionnaire_sources WHERE kind='exhibit' AND source_id=?) AND NOT EXISTS(SELECT 1 FROM privacy_holds WHERE released_at IS NULL AND ${holdPredicate}) THEN 1 ELSE 0 END`).bind(id,original.exhibit.requirement_id,JSON.stringify(original.folders),...holdParameters(row.kind,row.subject_id),original.hold_history.length,original.exhibit.receipt_id,original.exhibit.receipt_id,...holdParameters(row.kind,row.subject_id)),
    // CAS plus the tombstone primary key serialize concurrent confirms. The
    // journal fences old exports before any irreversible R2 operation occurs.
    env.DB.prepare("UPDATE privacy_requests SET state='pending',confirmed_at=? WHERE id=? AND state='preview'").bind(now.toISOString(),id),

@@ -1,3 +1,4 @@
+import { overdueHolds } from './erase/holds'
 import { problem } from './problem'
 import { auditFormRefusal, retainedMultipart, scalarValues, type RefusedForm } from './form-state'
 import { operatorAuth, runtimeBindings, type Bindings } from '../auth.server'
@@ -68,7 +69,7 @@ export function evidenceHandler(clock: () => Date = () => new Date()) {
     }
    }
    if (!['GET','HEAD'].includes(request.method)) return json({ error:'Method not allowed.' },405)
-   if (path === '/app' || path === '/api/desk') { const data = await desk(env,selected,now); if (reach) data.requirements = data.requirements.filter(x => reach.has(x.control_id)); data.requirements = await hideSensitive(data.requirements); return isApi ? json(data) : deskPage(data,session.operator.displayName) }
+   if (path === '/app' || path === '/api/desk') { const data = await desk(env,selected,now); if (reach) data.requirements = data.requirements.filter(x => reach.has(x.control_id)); data.requirements = await hideSensitive(data.requirements); const overdue = verdict.delegate ? [] : await overdueHolds(env,now); return isApi ? json({...data,overdue_holds:overdue}) : deskPage(data,session.operator.displayName,overdue) }
    const requirement = /^\/app\/requirements\/([a-f0-9-]+)$/.exec(path)
    if (requirement) { if (!await reaches(requirement[1])) return json({ error:'Requirement not found.' },404); return renderRequirement(requirement[1]) }
    const match = /^\/(?:app|api)\/receipts\/([a-f0-9-]+)(\/download)?$/.exec(path)
