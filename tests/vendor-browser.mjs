@@ -66,7 +66,7 @@ try {
  for (const width of [1440, 390]) {
   const supplierPath = new URL(links[width].url).pathname
   const context = await browser.newContext({ viewport: { width, height: 1000 } })
-  const page = await context.newPage(), errors = []; page.on('pageerror', e => errors.push(e.message));
+  const page = await context.newPage(), errors = []; page.setDefaultTimeout(30000); page.on('pageerror', e => errors.push(e.message));
   const capture = async name => { await page.evaluate(() => document.fonts.ready); assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${name} overflow at ${width}`); await page.screenshot({ path: join(output, `${width}-${name}.png`), fullPage: true }) }
   // The supplier needs no sign-in: the link shows only its own requests.
   await page.goto(origin + supplierPath)
@@ -258,10 +258,10 @@ try {
   await page.getByText('Preserve records for review').first().waitFor()
   await app.clock('2026-11-03T15:00:00Z')
   await page.reload()
-  if(width===1440)await page.getByText('overdue · hold remains active',{exact:false}).first().waitFor()
+  if(width===1440)await page.getByText('overdue review · still active',{exact:false}).first().waitFor()
   await capture('privacy-hold-overdue')
   await page.goto(origin+'/app')
-  if(width===1440)await page.getByRole('heading',{name:'Overdue legal hold reviews'}).waitFor()
+  if(width===1440)await page.getByRole('heading',{name:'Legal hold reviews overdue'}).waitFor()
   await capture('privacy-desk-overdue')
   const iconControls=await page.locator('button,a,summary').evaluateAll(elements=>elements.filter(e=>!e.textContent.trim()&&!e.querySelector('input')).map(e=>e.outerHTML))
   if(width===1440)assert.deepEqual(iconControls,[],'the touched desk uses visible words for every control')

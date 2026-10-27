@@ -1,31 +1,17 @@
 import type { Bindings } from '../../auth.server'
 import { auditStatement, text, oneOf, type Actor, type Input } from '../door'
-import { sendFollowup, sent } from '../followup/send'
+import { overdueHolds } from './holds'
 import { validDate } from '../model'
 import { Refusal } from '../upload'
 import { sha } from '../archive/format'
 export const kinds = ['exhibit','person','vendor','engagement','business'] as const
 export interface Erasure { id:string;kind:string;subject_id:string;snapshot_json:string;snapshot_hash:string;reason:string;requested_by:string;requested_name:string;requested_at:string;state:string;confirmed_at:string|null;completed_at:string|null;counts_json:string }
 export interface HoldReview { id:string;kind:string;subject_id:string;reason:string;authorized_by:string;authorized_name:string;review_on:string;created_at:string;released_at:string|null }
-export async function overdueHolds(env:Bindings,now:Date) {
- return (await env.DB.prepare('SELECT * FROM privacy_holds WHERE released_at IS NULL AND review_on<? ORDER BY review_on,id').bind(now.toISOString().slice(0,10)).all<HoldReview>()).results
-}
-export async function holdReviewReminders(env:Bindings,now:Date) {
- let count=0
- for(const h of await overdueHolds(env,now)) {
-  // Resolve the attributed authorizer, never a fallback recipient. Restored
-  // holds remain visible even if that identity is absent in this installation.
-  const authorizer=await env.DB.prepare("SELECT email FROM oa_operators WHERE id=? AND status='active'").bind(h.authorized_by).first<{email:string}>()
-  if(!authorizer)continue
-  if(sent(await sendFollowup(env,{kind:'privacy-hold-review',subject:'privacy-hold:'+h.id,cycle:h.review_on,recipient:authorizer.email,title:'Legal hold review overdue',text:`Legal hold ${h.id} was due for review on ${h.review_on}. It remains active until an attributed person explicitly releases it with a reason. Review it in Privacy: ${env.AUTH_ORIGIN}/app/privacy`,link:env.AUTH_ORIGIN+'/app/privacy'},now)))count++
- }
- return count
-}
 // Submitted receipts and explicit owner classifications share the same hold
 // predicate during preview and inside the atomic confirmation guard.
-const holdScope = "((h.kind=? AND h.subject_id=?) OR h.kind='business' OR (?='exhibit' AND h.kind='engagement' AND EXISTS(SELECT 1 FROM audit_submissions s JOIN audit_requests q ON q.id=s.request_id JOIN receipts r ON r.id=s.receipt_id WHERE q.engagement_id=h.subject_id AND r.exhibit_id=?)) OR (?='exhibit' AND EXISTS(SELECT 1 FROM privacy_exhibit_scopes s WHERE s.exhibit_id=? AND s.kind=h.kind AND s.subject_id=h.subject_id)))"
+const holdScope = "((h.kind=? AND h.subject_id=?) OR h.kind='business' OR (?='exhibit' AND h.kind='engagement' AND EXISTS(SELECT 1 FROM privacy_exhibit_engagements e WHERE e.engagement_id=h.subject_id AND e.exhibit_id=?)) OR (?='exhibit' AND EXISTS(SELECT 1 FROM privacy_exhibit_scopes s WHERE s.exhibit_id=? AND s.kind=h.kind AND s.subject_id=h.subject_id)))"
 export async function privacy(env:Bindings,now:Date) {
- return {classifications:(await env.DB.prepare('SELECT * FROM privacy_exhibit_scopes ORDER BY classified_at,kind,subject_id').all()).results,holds:(await env.DB.prepare('SELECT * FROM privacy_holds ORDER BY created_at,rowid').all<HoldReview>()).results.map(h=>({...h,review_state:h.released_at?'released':h.review_on<now.toISOString().slice(0,10)?'overdue':'active'})),requests:(await env.DB.prepare('SELECT * FROM privacy_requests ORDER BY requested_at DESC,rowid DESC').all<Erasure>()).results}
+ return {overdue_holds:await overdueHolds(env,now),classifications:(await env.DB.prepare('SELECT * FROM privacy_exhibit_scopes ORDER BY classified_at,kind,subject_id').all()).results,holds:(await env.DB.prepare('SELECT * FROM privacy_holds ORDER BY created_at,rowid').all<HoldReview>()).results.map(h=>({...h,review_state:h.released_at?'released':h.review_on<now.toISOString().slice(0,10)?'overdue':'active'})),requests:(await env.DB.prepare('SELECT * FROM privacy_requests ORDER BY requested_at DESC,rowid DESC').all<Erasure>()).results}
 }
 export async function requestOf(env:Bindings,id:string) { const row=await env.DB.prepare('SELECT * FROM privacy_requests WHERE id=?').bind(id).first<Erasure>();if(!row)throw new Refusal('Erasure request not found.',404);return row }
 async function snapshot(env:Bindings,kind:string,subject:string):Promise<any> {
@@ -52,7 +38,13 @@ export async function preview(env:Bindings,input:Input,actor:Actor,now:Date) {
 export async function hold(env:Bindings,input:Input,actor:Actor,now:Date) {
  const kind=oneOf(input,'kind',kinds),subject=kind==='business'?'business':text(input,'subject_id',128),reason=text(input,'reason',500),review=text(input,'review_on',10),id=crypto.randomUUID()
  if(!validDate(review)||review<now.toISOString().slice(0,10))throw new Refusal('Choose a current or future hold review date.')
- await env.DB.batch([env.DB.prepare('INSERT INTO privacy_holds(id,kind,subject_id,reason,authorized_by,authorized_name,review_on,created_at) VALUES(?,?,?,?,?,?,?,?)').bind(id,kind,subject,reason,actor.id,actor.name,review,now.toISOString()),auditStatement(env,actor,'privacy.hold-authorized','hold:'+id,now,'succeeded',kind,{reason})]);return {id}
+ try {
+  await env.DB.batch([env.DB.prepare('INSERT INTO privacy_holds(id,kind,subject_id,reason,authorized_by,authorized_name,review_on,created_at) VALUES(?,?,?,?,?,?,?,?)').bind(id,kind,subject,reason,actor.id,actor.name,review,now.toISOString()),auditStatement(env,actor,'privacy.hold-authorized','hold:'+id,now,'succeeded',kind,{reason})])
+ }catch(error){
+  if(error instanceof Error&&error.message.includes('erasure_already_confirmed'))throw new Refusal('Erasure is already confirmed and pending. A new hold cannot reverse deletion already authorized.',409)
+  throw error
+ }
+ return {id}
 }
 export async function release(env:Bindings,id:string,input:Input,actor:Actor,now:Date) {
  const reason=text(input,'reason',500)
@@ -130,10 +122,10 @@ export async function classify(env:Bindings,input:Input,actor:Actor,now:Date) {
 async function entitySnapshot(env:Bindings,kind:string,subject:string,holds:any[],hold_history:any[]):Promise<any> {
  const table:Record<string,string>={person:'people',vendor:'vendors',engagement:'audit_engagements'}
  const exists=kind==='business'||!!await env.DB.prepare(`SELECT 1 FROM ${table[kind]} WHERE id=?`).bind(subject).first()
- const selected=(await env.DB.prepare(`SELECT e.id FROM exhibits e WHERE NOT EXISTS(SELECT 1 FROM privacy_erased_exhibits x WHERE x.exhibit_id=e.id) AND (?='business' OR EXISTS(SELECT 1 FROM privacy_exhibit_scopes s WHERE s.exhibit_id=e.id AND s.kind=? AND s.subject_id=?) OR (?='engagement' AND EXISTS(SELECT 1 FROM audit_submissions a JOIN audit_requests q ON q.id=a.request_id JOIN receipts r ON r.id=a.receipt_id WHERE r.exhibit_id=e.id AND q.engagement_id=?))) ORDER BY e.id LIMIT 51`).bind(kind,kind,subject,kind,subject).all<{id:string}>()).results
+ const selected=(await env.DB.prepare(`SELECT e.id FROM exhibits e WHERE NOT EXISTS(SELECT 1 FROM privacy_erased_exhibits x WHERE x.exhibit_id=e.id) AND (?='business' OR EXISTS(SELECT 1 FROM privacy_exhibit_scopes s WHERE s.exhibit_id=e.id AND s.kind=? AND s.subject_id=?) OR (?='engagement' AND EXISTS(SELECT 1 FROM privacy_exhibit_engagements a WHERE a.exhibit_id=e.id AND a.engagement_id=?))) ORDER BY e.id LIMIT 51`).bind(kind,kind,subject,kind,subject).all<{id:string}>()).results
  const items=[]
  for(const e of selected.slice(0,50))items.push(await snapshot(env,'exhibit',e.id))
- const unclassified=kind==='business'?(await env.DB.prepare('SELECT e.id FROM exhibits e WHERE NOT EXISTS(SELECT 1 FROM privacy_erased_exhibits x WHERE x.exhibit_id=e.id) AND NOT EXISTS(SELECT 1 FROM privacy_exhibit_scopes s WHERE s.exhibit_id=e.id) AND NOT EXISTS(SELECT 1 FROM audit_submissions a JOIN receipts r ON r.id=a.receipt_id WHERE r.exhibit_id=e.id) ORDER BY e.id LIMIT 51').all<{id:string}>()).results:[]
+ const unclassified=kind==='business'?(await env.DB.prepare('SELECT e.id FROM exhibits e WHERE NOT EXISTS(SELECT 1 FROM privacy_erased_exhibits x WHERE x.exhibit_id=e.id) AND NOT EXISTS(SELECT 1 FROM privacy_exhibit_scopes s WHERE s.exhibit_id=e.id) AND NOT EXISTS(SELECT 1 FROM privacy_exhibit_engagements a WHERE a.exhibit_id=e.id) ORDER BY e.id LIMIT 51').all<{id:string}>()).results:[]
  const retained=items.filter(p=>p.holds.length).map(p=>({exhibit_id:p.subject,holds:p.holds}))
  const deletions=items.filter(p=>!p.holds.length&&p.supported)
  const unsupported=items.filter(p=>!p.holds.length&&!p.supported).map(p=>({exhibit_id:p.subject,reason:p.remaining||'Imported exhibit requires linked-import retirement.'}))
