@@ -253,5 +253,93 @@ export async function portalBrowser(app,program,reviewer,source,quote,post,get){
    await page.goto(origin+'/popup.html');await shot('extension-popup-layout')
    await context.close();console.log('PASS ANSWER-002 Chromium production scanner and applier: three pages, exact text, choices, document bytes, changed and unapproved refusal, no submission, history at '+width)
   }
+  await installedPortalBrowsers({app,program,reviewer,source,quote,post,get,origin,output})
  }finally{await browser?.close();if(server)await new Promise(done=>server.close(done))}
+}
+
+// Exercise installed extension APIs through the shipped popup, without API shims.
+async function installedPortalBrowsers({app,program,reviewer,source,quote,post,get,origin,output}){
+ const {chromium}=await import('playwright'),{resolve,join}=await import('node:path')
+ const extension=resolve('public/portal-extension')
+ const {createServer}=await import('node:net'),reservation=createServer();await new Promise(done=>reservation.listen(0,'127.0.0.1',done));const debugPort=reservation.address().port;await new Promise(done=>reservation.close(done))
+ for(const [name,executablePath] of [
+  ['Chrome','/tmp/rer-browsers/latest/chrome-linux64/chrome'],
+  ['Edge','/tmp/rer-browsers/edge-latest/opt/microsoft/msedge/msedge'],
+  ['Brave','/tmp/rer-browsers/brave-latest/opt/brave.com/brave/brave'],
+ ]){
+  const browser=await chromium.launch({executablePath,headless:true,args:['--no-sandbox','--use-mock-keychain','--password-store=basic','--enable-unsafe-extension-debugging','--remote-debugging-port='+debugPort,'--disable-extensions-except='+extension]})
+  try{
+   const cdp=await browser.newBrowserCDPSession(),{id}=await cdp.send('Extensions.loadUnpacked',{path:extension,enableInIncognito:true})
+   // Grant the local test installation through the browser's real site-access settings.
+   const connection=await chromium.connectOverCDP('http://127.0.0.1:'+debugPort),settings=await connection.contexts()[0].newPage()
+   await settings.goto('chrome://extensions');await settings.evaluate(async id=>{await chrome.developerPrivate.addHostPermission(id,'http://127.0.0.1/*')},id);await settings.close()
+   console.log('Installed portal browser: '+name+' '+browser.version())
+   const context=await browser.newContext({viewport:{width:1440,height:1000}}),portal=await context.newPage(),popup=await context.newPage()
+   await popup.goto('chrome-extension://'+id+'/popup.html')
+   const token=await post('/api/api-tokens',{name:name+' installed extension',scopes:['portal-capture','portal-fill'],expires_at:'2026-12-01'})
+   await popup.locator('[name=installation]').fill(origin);await popup.locator('[name=token]').fill(token.token);await popup.locator('[name=program]').fill(program.id);await popup.locator('[name=name]').fill(name+' three-page capture')
+   await popup.locator('form button').click()
+   await popup.waitForFunction(()=>document.querySelector('#status').textContent.includes('Connected'))
+   assert.equal(await popup.locator('[name=token]').inputValue(),'')
+   const state=await popup.evaluate(async()=>({session:await chrome.storage.session.get(),local:await chrome.storage.local.get(),sync:await chrome.storage.sync.get(),permissions:await chrome.permissions.getAll()}))
+   assert.equal(state.session.token,token.token);assert.deepEqual(state.local,{});assert.deepEqual(state.sync,{})
+   assert.ok(state.permissions.origins.includes('http://127.0.0.1/*'),'installation permission actually granted')
+   const active=async()=>{const target=await context.newCDPSession(portal),{targetInfo}=await target.send('Target.getTargetInfo');await target.detach();await popup.evaluate(async url=>{const tabs=await chrome.tabs.query({});const tab=tabs.find(t=>t.url===url);if(!tab)throw Error('Portal tab unavailable');await chrome.tabs.update(tab.id,{active:true})},portal.url());return targetInfo}
+   const capturePages=async changed=>{
+    for(const n of [1,2,3]){
+     await portal.goto(origin+'/portal/'+n)
+     if(changed&&n===2)await portal.evaluate(()=>document.querySelector('#cadence').add(new Option('Weekly','weekly')))
+     await active();await popup.locator('#page-id').fill('step-'+n);await popup.locator('#capture').click()
+     await popup.waitForFunction(n=>document.querySelectorAll('#pages li').length===n,n)
+    }
+   }
+   await capturePages(false)
+   const captured=await popup.evaluate(async()=>(await chrome.storage.session.get('pages')).pages)
+   assert.deepEqual(captured.map(p=>[p.id,p.fields.map(f=>f.type)]),[['step-1',['text']],['step-2',['choice','multi-select']],['step-3',[['yes','no'].join('/'),'file']]])
+   assert.doesNotMatch(JSON.stringify(captured),/synthetic-evidence-(entered|hidden|password)-value/)
+   await popup.locator('#import').click();await popup.waitForFunction(()=>document.querySelector('#questionnaire-id').value.length>0)
+   const qid=await popup.locator('#questionnaire-id').inputValue(),questions=(await get('/api/questionnaires/'+qid)).questions
+   const makeDraft=async(capture,all=false)=>{
+    const qs=(await get('/api/questionnaires/'+capture)).questions
+    let draft=await post('/api/questionnaires/'+capture+'/drafts',{})
+    for(const [index,value]of [[1,'monthly'],[2,JSON.stringify(['security','legal'])],...(all?[[3,'true']]:[])])draft=await post(`/api/questionnaires/${capture}/drafts/${draft.id}/edit`,{snapshot_hash:draft.snapshot_hash,question_id:qs[index].id,source_id:source.id,answer_value:value,mapping_confirm:'yes',reason:'Exact installed browser source review'})
+    const requirement=(await get('/api/desk')).requirements[0].id,form=new FormData();form.set('source','Synthetic portal document');form.set('covered_from','2026-11-04');form.set('covered_to','2026-11-04');form.set('file',new File(['synthetic-evidence-installed-document'],'synthetic-evidence-installed.pdf',{type:'application/pdf'}))
+    const uploaded=await app.fetch('/app/requirements/'+requirement+'/uploads',{method:'POST',headers:{origin:app.origin},body:form});assert.equal(uploaded.status,303)
+    const documentSource=await post('/api/questionnaires/sources',{kind:'exhibit',source_id:uploaded.headers.get('location').split('/').at(-1),quote:'synthetic-evidence-installed.pdf'})
+    draft=await post(`/api/questionnaires/${capture}/drafts/${draft.id}/edit`,{snapshot_hash:draft.snapshot_hash,question_id:qs[4].id,source_id:documentSource.id,answer_value:'',mapping_confirm:'yes',reason:'Reviewed exact original document'})
+    await post(`/api/questionnaires/${capture}/drafts/${draft.id}/approve`,{snapshot_hash:draft.snapshot_hash,reviewer_person_id:reviewer.id,recipient:'buyer@customer.test',expires_on:'2026-12-01',reason:'Exact installed browser approval'},200)
+    return draft
+   }
+   const draft=await makeDraft(qid)
+   await popup.locator('#draft-id').fill(draft.id);await popup.locator('#recipient').fill('buyer@customer.test')
+   const fill=async(n,changed=false)=>{
+    await portal.goto(origin+'/portal/'+n)
+    if(changed)await portal.evaluate(()=>document.querySelector('#cadence').add(new Option('Weekly','weekly')))
+    await active();await popup.locator('#page-id').fill('step-'+n)
+    await popup.locator('#status').evaluate(el=>el.textContent='')
+    await popup.locator('#fill').click();await popup.waitForFunction(()=>document.querySelector('#status').textContent.length>0)
+    assert.ok(!await portal.evaluate(()=>window.submitted),'No portal submission')
+    return popup.locator('#status').textContent()
+   }
+   assert.match(await fill(1),/filled/);assert.equal(await portal.locator('#access').inputValue(),quote)
+   assert.match(await fill(2,true),/cadence: refused.*changed/i);assert.deepEqual(await portal.locator('#participants').evaluate(el=>[...el.selectedOptions].map(o=>o.value)),['security','legal'])
+   assert.match(await fill(3),/enabled: refused/);assert.equal(await portal.locator('#enabled').isChecked(),false)
+   assert.equal(await portal.locator('#document').evaluate(async el=>el.files[0].text()),'synthetic-evidence-installed-document')
+   assert.equal(await portal.locator('#document').evaluate(el=>el.files[0].name),'synthetic-evidence-installed.pdf')
+   const history=await get('/api/questionnaires/'+qid)
+   assert.equal(JSON.parse(history.questionnaire.mapping_json).portal.pages.length,3)
+   assert.ok(JSON.stringify(history).includes('portal-fill-reported'),'Every extension fill has retained history')
+   for(const width of [1440,390]){await popup.setViewportSize({width,height:1000});assert.ok(await popup.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.equal(await popup.locator('button,a,[role=button]').evaluateAll(nodes=>nodes.filter(el=>!el.textContent.trim()).length),0);await popup.screenshot({path:join(output,name+'-'+width+'-installed-popup.png'),fullPage:true})}
+   await capturePages(true);await popup.locator('#import').click();await popup.waitForFunction(old=>document.querySelector('#questionnaire-id').value!==old,qid)
+   const next=await popup.locator('#questionnaire-id').inputValue(),fresh=await makeDraft(next,true)
+   await popup.locator('#draft-id').fill(fresh.id)
+   assert.match(await fill(2,true),/cadence: filled/);assert.equal(await portal.locator('#cadence').inputValue(),'monthly')
+   assert.match(await fill(3),/enabled: filled/);assert.equal(await portal.locator('#enabled').isChecked(),true)
+   assert.equal(JSON.parse((await get('/api/questionnaires/'+next)).questionnaire.mapping_json).portal.previous_id,qid)
+   await popup.locator('#clear').click();await popup.waitForFunction(()=>document.querySelector('#status').textContent.includes('cleared'))
+   assert.deepEqual(await popup.evaluate(()=>chrome.storage.session.get()),{})
+   await context.close()
+   console.log('PASS ANSWER-002 installed '+name+': permissions, session-only credential, typed three-page capture, exact approved fill and file bytes, changed and unapproved refusal, recapture and new approval, history, no submission, clear session')
+  }finally{await browser.close()}
+ }
 }
