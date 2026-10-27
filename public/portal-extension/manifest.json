@@ -3,7 +3,19 @@
   "name": "Evidence portal capture",
   "version": "0.1.0",
   "description": "Capture questionnaire pages and fill exact approved answers and documents in your Evidence installation. Never submits forms.",
-  "permissions": ["activeTab", "scripting", "storage"],
-  "optional_host_permissions": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
-  "action": {"default_popup": "popup.html", "default_title": "Capture questionnaire"}
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Capture questionnaire"
+  },
+  "incognito": "split"
 }
