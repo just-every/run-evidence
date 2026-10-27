@@ -36,12 +36,14 @@ function scanPortalPage() {
 // plan was fetched. Each assignment checks again before touching that field.
 function applyPortalPlan(plan){
  const report=[]
+ // Browser scripting arguments may reorder object keys during serialization.
+ const signature=field=>JSON.stringify([field.id,field.label,field.type,field.section,field.required,field.multiple,field.accept,field.options.map(option=>[option.value,option.label])])
  const scan=scanPortalPage()
  if(scan.unsupported.length||scan.url!==plan.page.url)return {error:'Page changed; re-capture and review.',results:[]}
  for(const item of plan.results){
   if(item.state!=='ready'){report.push({id:item.id,state:'refused',reason:item.reason});continue}
   const current=scanPortalPage(),field=current.fields.find(f=>f.id===item.id)
-  if(current.unsupported.length||current.url!==plan.page.url||!field||JSON.stringify(field)!==JSON.stringify(item.field)){report.push({id:item.id,state:'refused',reason:'Field changed after approval scan.'});continue}
+  if(current.unsupported.length||current.url!==plan.page.url||!field||signature(field)!==signature(item.field)){report.push({id:item.id,state:'refused',reason:'Field changed after approval scan.'});continue}
   const candidates=[...document.querySelectorAll('input,textarea,select')].filter(el=>{
    const form=el.form,formId=form?(form.id||form.getAttribute('name')||'form-'+[...document.forms].indexOf(form)):'document'
    const key=(el.type==='radio'||el.type==='checkbox')&&el.name?el.name:el.id||el.name
