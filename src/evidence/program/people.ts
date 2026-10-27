@@ -7,7 +7,7 @@ export const people = async (env: Bindings) => (await env.DB.prepare('SELECT id,
 export const person = (env: Bindings, id: string) => env.DB.prepare('SELECT id,name,email,kind,created_at FROM people WHERE id=?').bind(id).first<Person>()
 export async function requirePerson(env: Bindings, id: unknown, label = 'person') {
  if (typeof id !== 'string' || !id) throw new Refusal(`Choose a ${label} from People.`)
- const found = await person(env, id); if (!found) throw new Refusal(`Choose a ${label} from People.`)
+ const found = await person(env, id); if (!found || found.email===id+'@erased.invalid') throw new Refusal(`Choose a ${label} from People.`)
  return found
 }
 export async function addPerson(env: Bindings, actor: Actor, input: Input, now: Date) {

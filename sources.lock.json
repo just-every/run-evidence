@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "9c8e8839e190d880fa5e5bfd1b8b139529cc7919a0e04c40c5cce428c97cb13f",
+  "manifest": "2744f0df644bb31b4b29bd72fcf2f199acb02bdea69405a40a543ee8658f10c3",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2826,6 +2826,11 @@
           "migrations/core/0067_access_roles.sql",
           "migrations/core/0068_secure_records_flows.sql",
           "migrations/core/0069_credential_displays.sql",
+          "migrations/core/0070_engagement_holds.sql",
+          "migrations/core/0071_privacy_classifications.sql",
+          "migrations/core/0072_partial_erasure_receipts.sql",
+          "migrations/core/0073_combined_erasure_hold_fences.sql",
+          "migrations/core/0074_privacy_person_records.sql",
           "package.json",
           "packaging.json",
           "pnpm-lock.yaml",
@@ -3067,7 +3072,9 @@
           "src/evidence/credential-display.ts",
           "src/evidence/door.ts",
           "src/evidence/erase/archive.ts",
+          "src/evidence/erase/holds.ts",
           "src/evidence/erase/http.ts",
+          "src/evidence/erase/person.ts",
           "src/evidence/erase/storage.ts",
           "src/evidence/followup/channels.ts",
           "src/evidence/followup/digest.ts",
@@ -3476,6 +3483,7 @@
           "tests/helpers/runtime.mjs",
           "tests/helpers/shortcut-webhook-journey.mjs",
           "tests/helpers/site-runtime.mjs",
+          "tests/helpers/step.mjs",
           "tests/helpers/tailoring-journey.mjs",
           "tests/helpers/tracker-fields-browser.mjs",
           "tests/helpers/tracker-fixture.mjs",
@@ -3564,7 +3572,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "d5d9174bf283c3a43c805a2ecc4d33ee1625ab46c932c12dee587e7c938c950a",
+      "sha256": "5d79eef93e144aba94fc3252b25126d6648323c047ef0cc9563bdaead99a916b",
       "executable": false
     },
     "AGENTS.md": {
@@ -3580,7 +3588,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "3ec3d19be3a97caa26146cdedef574203f5e5a5c84f7a6a4b171e9b47fbbfc8d",
+      "sha256": "535065ea58db5372bc553d4bb6fd503339a34fb72f02ff34ba736d203c63c08b",
       "executable": false
     },
     "DEMO.md": {
@@ -3688,7 +3696,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "9c8e8839e190d880fa5e5bfd1b8b139529cc7919a0e04c40c5cce428c97cb13f",
+      "sha256": "2744f0df644bb31b4b29bd72fcf2f199acb02bdea69405a40a543ee8658f10c3",
       "executable": false
     },
     "LICENSE": {
@@ -3981,6 +3989,22 @@
     },
     "migrations/core/0070_engagement_holds.sql": {
       "sha256": "716ab9a99d20dbff50fcc9d55c33f4428b4db82fa8531c462565172deacb3b53",
+      "executable": false
+    },
+    "migrations/core/0071_privacy_classifications.sql": {
+      "sha256": "2ec93da9b36925df9ce95f59288f9acfe82e1d34e570882c958dbb2e8fa5f8f5",
+      "executable": false
+    },
+    "migrations/core/0072_partial_erasure_receipts.sql": {
+      "sha256": "f81ca0776ca2a6383c615082aac4a2ec7b3d850a97400a1c1055ec1464478ef8",
+      "executable": false
+    },
+    "migrations/core/0073_combined_erasure_hold_fences.sql": {
+      "sha256": "8b53d5643fee112ebf306c459df9e0af96766ec8f41b38746a81a69c0068ecae",
+      "executable": false
+    },
+    "migrations/core/0074_privacy_person_records.sql": {
+      "sha256": "12893d431cecf28319830cfe2ad13dfa199310a45ca9d46f8664281a617ec652",
       "executable": false
     },
     "ONBOARDING.md": {
@@ -4868,7 +4892,7 @@
       "executable": false
     },
     "src/evidence/archive/feature-records.ts": {
-      "sha256": "7c0bcf7c9e7660168217cc136cec66a8408ad72a54cd4e314b41bb25eae0472f",
+      "sha256": "e0851fe4c24491bcb8d0caa3a881cb3f13c2f960796050171617c71ae17c5423",
       "executable": false
     },
     "src/evidence/archive/files.ts": {
@@ -4912,7 +4936,7 @@
       "executable": false
     },
     "src/evidence/archive/portable-restore.ts": {
-      "sha256": "f07db9cb3c457a1df9f7233e9fda70a74c4c8613154f8e1b11b3c1db33c1f739",
+      "sha256": "37426d354690f4c9981bb726c0f20b0952dec16ffa76ec53d9375e5981456a17",
       "executable": false
     },
     "src/evidence/archive/program.ts": {
@@ -4932,7 +4956,7 @@
       "executable": false
     },
     "src/evidence/archive/schema.json": {
-      "sha256": "953b1e2653c770a02b6909ab63008fde908f416288372439f219794c3f872da7",
+      "sha256": "4b14b184112f65c0661c4659c65ba59892bdf243c8c11e75ad69527ae21c5e0a",
       "executable": false
     },
     "src/evidence/archive/service.ts": {
@@ -4972,7 +4996,7 @@
       "executable": false
     },
     "src/evidence/audit/storage.ts": {
-      "sha256": "e6993663d65975a3ebcb930b4cd93aa30e243ab20b36b22a994af9cb80444bd9",
+      "sha256": "3df54717d299c97827d3aa441ae4510548e3b178e77905ca9e01495b9da1e5a3",
       "executable": false
     },
     "src/evidence/audit/view.ts": {
@@ -5252,7 +5276,7 @@
       "executable": false
     },
     "src/evidence/erase/archive.ts": {
-      "sha256": "5ec9a0268506b3a313e4fe3b058bee0c9b8e58afcda8aa28296a5e76041836a4",
+      "sha256": "83f38b476ab810965eb1a018914447ff4735f9d2017ff4178e69c963a706ade5",
       "executable": false
     },
     "src/evidence/erase/holds.ts": {
@@ -5260,11 +5284,15 @@
       "executable": false
     },
     "src/evidence/erase/http.ts": {
-      "sha256": "f0f3a391bad1e961c8ba52cd1b48116d85be16d7ff55f9b5cc0211d029c0db04",
+      "sha256": "8a6be08c4284dd7caf509aff4879f976b2404aacaa2e6a1fc1c3b9731d5cdffd",
+      "executable": false
+    },
+    "src/evidence/erase/person.ts": {
+      "sha256": "f0c9a181d5716a72b5a418ca0f8b897d206154c40b78042f4dffbf18e2cc8218",
       "executable": false
     },
     "src/evidence/erase/storage.ts": {
-      "sha256": "785610c1c065b60a1e200086b07918c1bf55f1ae19c510f908f8f6e849b734e7",
+      "sha256": "cc9c0db20983a558e42c2f415b7b2a3e7d9053597d3a3221f73c5672f4302c68",
       "executable": false
     },
     "src/evidence/followup/channels.ts": {
@@ -6448,7 +6476,7 @@
       "executable": false
     },
     "src/evidence/program/people.ts": {
-      "sha256": "b9544f9c8640d6ee576c5c19cd5cfbc40794c59d67e39044bc5e250552529711",
+      "sha256": "0db4e8b4c3a63e5befcd78fc8d620b8f020fa7bfbe1928458075ec0925d87e11",
       "executable": false
     },
     "src/evidence/program/readiness-view.ts": {
@@ -6544,7 +6572,7 @@
       "executable": false
     },
     "src/evidence/review/engagement/storage.ts": {
-      "sha256": "5cfd4e4ebff9d1f34eafd55a2dee4127109aee925da7b7eb7f82e80776a060e4",
+      "sha256": "3474bdbe215e36862f295a8e9fb641df1d3ca21d2914d1b75ea08b9718b1be3c",
       "executable": false
     },
     "src/evidence/review/engagement/validate.ts": {
@@ -8068,7 +8096,7 @@
       "executable": false
     },
     "tests/followup.mjs": {
-      "sha256": "5c797546649f429cbc0674035bf7ec0a768208ddf1d0ce7a16a84c6e8f2ee2f6",
+      "sha256": "00ec6bcf5dd547f9075d453dd7dfcc94479fa79969f1e081772d515a0616750a",
       "executable": false
     },
     "tests/github.mjs": {
@@ -8180,7 +8208,7 @@
       "executable": false
     },
     "tests/helpers/erasure-journey.mjs": {
-      "sha256": "abb7706ed2af51e2156c8faeea05be2844cc5c784e4d4cb7bb93915db9dbb2d2",
+      "sha256": "9a4735d530184debd0ef298d8cf55586b1e8d90a00b341611b97a78a58388e0e",
       "executable": false
     },
     "tests/helpers/extended-programs-journey.mjs": {
@@ -8412,7 +8440,7 @@
       "executable": false
     },
     "tests/helpers/worker.ts": {
-      "sha256": "adb98b657b3608c2572ca6ab1c5844834e9452c41fcbeb06cf718e4b98c08bdb",
+      "sha256": "eceff7a0da31cf41d7066d75bfda4c7b99a47dde0f93053d8b53e3761d53b57b",
       "executable": false
     },
     "tests/helpers/xlsx.mjs": {
@@ -8576,7 +8604,7 @@
       "executable": false
     },
     "tests/vendor-browser.mjs": {
-      "sha256": "956cc8e83a407d6ca613f401e0903691414dfbbacf85be044a7128d5ee7520f4",
+      "sha256": "86751e085e016e8c33f99ae24246893ae1830280f7b80afaed189eb34bfa53fe",
       "executable": false
     },
     "tests/vulns.mjs": {
