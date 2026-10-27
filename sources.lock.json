@@ -3569,7 +3569,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "9423b4f76a5693fedbe85c0976d7e87c7977119ca9fc74f9a57e8e87015afc05",
+      "sha256": "20ddaa12cbb3ac147dfef65256a04739c062b6e72da8255e5c27c3fafa22dc61",
       "executable": false
     },
     "AGENTS.md": {
@@ -8193,7 +8193,7 @@
       "executable": false
     },
     "tests/helpers/erasure-journey.mjs": {
-      "sha256": "90c0d2f7458ce33946a8f30621077ea9aed33605ac3550ea2bc8fea5c436ffda",
+      "sha256": "415c8e1109eb19615eccfbabb0686f7a77d6f6cd15a7c45ddd7c199f43aa802f",
       "executable": false
     },
     "tests/helpers/extended-programs-journey.mjs": {

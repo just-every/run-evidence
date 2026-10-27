@@ -56,6 +56,11 @@ export async function erasureJourney(app) {
   const response=await app.fetch(path,{method,headers:{cookie:member,origin:app.origin,'content-type':'application'+'/'+'json'},...(method==='POST'?{body:'{}'}:{})})
   assert.equal(response.status,403,path)
  }
+ await post('/api/privacy/holds/'+engagementHold.id+'/release',{reason:''},400)
+ await app.db.prepare("CREATE TRIGGER synthetic_hold_release_audit BEFORE INSERT ON product_audit WHEN NEW.action='privacy.hold-released' BEGIN SELECT RAISE(ABORT,'synthetic-evidence-release-audit-failure'); END").run()
+ await post('/api/privacy/holds/'+engagementHold.id+'/release',{reason:'Engagement dispute resolved'},503)
+ assert.equal((await (await app.fetch('/api/privacy')).json()).holds.find(h=>h.id===engagementHold.id).released_at,null,'failed audit leaves the hold active')
+ await app.db.prepare('DROP TRIGGER synthetic_hold_release_audit').run()
  await post('/api/privacy/holds/'+engagementHold.id+'/release',{reason:'Engagement dispute resolved'})
  await post('/api/privacy/holds/'+unrelatedHold.id+'/release',{reason:'Separate dispute resolved'})
  assert.deepEqual((await (await app.fetch('/api/desk')).json()).overdue_holds,[])
