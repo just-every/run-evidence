@@ -3570,7 +3570,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "09b384f08f5a965db832e01696efd7fed110036e35b5c5dc10d5d6c938d32f63",
+      "sha256": "59b4028ea9ad3ea07d3a1431842ab698c901293f324562d331f6e7b18496661f",
       "executable": false
     },
     "AGENTS.md": {
@@ -3586,7 +3586,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "88028081575af1af2f88ee8466b0d7720747b43dd0994ed934806cdd10e887fc",
+      "sha256": "1845dadc501bfe59adc41404214bede5453ae9aa6b0f911697bf1e834809d354",
       "executable": false
     },
     "DEMO.md": {
@@ -4886,7 +4886,7 @@
       "executable": false
     },
     "src/evidence/archive/feature-records.ts": {
-      "sha256": "500527bdcb06b50d3cc87a848263ae1578e155bb2e0c3c4bf556ebd9b5c37318",
+      "sha256": "39bcdf465cc6afa2f808c96245e4ef55b833302212d44b5fc646288e05a9188b",
       "executable": false
     },
     "src/evidence/archive/files.ts": {
@@ -5278,7 +5278,7 @@
       "executable": false
     },
     "src/evidence/erase/http.ts": {
-      "sha256": "bb98c7656adef83cda51045576764ba5aa1aa898fafc48af19dd292c18c82ef6",
+      "sha256": "0435ab80aa057a8ed4c27664e96990cb3b23869b891620c059791a48dcecbeff",
       "executable": false
     },
     "src/evidence/erase/storage.ts": {
@@ -8198,7 +8198,7 @@
       "executable": false
     },
     "tests/helpers/erasure-journey.mjs": {
-      "sha256": "b66eb2545bc5e7a837626c806f628443f816dde904262e0599e2c744e1ef606d",
+      "sha256": "a09d60756353aea19c632dab7e26b8c5f896d229326af652d21c644c6bd4623c",
       "executable": false
     },
     "tests/helpers/extended-programs-journey.mjs": {

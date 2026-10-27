@@ -190,13 +190,13 @@ export async function erasureJourney(app) {
  assert.ok(!exported.includes(Buffer.from('synthetic-evidence-erasure-content')));assert.ok(!exported.includes(Buffer.from('synthetic-evidence-private-name')));assert.ok(!exported.includes(Buffer.from('synthetic-evidence-erasure-source')))
  // Re-sign the transport after tampering, so semantic receipt validation must
  // reject incorrect counts or omitted retention before any custody admission.
- for(const mutation of ['zero-count','omit-retention']) {
+ for(const mutation of ['zero-count','omit-retention','omit-plan-retention']) {
   const destination=await runtime()
   try {
    await destination.signin()
    const response=await destination.fetch('/api/archive/restore',{method:'POST',headers:{origin:destination.origin,'content-type':'application'+'/'+'octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:alterEntityReceipt(exported,entityReceipts[0].id,mutation)})
    assert.equal(response.status,400,mutation+' must refuse custody admission')
-   assert.match(await response.text(),/Entity receipt counts or retention do not reconcile/)
+   assert.match(await response.text(),mutation==='omit-plan-retention'?/Entity snapshot retention or deletion set does not reconcile/:/Entity receipt counts or retention do not reconcile/)
    assert.equal((await destination.db.prepare('SELECT count(*) AS n FROM receipts').first()).n,0)
   }finally{await destination.close()}
  }
@@ -310,6 +310,7 @@ function alterEntityReceipt(source,id,mutation) {
    const counts=JSON.parse(row.counts_json)
    if(mutation==='zero-count')counts.R2=0
    else counts.retained=[]
+   if(mutation==='omit-plan-retention') {const snapshot=JSON.parse(row.snapshot_json);snapshot.retained=[];row.snapshot_json=JSON.stringify(snapshot);row.snapshot_hash=createHash('sha256').update(row.snapshot_json).digest('hex')}
    row.counts_json=JSON.stringify(counts);changed++
   }
   if(frame.type==='end')frame.sha256=hash.digest('hex')

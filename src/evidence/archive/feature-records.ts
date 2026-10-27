@@ -16,6 +16,9 @@ export async function validateFeatureRecords(env:Store,id:string) {
    if(r.kind!=='exhibit'&&['pending','partial'].includes(String(r.state))){
     let counts:any;try{counts=JSON.parse(String(r.counts_json))}catch{fail('Invalid entity deletion receipt.')}
     if(!value.supported||!Array.isArray(value.items)||!Array.isArray(value.deletions)||!Array.isArray(value.retained)||!Array.isArray(counts.child_requests)||counts.child_requests.length!==value.deletions.length||new Set(counts.child_requests).size!==counts.child_requests.length)fail('Incomplete entity deletion receipt.')
+    const expectedDeletions=value.items.filter((p:any)=>!p.holds.length&&p.supported).map((p:any)=>p.subject)
+    const expectedRetained=value.items.filter((p:any)=>p.holds.length).map((p:any)=>({exhibit_id:p.subject,holds:p.holds}))
+    if(JSON.stringify(value.deletions)!==JSON.stringify(expectedDeletions)||JSON.stringify(value.retained)!==JSON.stringify(expectedRetained))fail('Entity snapshot retention or deletion set does not reconcile.')
     const subjects=[],folders=new Set<string>()
     for(const childId of counts.child_requests){
      const child=await env.DB.prepare(`SELECT * FROM ${t('privacy_requests')} WHERE id=?`).bind(childId).first<any>()
