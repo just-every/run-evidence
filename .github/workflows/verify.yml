@@ -1,7 +1,7 @@
 name: Verify
 on:
   push:
-    branches: [main, cloud/sx-evidence-c37, cloud/sx-evidence-g23-r4, cloud/sx-evidence-c-i816, cloud/sx-evidence-c-i822, cloud/sx-evidence-defect1]
+    branches: [main, cloud/sx-evidence-c37, cloud/sx-evidence-g23-r4, cloud/sx-evidence-c-i816, cloud/sx-evidence-c-i822, cloud/sx-evidence-defect1, cloud/sx-evidence-rdy9]
   pull_request:
     branches: [main]
 permissions:

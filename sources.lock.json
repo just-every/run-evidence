@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "5d27a0dadc25a1aafe020c81316dc5062e76948ca3a9b8cb9eb5fe700895191e",
+  "manifest": "eacc8a6cc2c3ff05ee09f4752c905f232fd7f4ee9bcfd5579cfabd0db6746e3c",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2926,6 +2926,7 @@
           "scripts/evidence-archive/local.mjs",
           "scripts/evidence-archive/storage-worker.mjs",
           "scripts/generate-edition.mjs",
+          "scripts/install-portal-browsers.mjs",
           "scripts/install.mjs",
           "scripts/installer/local.mjs",
           "scripts/installer/ui/seed.mjs",
@@ -3558,7 +3559,7 @@
       "executable": false
     },
     ".github/workflows/verify.yml": {
-      "sha256": "6ba3b2fa1848b7d7029e0c23bffb9cc8f49d012b92a3ba59f6a9dd359962e01b",
+      "sha256": "b3484607b736d929549a03472b15a17afc64421e20490e6e944e0edfee9fc563",
       "executable": false
     },
     ".gitignore": {
@@ -3570,7 +3571,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "acb769b67587d7fd197c923dd0e03f7b98b08dbc00639cfc959701e2a6f52f4c",
+      "sha256": "c0094eb2f6edd3fd8822c39fcfe2cedb16992b383a4c5b1e9ed9df6b63e1b9e8",
       "executable": false
     },
     "AGENTS.md": {
@@ -3586,7 +3587,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "dcbd18a0fb8f4ee830af5daa81a5375c30688c23a20cfe3a283835b15e7ee6ae",
+      "sha256": "ec250f12edc0a42ce87a891da24bc4873c628fda34d63c0caeb2a0178ac79697",
       "executable": false
     },
     "DEMO.md": {
@@ -3658,7 +3659,7 @@
       "executable": false
     },
     "docs/PORTAL-QUESTIONNAIRES.md": {
-      "sha256": "6347f41cb514df9cd2cd9cca33c2c86344d81ed0ead75693c7af14e8023a79c0",
+      "sha256": "06f39a145761096937632a84da2ebc59a80cedd6c18cd07c3a31fb4a6419b53b",
       "executable": false
     },
     "docs/PRIVATE-COLLECTOR.md": {
@@ -3694,7 +3695,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "5d27a0dadc25a1aafe020c81316dc5062e76948ca3a9b8cb9eb5fe700895191e",
+      "sha256": "eacc8a6cc2c3ff05ee09f4752c905f232fd7f4ee9bcfd5579cfabd0db6746e3c",
       "executable": false
     },
     "LICENSE": {
@@ -4130,7 +4131,7 @@
       "executable": false
     },
     "public/portal-extension/scan.js": {
-      "sha256": "38c8eb01eee9429dc1e7ddcf0a11d3f41ab445cecfa714597fa0aae7f116955a",
+      "sha256": "d1c24376e29bbe20e89e445867144ce951c7a8b6ef14515d6e39b102a8bff0a6",
       "executable": false
     },
     "public/privacy.css": {
@@ -8106,7 +8107,7 @@
       "executable": false
     },
     "tests/helpers/answer-journey.mjs": {
-      "sha256": "ebaf03bc2f6b5aeafa8e2c464bb7529143b8923823ff42133b36a34822ce0ebf",
+      "sha256": "60869907f73996580f272b23da6438933c518e704133c6c1d12e507bcaf5fe7d",
       "executable": false
     },
     "tests/helpers/archive-display-browser.mjs": {
