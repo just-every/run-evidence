@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "9c8e8839e190d880fa5e5bfd1b8b139529cc7919a0e04c40c5cce428c97cb13f",
+  "manifest": "77c0a2194ba3f89078e90a398e3c50b8df0d65c421d0aeef77ccc828087759ed",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -2826,6 +2826,7 @@
           "migrations/core/0067_access_roles.sql",
           "migrations/core/0068_secure_records_flows.sql",
           "migrations/core/0069_credential_displays.sql",
+          "migrations/core/0070_engagement_holds.sql",
           "package.json",
           "packaging.json",
           "pnpm-lock.yaml",
@@ -2922,6 +2923,7 @@
           "scripts/evidence-archive/local.mjs",
           "scripts/evidence-archive/storage-worker.mjs",
           "scripts/generate-edition.mjs",
+          "scripts/install-portal-browsers.mjs",
           "scripts/install.mjs",
           "scripts/installer/local.mjs",
           "scripts/installer/ui/seed.mjs",
@@ -3067,6 +3069,7 @@
           "src/evidence/credential-display.ts",
           "src/evidence/door.ts",
           "src/evidence/erase/archive.ts",
+          "src/evidence/erase/holds.ts",
           "src/evidence/erase/http.ts",
           "src/evidence/erase/storage.ts",
           "src/evidence/followup/channels.ts",
@@ -3476,6 +3479,7 @@
           "tests/helpers/runtime.mjs",
           "tests/helpers/shortcut-webhook-journey.mjs",
           "tests/helpers/site-runtime.mjs",
+          "tests/helpers/step.mjs",
           "tests/helpers/tailoring-journey.mjs",
           "tests/helpers/tracker-fields-browser.mjs",
           "tests/helpers/tracker-fixture.mjs",
@@ -3552,7 +3556,7 @@
       "executable": false
     },
     ".github/workflows/verify.yml": {
-      "sha256": "6ba3b2fa1848b7d7029e0c23bffb9cc8f49d012b92a3ba59f6a9dd359962e01b",
+      "sha256": "b3484607b736d929549a03472b15a17afc64421e20490e6e944e0edfee9fc563",
       "executable": false
     },
     ".gitignore": {
@@ -3564,7 +3568,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "d5d9174bf283c3a43c805a2ecc4d33ee1625ab46c932c12dee587e7c938c950a",
+      "sha256": "11a49b5a2115d8824bd81b3d514bef05667c2d15a8b0d5e947bff57e7822fe81",
       "executable": false
     },
     "AGENTS.md": {
@@ -3580,7 +3584,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "3ec3d19be3a97caa26146cdedef574203f5e5a5c84f7a6a4b171e9b47fbbfc8d",
+      "sha256": "e80e30cbd395156975d641941e609a1dd53df329bce691d7d814ae68b8350d1e",
       "executable": false
     },
     "DEMO.md": {
@@ -3652,7 +3656,7 @@
       "executable": false
     },
     "docs/PORTAL-QUESTIONNAIRES.md": {
-      "sha256": "6347f41cb514df9cd2cd9cca33c2c86344d81ed0ead75693c7af14e8023a79c0",
+      "sha256": "06f39a145761096937632a84da2ebc59a80cedd6c18cd07c3a31fb4a6419b53b",
       "executable": false
     },
     "docs/PRIVATE-COLLECTOR.md": {
@@ -3688,7 +3692,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "9c8e8839e190d880fa5e5bfd1b8b139529cc7919a0e04c40c5cce428c97cb13f",
+      "sha256": "77c0a2194ba3f89078e90a398e3c50b8df0d65c421d0aeef77ccc828087759ed",
       "executable": false
     },
     "LICENSE": {
@@ -4116,7 +4120,7 @@
       "executable": false
     },
     "public/portal-extension/scan.js": {
-      "sha256": "38c8eb01eee9429dc1e7ddcf0a11d3f41ab445cecfa714597fa0aae7f116955a",
+      "sha256": "d1c24376e29bbe20e89e445867144ce951c7a8b6ef14515d6e39b102a8bff0a6",
       "executable": false
     },
     "public/rer-theme.css": {
@@ -8088,7 +8092,7 @@
       "executable": false
     },
     "tests/helpers/answer-journey.mjs": {
-      "sha256": "ebaf03bc2f6b5aeafa8e2c464bb7529143b8923823ff42133b36a34822ce0ebf",
+      "sha256": "60869907f73996580f272b23da6438933c518e704133c6c1d12e507bcaf5fe7d",
       "executable": false
     },
     "tests/helpers/archive-display-browser.mjs": {
