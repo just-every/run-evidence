@@ -65,8 +65,36 @@ jobs:
           fi
           echo "skip=$skip" >> "$GITHUB_OUTPUT"
 
-  shards:
+  build:
     needs: plan
+    if: needs.plan.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.20.0
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Build application and run site once
+        run: |
+          pnpm run build
+          pnpm exec rer build --site
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verify-build
+          path: dist/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  shards:
+    needs: [plan, build]
     if: needs.plan.outputs.skip != 'true'
     name: verify (${{ matrix.shard }})
     runs-on: ubuntu-24.04
@@ -74,7 +102,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [core, custody, history, program, code, people, integrations, cloud, clouds, identity, trackers, browser, browser-data]
+        # Last green Verify bodies (seconds): browser 434, browser-data 438,
+        # code 343, custody/cloud 410, program/integrations 392,
+        # core/history 350, people/identity 383, trackers/clouds 354.
+        shard: [browser, browser-data, code, 'custody,cloud', 'program,integrations', 'core,history', 'people,identity', 'trackers,clouds']
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -104,14 +135,19 @@ jobs:
             timeout 420 pnpm exec playwright install-deps chromium
             node scripts/ci/chromium-probe.mjs
           }
+      - uses: actions/download-artifact@v4
+        with:
+          name: verify-build
+          path: dist/
       - run: pnpm exec rer verify
         env:
           RER_VERIFY_WORKERS: '2'
           VERIFY_SHARD: ${{ matrix.shard }}
+          VERIFY_PREBUILT: '1'
           WRANGLER_SEND_METRICS: 'false'
 
   verify:
-    needs: [plan, shards]
+    needs: [plan, build, shards]
     if: ${{ always() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 1

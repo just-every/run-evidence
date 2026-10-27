@@ -1,6 +1,8 @@
 // The internal verification target, split into shards that CI runs in parallel
-// (VERIFY_SHARD=core|custody|history|program|code|people|integrations|cloud|clouds|identity|trackers|browser|browser-data). Without a shard every step runs in order.
+// VERIFY_SHARD accepts one partition or a comma-separated CI group.
+// Without a shard every step runs in order; CI can consume the shared build.
 import { spawnSync } from 'node:child_process'
+import { accessSync } from 'node:fs'
 const shards = {
  core: [['rer', 'build', '--site'], ['node', 'tests/site.mjs'], ['pnpm', 'run', 'typecheck'], ['node', 'scripts/edition-authoring/cli.mjs', 'check'], ['node', 'scripts/library-check.mjs'], ['node', 'tests/ops.mjs'], ['node', 'tests/evidence.mjs']],
  custody: [['node', 'tests/review.mjs'], ['node', 'tests/archive.mjs'], ['node', 'tests/secure.mjs']],
@@ -18,10 +20,19 @@ const shards = {
  // them separate from the other browser journeys within the same 15-minute cap.
  'browser-data': [['node', 'tests/review-browser.mjs'], ['node', 'tests/inventory-browser.mjs']],
 }
-const shard = process.env.VERIFY_SHARD
-if (shard && !shards[shard]) { console.error(`Unknown VERIFY_SHARD ${shard}; use ${Object.keys(shards).join(', ')}.`); process.exit(2) }
-// The production build comes first in every shard: rer verify then serves it.
-for (const [command, ...args] of [['pnpm', 'run', 'build'], ...(shard ? shards[shard] : Object.values(shards).flat())]) {
+const selected = process.env.VERIFY_SHARD?.split(',') ?? Object.keys(shards)
+for (const shard of selected) {
+ if (!shards[shard]) { console.error(`Unknown VERIFY_SHARD ${shard}; use ${Object.keys(shards).join(', ')}.`); process.exit(2) }
+}
+const prebuilt = process.env.CI === 'true' && process.env.VERIFY_PREBUILT === '1'
+if (prebuilt) {
+ // A missing artifact must fail, never turn into an unmeasured rebuild.
+ for (const path of ['dist/server/wrangler.json', 'dist/client', 'dist/site/index.html']) accessSync(path)
+}
+const steps = selected.flatMap(shard => shards[shard]).filter(([command, ...args]) =>
+ !(prebuilt && command === 'rer' && args.join(' ') === 'build --site'))
+// Local verification still builds first. CI downloads the one build from this run.
+for (const [command, ...args] of [...(prebuilt ? [] : [['pnpm', 'run', 'build']]), ...steps]) {
  console.log(`\n> ${[command, ...args].join(' ')}`)
  if(command==='pnpm'&&args.join(' ')==='run build')console.log('OPS-001: documented production build must succeed before journeys')
  const started = performance.now()
