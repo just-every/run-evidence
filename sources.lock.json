@@ -3558,7 +3558,7 @@
       "executable": false
     },
     ".github/workflows/verify.yml": {
-      "sha256": "74b6091d1d08d73806796742b35fe0e0a5f5b9ddd9f79078410f6f1c13c89135",
+      "sha256": "a62f8202084a4eefd47cd9b5760364d421d0f8d7aa279ce2a53eb4506803395b",
       "executable": false
     },
     ".gitignore": {
@@ -4389,6 +4389,10 @@
       "sha256": "58f31dcfdd18377c8984337312f78bb08700f2f3051f38e2f88c668e838fa2ab",
       "executable": false
     },
+    "scripts/ci/chromium-probe.mjs": {
+      "sha256": "86a09cf761fb94b2ffd0af334be8ec9b413114e3a9061b31331a29ec8d37bdac",
+      "executable": false
+    },
     "scripts/delivery/base/artifact.mjs": {
       "sha256": "129f210f1556e816ba94ffe74359ac553cd26466aaf8c6c299765e9cea29aa07",
       "executable": false
@@ -4606,7 +4610,7 @@
       "executable": false
     },
     "scripts/verify.mjs": {
-      "sha256": "86c0b27f59c8c46422c31f59d73d4c99f6bf9ddea00e6536d4721e86f5107ec0",
+      "sha256": "c1366a2570bfcae3e6bd4b6c619e6acf226490fb4027559fb6a67e963dcd157b",
       "executable": false
     },
     "SEED-COMMAND-CONTRACT.md": {
