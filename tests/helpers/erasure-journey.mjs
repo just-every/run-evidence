@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { runtime } from './runtime.mjs'
 export async function erasureJourney(app) {
  const post=async(path,body,status=200)=>{const r=await app.fetch(path,{method:'POST',headers:{origin:app.origin,'content-type':'application'+'/'+'json'},body:JSON.stringify(body)});assert.equal(r.status,status,path+' '+await r.clone().text());return r.json()}
@@ -176,15 +177,29 @@ export async function erasureJourney(app) {
  const retained=await (await app.fetch(retainedUpload.headers.get('location').replace('/app/','/api/'))).json()
  await classify('vendor',vendor.id,retained.exhibit_id)
  const retainedHold=await post('/api/privacy/holds',{kind:'vendor',subject_id:vendor.id,reason:'Keep classified original through custody transfer',review_on:'2027-01-01'},201)
+ const entityReceipts=await entityExhibitBatches(app,post,person,vendor,engagement,requirement,controlId)
  console.log('ERASE-001: re-exporting after erasure')
  const exported=Buffer.from(await (await app.fetch('/api/archive/export')).arrayBuffer())
  assert.ok(!exported.includes(Buffer.from('synthetic-evidence-erasure-content')));assert.ok(!exported.includes(Buffer.from('synthetic-evidence-private-name')));assert.ok(!exported.includes(Buffer.from('synthetic-evidence-erasure-source')))
+ // Re-sign the transport after tampering, so semantic receipt validation must
+ // reject incorrect counts or omitted retention before any custody admission.
+ for(const mutation of ['zero-count','omit-retention']) {
+  const destination=await runtime()
+  try {
+   await destination.signin()
+   const response=await destination.fetch('/api/archive/restore',{method:'POST',headers:{origin:destination.origin,'content-type':'application'+'/'+'octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:alterEntityReceipt(exported,entityReceipts[0].id,mutation)})
+   assert.equal(response.status,400,mutation+' must refuse custody admission')
+   assert.match(await response.text(),/Entity receipt counts or retention do not reconcile/)
+   assert.equal((await destination.db.prepare('SELECT count(*) AS n FROM receipts').first()).n,0)
+  }finally{await destination.close()}
+ }
  const restored=await runtime()
  try {
   await restored.signin()
   console.log('ERASE-001: restoring current erased archive')
-  const r=await restored.fetch('/api/archive/restore',{method:'POST',headers:{origin:restored.origin,'content-type':'application/octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:exported});assert.equal(r.status,200,await r.clone().text())
+  const r=await restored.fetch('/api/archive/restore',{method:'POST',headers:{origin:restored.origin,'content-type':'application'+'/'+'octet-stream','x-evidence-confirm':'restore','x-evidence-erasure-history':'unverified acknowledged'},body:exported});assert.equal(r.status,200,await r.clone().text())
   assert.equal((await (await restored.fetch('/api/privacy/requests/'+row.id)).json()).state,'complete')
+  for(const expected of entityReceipts){const actual=await (await restored.fetch('/api/privacy/requests/'+expected.id)).json();assert.equal(actual.state,'partial');assert.deepEqual(JSON.parse(actual.counts_json),JSON.parse(expected.counts_json))}
   const restoredPlan=JSON.parse((await (await restored.fetch('/api/privacy/requests/'+row.id)).json()).snapshot_json)
   assert.deepEqual(restoredPlan.classifications.map(c=>[c.kind,c.subject_id]),[['person',person.id],['vendor',vendor.id]])
   assert.deepEqual((await restored.db.prepare('SELECT kind,subject_id FROM privacy_exhibit_scopes WHERE exhibit_id=? ORDER BY kind').bind(receipt.exhibit_id).all()).results,[{kind:'person',subject_id:person.id},{kind:'vendor',subject_id:vendor.id}])
@@ -200,4 +215,99 @@ export async function erasureJourney(app) {
   assert.equal((await restored.fetch('/api/privacy/requests/'+heldPreview.id+'/confirm',{method:'POST',headers:{origin:restored.origin,'content-type':'application'+'/'+'json'},body:JSON.stringify({snapshot_hash:heldPreview.snapshot_hash,confirm:'ERASE'})})).status,409)
  }finally{await restored.close()}
  console.log('PASS ERASE-001: reviewed exhibit erasure, holds, exact confirmation, tombstone custody, old-archive refusal and populated restore')
+}
+
+async function entityExhibitBatches(app,post,person,vendor,engagement,requirement,controlId) {
+ const receipts=[]
+ const upload=async(label)=>{
+  const f=new FormData()
+  for(const [k,v]of Object.entries({source:'synthetic-evidence-'+label,covered_from:'2026-10-11',covered_to:'2026-10-11'}))f.set(k,v)
+  f.set('file',new File(['synthetic-evidence-bytes-'+label],'synthetic-evidence-'+label+'.txt'))
+  const r=await app.fetch('/app/requirements/'+requirement+'/uploads',{method:'POST',headers:{origin:app.origin},body:f});assert.equal(r.status,303)
+  return (await app.fetch(r.headers.get('location').replace('/app/','/api/'))).json()
+ }
+ const classify=(kind,subject_id,e)=>post('/api/privacy/classifications',{kind,subject_id,exhibit_id:e.exhibit_id,reason:'Reviewed entity batch membership'},201)
+ for(const kind of ['person','vendor','engagement','business']) {
+  const entity=kind==='person'?await post('/api/people',{name:'synthetic-evidence-batch-person',email:'batch-person@example.test',kind:'employee'},201):kind==='vendor'?await post('/api/vendors',{name:'synthetic-evidence-batch-vendor',criticality:'low'},201):kind==='engagement'?await post('/api/audit-engagements',{name:'synthetic-evidence-batch-engagement',period_from:'2026-10-11',period_to:'2026-10-11',control_ids:[controlId]},201):{id:'business'}
+  const subject_id=entity.id
+  const originals=[]
+  for(const label of ['remove-a','remove-b','held'])originals.push(await upload(kind+'-'+label))
+  const [a,b,kept]=originals
+  if(kind==='business') {
+   const unclassified=await post('/api/privacy/requests',{kind,subject_id,reason:'Refuse unclassified originals'},201)
+   assert.deepEqual(JSON.parse(unclassified.snapshot_json).unclassified.sort(),originals.map(e=>e.exhibit_id).sort())
+   await post('/api/privacy/requests/'+unclassified.id+'/confirm',{snapshot_hash:unclassified.snapshot_hash,confirm:'ERASE'},409)
+  }
+  for(const e of originals) {
+   if(kind==='engagement') {
+    const req=await post('/api/audit-engagements/'+subject_id+'/requests',{requests:JSON.stringify([{title:'Entity batch original',control_id:controlId,owner_person_id:person.id,due_date:'2026-10-15'}])},201)
+    await post('/api/audit-engagements/'+subject_id+'/requests/'+req.ids[0]+'/submissions',{receipt_id:e.id},201)
+   }else await classify(kind==='business'?'person':kind,kind==='business'?person.id:subject_id,e)
+  }
+  const held=await post('/api/privacy/holds',{kind:'exhibit',subject_id:kept.exhibit_id,reason:'Retain exact '+kind+' original',review_on:'2027-01-01'},201)
+  const make=()=>post('/api/privacy/requests',{kind,subject_id,reason:'Erase reviewed classified originals only'},201)
+  let request=await make(),plan=JSON.parse(request.snapshot_json)
+  assert.equal(plan.supported,true)
+  assert.deepEqual(new Set(plan.deletions),new Set([a.exhibit_id,b.exhibit_id]))
+  const retained=plan.retained.find(r=>r.exhibit_id===kept.exhibit_id)
+  assert.deepEqual(retained.holds.map(h=>[h.id,h.reason,h.authorized_name,h.review_on]),[[held.id,'Retain exact '+kind+' original','Evidence owner','2027-01-01']])
+  const confirm=()=>post('/api/privacy/requests/'+request.id+'/confirm',{snapshot_hash:request.snapshot_hash,confirm:'ERASE'})
+  await post('/api/privacy/requests/'+request.id+'/confirm',{snapshot_hash:request.snapshot_hash,confirm:'yes'},409)
+  await post('/api/privacy/requests/'+request.id+'/confirm',{snapshot_hash:'0'.repeat(64),confirm:'ERASE'},409)
+  // A newly attached legal hold invalidates the exact entity preview.
+  const late=await post('/api/privacy/holds',{kind:'exhibit',subject_id:a.exhibit_id,reason:'Changed since preview',review_on:'2027-01-01'},201)
+  await post('/api/privacy/requests/'+request.id+'/confirm',{snapshot_hash:request.snapshot_hash,confirm:'ERASE'},409)
+  await post('/api/privacy/holds/'+late.id+'/release',{reason:'Review resolved'})
+  request=await make();plan=JSON.parse(request.snapshot_json)
+  await app.db.prepare("CREATE TRIGGER synthetic_entity_audit BEFORE INSERT ON product_audit WHEN NEW.action='privacy.confirmed' BEGIN SELECT RAISE(ABORT,'synthetic-evidence-batch-audit-failure'); END").run()
+  await post('/api/privacy/requests/'+request.id+'/confirm',{snapshot_hash:request.snapshot_hash,confirm:'ERASE'},503)
+  assert.equal((await (await app.fetch('/api/privacy/requests/'+request.id)).json()).state,'preview')
+  for(const e of originals)assert.equal((await app.fetch('/api/receipts/'+e.id+'/download')).status,200,'failed atomic admission preserves every original')
+  await app.db.prepare('DROP TRIGGER synthetic_entity_audit').run()
+  await app.setSettings({HARNESS_R2_DELETE_FAILURE:'true'})
+  const pending=await confirm()
+  assert.equal(pending.state,'pending');assert.equal(pending.completed_at,null)
+  assert.equal(JSON.parse(pending.counts_json).child_requests.length,2)
+  for(const e of [a,b])assert.equal(await (await (await app.mf.getR2Bucket('EXHIBITS')).get(e.object_key)).text(),'synthetic-evidence-bytes-'+kind+(e.id===a.id?'-remove-a':'-remove-b'))
+  assert.equal((await app.fetch('/api/archive/export')).status,400)
+  await app.setSettings({HARNESS_R2_DELETE_FAILURE:undefined})
+  const completed=await Promise.all([confirm(),confirm()])
+  assert.deepEqual(completed[0],completed[1],'concurrent retries return the same durable receipt')
+  const finished=completed[0],counts=JSON.parse(finished.counts_json)
+  assert.equal(finished.state,'partial');assert.equal(finished.completed_at,null,'a batch never reports whole-entity completion')
+  assert.deepEqual([counts.R2,counts.D1_fields],[2,4])
+  assert.deepEqual(counts.retained,plan.retained)
+  for(const childId of counts.child_requests)assert.equal((await (await app.fetch('/api/audit')).json()).entries.filter(e=>e.action==='privacy.completed'&&e.subject==='privacy:'+childId).length,1,'each child completes once under competing retries')
+  assert.match(counts.remaining,/Entity profiles/)
+  for(const e of [a,b]){assert.equal((await app.fetch('/api/receipts/'+e.id+'/download')).status,410);assert.equal(await (await app.mf.getR2Bucket('EXHIBITS')).get(e.object_key),null)}
+  const stillKept=await app.fetch('/api/receipts/'+kept.id+'/download')
+  assert.equal(stillKept.status,200);assert.equal(await stillKept.text(),'synthetic-evidence-bytes-'+kind+'-held')
+  assert.deepEqual((await confirm()).counts_json,finished.counts_json,'retry never admits duplicate children')
+  assert.equal((await (await app.fetch('/api/audit')).json()).entries.filter(e=>e.action==='privacy.partially-erased'&&e.subject==='privacy:'+request.id).length,1)
+  await assert.rejects(app.db.prepare("UPDATE privacy_requests SET state='complete' WHERE id=?").bind(request.id).run(),/retained_partial_erasure/)
+  receipts.push(finished)
+ }
+ console.log('PASS ERASE-001: exact entity exhibit batches, retained hold disclosure, atomic admission, durable retry and honest partial receipts')
+ return receipts
+}
+
+function alterEntityReceipt(source,id,mutation) {
+ const magic=Buffer.from('EVIDENCE-ARCHIVE\n'),parts=[magic],hash=createHash('sha256')
+ let at=magic.length,changed=0
+ while(at<source.length) {
+  const size=source.readUInt32BE(at);at+=4
+  const frame=JSON.parse(source.subarray(at,at+size));at+=size
+  if(frame.type==='rows'&&frame.table==='privacy_requests')for(const row of frame.rows)if(row.id===id){
+   const counts=JSON.parse(row.counts_json)
+   if(mutation==='zero-count')counts.R2=0
+   else counts.retained=[]
+   row.counts_json=JSON.stringify(counts);changed++
+  }
+  if(frame.type==='end')frame.sha256=hash.digest('hex')
+  const body=Buffer.from(JSON.stringify(frame)),prefix=Buffer.alloc(4);prefix.writeUInt32BE(body.length)
+  parts.push(prefix,body)
+  if(frame.type!=='end')hash.update(prefix).update(body)
+ }
+ assert.equal(changed,1)
+ return Buffer.concat(parts)
 }

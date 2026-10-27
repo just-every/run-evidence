@@ -2820,6 +2820,7 @@
           "migrations/core/0069_credential_displays.sql",
           "migrations/core/0070_engagement_holds.sql",
           "migrations/core/0071_privacy_classifications.sql",
+          "migrations/core/0072_partial_erasure_receipts.sql",
           "package.json",
           "packaging.json",
           "pnpm-lock.yaml",

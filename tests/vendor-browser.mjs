@@ -35,6 +35,19 @@ try {
  const privacyUpload=await app.fetch(controlResponse.headers.get('location')+'/uploads',{method:'POST',headers:{origin:app.origin},body:privacyFormData})
  assert.equal(privacyUpload.status,303)
  const privacyReceipt=await (await app.fetch(privacyUpload.headers.get('location').replace('/app/','/api/'))).json()
+ const entityBatches={}
+ for(const width of [1440,390]) {
+  const subject=await api('/api/people',{name:'synthetic-evidence-batch-'+width,email:'batch-'+width+'@example.test',kind:'employee'})
+  const originals=[]
+  for(const label of ['remove','keep']) {
+   const f=new FormData();f.set('source','synthetic-evidence-'+label);f.set('covered_from','2026-11-02');f.set('covered_to','2026-11-02');f.set('file',new File(['synthetic-evidence-'+label+'-'+width],'synthetic-evidence-'+label+'.txt'))
+   const upload=await app.fetch(controlResponse.headers.get('location')+'/uploads',{method:'POST',headers:{origin:app.origin},body:f});assert.equal(upload.status,303)
+   const e=await (await app.fetch(upload.headers.get('location').replace('/app/','/api/'))).json();originals.push(e)
+   await api('/api/privacy/classifications',{kind:'person',subject_id:subject.id,exhibit_id:e.exhibit_id,reason:'Reviewed batch exhibit'})
+  }
+  await api('/api/privacy/holds',{kind:'exhibit',subject_id:originals[1].exhibit_id,reason:'Retain batch original '+width,review_on:'2027-01-01'})
+  entityBatches[width]={subject,originals}
+ }
  app.setCookie('')
  server = createServer(async (req, res) => {
   try {
@@ -218,6 +231,23 @@ try {
   await page.getByRole('heading',{name:'Erasure review',exact:true}).waitFor()
   await page.getByText('No completed erasure is claimed.').waitFor()
   await capture('privacy-refused-scope')
+  await page.goto(origin+'/app/privacy')
+  const batchForm=page.locator('form[action="/app/privacy/requests"]')
+  await batchForm.getByLabel('Scope').selectOption('person')
+  await batchForm.getByLabel('Subject ID').fill(entityBatches[width].subject.id)
+  await batchForm.getByLabel('Reason').fill('Erase classified exhibits; retain held original')
+  await batchForm.getByRole('button').click()
+  await page.getByText('Exact affected stores',{exact:true}).click()
+  if(width===1440){const plan=JSON.parse(await page.locator('pre').first().innerText());assert.deepEqual(plan.deletions,[entityBatches[width].originals[0].exhibit_id]);assert.equal(plan.retained[0].holds[0].reason,'Retain batch original 1440')}
+  await page.getByText('Exact affected stores',{exact:true}).click()
+  await capture('privacy-entity-preview')
+  await page.getByLabel('Type ERASE').fill('ERASE')
+  await page.getByRole('button',{name:'Confirm erasure',exact:true}).click()
+  await page.getByRole('heading',{name:'Erasure partial',exact:true}).waitFor()
+  await page.getByText('Exact deletion receipt',{exact:true}).click()
+  if(width===1440){assert.equal(await page.getByLabel('Type ERASE').count(),0);const receipt=JSON.parse(await page.locator('pre').nth(1).innerText());assert.equal(receipt.R2,1);assert.equal(receipt.retained[0].exhibit_id,entityBatches[width].originals[1].exhibit_id)}
+  await page.getByText('Exact deletion receipt',{exact:true}).click()
+  await capture('privacy-entity-partial')
   await page.goto(origin + '/app/privacy')
   const holdForm=page.locator('form[action="/app/privacy/holds"]')
   await holdForm.getByLabel('Scope').selectOption('business')
@@ -237,6 +267,9 @@ try {
   if(width===1440)assert.deepEqual(iconControls,[],'the touched desk uses visible words for every control')
   await page.goto(origin+'/app/privacy')
   if(width===1440)assert.deepEqual(await page.locator('button,a,summary').evaluateAll(elements=>elements.filter(e=>!e.textContent.trim()&&!e.querySelector('input')).map(e=>e.outerHTML)),[],'Privacy controls have visible labels')
+  const releaseForm=page.locator('section').filter({hasText:'Preserve records for review'}).locator('form')
+  await releaseForm.getByLabel('Release reason').fill('Review completed for this proof')
+  await releaseForm.getByRole('button',{name:'Release hold'}).click()
   assert.deepEqual(errors, [])
   await context.close()
   console.log(`PASS VENDOR-001: register, diligence page and supplier link screens at ${width}`)
