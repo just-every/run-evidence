@@ -6,10 +6,31 @@ import { validChoice } from '../answer/format'
 export async function validateFeatureRecords(env:Store,id:string) {
  await validateManifestArchive(env,id)
  const t=(name:string)=>staged(id,name)
+ for(const [kind,table]of [['person','people'],['vendor','vendors'],['engagement','audit_engagements']])if(await env.DB.prepare(`SELECT 1 FROM ${t('privacy_exhibit_scopes')} s WHERE s.kind=? AND NOT EXISTS(SELECT 1 FROM ${t(table)} p WHERE p.id=s.subject_id) LIMIT 1`).bind(kind).first())fail('Invalid retained privacy classification subject.')
  for(const table of ['privacy_requests','vendor_document_reviews','questionnaire_drafts','tailoring_proposals'])for await(const rows of pages(env,table,t(table)))for(const r of rows){
   if(typeof r.snapshot_json!=='string'||await sha(new TextEncoder().encode(r.snapshot_json))!==r.snapshot_hash)fail('Retained review fingerprint does not match.')
   let value:any;try{value=JSON.parse(r.snapshot_json)}catch{fail('Invalid retained review JSON.')}
-  if(table==='privacy_requests'){if(value.kind!==r.kind||value.subject!==r.subject_id||!['preview','pending','complete'].includes(String(r.state)))fail('Invalid retained erasure scope.')}
+  if(table==='privacy_requests'){
+   if(value.kind!==r.kind||value.subject!==r.subject_id||!['preview','pending','partial','complete'].includes(String(r.state)))fail('Invalid retained erasure scope.')
+   if(r.state==='partial'&&r.kind==='exhibit'||r.kind!=='exhibit'&&r.state==='complete')fail('Entity erasure cannot claim whole-entity completion.')
+   if(r.kind!=='exhibit'&&['pending','partial'].includes(String(r.state))){
+    let counts:any;try{counts=JSON.parse(String(r.counts_json))}catch{fail('Invalid entity deletion receipt.')}
+    if(!value.supported||!Array.isArray(value.items)||!Array.isArray(value.deletions)||!Array.isArray(value.retained)||!Array.isArray(counts.child_requests)||counts.child_requests.length!==value.deletions.length||new Set(counts.child_requests).size!==counts.child_requests.length)fail('Incomplete entity deletion receipt.')
+    const expectedDeletions=value.items.filter((p:any)=>!p.holds.length&&p.supported).map((p:any)=>p.subject)
+    const expectedRetained=value.items.filter((p:any)=>p.holds.length).map((p:any)=>({exhibit_id:p.subject,holds:p.holds}))
+    if(JSON.stringify(value.deletions)!==JSON.stringify(expectedDeletions)||JSON.stringify(value.retained)!==JSON.stringify(expectedRetained))fail('Entity snapshot retention or deletion set does not reconcile.')
+    const subjects=[],folders=new Set<string>()
+    for(const childId of counts.child_requests){
+     const child=await env.DB.prepare(`SELECT * FROM ${t('privacy_requests')} WHERE id=?`).bind(childId).first<any>()
+     const plan=value.items.find((p:any)=>p.subject===child?.subject_id)
+     if(!child||child.kind!=='exhibit'||!plan||!value.deletions.includes(child.subject_id)||!['pending','complete'].includes(child.state)||JSON.stringify(plan)!==child.snapshot_json||plan.holds.length||!plan.supported||r.state==='partial'&&child.state!=='complete')fail('Entity receipt contradicts its exhibit deletion.')
+     subjects.push(child.subject_id)
+     for(const f of plan.folders)if(!f.closed_at)folders.add(f.id)
+    }
+    if(new Set(subjects).size!==value.deletions.length)fail('Entity receipt repeats an exhibit deletion.')
+    if(r.state==='partial'&&(r.completed_at!==null||counts.R2!==subjects.length||counts.D1_fields!==subjects.length*2||counts.live_shares!==folders.size||JSON.stringify(counts.retained)!==JSON.stringify(value.retained)||counts.remaining!==value.remaining))fail('Entity receipt counts or retention do not reconcile.')
+   }
+  }
   else if(table==='questionnaire_drafts') {
    const q=await env.DB.prepare(`SELECT questions_json,sha256 FROM ${t('questionnaires')} WHERE id=?`).bind(r.questionnaire_id).first<{questions_json:string;sha256:string}>()
    if(!q||JSON.stringify(value.questions)!==q.questions_json||value.template_sha256!==q.sha256||!Array.isArray(value.answers)||value.answers.length!==value.questions.length)fail('Questionnaire draft contradicts its retained template.')
