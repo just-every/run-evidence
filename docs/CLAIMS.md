@@ -16,7 +16,7 @@ A claim is done when every clause behind it is done, missing when every one is m
 | 8 | Hero | Exhibit B: "S3 buckets encrypted · AWS · 12 of 12" | `CLOUD-001` done; `TEST-001` partial | partial |
 | 9 | Hero | Exhibit C: laptop disk encryption, 1 failing → fixed, re-tested | `DEVICE-001` missing; `DEVICE-002` missing; `REMEDY-001` partial | partial |
 | 10 | Hero | "SOC 2 Type II 94% ready" | `READINESS-001` partial | partial |
-| 11 | Hero | Checklist: "Policies · Access reviews · Vendor risk · Trust center" | `READINESS-001` partial; `POLICY-001` partial; `ACCESS-001` done; `VENDOR-001` done; `TRUST-001` partial | partial |
+| 11 | Hero | Checklist: "Policies · Access reviews · Vendor risk · Trust center" | `READINESS-001` partial; `POLICY-001` partial; `ACCESS-001` partial; `VENDOR-001` done; `TRUST-001` partial | partial |
 | 12 | Hero | AWS, GitHub, Google Workspace and Okta connections | `CLOUD-001` done; `CODE-001` partial; `IDENTITY-001` done | partial |
 | 13 | Hero | Jamf tile; "Device systems · Endpoints" | `DEVICE-001` missing | missing |
 | 14 | Hero | "HR systems · People" | `HRIS-001` missing; `POPULATION-001` done | partial |

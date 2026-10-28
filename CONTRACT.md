@@ -1639,8 +1639,8 @@ Judged from the code and tests at commit `dd2c24078e57bfbccb54bb40c6dedf3a8cf18f
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 4 | 4 | 0 | 8 |
-| Target and push further | 36 | 25 | 28 | 89 |
-| All | 40 | 29 | 28 | 97 |
+| Target and push further | 35 | 26 | 28 | 89 |
+| All | 39 | 30 | 28 | 97 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -1703,7 +1703,7 @@ Judged from the code and tests at commit `dd2c24078e57bfbccb54bb40c6dedf3a8cf18f
 | `TRAIN-001` | Shipped security training and KnowBe4 evidence | target | partial | `tests/training.mjs`; `tests/helpers/training-browser.mjs` | Point 3's real KnowBe4 sandbox completion is unproved: no authorized KnowBe4 reporting API key is held (R-7). The controlled KnowBe4 network edge is not a live sandbox receipt. |
 | `LIFECYCLE-001` | Joiner, mover and leaver compliance | target | missing |  | No implementing path: departures end sign-in and close attestations; checklists, HRIS events and background checks not built |
 | `LIFECYCLE-002` | Ownership handover when a person leaves | target | done | `src/evidence/handover/`; `src/evidence/attest/storage.ts`; `src/evidence/program/readiness.ts`; `src/evidence/program/control.ts`; `tests/handover.mjs` |  |
-| `ACCESS-001` | Quarterly access-review campaigns | target | done | `src/evidence/access/`; `migrations/core/0044_access_cadence.sql`; `tests/access.mjs` |  |
+| `ACCESS-001` | Quarterly access-review campaigns | target | partial | `src/evidence/access/`; `migrations/core/0044_access_cadence.sql`; `tests/access.mjs` | Point 3's complete decision export is not asserted: the export is read for the whole frozen population (9 items) and for one decision (the guest revoke with its reason and decider), and its CSV for the row count and revocation evidence; the employee retain, privileged-service change and uploaded-list decisions and the exclusion are never read from either. The quarterly campaign, own-access and other-owner refusals, delegation, unresolved and verified revocations, the re-uploaded list, the attached-exhibit receipt and the next quarterly period are asserted. |
 | `AUDIT-001` | Period-specific auditor workspace and request lists | target | done | `tests/review.mjs`; `tests/helpers/engagement-journey.mjs`; `tests/engagement-browser.mjs`; `tests/helpers/engagement-browser.mjs`; `tests/handover.mjs`; `tests/readiness.mjs` |  |
 | `AUDIT-002` | Type II populations, sampling and non-occurrence | target | missing |  | No implementing path |
 | `AUDIT-003` | Auditor review of continuous test evidence for the period | target | done | `tests/review.mjs`; `tests/helpers/audit-sharing-journey.mjs`; `tests/engagement-browser.mjs`; `tests/helpers/audit-remediation-journey.mjs` |  |

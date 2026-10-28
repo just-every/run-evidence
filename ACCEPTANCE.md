@@ -8,10 +8,10 @@ The primary journey: a US security lead moves in from an incumbent or starts fre
 
 | Tier | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
-| Core | 40 | 29 | 21 | 90 |
+| Core | 39 | 30 | 21 | 90 |
 | Agent surface | 0 | 0 | 7 | 7 |
 | Later | 0 | 0 | 0 | 0 |
-| Full target | 40 | 29 | 28 | 97 |
+| Full target | 39 | 30 | 28 | 97 |
 
 Judged from the code and tests at commit `dd2c24078e57bfbccb54bb40c6dedf3a8cf18fc5` (21 October 2026). Field proof register: 14 rows; 3 passed, 0 failed, 11 not run.
 
@@ -1066,7 +1066,7 @@ Core · target · **done**
 
 #### ACCESS-001 — Quarterly access-review campaigns
 
-Core · target · **done** · Rules D-1, D-3
+Core · target · **partial** · Rules D-1, D-3
 
 **Requirement.** Schedule quarterly, semi-annual, annual (CADENCE-001) and owner-configured access reviews using a frozen source population of users, service identities, privileges and resources, drawn from identity connectors and from app-level account connectors (APPS-001) with in-app roles and MFA. Apps that are not connected or not behind SSO join a review through an uploaded account list (POPULATION-001), reconciled to people in Inventory and labeled manual provenance. Revocation in such an app is evidenced by a re-uploaded list or an attached exhibit, never by the reviewer's decision alone. Resource owners decide retain/revoke/change with reasons; self-review restrictions and delegated approvals are explicit. Track overdue decisions, reminders, exclusions and actual revocation readback; late discovered accounts become visible supplemental work. Owner-configured cadence, revocation evidence and People reconciliation follow `docs/rules/access-reviews.md`.
 
@@ -1077,7 +1077,7 @@ Core · target · **done** · Rules D-1, D-3
 4. Add an unconnected SaaS app by uploading its account list: decide revoke on a departed person's account, re-upload the list without that account, and confirm the revocation is evidenced by the new upload with both lists retained.
 
 **Evidence.** `src/evidence/access/`; `migrations/core/0044_access_cadence.sql`; `tests/access.mjs`
-**Gap.** None.
+**Gap.** Point 3's complete decision export is not asserted: the export is read for the whole frozen population (9 items) and for one decision (the guest revoke with its reason and decider), and its CSV for the row count and revocation evidence; the employee retain, privileged-service change and uploaded-list decisions and the exclusion are never read from either. The quarterly campaign, own-access and other-owner refusals, delegation, unresolved and verified revocations, the re-uploaded list, the attached-exhibit receipt and the next quarterly period are asserted.
 
 ### Audit collaboration
 

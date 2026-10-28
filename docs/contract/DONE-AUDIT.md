@@ -462,7 +462,8 @@ Every acceptance point of every part of a clause that was done at `c252c8f42873f
 | `ACCESS-001` | 2 | Revocation is requested | `tests/access.mjs:86` | asserted |
 | `ACCESS-001` | 2 | With the source account still active the revocation stays unresolved | `tests/access.mjs:91` | asserted |
 | `ACCESS-001` | 3 | Revoking in the source and re-reading verifies the revocation | `tests/access.mjs:98` | asserted |
-| `ACCESS-001` | 3 | The export carries the population and every decision | `tests/access.mjs:127` | asserted |
+| `ACCESS-001` | 3 | The export carries the whole frozen population | `tests/access.mjs:127` | asserted |
+| `ACCESS-001` | 3 | The export carries every decision — only the guest revoke, with its reason and decider, is read from it (tests/access.mjs:128); the employee retain, privileged-service change and uploaded-list decisions and the exclusion are never read from the JSON or CSV export | none | none |
 | `ACCESS-001` | 3 | The export carries the revocation and period evidence | `tests/access.mjs:130` | asserted |
 | `ACCESS-001` | 4 | Revoke is decided on a departed person's account in an uploaded app list | `tests/access.mjs:78` | asserted |
 | `ACCESS-001` | 4 | The re-uploaded list without the account evidences the revocation | `tests/access.mjs:99` | asserted |
@@ -638,4 +639,4 @@ Every acceptance point of every part of a clause that was done at `c252c8f42873f
 | `BOUNDARY-001` | 3 | No UI claims certification or legal sufficiency | `tests/program.mjs:101` | asserted |
 | `BOUNDARY-001` | 3 | No report or pack claims certification | `tests/program.mjs:120` | asserted |
 
-Rows: 633; 600 asserted, 26 none, 7 moved. Parts audited: 54; demoted to partial: 14 (CADENCE-001, FOLLOWUP-001, GAP-001, IMPORT-001, LIBRARY-002, LOG-001, OPS-001, POLICY-001, PROGRAM-001, PUBLIC-001, READINESS-001, REMEDY-001, TEST-001, WORK-003).
+Rows: 634; 600 asserted, 27 none, 7 moved. Parts audited: 54; demoted to partial: 15 (ACCESS-001, CADENCE-001, FOLLOWUP-001, GAP-001, IMPORT-001, LIBRARY-002, LOG-001, OPS-001, POLICY-001, PROGRAM-001, PUBLIC-001, READINESS-001, REMEDY-001, TEST-001, WORK-003).
