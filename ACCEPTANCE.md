@@ -135,8 +135,8 @@ Core · published · **done** · Cites BASE-AGENT-005, BASE-AGENT-008 · Rules D
 
 **Acceptance.** Through the agent commands and API and the owner agent page:
 1. Issue a prepare token, inspect gaps and propose a folder.
-2. Attempt direct sharing, owner-only mutation, approval with an agent token and stale-snapshot approval; refuse each.
-3. Have the owner approve the current snapshot, revisit its immutable decision and revoke the token.
+2. With that prepare-only token, attempt direct sharing, an owner-only mutation and an approval, and with the owner session a stale-snapshot approval; refuse each.
+3. Under the prepare-only grant, the owner approves the current snapshot, revisits its immutable decision and revokes the token.
 
 **Evidence.** `src/evidence/agent/http.ts`; `src/evidence/agent/storage.ts`; `tests/agent.mjs`; `docs/AGENT-COMMANDS.md`
 **Gap.** None.
@@ -973,7 +973,7 @@ Core · target · **missing** · Rules D-8
 - **Spend sources:** QuickBooks Online vendors and bills, Ramp vendors and card transactions, and Brex vendors and expenses, each with amounts and dates.
 - **Connected sources:** app-account connectors (APPS-001) and cloud marketplace subscriptions visible through CLOUD-001.
 
-Each candidate shows the source records that surfaced it. Candidates seen in several sources merge only through a reviewable match. A human confirms identity, ownership and data access before risk-tier assignment or external diligence. Accepted vendors start tier-specific recurring reviews (CADENCE-001). A follow-up to a supplier reaches someone outside the business, so an agent's call that prepares or sends one carries the external class, which the company's policy decides.
+Each candidate shows the source records that surfaced it. Candidates seen in several sources merge only through a reviewable match. Identity, ownership and data access are confirmed before risk-tier assignment or external diligence; confirming a candidate is a standard call and sending diligence an external one, each of which the company's policy decides. Accepted vendors start tier-specific recurring reviews (CADENCE-001). A follow-up to a supplier reaches someone outside the business, so an agent's call that prepares or sends one carries the external class, which the company's policy decides.
 
 **Acceptance.** Through Connections and Vendors:
 1. Connect each of the six named grant and spend sources (Google Workspace, Entra ID, Okta, QuickBooks Online, Ramp and Brex): each surfaces at least one candidate citing its source records (granted scopes and users, or spend amounts and dates).
@@ -1526,7 +1526,7 @@ Core · push-further · **missing** · Rules D-2, D-8
 
 Core · push-further · **done** · Rules D-4
 
-**Requirement.** An agent tracks dependencies from approved trust statements and questionnaire answers to controls, exhibits, policies, audit periods and customer contract commitments. Changed/failed/stale sources invalidate affected answers for reuse and prepare a cited revision plus a named security/legal-owner decision. Publishing a revised promise or sending it to a customer reaches people outside the business and binds it, so an agent's call that does so carries the external and commitment classes, which the company's policy decides; whoever decides, the decision binds the exact version and recipients. The agent can chase internal review under the follow-up rules, and nothing silently sends a new security promise. Dependencies are exact owner-selected source relationships (`docs/CUSTOMER-PROMISES.md`).
+**Requirement.** An agent tracks dependencies from approved trust statements and questionnaire answers to controls, exhibits, policies, audit periods and customer contract commitments. Changed/failed/stale sources invalidate affected answers for reuse and prepare a cited revision for its security or legal owner; whether that person or an agent's call decides it is the company's policy for its commitment class. Publishing a revised promise or sending it to a customer reaches people outside the business and binds it, so an agent's call that does so carries the external and commitment classes, which the company's policy decides; whoever decides, the decision binds the exact version and recipients. The agent can chase internal review under the follow-up rules, and nothing silently sends a new security promise. Dependencies are exact owner-selected source relationships (`docs/CUSTOMER-PROMISES.md`).
 
 **Acceptance.** Through answers, trust statements and their exports:
 1. Approve an answer and trust statement linked to a passing control and contract obligation, then fail the control and change the source policy.

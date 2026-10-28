@@ -59,13 +59,13 @@ Every acceptance point of every part of a clause that was done at `c252c8f42873f
 | `AGENT-001` | 1 | The owner issues a prepare token | `tests/agent.mjs:44` | asserted |
 | `AGENT-001` | 1 | The agent inspects gaps on the desk | `tests/agent.mjs:57` | asserted |
 | `AGENT-001` | 1 | The agent proposes a folder with a frozen snapshot | `tests/agent.mjs:67` | asserted |
-| `AGENT-001` | 2 | Direct sharing (creating a folder) with an agent token is refused | `tests/agent.mjs:50` | asserted |
-| `AGENT-001` | 2 | An owner-only mutation with an agent token is refused | `tests/agent.mjs:49` | asserted |
-| `AGENT-001` | 2 | Approval with an agent token is refused, even with an ambient owner cookie | `tests/agent.mjs:80` | asserted |
-| `AGENT-001` | 2 | Approval of a stale snapshot is refused | `tests/agent.mjs:104` | asserted |
-| `AGENT-001` | 3 | The owner approves the current snapshot once | `tests/agent.mjs:83` | asserted |
-| `AGENT-001` | 3 | The decision is revisited with its actor and exact snapshot and cannot be removed | `tests/agent.mjs:84` | asserted |
-| `AGENT-001` | 3 | A revoked token can no longer inspect or prepare | `tests/agent.mjs:116` | asserted |
+| `AGENT-001` | 2 | Direct sharing (creating a folder) with the prepare-only token is refused | `tests/agent.mjs:50` | asserted |
+| `AGENT-001` | 2 | An owner-only mutation with the prepare-only token is refused | `tests/agent.mjs:49` | asserted |
+| `AGENT-001` | 2 | Approval with the prepare-only token is refused, even with an ambient owner cookie | `tests/agent.mjs:80` | asserted |
+| `AGENT-001` | 2 | Approval of a stale snapshot with the owner session is refused | `tests/agent.mjs:104` | asserted |
+| `AGENT-001` | 3 | Under the prepare-only grant, the owner approves the current snapshot once | `tests/agent.mjs:83` | asserted |
+| `AGENT-001` | 3 | The owner revisits the decision with its actor and exact snapshot, and it cannot be removed | `tests/agent.mjs:84` | asserted |
+| `AGENT-001` | 3 | The revoked prepare-only token can no longer inspect or prepare | `tests/agent.mjs:116` | asserted |
 | `PROGRAM-001` | 1 | Each of the four core programs is created | `tests/program.mjs:38` | asserted |
 | `PROGRAM-001` | 1 | Two scoped products are recorded | `tests/program.mjs:41` | asserted |
 | `PROGRAM-001` | 1 | A program carries its own audit period | `tests/program.mjs:46` | asserted |
