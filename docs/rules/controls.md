@@ -1,0 +1,5 @@
+# Control revision rules
+
+These are the exact rules, bounds and formats behind CONTROL-001 and CONTROL-002 in [CONTRACT.md](../../CONTRACT.md). The contract holds the requirement and its acceptance; this page holds the mechanism they rely on, as recorded when the contract was rewritten to the RER contract standard on 28 October 2026.
+
+A control's applicability, test intent and evaluation criteria are owner-written definition text; automated tests retain their own versioned structured criteria. Every new run captures both the control/evidence definition and its actual evaluated test criteria. Prior runs without a captured control definition are labeled unavailable, never reconstructed. Requirement and control edits apply from server UTC time; schedule revisions retain CADENCE-001's anchors. Import confirmation explicitly excludes the displayed invalid rows and admits only valid rows; unchanged, added, changed and removed comparisons use stable requirement IDs and exact normalized field/mapping values.

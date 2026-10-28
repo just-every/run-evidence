@@ -9,9 +9,11 @@
       ]
     },
     "PROGRAM-003": {
-      "how": "kept",
+      "how": "split",
       "to": [
-        "PROGRAM-003"
+        "PROGRAM-003",
+        "PROGRAM-005",
+        "PROGRAM-006"
       ]
     },
     "PROGRAM-004": {
@@ -21,9 +23,13 @@
       ]
     },
     "LIBRARY-001": {
-      "how": "kept",
+      "how": "split",
       "to": [
-        "LIBRARY-001"
+        "LIBRARY-001",
+        "LIBRARY-002",
+        "LIBRARY-003",
+        "LIBRARY-004",
+        "LIBRARY-005"
       ]
     },
     "PROGRAM-002": {
@@ -33,9 +39,10 @@
       ]
     },
     "CONTROL-001": {
-      "how": "kept",
+      "how": "split",
       "to": [
-        "CONTROL-001"
+        "CONTROL-001",
+        "CONTROL-002"
       ]
     },
     "READINESS-001": {
@@ -147,9 +154,11 @@
       ]
     },
     "ISSUES-001": {
-      "how": "kept",
+      "how": "split",
       "to": [
-        "ISSUES-001"
+        "ISSUES-001",
+        "ISSUES-002",
+        "ISSUES-003"
       ]
     },
     "INVENTORY-001": {
@@ -183,9 +192,10 @@
       ]
     },
     "WORK-001": {
-      "how": "kept",
+      "how": "split",
       "to": [
-        "WORK-001"
+        "WORK-001",
+        "WORK-003"
       ]
     },
     "WORK-002": {

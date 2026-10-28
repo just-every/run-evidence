@@ -1,4 +1,4 @@
-# Target acceptance
+# Target acceptance (before the contract cleanup)
 
 Target date: **16 October 2026**. This extends the original first-release journey list to the complete Evidence product. Every named contract clause has one acceptance item below, in the existing journey-list form. Status describes the code at `752e0d4a6dea5f6f5f97c23fb00b5e4bb6ce8601`, as judged in the CONTRACT.md Status section, not a promised release or a test-run receipt. `done` clauses have implemented behavior and cited existing tests; `partial` and `missing` items are work for build rounds. Planned UI names are acceptance destinations, not present capabilities.
 

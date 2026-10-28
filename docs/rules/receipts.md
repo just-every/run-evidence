@@ -1,0 +1,11 @@
+# Receipt rules
+
+These are the exact rules, bounds and formats behind PROOF-001 in [CONTRACT.md](../../CONTRACT.md). The contract holds the requirement and its acceptance; this page holds the mechanism they rely on, as recorded when the contract was rewritten to the RER contract standard on 28 October 2026.
+
+These rules define existing receipt, cadence, bearer-folder and custody behavior. Target program automation adds independently attributable observations and permissions; it must not relabel manual/imported material, silently change historical period logic or grant external authority on restore. Explicit erasure under ERASE-001 is the only target exception to ordinary immutable-record deletion rules.
+
+The receipt origin vocabulary is exactly source-observed, manually-asserted, or imported. The manual upload route always writes manually-asserted; a caller cannot select imported or source-observed. Caller-supplied origin, actor, digest and time are ignored. The authenticated Base owner identity and server UTC timestamp are recorded. Source and inclusive covered-from/through UTC dates are owner assertions, including future coverage; the desk does not verify their truth.
+
+The server writes a fresh random R2 key, then reads the stored bytes and computes SHA-256. A filename is display metadata, never a key or filesystem path. Each upload appends an Exhibit and Receipt in a D1 transaction. Supersession requires an explicit current receipt belonging to the same requirement. The newer receipt points to the old; no old fact or byte is changed. A unique constraint prevents concurrent double replacements. Old files remain listed and downloadable. Receipt/exhibit update and deletion are forbidden by SQLite triggers. An interrupted storage/DB operation may leave unreferenced bytes, but never a successful invented receipt.
+
+Files are nonempty and limited to 10 MiB; the multipart body is streamed with a 10 MiB + 64 KiB cap before parsing. Downloads require owner authorization, force attachment and octet-stream, include nosniff and a sandbox policy, and do not preview HTML/SVG. Every read verifies actual R2 bytes against retained size and SHA-256. Missing, unreadable or changed bytes are unavailable; the receipt remains.

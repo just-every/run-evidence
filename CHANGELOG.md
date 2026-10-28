@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-28 — contract cleanup to the RER contract standard
+
+- CONTRACT.md follows the RER contract standard: one capability per clause with at most eight acceptance points, a Tier on every clause, door rules D-1 to D-8 stated once, the Shared duties (Base) table, the Agent surface with SURFACE-001 to SURFACE-007, a Field proof register (R-1 to R-14), Boundaries and the Homepage claims table. ACCEPTANCE.md and docs/CLAIMS.md are now generated from it by `src/base/contract-docs.mjs`.
+- Splits: PROGRAM-003 into PROGRAM-003, PROGRAM-005 (ISO 27001 records) and PROGRAM-006 (PCI DSS SAQ); LIBRARY-001 into LIBRARY-001 to LIBRARY-005 (library, catalogs and remediation guidance, cadence, revisions, one observation across frameworks); CONTROL-001 into CONTROL-001 and CONTROL-002 (custom framework import); ISSUES-001 into ISSUES-001 to ISSUES-003 (security issues, incidents, selector revisions and tracker tasks); WORK-001 into WORK-001 and WORK-003 (Evidence-origin tracker field writes). No clause was retired.
+- Rulings moved to RULINGS.md (RL-1 to RL-14), with ct's ruling pass of 28 October (RL-101 to RL-104); exact rules, bounds and formats moved to `docs/rules/`; the old hand-written ACCEPTANCE.md is kept at `docs/contract/acceptance-before-cleanup.md`. The status narratives that the old Status section and Gap cells carried are preserved below, in the contract source before this change.
+- Live-provider proof that the old Gaps named (provider accounts, tracker and messaging workspaces, incumbent tenants, KnowBe4, SSO tenants, licensed questionnaires, the screen-reader pass and a VPAT) is now the Field proof register. The Okta sandbox SSO run of 26 October, the SendGrid delivery of 25 October and the Anthropic tailoring call of 26 October are its passed rows.
+- The carried-done audit (`docs/contract/DONE-AUDIT.md`) proves every point of every clause done at the old reference; parts it could not prove are partial with their Gap.
+
 ## 2026-10-20
 
 - Rebuilt the homepage on the owner-approved page-s1 structure: after the unchanged hero, the buyer's first SOC 2 Type II from March to December (a true-scale year timeline, the first scan, fixes re-tested, policies signed, the 183-day record, the agent's Jul 14 investigation, the Exhibit D interlude, fieldwork requests, the trust center and ISO 27001), the switcher's note, the honest limit and the unchanged closing. Every drawing is HTML and CSS with phone forms at 390; the old twelve-section skeleton and its styles are removed.

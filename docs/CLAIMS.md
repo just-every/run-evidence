@@ -6,7 +6,7 @@ A claim is done when every clause behind it is done, missing when every one is m
 
 | # | Section | Claim | Clauses | Status |
 | --- | --- | --- | --- | --- |
-| 1 | Hero | "tests your controls around the clock" | `TEST-001` done; `LIBRARY-001` done | done |
+| 1 | Hero | "tests your controls around the clock" | `TEST-001` done; `LIBRARY-003` done | done |
 | 2 | Hero | "collects the proof" | `COLLECTION-001` partial; `CLOUD-001` done; `IDENTITY-001` done; `CODE-001` partial; `PROOF-001` done | partial |
 | 3 | Hero | "fixes what drifts" | `REMEDY-001` done; `REMEDY-002` done; `AGENT-003` missing | partial |
 | 4 | Hero | "hands your auditor everything they ask for" | `AUDIT-001` done; `AUDIT-003` done; `REVIEW-001` done | done |
@@ -38,7 +38,7 @@ A claim is done when every clause behind it is done, missing when every one is m
 | 30 | Policies | "every person signs" (42 of 42 signed; RV reminded, then signed) | `ATTEST-001` done; `FOLLOWUP-001` done | done |
 | 31 | Policies | "and finishes training" (42 of 42 trained) | `TRAIN-001` partial | partial |
 | 32 | Policies | "New hires get the same list on day one" (JL signed and trained day one) | `LIFECYCLE-001` missing | missing |
-| 33 | Observation window | "Evidence tests every control around the clock and keeps each day's result with its time and source" | `TEST-001` done; `PROOF-001` done; `LIBRARY-001` done | done |
+| 33 | Observation window | "Evidence tests every control around the clock and keeps each day's result with its time and source" | `TEST-001` done; `PROOF-001` done; `LIBRARY-003` done | done |
 | 34 | Observation window | Day record: Okta CC6.1, AWS A1.2 and CC7.2, every day for 183 days | `IDENTITY-001` done; `CLOUD-001` done; `TEST-001` done | done |
 | 35 | Observation window | Day record: GitHub CC8.1 change management | `CODE-001` partial; `TEST-001` done | partial |
 | 36 | Observation window | Day record: Jamf CC6.7 laptop encryption | `DEVICE-001` missing | missing |
@@ -55,7 +55,7 @@ A claim is done when every clause behind it is done, missing when every one is m
 | 47 | Trust center | "Publish your report in a trust center" (Larkspur Trust Center) | `TRUST-001` partial | partial |
 | 48 | Trust center | "Evidence answers security questionnaires from verified proof, and every answer cites its source"; "Every answer cites its proof." | `ANSWER-001` partial | partial |
 | 49 | Trust center | "209 answered from evidence · 3 sent to Dana Lee" | `ANSWER-001` partial; `ANSWER-003` missing | partial |
-| 50 | ISO 27001 | "SOC 2, ISO 27001 and HIPAA share controls, so one passing test counts everywhere it applies" | `PROGRAM-002` done; `LIBRARY-001` done | done |
+| 50 | ISO 27001 | "SOC 2, ISO 27001 and HIPAA share controls, so one passing test counts everywhere it applies" | `PROGRAM-002` done; `LIBRARY-005` done | done |
 | 51 | ISO 27001 | "Add framework · ISO 27001:2022 · 71 of 93 controls already tested", A.5.15 ← CC6.1, A.8.24 ← CC6.7, a new control with an owner | `PROGRAM-001` done; `PROGRAM-002` done; `READINESS-001` done | done |
 | 52 | Moving in | "Coming from Vanta, Drata or Secureframe? Import controls, policies, evidence and vendors" | `MIGRATE-001` done; `IMPORT-001` done | done |
 | 53 | Moving in | "check every count before you switch" (86 controls, 18 policies, 1,412 evidence files, 37 vendors) | `MIGRATE-001` done; `IMPORT-001` done | done |

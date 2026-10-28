@@ -1,0 +1,7 @@
+# Trust-center grant and notice evidence
+
+These are the exact rules, bounds and formats behind TRUST-003 and TRUST-005 in [CONTRACT.md](../../CONTRACT.md). The contract holds the requirement and its acceptance; this page holds the mechanism they rely on, as recorded when the contract was rewritten to the RER contract standard on 28 October 2026.
+
+Status note (TRUST-003): None for this clause's current scope. A send alone does not prove owner authority, reason and expiry, one-time issuance and digest-only storage, named-record rights and use audit, recipient isolation, consent transitions and excluded recipients, approval gates, notice timing and effective-date transitions, public versus customer visibility, exports, restart or inactive custody restore; each is asserted by the named native journey, with changed screens also proved by the browser journey. No live webhook URL is available: signed delivered and bounced events, replay and forged-event refusal remain network-edge assertions, as permitted. TRUST-001 and TRUST-002 retain document, NDA, domain and CRM obligations. Customer-facing publication and confirmation notifications are proved separately under TRUST-005.
+
+Status note (TRUST-005): None for the two native notification obligations. Only the mail network edge is controlled; no new live provider or webhook verification is claimed. TRUST-001 and TRUST-002 retain their inherited obligations.
