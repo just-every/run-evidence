@@ -74,13 +74,43 @@ export async function privacyAuthorityJourney(app) {
  await delegated('/api/privacy/requests/'+reviewed.id+'/confirm',{snapshot_hash:reviewed.snapshot_hash,confirm:'ERASE'},403)
  assert.equal(await (await (await app.mf.getR2Bucket('EXHIBITS')).get(own.object_key)).text(),'synthetic-evidence-authority-permitted')
  const renewed=await ownerPost('/api/roles/grants',{email,role:'compliance_manager',scope_kind:'area',scope_ref:'privacy:person:'+person.id,reason:'Owner restores limited privacy authority'},201)
- const final=await delegated('/api/privacy/requests/'+reviewed.id+'/confirm',{snapshot_hash:reviewed.snapshot_hash,confirm:'ERASE'})
+ await app.setSettings({HARNESS_R2_DELETE_FAILURE:'true'})
+ const pending=await delegated('/api/privacy/requests/'+reviewed.id+'/confirm',{snapshot_hash:reviewed.snapshot_hash,confirm:'ERASE'})
+ assert.equal(pending.state,'pending')
+ await ownerPost('/api/roles/grants/'+renewed.id+'/revoke',{reason:'Owner withdraws authority during provider interruption'})
+ await delegated('/api/privacy/requests/'+reviewed.id+'/confirm',{snapshot_hash:reviewed.snapshot_hash,confirm:'ERASE'},403)
+ await app.setSettings({HARNESS_R2_DELETE_FAILURE:undefined})
+ const final=await ownerPost('/api/privacy/requests/'+reviewed.id+'/confirm',{snapshot_hash:reviewed.snapshot_hash,confirm:'ERASE'})
  assert.equal(final.state,'partial')
  assert.equal((await app.fetch('/api/receipts/'+own.id+'/download')).status,410)
  assert.equal((await app.fetch('/api/receipts/'+foreign.id+'/download')).status,200)
  const audit=(await (await app.fetch('/api/audit')).json()).entries
  assert.ok(audit.some(a=>a.action==='privacy.hold-released'&&a.subject==='hold:'+hold.id&&a.actor_name.includes('Privacy legal reviewer')&&a.reason==='Scoped counsel released retention'))
- await ownerPost('/api/roles/grants/'+renewed.id+'/revoke',{reason:'End scoped review'})
+ for(const kind of ['vendor','engagement','exhibit','business']) {
+  const allowed=await makeExhibit('scope-'+kind,person.id)
+  const subject=kind==='vendor'?(await ownerPost('/api/vendors',{name:'synthetic-evidence-private-vendor',criticality:'low'},201)).id
+   :kind==='engagement'?(await ownerPost('/api/audit-engagements',{name:'synthetic-evidence-private-engagement',period_from:'2026-10-11',period_to:'2026-10-11',control_ids:[(await (await app.fetch('/api/desk')).json()).requirements.find(q=>q.id===allowed.requirement_id).control_id]},201)).id
+   :kind==='exhibit'?allowed.exhibit_id:'business'
+  if(kind==='vendor')await ownerPost('/api/privacy/classifications',{kind,subject_id:subject,exhibit_id:allowed.exhibit_id,reason:'Owner selected a vendor privacy record'},201)
+  const ref=kind==='business'?'privacy:business':'privacy:'+kind+':'+subject
+  const area=await ownerPost('/api/roles/grants',{email,role:'compliance_manager',scope_kind:'area',scope_ref:ref,reason:'Owner selects the exact privacy scope'},201)
+  const list=await delegated('/api/privacy')
+  if(kind!=='business')assert.ok(!list.requests.some(r=>r.id===foreignRequest.id),'the scoped list excludes unrelated requests')
+  const ownPreview=await delegated('/api/privacy/requests',{kind,subject_id:subject,reason:'Review authorized '+kind+' scope'},201)
+  assert.equal(JSON.parse(ownPreview.snapshot_json).supported,true,kind)
+  // Engagement scope follows its native control and submission relationships;
+  // the other entity scopes follow explicit retained classifications.
+  const original=await delegated('/api/privacy/requests',{kind:'exhibit',subject_id:allowed.exhibit_id,reason:'Review an original inside the selected scope'},201)
+  assert.equal(JSON.parse(original.snapshot_json).subject,allowed.exhibit_id)
+  if(kind!=='business') {
+   await delegated('/api/privacy/requests/'+foreignRequest.id,undefined,403)
+   await delegated('/api/privacy/requests',{kind:'person',subject_id:other.id,reason:'Do not cross the selected scope'},403)
+  }
+  const retained=await delegated('/api/privacy/holds',{kind,subject_id:subject,reason:'Scoped legal retention',review_on:'2027-01-01'},201)
+  await delegated('/api/privacy/holds/'+retained.id+'/release',{reason:'Scoped legal release'})
+  await ownerPost('/api/roles/grants/'+area.id+'/revoke',{reason:'Finish selected privacy scope'})
+  await delegated('/api/privacy',undefined,403)
+ }
  await ownerPost('/api/roles/grants/'+business.id+'/revoke',{reason:'End program review'})
  console.log('PASS ERASE-001: scoped privacy allow and deny, attributed hold release, immediate revoke and owner-controlled scope')
 }

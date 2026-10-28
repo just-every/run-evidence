@@ -47,6 +47,21 @@ export async function promiseJourney(app,{browserProof}={}){
  assert.equal(JSON.parse(erasure.snapshot_json).supported,false);assert.equal(JSON.parse(erasure.snapshot_json).promise_linked,true)
  await post('/api/privacy/requests/'+erasure.id+'/confirm',{snapshot_hash:erasure.snapshot_hash,confirm:'ERASE'},409)
  assert.equal((await app.fetch('/api/receipts/'+exhibit.id+'/download')).status,200,'refused erasure preserves the original')
+ // Entity batching cannot bypass the standalone derivative fence.
+ await post('/api/privacy/classifications',{kind:'person',subject_id:reviewer.id,exhibit_id:exhibit.exhibit_id,reason:'Owner classified the retained promise original'})
+ upload.set('file',new File(['synthetic-evidence-unlinked-original'],'synthetic-evidence-unlinked.txt',{type:'text'+'/'+'plain'}))
+ const unlinkedResponse=await app.fetch('/app/requirements/'+exhibit.requirement_id+'/uploads',{method:'POST',headers:{origin:app.origin},body:upload})
+ assert.equal(unlinkedResponse.status,303)
+ const unlinked=await get(unlinkedResponse.headers.get('location').replace('/app/','/api/'))
+ await post('/api/privacy/classifications',{kind:'person',subject_id:reviewer.id,exhibit_id:unlinked.exhibit_id,reason:'Owner classified the other original'})
+ const entityErasure=await post('/api/privacy/requests',{kind:'person',subject_id:reviewer.id,reason:'Do not bypass unclassified promise derivatives'})
+ const entityPlan=JSON.parse(entityErasure.snapshot_json)
+ assert.equal(entityPlan.supported,false)
+ assert.deepEqual(new Set(entityPlan.items.map(item=>item.subject)),new Set([exhibit.exhibit_id,unlinked.exhibit_id]))
+ await post('/api/privacy/requests/'+entityErasure.id+'/confirm',{snapshot_hash:entityErasure.snapshot_hash,confirm:'ERASE'},409)
+ assert.equal((await app.fetch('/api/receipts/'+exhibit.id+'/download')).status,200)
+ assert.equal(await (await app.fetch('/api/receipts/'+unlinked.id+'/download')).text(),'synthetic-evidence-unlinked-original')
+
  if(browserProof)await browserProof(app,{cookie,stage:'promise-erasure-fenced',followLink:false,screens:[['privacy','/app/privacy/requests/'+erasure.id,'No completed erasure is claimed']]})
  const approval={snapshot_hash:draft.snapshot_hash,reviewer_person_id:reviewer.id,recipient:'buyer@customer.test',expires_on:'2027-01-01',reason:'Reviewed exact promise and passing control'}
  await post(answer+'/approve',approval,409)

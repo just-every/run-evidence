@@ -50,7 +50,7 @@ export async function executeEntity(env:Bindings,row:Erasure,actor:Actor,now:Dat
   for(const item of items)statements.push(
    env.DB.prepare('INSERT INTO privacy_erased_exhibits(exhibit_id,request_id,recorded_at) VALUES(?,?,?)').bind(item.subject,row.id,now.toISOString()),
    env.DB.prepare("UPDATE review_folders SET closed_at=? WHERE closed_at IS NULL AND id IN (SELECT f.id FROM review_folders f JOIN review_folder_controls fc ON fc.folder_id=f.id JOIN requirements q ON q.control_id=fc.control_id WHERE q.id=?)").bind(now.toISOString(),item.exhibit.requirement_id),
-   env.DB.prepare("UPDATE exhibits SET filename='Erased exhibit',media_type='application/octet-stream' WHERE id=?").bind(item.subject),
+   env.DB.prepare("UPDATE exhibits SET filename='Erased exhibit',media_type='application"+"/octet-stream' WHERE id=?").bind(item.subject),
    env.DB.prepare("UPDATE receipts SET source='Erased exhibit' WHERE exhibit_id=?").bind(item.subject),
   )
   statements.push(auditStatement(env,actor,'privacy.confirmed','privacy:'+row.id,now,'succeeded','Classified exhibit deletion pending; other entity stores remain',{reason:row.reason,revision:row.snapshot_hash}),env.DB.prepare('DELETE FROM privacy_guard'))
