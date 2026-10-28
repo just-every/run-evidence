@@ -1,5 +1,5 @@
 import type { FrameworkId } from './types'
-// LIBRARY-001: shipped library revisions after revision 1 (controls.ts). Each is
+// LIBRARY-004: shipped library revisions after revision 1 (controls.ts). Each is
 // a reviewable change set of control-to-requirement mappings. An installation
 // keeps its accepted revision until the owner accepts a later one; accepting
 // revision N applies every change set up to and including N.

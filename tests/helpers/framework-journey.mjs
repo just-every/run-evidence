@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { frameworkFixture,frameworkUpload,revisedFrameworkFixture } from './framework-fixture.mjs'
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex')
-// One public-door CONTROL-001 journey, called by tests/evidence.mjs with its real runtime.
+// One public-door CONTROL-002 journey, called by tests/evidence.mjs with its real runtime.
 export async function frameworkJourney(app,fixture={}) {
  const fetch=app.fetch,post=(path,body)=>fetch(path,{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify(body)})
  const read=async path=>{const r=await fetch(path);assert.equal(r.status,200,await r.clone().text());return r.json()}

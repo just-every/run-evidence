@@ -169,7 +169,7 @@ try {
   }finally{await receiver.close()}
 
  })
- await scenario('LIBRARY-001: one connected MFA observation on the shared AC-05 control passes and then fails SOC 2, ISO 27001 and HIPAA; an accepted library revision moves mappings forward while earlier runs keep their revision, through restore', async () => {
+ await scenario('LIBRARY-005 / LIBRARY-004: one connected MFA observation on the shared AC-05 control passes and then fails SOC 2, ISO 27001 and HIPAA; an accepted library revision moves mappings forward while earlier runs keep their revision, through restore', async () => {
   const lib = await runtime({ outbound: fakeGitHub }), target = await runtime()
   try {
    await lib.clock('2026-10-12T09:00:00Z'); github.clock = '2026-10-12T09:00:00Z'; github.org.two_factor_requirement_enabled = true

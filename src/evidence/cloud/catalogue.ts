@@ -1,5 +1,5 @@
 import type { CatalogueEntry } from '../tests/catalogue'
-// The published AWS catalogue (LIBRARY-001 cloud classes): IAM and MFA, public
+// The published AWS catalogue (LIBRARY-002 cloud classes): IAM and MFA, public
 // storage, encryption at rest, logging and monitoring, backup and network.
 // Encryption in transit for S3 is listed as unsupported with its replacement.
 const aws = (console: string, api: string, terraform?: string, noTerraform?: string) => ({ aws: { console, api, ...(terraform ? { terraform } : {}), ...(noTerraform ? { noTerraform } : {}) } })

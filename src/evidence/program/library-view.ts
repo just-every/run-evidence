@@ -3,7 +3,7 @@ import { slab } from '../ui'
 import { usDateTime } from '../format'
 import { facts, table } from './view'
 import type { libraryReview } from './library'
-// LIBRARY-001: the accepted library revision, each newer shipped revision as a
+// LIBRARY-004: the accepted library revision, each newer shipped revision as a
 // reviewable change set, and every acceptance with its actor and reason.
 export function libraryPage(review: Awaited<ReturnType<typeof libraryReview>>, owner: string) {
  const summary = slab(`<section aria-labelledby="library-title"><h2 id="library-title">Control library</h2><p class="panel-intro">Program mappings follow the accepted revision. A newer shipped revision changes nothing until you accept it, and every test run keeps the library revision it was evaluated under.</p>${facts([['Accepted revision', String(review.accepted)], ['Latest shipped revision', String(review.latest)]])}</section>`)

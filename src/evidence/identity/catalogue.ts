@@ -1,5 +1,5 @@
 import type { CatalogueEntry } from '../tests/catalogue'
-// The identity catalogue (LIBRARY-001): MFA, privileged roles, inactive and
+// The identity catalogue (LIBRARY-002): MFA, privileged roles, inactive and
 // departed users, for each directory. JumpCloud exposes no last sign-in time
 // and no departed-person source exists without an HRIS, so those classes are
 // listed as unsupported with the manual evidence that replaces them.

@@ -1017,7 +1017,26 @@
     {
       "file": "CONTRACT.md",
       "line": 141,
-      "text": "Import an 80-row XLSX customer security addendum through the framework import: the dry run refuses one duplicate requirement ID and one unknown control ID and admits nothing until confirmed. Confirm: 78 requirements appear, those mapped in the file show their controls, and readiness counts the rest as unmapped. Before AGENT-006 ships its mapping proposals, approve two and reject one: only the two approved exact revisions become mappings. Re-import a revised file with three changed rows and one removed: the review lists exactly those four changes, and after confirmation the removed requirement remains in history with its earlier observations.",
+      "text": "Import an 80-row XLSX customer security addendum through the framework import: the dry run refuses one duplicate requirement ID and one unknown control ID and admits nothing until confirmed. Confirm: 78 requirements appear, those mapped in the file show their controls, and readiness counts the rest as unmapped.",
+      "to": "clause",
+      "ids": [
+        "CONTROL-002"
+      ]
+    },
+    {
+      "file": "CONTRACT.md",
+      "line": 141,
+      "text": "Before AGENT-006 ships its mapping proposals, approve two and reject one: only the two approved exact revisions become mappings.",
+      "to": "clause",
+      "ids": [
+        "AGENT-006",
+        "CONTROL-002"
+      ]
+    },
+    {
+      "file": "CONTRACT.md",
+      "line": 141,
+      "text": "Re-import a revised file with three changed rows and one removed: the review lists exactly those four changes, and after confirmation the removed requirement remains in history with its earlier observations.",
       "to": "clause",
       "ids": [
         "CONTROL-002"

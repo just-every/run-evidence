@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { configs } from './tracker-matrix.mjs'
-// WORK-001: use the same owner forms as a person, including a stale edit and
+// WORK-003: use the same owner forms as a person, including a stale edit and
 // an explicit new decision. Network fakes supply provider responses only.
 export async function trackerFieldsBrowser({page,app,edge,cookie,destination,ticket,ob,provider,width,capture}) {
  const write=configs[provider].write,host=new URL(page.url()).origin
@@ -62,5 +62,5 @@ export async function trackerFieldsBrowser({page,app,edge,cookie,destination,tic
  assert.equal(retested.observations[0].result,'fail')
  assert.equal(retested.observations[0].run_trigger,'retest')
  await capture(provider+'-closed-retested-open')
- console.log(`PASS WORK-001: ${provider} mapped assignee/status writes, conflict, fresh decision and unverified closure at ${width}`)
+ console.log(`PASS WORK-003: ${provider} mapped assignee/status writes, conflict, fresh decision and unverified closure at ${width}`)
 }

@@ -111,7 +111,7 @@ const results = async id => Object.fromEntries((await get('/api/tests/' + (await
 const keys = { access_key_id: MAIN_KEY, secret_access_key: aws.keys[MAIN_KEY].secret }
 let connection
 try {
- await scenario("CLOUD-001 / LIBRARY-001: authorize AWS, observe failures and source fixes, and retain unknown or stale coverage", async () => {
+ await scenario("CLOUD-001 / LIBRARY-002: authorize AWS, observe failures and source fixes, and retain unknown or stale coverage", async () => {
   await step('An AWS key is kept only after a signed STS read through the assumed role; keys never appear and the AWS catalogue is enabled', async () => {
     await app.signin()
     await owner('/api/connections', { provider: 'aws', ...keys, secret_access_key: secretKey(), role_arn: `arn:aws:iam::${MGMT}:role/EvidenceAudit`, external_id: 'ext-123' }, 400)
@@ -126,7 +126,7 @@ try {
     assert.equal(enabled.length, 13); assert.ok(!enabled.includes('aws.s3-tls-only'))
     assert.match((await get('/api/tests')).catalogue.find(e => e.id === 'aws.s3-tls-only').manualRequirement, /aws:SecureTransport/)
    })
-   await step('BOUNDARY-001 / LIBRARY-001: The hourly read finds every organization account, keeps the unreadable one as unknown, and fails the real misconfigurations with AWS remediation and Terraform', async () => {
+   await step('BOUNDARY-001 / LIBRARY-002: The hourly read finds every organization account, keeps the unreadable one as unknown, and fails the real misconfigurations with AWS remediation and Terraform', async () => {
     await app.tick()
     const detail = await get('/api/connections/' + connection.id), run = detail.runs[0], coverage = JSON.parse(run.coverage_json)
     assert.equal(run.outcome, 'partial'); assert.equal(run.trigger, 'schedule')
@@ -174,7 +174,7 @@ try {
     assert.ok(assets.some(r => r.collection_state === 'unread'))
 
    })
-   await step('LIBRARY-001: two connected hours leave at least two runs of every AWS configuration test, and a paused scheduler shows a stale interval, never a carried-forward pass', async () => {
+   await step('LIBRARY-003: two connected hours leave at least two runs of every AWS configuration test, and a paused scheduler shows a stale interval, never a carried-forward pass', async () => {
     const hourly = (await get('/api/tests')).tests.filter(t => t.catalogue_id?.startsWith('aws.') && t.cadence === 'hourly')
     assert.ok(hourly.length >= 10)
     for (const t of hourly) assert.ok((await get('/api/tests/' + t.id)).runs.length >= 2, t.catalogue_id)

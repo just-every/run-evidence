@@ -45,6 +45,6 @@ export async function frameworkBrowserJourney(page,origin,width,capture,fixture=
  await page.getByRole('heading',{name:'Recorded revision',exact:true}).waitFor()
  await capture(page,`${width}-framework-original-revision`)
  const original=await page.request.get(origin+path+'/revisions/1/file');assert.equal(original.status(),200);assert.deepEqual(await original.body(),bytes)
- console.log(`PASS CONTROL-001 reviewed framework import, unmapped readiness, revised changes and retained history at ${width}`)
+ console.log(`PASS CONTROL-002 reviewed framework import, unmapped readiness, revised changes and retained history at ${width}`)
  return path
 }

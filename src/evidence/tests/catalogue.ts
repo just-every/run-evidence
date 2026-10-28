@@ -8,7 +8,7 @@ import { azureCatalogue } from '../cloud/azure'
 import { identityCatalogue } from '../identity/catalogue'
 import { attestationTest, policyTests } from '../policy/templates'
 import { trainingTest } from '../training/courses'
-// The published LIBRARY-001 test catalogue for connectors Evidence ships. Each
+// The published LIBRARY-002 test catalogue for connectors Evidence ships. Each
 // entry names criteria, the evaluated resource type, mapped library controls,
 // cadence and remediation per provider. Classes the provider cannot expose are
 // listed as unsupported with the manual evidence requirement that replaces them.

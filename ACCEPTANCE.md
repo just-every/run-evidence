@@ -8,10 +8,10 @@ The primary journey: a US security lead moves in from an incumbent or starts fre
 
 | Tier | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
-| Core | 54 | 15 | 21 | 90 |
+| Core | 40 | 29 | 21 | 90 |
 | Agent surface | 0 | 0 | 7 | 7 |
 | Later | 0 | 0 | 0 | 0 |
-| Full target | 54 | 15 | 28 | 97 |
+| Full target | 40 | 29 | 28 | 97 |
 
 Judged from the code and tests at commit `dd2c24078e57bfbccb54bb40c6dedf3a8cf18fc5` (21 October 2026). Field proof register: 14 rows; 3 passed, 0 failed, 11 not run.
 
@@ -34,7 +34,7 @@ Core · published · **done** · Cites BASE-INPUT-003 · Rules D-1, D-3
 
 #### GAP-001 — Honest period-specific proof coverage
 
-Core · published · **done** · Rules D-1, D-2
+Core · published · **partial** · Rules D-1, D-2
 
 **Requirement.** The owner desk derives covered, due soon, overdue, missing, superseded-only or unavailable bytes per requirement and selected UTC cadence period. Imported history cannot establish current proof. Storage failure is unavailable, never green. Historical completeness describes recorded assertions and remains separate from observed control effectiveness. The period rules in `docs/rules/periods.md` remain binding. Semi-annual, annual and anchored renewal periods are CADENCE-001; they add periods and never change these four.
 
@@ -43,7 +43,7 @@ Core · published · **done** · Rules D-1, D-2
 2. Reopen a completed historical period and confirm the original state logic.
 
 **Evidence.** `src/evidence/model.ts`; `src/evidence/storage.ts`; `tests/evidence.mjs`
-**Gap.** None.
+**Gap.** Point 1's imported-only proof state is not asserted in the cited evidence: it is asserted only in `tests/import.mjs` (line 62), which this clause does not cite. The daily, weekly, monthly and quarterly periods, the superseded period, unavailable bytes and the historical period are asserted.
 
 #### COLLECTION-001 — Scheduled source collection with visible failures
 
@@ -102,7 +102,7 @@ Core · published · **partial** · Rules D-6 · Register R-10
 
 #### IMPORT-001 — Reviewed Drata archive admission and undo
 
-Core · published · **done** · Rules D-1 · Register R-6
+Core · published · **partial** · Rules D-1 · Register R-6
 
 **Requirement.** The owner dry-runs the documented Drata ZIP/HTML-manifest shape, reviews every proposed mapping and unsupported item, explicitly admits a Base journal and can undo active native links while original artifacts and immutable custody remain. Imported history never proves a live control operated. Original archive bytes and source provenance remain available; the supported shape and synthetic-fixture boundary in `docs/DRATA-IMPORT.md` are explicit. A real customer export is field proof (R-6).
 
@@ -111,7 +111,7 @@ Core · published · **done** · Rules D-1 · Register R-6
 2. Inspect retained originals and import history after undo, restart and archive restore.
 
 **Evidence.** `src/evidence/import/http.ts`; `src/evidence/import/plan.ts`; `tests/import.mjs`; `docs/DRATA-IMPORT.md`
-**Gap.** None.
+**Gap.** Point 2's original artifacts after a restart are not asserted: the cited journey checks originals after undo and archive restore, and import history after a restart, but never reads the originals after a restart.
 
 #### CUSTODY-001 — Complete custody archive and empty-target restore
 
@@ -145,7 +145,7 @@ Core · published · **done** · Cites BASE-AGENT-005, BASE-AGENT-008 · Rules D
 
 #### PROGRAM-001 — Framework programs and applicability
 
-Core · target · **done** · Rules D-3
+Core · target · **partial** · Rules D-3
 
 **Requirement.** A US security or operations lead at a 20–250 person business can run SOC 2 Type I and Type II, ISO 27001, HIPAA and PCI DSS programs. Each program records its framework edition, licensed requirement references where necessary, legal entity, in-scope products, teams, regions, systems, audit period, assessor, accountable lead and milestone dates. An applicability review records exclusions and rationale; changing editions creates a reviewable mapping change, never a retroactive pass. Each core program is created pre-mapped to the shipped control library (LIBRARY-001) and produces its framework-required documents (PROGRAM-003); extended and regulated programs are PROGRAM-004.
 
@@ -154,7 +154,7 @@ Core · target · **done** · Rules D-3
 2. Reopen the program and export it: owners, exclusions, edition history and unresolved obligations survive; excluded work is visible and no certification is asserted.
 
 **Evidence.** `tests/program.mjs`
-**Gap.** None.
+**Gap.** Point 2's owners surviving the export are not asserted: the program export is checked for its edition history, exclusions, unresolved obligations and the no-certification statement, but not for its accountable lead or owners.
 
 #### PROGRAM-003 — Framework-required program documents
 
@@ -240,7 +240,7 @@ Core · target · **done**
 
 #### LIBRARY-002 — Connector test catalogs and how-to-remediate guidance
 
-Core · target · **done** · From LIBRARY-001 · Rules D-2 · Register R-1
+Core · target · **partial** · From LIBRARY-001 · Rules D-2 · Register R-1
 
 **Requirement.** Each named cloud, identity, code, HRIS and device connector ships a published test catalog covering every evidence class its clause lists:
 - **Cloud:** IAM/MFA, public storage, encryption at rest and in transit, logging/monitoring, backup and network configuration.
@@ -261,7 +261,7 @@ A platform that does not expose an evidence class lists it in its catalog as uns
 2. Fail an AWS S3 public-access test and a Vercel deployment-protection test: each Results page shows the How to remediate panel for its own provider, the AWS entry includes a Terraform snippet, and applying that snippet makes the next run pass.
 
 **Evidence.** `scripts/library-check.mjs`; `src/evidence/library/`; `src/evidence/program/library.ts`; `src/evidence/tests/engine.ts`; `src/evidence/cloud/`; `src/evidence/identity/`; `src/evidence/policy/`; `tests/program.mjs`; `tests/github.mjs`; `tests/cloud.mjs`
-**Gap.** None.
+**Gap.** Point 2 is not asserted for the Vercel deployment-protection test (no Vercel connector exists until CLOUD-002) or for applying the AWS Terraform snippet, which the fixture never applies (a live account is R-1). The build-time remediation checks, the failing AWS S3 test, its How to remediate panel and its Terraform snippet are asserted.
 
 #### LIBRARY-003 — Test cadence and stale intervals
 
@@ -331,20 +331,19 @@ Core · target · **done** · Rules D-3
 
 Core · target · **done** · From CONTROL-001 · Rules D-3
 
-**Requirement.** A custom framework, such as a customer security addendum or an internal framework, can be imported from a CSV or XLSX file through a reviewed import. Owners map columns for requirement ID, title, description, section and an optional mapping to library control IDs. A dry run shows what will be admitted, and row-level validation refuses invalid rows (a duplicate requirement ID, a missing title or an unknown control ID) without admitting them. The confirmed import becomes a revision of that custom framework, labeled with the file, importer and time, and the original file is kept as an exhibit. Imported requirements without a mapping stay visible as unmapped in readiness. An agent may propose mappings (AGENT-006); each proposed mapping is decided individually on its exact revision, and whether a person or an agent's call decides it is the company's policy for its class. Re-importing a revised file shows added, changed and removed requirements for review before anything changes. A removed requirement keeps its history and earlier observations, and is never deleted.
+**Requirement.** A custom framework, such as a customer security addendum or an internal framework, can be imported from a CSV or XLSX file through a reviewed import. Owners map columns for requirement ID, title, description, section and an optional mapping to library control IDs. A dry run shows what will be admitted, and row-level validation refuses invalid rows (a duplicate requirement ID, a missing title or an unknown control ID) without admitting them. The confirmed import becomes a revision of that custom framework, labeled with the file, importer and time, and the original file is kept as an exhibit. Imported requirements without a mapping stay visible as unmapped in readiness. An agent may propose mappings; AGENT-006 carries those proposals, each decided individually on its exact revision, and whether a person or an agent's call decides one is the company's policy for its class. Re-importing a revised file shows added, changed and removed requirements for review before anything changes. A removed requirement keeps its history and earlier observations, and is never deleted.
 
 **Acceptance.** Through the framework import:
 1. Import an 80-row XLSX customer security addendum: the dry run refuses one duplicate requirement ID and one unknown control ID and admits nothing until confirmed.
 2. Confirm: 78 requirements appear, those mapped in the file show their controls, and readiness counts the rest as unmapped.
-3. Approve two proposed mappings and reject one: only the two approved exact revisions become mappings.
-4. Re-import a revised file with three changed rows and one removed: the review lists exactly those four changes, and after confirmation the removed requirement remains in history with its earlier observations.
+3. Re-import a revised file with three changed rows and one removed: the review lists exactly those four changes, and after confirmation the removed requirement remains in history with its earlier observations.
 
 **Evidence.** `tests/evidence.mjs`; `tests/helpers/control-journey.mjs`; `tests/helpers/framework-journey.mjs`; `tests/browser.mjs`; `tests/helpers/control-browser.mjs`; `tests/helpers/framework-browser.mjs`
 **Gap.** None.
 
 #### READINESS-001 — Readiness, trend and executive reports
 
-Core · target · **done** · Rules D-2, D-6
+Core · target · **partial** · Rules D-2, D-6
 
 **Requirement.** The readiness view separates recorded proof completeness, automated test effectiveness, policy/personnel completion, risks, exceptions and auditor decisions. Filter by framework, product, owner, period and severity; drill from each total to its denominator and source. Board/auditor exports include scope, open obligations, overdue work, per-item SLA status (REMEDY-002), collection freshness, test last-run times and trend history. Missing, stale, unsupported and untested work remains visible; any score explains its calculation and does not label a business certified. Each program shows one readiness percentage: the share of its in-scope requirements that are ready (mapped, proof current, every mapped test passing and every required policy approved and current), shown with the counts it was computed from and the program's checklist areas (policies, access reviews, vendor risk, trust center and the others the program uses), each with its own count. Unknown, stale and untested requirements count as not ready, so 100% means every in-scope requirement is ready today, never that the business is certified. The calculation, staleness, filters and daily snapshots follow `docs/rules/readiness.md`.
 
@@ -357,13 +356,13 @@ Core · target · **done** · Rules D-2, D-6
 6. Make the remaining three requirements ready: it shows 100%, and no page or export uses the word certified.
 
 **Evidence.** `src/evidence/program/readiness.ts`; `src/evidence/program/board.ts`; `src/evidence/program/board-view.ts`; `src/evidence/program/denominator-view.ts`; `tests/readiness.mjs`; `tests/helpers/readiness-browser.mjs`; `tests/report.mjs`
-**Gap.** None.
+**Gap.** Point 6's 100% after the remaining three requirements are made ready is asserted only inside `assertReadiness` in `tests/helpers/readiness-fixture.mjs` (line 97), which this clause does not cite. The period comparison, drilldown, export reconciliation, filtered and failed reads, 94%, 92% and the no-certified wording are asserted.
 
 ### Evidence provenance and continuous observation
 
 #### CADENCE-001 — Annual, semi-annual and anchored evidence renewal
 
-Core · target · **done** · Rules D-1, D-3
+Core · target · **partial** · Rules D-1, D-3
 
 **Requirement.** Evidence requirements, policy and vendor reviews, training campaigns and access-review campaigns can recur semi-annually or annually, in addition to the four GAP-001 calendar periods. Typical annual and semi-annual evidence includes the penetration test, BCP/DR test, incident-response tabletop, risk assessment, board or management security review, vendor reassessment and semi-annual access reviews of low-risk systems. Each such requirement chooses one anchor:
 - **Effective date (default):** the next due date is the exhibit's effective date plus the period. The effective date is an owner-asserted receipt fact (for example the pentest report date), recorded separately from the server upload time, so uploading an eight-month-old report leaves four months of coverage, not twelve.
@@ -383,7 +382,7 @@ The covered → due soon → overdue states and their precedence (unavailable by
 7. Reopen a historical quarterly period and an annual period from before a period change: each keeps its original state.
 
 **Evidence.** `src/evidence/reviews/`; `tests/cadence.mjs`; `tests/training.mjs`; `tests/access.mjs`
-**Gap.** None.
+**Gap.** The cited evidence (`tests/cadence.mjs`, `tests/training.mjs`, `tests/access.mjs`) asserts the anchors, reminders, overdue state and one-off override on policy and vendor reviews, but not point 1's eight-month-old pentest report, point 3's semi-annual audit-window periods, point 6's imported annual report or point 7's historical periods; points 1, 3 and 7 are asserted in `tests/program.mjs` (lines 133, 155 and 160), which this clause does not cite.
 
 #### CONNECT-001 — Least-privilege integration custody and custom collectors
 
@@ -730,7 +729,7 @@ Core · target · **done** · Rules D-1, D-2
 
 #### TEST-001 — Continuous control tests and exception discipline
 
-Core · target · **done** · Rules D-2, D-3
+Core · target · **partial** · Rules D-2, D-3
 
 **Requirement.** Framework tests from the shipped catalog (LIBRARY-002), API-defined tests (API-001) and owner-defined custom tests run on their schedule (configuration tests at least hourly, population and period tests at least daily) and on source change events against the declared asset population. Each immutable observation keeps expected criteria, evaluated revision, source references, interval and result: pass, fail, unknown or not applicable with approved rationale. Configuration snapshots and event/period tests are distinct. Tune noisy tests with reviewed scope, thresholds and expiring exceptions; suppressing alerts never rewrites observations or closes risk.
 
@@ -740,13 +739,13 @@ Core · target · **done** · Rules D-2, D-3
 3. A later pass, expired exception or revised denominator never erases the earlier failure or fills an unobserved period.
 
 **Evidence.** `src/evidence/tests/engine.ts`; `src/evidence/tests/catalogue.ts`; `src/evidence/tests/http.ts`; `tests/api.mjs`
-**Gap.** None.
+**Gap.** The cited evidence (`tests/api.mjs`) does not assert point 1's at-least-hourly runs, point 2's interrupted collection, or point 3's expired exception and unfilled unobserved period. It asserts the mapped test, the failing resource and all results, the expiring exception, the revised criteria, and that a later pass and a revised denominator keep the earlier failure.
 
 ### Remediation and follow-through
 
 #### REMEDY-001 — Failed test to verified remediation
 
-Core · target · **done** · Rules D-3
+Core · target · **partial** · Rules D-3
 
 **Requirement.** A failed test creates or links a durable remediation obligation with affected assets, control/framework mappings, severity, accountable owner, guidance (the test's per-provider remediation steps, LIBRARY-002), deadline, next action and source evidence. Owners triage, assign, comment and attach changes. A re-test starts automatically when the linked task closes in Evidence or in any WORK-001 tracker (per item when tickets are per item, WORK-002), or when a relevant source change event arrives, and owners can also request one. A ticket marked done remains awaiting verification until an independent real-source re-test passes; failures reopen work and time-bounded risk acceptance has an approver and expiry.
 
@@ -756,13 +755,13 @@ Core · target · **done** · Rules D-3
 3. Regress it and confirm reopening with both observations retained.
 
 **Evidence.** `tests/work.mjs`
-**Gap.** None.
+**Gap.** The cited evidence (`tests/work.mjs`) does not assert point 1's Remediate action or attached change, or point 3's regression reopening with both observations retained; the reopening is asserted in `tests/api.mjs` (lines 129-130), which this clause does not cite. The failing control's obligation, the owner and due date, closure that stays open on a failing re-test and the verified fix are asserted.
 
 #### REMEDY-002 — Remediation SLAs and automatic re-test
 
 Core · target · **done** · Rules D-3
 
-**Requirement.** Owners define SLA policies by test category (cloud, identity, code, device, vulnerability, security issue, personnel, policy, vendor) and severity, with a default policy shipped per category. Each failing user, device, account, resource or vulnerability finding gets its own SLA clock starting at its first failing observation. A vulnerability finding's due date is fixed at first detection from the SLA policy revision then in force (VULN-001); changing a policy applies only to findings first detected afterwards. A tracker-sourced security issue (ISSUES-001) is clocked the same way from its tracker creation time, and its closure is recorded as the tracker's resolution rather than a verified pass. The clock pauses only for an approved, expiring exception and resets only on verified pass. Readiness, test history, the remediation queue and board/auditor exports show each item as within SLA, approaching or SLA missed, with time-to-remediate history filterable by period, owner and category. SLA breaches escalate through FOLLOWUP-001. A linked task closing in Evidence or in any WORK-001 tracker, or a source change event, automatically queues a re-test within 15 minutes, with no human action; a per-item ticket (WORK-002) re-tests only its item. If that re-test fails, the obligation reopens and the SLA clock keeps running. Every new WORK-001 destination inherits automatic re-test within 15 minutes, per-item scope and preservation of a still-failing clock before it ships. SLA day counting, exception unions and time-to-remediate follow `docs/rules/remediation.md`.
+**Requirement.** Owners define SLA policies by test category (cloud, identity, code, device, vulnerability, security issue, personnel, policy, vendor) and severity, with shipped default SLA days per category. Each failing user, device, account, resource or vulnerability finding gets its own SLA clock starting at its first failing observation. A vulnerability finding's due date is fixed at first detection from the SLA policy revision then in force (VULN-001); changing a policy applies only to findings first detected afterwards. A tracker-sourced security issue (ISSUES-001) is clocked the same way from its tracker creation time, and its closure is recorded as the tracker's resolution rather than a verified pass. The clock pauses only for an approved, expiring exception and resets only on verified pass. Readiness, test history, the remediation queue and board/auditor exports show each item as within SLA, approaching or SLA missed, with time-to-remediate history filterable by period, owner and category. SLA breaches escalate through FOLLOWUP-001. A linked task closing in Evidence or in any WORK-001 tracker, or a source change event, automatically queues a re-test within 15 minutes, with no human action; a per-item ticket (WORK-002) re-tests only its item. If that re-test fails, the obligation reopens and the SLA clock keeps running. Every new WORK-001 destination inherits automatic re-test within 15 minutes, per-item scope and preservation of a still-failing clock before it ships. SLA day counting, exception unions and time-to-remediate follow `docs/rules/remediation.md`.
 
 **Acceptance.** With a 7-day SLA for high-severity identity failures and the test-harness clock:
 1. Set a 7-day SLA for high-severity identity failures. Fail MFA for two real users, fix one within the SLA, and let the other's clock pass the deadline using the test-harness clock: one item shows within SLA and resolved, the other SLA missed with an escalation sent.
@@ -808,9 +807,9 @@ Ticket granularity and tracker status on tests are WORK-002; Evidence-origin wri
 
 #### WORK-003 — Evidence-origin writes to mapped tracker assignees and statuses
 
-Core · target · **done** · From WORK-001 · Register R-4
+Core · target · **partial** · From WORK-001 · Register R-4
 
-**Requirement.** A signed-in person can write explicitly mapped native tracker assignees and statuses from Evidence, separately from Evidence's accountable owner and compliance state, on every WORK-001 destination. The field editor reads native identities, and a new source read precedes every write: if a selected field changed since the displayed snapshot, no field is written and both tracker and requested values, expected snapshot, actor reason and UTC conflict time remain in Sync history. Unknown native identities refuse writes. Read-back must confirm the requested identities; lost or unconfirmed outcomes stay uncertain and are never reported as success. A write reaches a system outside Evidence, so an agent's call that makes one carries the external class. Until a delegated role names tracker writes (AUTH-001, RL-102), only the owner session makes them, and API tokens and unsigned requests are refused.
+**Requirement.** A signed-in person can write explicitly mapped native tracker assignees and statuses from Evidence, separately from Evidence's accountable owner and compliance state, on every WORK-001 destination. The field editor reads native identities, and a new source read precedes every write: if a selected field changed since the displayed snapshot, no field is written and both tracker and requested values, expected snapshot, actor reason and UTC conflict time remain in Sync history. Unknown native identities refuse writes. Read-back must confirm the requested identities; lost or unconfirmed outcomes stay uncertain and are never reported as success. A write reaches a system outside Evidence, so an agent's call that makes one carries the external class. Until a delegated role names tracker writes (AUTH-001, RL-102), the owner is the only person whose role includes them, and API tokens and unsigned requests are refused.
 
 **Acceptance.** Through the tracker field editor on each of the thirteen destinations:
 1. The signed-in owner writes a mapped native assignee and status, and read-back confirms the requested identities; editing Evidence's accountable owner or compliance state does not stand in for that write.
@@ -820,7 +819,7 @@ Core · target · **done** · From WORK-001 · Register R-4
 5. An API token or an unsigned request cannot use the write door.
 
 **Evidence.** `src/evidence/work/`; `tests/work.mjs`; `tests/trackers.mjs`; `tests/trackers-browser.mjs`; `docs/TRACKERS.md`; `tests/helpers/tracker-write-journey.mjs`; `tests/helpers/basecamp-webhook-journey.mjs`
-**Gap.** None.
+**Gap.** Point 1's rule that editing Evidence's accountable owner or compliance state does not stand in for a tracker write, and point 2's expected snapshot in Sync history, are not asserted; the write, read-back, conflict refusal with both values, reason and time, unknown identities, uncertain outcomes and refusal of unsigned and token requests are. Live tracker accounts are R-4.
 
 #### WORK-002 — Per-test or per-item tickets, with tracker status on tests
 
@@ -831,6 +830,8 @@ Core · target · **done** · Register R-4
 - **SLA per ticket.** A per-item ticket links to that item's REMEDY-002 SLA clock, and its due date is written to the tracker. A whole-test ticket lists its items with each item's deadline, and its due date is the earliest open item's deadline. Newly failing items are added to the whole-test ticket as a comment and an updated item list.
 - **Closure.** Closing a per-item ticket re-tests only that item: the item closes only on a verified pass, and other items' clocks are unaffected. Closing a whole-test ticket re-tests every item and closes only the passing ones. If any item still fails, the remote ticket is reopened with a comment naming those items, unless the owner has chosen to open a follow-up ticket instead.
 - **Tracker status in Evidence.** The test page and the remediation queue show, for each linked ticket, its destination, key and link, assignee, status and last sync time. A sync older than its interval is marked stale. The remediation queue filters by tracker assignee and status.
+
+Live tracker accounts are field proof (R-4).
 
 **Acceptance.** For each WORK-001 destination:
 1. Set a test to per-item tickets and fail it on two resources: two tickets are created, each with its own due date.
@@ -845,7 +846,7 @@ Core · target · **done** · Register R-4
 
 #### FOLLOWUP-001 — Email, Slack and Microsoft Teams follow-up
 
-Core · target · **done** · Cites BASE-MAIL-001 · Register R-5
+Core · target · **partial** · Cites BASE-MAIL-001 · Register R-5
 
 **Requirement.** Email through Resend or SendGrid, Slack and Microsoft Teams deliver actionable remediation, policy, training, vendor-diligence and access-review reminders with private record links. Owners configure escalation, US business timezone, business calendar, quiet hours, cadence, stop rules and destination permissions. Persist the obligation and next action across restarts, deduplicate scheduled sends, expose pending/acknowledged/failed/uncertain outcomes, and stop when work is verified, authority ends or an owner pauses it. A weekly compliance digest goes to each owner and control owner by email, Slack or Teams, on an owner-chosen day and time (default Monday 09:00 in the business timezone). It lists that person's new failures, items due in the next 14 days, overdue and SLA-missed items and expiring exceptions, each linked to its record. A person with nothing open gets no digest unless they opt into an all-clear. Live Slack and Teams workspaces and a production mail key are field proof (R-5).
 
@@ -856,7 +857,7 @@ Core · target · **done** · Cites BASE-MAIL-001 · Register R-5
 4. Let the weekly digest run on the test-harness clock: each control owner receives only their own new failures, upcoming, overdue and SLA-missed items, reconciled to the remediation queue, and a control owner with nothing open receives none.
 
 **Evidence.** `src/evidence/followup/`; `tests/followup.mjs`; `tests/policy.mjs`; `tests/cadence.mjs`; `tests/training.mjs`; `tests/access.mjs`
-**Gap.** None.
+**Gap.** Point 1's SendGrid provider is not asserted: the cited journeys exercise Slack, Teams and the default (Resend) mail provider. The escalation across the calendar boundary, the restart, delivery uncertainty, reconnect, pause and the weekly digest are asserted. Live workspaces and a production mail key are R-5.
 
 #### FOLLOWUP-002 — Failure notices with an owner and a due date in Slack, Teams or email
 
@@ -988,7 +989,7 @@ Each candidate shows the source records that surfaced it. Candidates seen in sev
 
 #### POLICY-001 — Policy library, approval and version control
 
-Core · target · **done** · Rules D-3
+Core · target · **partial** · Rules D-3
 
 **Requirement.** Evidence ships a template for every policy that the mapped requirements of SOC 2, ISO 27001:2022, HIPAA and PCI DSS call for. At minimum that is: information security, acceptable use, access control, asset management, data classification and management, data retention and disposal, encryption/cryptography, risk management, secure development, change management, vulnerability and patch management, logging and monitoring, incident response, business continuity and disaster recovery, vendor/third-party management, human resources security, physical and environmental security, privacy, and the HIPAA-specific sanctions, breach notification and workforce security policies. A guided policy builder for SOC 2 and ISO 27001:2022 tailors templates from program scope and connected facts. Each library requirement that calls for a policy links the template, and an approved, published policy revision automatically satisfies its linked policy test, which fails again when the policy passes its review deadline. Tailor them to actual operations; named reviewers approve exact revisions before publication. Maintain effective dates, change history, recurring review, control mappings and exceptions, with employee assignment tied to a specific approved version. Templates require applicability review and do not constitute legal advice.
 
@@ -1001,7 +1002,7 @@ Core · target · **done** · Rules D-3
 6. Let one policy pass its review deadline: its linked policy test fails.
 
 **Evidence.** `src/evidence/policy/`; `src/evidence/attest/`; `tests/policy.mjs`; `tests/cadence.mjs`
-**Gap.** None.
+**Gap.** Point 5's build-time template check is asserted in `scripts/library-check.mjs` (line 70), which this clause does not cite. The tailoring, exact approval, rejection, publication, readiness listing, replacement and review-deadline failure are asserted.
 
 #### ATTEST-001 — Employee policy attestations
 
@@ -1379,7 +1380,7 @@ Core · target · **partial** · Cites BASE-DATA-003, BASE-DATA-006 · Rules D-4
 
 #### LOG-001 — Permanent accountable action audit
 
-Core · target · **done** · Cites BASE-OPS-005, BASE-AUDIT-001 · Rules D-8
+Core · target · **partial** · Cites BASE-OPS-005, BASE-AUDIT-001 · Rules D-8
 
 **Requirement.** An append-only product audit records authentication/authorization changes, control/scope revisions, observations, evidence access and replacement, import/undo, approvals, source mutations, sends, exports and erasures with actor or scoped agent, subject, time, reason, exact revision and durable outcome. No raw credentials or token-bearing URLs enter it. The audit travels in product archives and authorized reports. The reason, revision and per-door recording rules follow `docs/rules/audit-log.md`; actor anonymization on person erasure arrives with ERASE-001.
 
@@ -1389,11 +1390,11 @@ Core · target · **done** · Cites BASE-OPS-005, BASE-AUDIT-001 · Rules D-8
 3. Every attempted sensitive action and its outcome remains attributable without secrets; an erased actor is anonymous and an interrupted send remains uncertain until resolved.
 
 **Evidence.** `src/evidence/door.ts`; `src/evidence/audit/`; `src/evidence/audit/auth.ts`; `src/evidence/followup/send.ts`; `src/evidence/followup/resolve.ts`; `src/evidence/import/http.ts`; `src/evidence/review/storage.ts`; `src/evidence/agent/storage.ts`; `migrations/core/0046_audit_context.sql`; `tests/import.mjs`; `tests/followup.mjs`; `tests/review.mjs`; `tests/agent.mjs`; `tests/policy.mjs`; `tests/work.mjs`
-**Gap.** None.
+**Gap.** Point 1's erasure and point 3's anonymous erased actor are not asserted: no cited journey performs an erasure, and person erasure with actor anonymization is not built (ERASE-001). The import, undo, folder read and refusal, approval, source change and failed-send entries, export, restart, restore, secret exclusion and uncertain-send resolution are asserted.
 
 #### OPS-001 — Durable operation, health and recovery
 
-Core · target · **done** · Cites BASE-SECRET-002, BASE-OPS-001, BASE-OPS-002, BASE-OPS-004, BASE-BACKUP-001 · Rules D-8
+Core · target · **partial** · Cites BASE-SECRET-002, BASE-OPS-001, BASE-OPS-002, BASE-OPS-004, BASE-BACKUP-001 · Rules D-8
 
 **Requirement.** Scheduled work uses durable claims, bounded execution, crash reconciliation and visible failed/unknown outcomes; restarts never manufacture observations or silently discard obligations. Operators see connector health, storage/queue limits, backup status and last successful collection. Limits refuse work explicitly rather than truncate evidence. Estimated operating costs and optional provider/module charges are itemized in USD before enablement. The scheduler budget, lease, cancellation and history rules follow `docs/rules/operations.md` and `docs/OPERATIONS.md`.
 
@@ -1403,7 +1404,7 @@ Core · target · **done** · Cites BASE-SECRET-002, BASE-OPS-001, BASE-OPS-002,
 3. Attempt a documented size bound and inspect explicit refusal and the USD cost/configuration explanation.
 
 **Evidence.** `SEED-COMMAND-CONTRACT.md`; `src/auth.server.ts`; `src/evidence/ops/`; `src/evidence/scheduler.ts`; `migrations/core/0048_operations.sql`; `docs/OPERATIONS.md`; `tests/ops.mjs`; `tests/ops-browser.mjs`; `tests/open.mjs`; `tests/browser.mjs`; `tests/evidence.mjs`; `tests/archive.mjs`; `tests/email-link.mjs`
-**Gap.** None.
+**Gap.** Point 1's documented setup, dev and build commands are not exercised in a cited file: the cited journeys start the runtime harness directly (the production build runs in Verify through `scripts/verify.mjs`, which this clause does not cite). The named-setting refusal, restarts during collection and notification, storage interruption, health, durable outcomes, backup restore, additive migration, size refusal and USD explanation are asserted.
 
 #### MOBILE-001 — Responsive and accessible complete workflows
 
@@ -1421,7 +1422,7 @@ Core · target · **partial** · Cites BASE-ACCESSIBILITY-001, BASE-PUBLIC-003 �
 
 #### PUBLIC-001 — Preserve the approved installation and run surfaces
 
-Core · target · **done** · Cites BASE-ACCESS-003, BASE-DOCS-001
+Core · target · **partial** · Cites BASE-ACCESS-003, BASE-DOCS-001
 
 **Requirement.** The separate static run site retains its approved homepage, run installation instructions and repository Markdown guides without requiring JavaScript. The installed root remains Base’s Lobby, with setup-state-aware Finish setup or Sign in. Existing sign-in, setup, proof, folder, archive, move-in and agent surfaces keep the approved styling. This target contract does not itself change those screens or claim unbuilt workflows are present.
 
@@ -1430,7 +1431,7 @@ Core · target · **done** · Cites BASE-ACCESS-003, BASE-DOCS-001
 2. Existing browser journeys inspect the approved owner/reviewer flows at 1440 and 390.
 
 **Evidence.** `tests/site.mjs`; `tests/browser.mjs`
-**Gap.** None.
+**Gap.** Point 2's reviewer flows at 1440 and 390 are asserted in `tests/review-browser.mjs`, which this clause does not cite; the built site, no-JavaScript landing, Lobby before and after setup and the owner flows are asserted.
 
 #### OPEN-001 — Free and open source under the MIT license
 

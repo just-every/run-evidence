@@ -1,4 +1,4 @@
-// LIBRARY-001 catalogue check, run by Verify: every shipped program requirement
+// LIBRARY-001 / LIBRARY-002 catalogue check, run by Verify: every shipped program requirement
 // maps to a control, every control has proof or a test, every referenced test is
 // catalogued, and every catalogue entry carries remediation for each provider it
 // runs against (with a Terraform snippet or a stated absence of a provider).
@@ -44,7 +44,7 @@ for (const connector of new Set(catalogue.flatMap(entry => entry.providers))) {
  const classes = catalogue.filter(entry => entry.providers.includes(connector))
  for (const entry of classes) if (entry.unsupported && !entry.manualRequirement) failures.push(`${entry.id} is unsupported without a replacement evidence requirement`)
 }
-// Every evidence class LIBRARY-001 lists for a connector family has, for each
+// Every evidence class LIBRARY-002 lists for a connector family has, for each
 // connector of that family, a shipped test or an explicit unsupported entry.
 // Later families (CLOUD-002, APPS-001, VULN-001, ISSUES-001, MONITOR-001,
 // HRIS-001, DEVICE-001) add their classes here before their connectors ship.

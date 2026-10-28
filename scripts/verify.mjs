@@ -2,7 +2,7 @@
 // (VERIFY_SHARD=core|custody|history|program|code|people|integrations|cloud|clouds|identity|trackers|browser|browser-data). Without a shard every step runs in order.
 import { spawnSync } from 'node:child_process'
 const shards = {
- core: [['rer', 'build', '--site'], ['node', 'tests/site.mjs'], ['pnpm', 'run', 'typecheck'], ['node', 'scripts/edition-authoring/cli.mjs', 'check'], ['node', 'scripts/library-check.mjs'], ['node', 'tests/ops.mjs'], ['node', 'tests/evidence.mjs']],
+ core: [['rer', 'build', '--site'], ['node', 'tests/site.mjs'], ['pnpm', 'run', 'typecheck'], ['node', 'scripts/edition-authoring/cli.mjs', 'check'], ['node', 'scripts/library-check.mjs'], ['node', 'src/base/contract-docs.mjs', 'check'], ['rer', 'check'], ['node', 'tests/ops.mjs'], ['node', 'tests/evidence.mjs']],
  custody: [['node', 'tests/review.mjs'], ['node', 'tests/archive.mjs'], ['node', 'tests/secure.mjs']],
  history: [['node', 'tests/import.mjs'], ['node', 'tests/agent.mjs']],
  program: [['node', 'tests/open.mjs'], ['node', 'tests/program.mjs'], ['node', 'tests/api.mjs'], ['node', 'tests/private-collector.mjs'], ['node', 'tests/risk.mjs'], ['node', 'tests/report.mjs'], ['node', 'tests/readiness.mjs']],

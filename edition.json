@@ -2678,6 +2678,30 @@
       }
     },
     {
+      "id": "runeditrun/base-history-0fe27af",
+      "role": "module",
+      "source": {
+        "kind": "local",
+        "paths": [
+          "src/base/contract-docs.mjs"
+        ],
+        "origin": {
+          "repository": "https://github.com/runeditrun/base.git",
+          "revision": "0fe27af9a5cb1bd9dc5e41da024784082e609010",
+          "path": ".",
+          "paths": [
+            "foundation/runtime/contract-docs.mjs"
+          ]
+        },
+        "mappings": [
+          {
+            "path": "src/base/contract-docs.mjs",
+            "originPath": "foundation/runtime/contract-docs.mjs"
+          }
+        ]
+      }
+    },
+    {
       "id": "runeditrun/base-history-4a78339",
       "role": "module",
       "source": {
@@ -2721,6 +2745,7 @@
           "OPERATIONS.md",
           "README.md",
           "RELEASE.json",
+          "RULINGS.md",
           "base-copies.json",
           "deploy-demo.json",
           "deploy-site.json",
@@ -2730,6 +2755,7 @@
           "docs/API.md",
           "docs/AUDITOR-API.md",
           "docs/BACKUP-RESTORE.md",
+          "docs/CLAIMS.md",
           "docs/CODE-MANIFESTS.md",
           "docs/CUSTOMER-PROMISES.md",
           "docs/DRATA-IMPORT.md",
@@ -2747,6 +2773,44 @@
           "docs/TRACKERS.md",
           "docs/TRUST-UPDATES.md",
           "docs/USDP-CITATIONS.md",
+          "docs/contract/COVERAGE.json",
+          "docs/contract/DONE-AUDIT.md",
+          "docs/contract/ID-MAP.json",
+          "docs/contract/acceptance-before-cleanup.md",
+          "docs/rules/access-reviews.md",
+          "docs/rules/audit-log.md",
+          "docs/rules/audit-review.md",
+          "docs/rules/auditor-api.md",
+          "docs/rules/boundary.md",
+          "docs/rules/code-providers.md",
+          "docs/rules/collection.md",
+          "docs/rules/connections.md",
+          "docs/rules/controls.md",
+          "docs/rules/custody-archive.md",
+          "docs/rules/erasure.md",
+          "docs/rules/extended-programs.md",
+          "docs/rules/failure-notices.md",
+          "docs/rules/handover.md",
+          "docs/rules/inventory.md",
+          "docs/rules/library.md",
+          "docs/rules/migration.md",
+          "docs/rules/operations.md",
+          "docs/rules/pentest-findings.md",
+          "docs/rules/period-agent.md",
+          "docs/rules/periods.md",
+          "docs/rules/portable-archive.md",
+          "docs/rules/program-documents.md",
+          "docs/rules/program-status.md",
+          "docs/rules/readiness.md",
+          "docs/rules/receipts.md",
+          "docs/rules/remediation.md",
+          "docs/rules/review-folders.md",
+          "docs/rules/risks.md",
+          "docs/rules/tailoring.md",
+          "docs/rules/trackers.md",
+          "docs/rules/trust.md",
+          "docs/rules/vendor-documents.md",
+          "docs/rules/vendors.md",
           "management/integration/deployment-spec.json",
           "migrations/core/0001_owner.sql",
           "migrations/core/0002_outbox.sql",

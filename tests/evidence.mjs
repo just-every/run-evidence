@@ -96,6 +96,6 @@ try {
     await bucket.delete(second.object_key);assert.equal((await primary()).gap,'unavailable bytes');assert.equal((await primary()).receipts.length,2)
    })
  })
- await scenario('CONTROL-001 prospective controls, multiple requirements, exact failed observations and exported mappings',async()=>{ const fixture=await controlJourney(app); await frameworkJourney(app,fixture); await controlArchiveJourney(app) })
+ await scenario('CONTROL-001 / CONTROL-002 prospective controls, multiple requirements, exact failed observations and exported mappings',async()=>{ const fixture=await controlJourney(app); await frameworkJourney(app,fixture); await controlArchiveJourney(app) })
  console.log(`${passed} public-door scenarios passed; real workerd, D1, R2 and Base email-link sign-in.`)
 } finally { await app.close() }

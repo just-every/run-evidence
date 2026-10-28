@@ -4,7 +4,7 @@ import { auditStatement, text, type Actor, type Input } from '../door'
 import { edition, frameworks, isLibraryRevision, latestLibraryRevision, latestEdition, libraryControl, libraryRevisions, mappedControls } from '../library'
 import { acceptedLibraryRevision } from './library-revision'
 import { adoptionStatements, programs } from './storage'
-// LIBRARY-001: newer shipped library revisions wait as reviewable change sets.
+// LIBRARY-004: newer shipped library revisions wait as reviewable change sets.
 // Current mappings stay at the accepted revision until the owner accepts a
 // later one; each test run records the revision it was evaluated under, and
 // that record is never rewritten.

@@ -74,7 +74,7 @@ export function grade(c: Course, answers: number[]) {
  const correct = c.quiz.filter((q, i) => q.answer === answers[i]).length, score = Math.round(correct / c.quiz.length * 100)
  return { correct, total: c.quiz.length, score, passed: score >= c.passMark }
 }
-// The training test (LIBRARY-001 personnel class): no overdue assignment.
+// The training test (LIBRARY-002 personnel class): no overdue assignment.
 export const trainingTest: CatalogueEntry = {
  id: 'training.current', name: 'People complete assigned training on time', providers: ['training'], resourceType: 'training.person', evidenceClass: 'Security training',
  criteria: [{ attribute: 'overdue', op: 'max', value: 0 }], cadence: 'daily', category: 'personnel', severity: 'medium', controls: ['HR-03'], configuration: false,

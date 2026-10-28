@@ -5,7 +5,7 @@ import { TrackerFieldConflict, TrackerFailure, type Remote, type FieldChanges } 
 import { adapters, mappingOf, reference, requireDestination, requireTicket, secretOf } from './storage'
 import { syncTicket } from './sync'
 
-// WORK-001: a human edits explicit provider mappings against a fresh identity
+// WORK-003: a human edits explicit provider mappings against a fresh identity
 // snapshot. Display names never establish identity or authorize a tracker write.
 export const fieldSnapshot = (remote: Pick<Remote, 'status_id' | 'assignee_ids'>) => JSON.stringify({ status_id: remote.status_id, assignee_ids: remote.assignee_ids === null ? null : [...remote.assignee_ids].sort() })
 const targetRef = (ticket: Awaited<ReturnType<typeof requireTicket>>) => {

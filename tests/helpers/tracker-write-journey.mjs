@@ -1,4 +1,4 @@
-// WORK-001 C: one owner HTTP flow per provider, with fakes only at its network
+// WORK-003: one owner HTTP flow per provider, with fakes only at its network
 // boundary. The same D1/auth/sync/re-test paths run as the application uses.
 import assert from 'node:assert/strict'
 import { configs } from './tracker-matrix.mjs'
