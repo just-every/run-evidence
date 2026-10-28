@@ -61,7 +61,8 @@ try {
   desk=await (await agent('/api/agent/desk')).json();assert.equal(desk.requirements.find(row=>row.id===control.id).gap,'unavailable bytes')
   await (await app.mf.getR2Bucket('EXHIBITS')).put(receipt.object_key,'Real retained evidence bytes')
  })
- await scenario('Preparation freezes selected evidence and gaps without creating a published folder',async()=>{
+ await scenario('AGENT-001 and LOG-001: prepare a scoped proposal, approve its exact snapshot or reject it, and retain the scoped decision and audit',async()=>{
+  {
   const before=(await (await app.fetch('/api/folders')).json()).folders.length
   proposal=await prepare()
   assert.equal(proposal.snapshot.requirements.length,1);assert.equal(proposal.snapshot.requirements[0].control_id,control.control_id)
@@ -74,8 +75,8 @@ try {
   const retained=await (await app.fetch('/api/agent/proposals/'+proposal.id)).json();assert.equal(retained.proposal.snapshot.requirements[0].gap,'covered')
   assert.equal((await owner('/api/agent/proposals/'+proposal.id+'/approve',{snapshot_hash:proposal.snapshot_hash})).status,409)
   proposal=await prepare()
- })
- await scenario('LOG-001 / Only exact owner approval creates one folder, is on the owner Audit with the snapshot it approved, and the reviewer sees current honest gaps',async()=>{
+  }
+  {
   const path='/api/agent/proposals/'+proposal.id+'/approve'
   for(const extra of [{},{cookie:ownerCookie,origin:app.origin}])assert.equal((await refusedAgent(path,{snapshot_hash:proposal.snapshot_hash},extra)).status,403)
   assert.equal((await owner(path,{snapshot_hash:'0'.repeat(64)})).status,409)
@@ -88,13 +89,14 @@ try {
   const persisted=await (await app.fetch('/api/agent/proposals/'+proposal.id)).text();assert.ok(!persisted.includes(approved.review_url));assert.ok(!persisted.includes(new URL(approved.review_url).pathname.split('/').at(-1)))
   await assert.rejects(app.db.prepare('UPDATE agent_proposals SET snapshot_hash=? WHERE id=?').bind('a'.repeat(64),proposal.id).run(),/immutable_agent_proposal/)
   await assert.rejects(app.db.prepare('DELETE FROM agent_decisions WHERE proposal_id=?').bind(proposal.id).run(),/retained_agent_decision/)
- })
- await scenario('Rejection is final and each agent can inspect only its own proposals',async()=>{
+  }
+  {
   const rejected=await prepare();assert.equal((await owner('/api/agent/proposals/'+rejected.id+'/reject',{snapshot_hash:rejected.snapshot_hash})).status,200)
   assert.equal((await owner('/api/agent/proposals/'+rejected.id+'/approve',{snapshot_hash:rejected.snapshot_hash})).status,409)
   const other=await (await owner('/api/agent/tokens',{label:'Another agent',expires_at:'2026-10-20T00:00:00Z'})).json()
   const list=await (await agent('/api/agent/proposals',undefined,other.token)).json();assert.deepEqual(list.proposals,[])
   assert.equal((await agent('/api/agent/proposals/'+proposal.id,undefined,other.token)).status,403)
+  }
  })
  await scenario('New in-scope receipts make preparation stale and require a new owner review',async()=>{
   const stale=await prepare(), before=(await (await app.fetch('/api/folders')).json()).folders.length

@@ -1,7 +1,7 @@
 name: Verify
 on:
   push:
-    branches: [main, cloud/sx-evidence-c37, cloud/sx-evidence-g23-r4, cloud/sx-evidence-c-i816, cloud/sx-evidence-c-i822, cloud/sx-evidence-defect1]
+    branches: [main, cloud/sx-evidence-c37, cloud/sx-evidence-g23-r4, cloud/sx-evidence-c-i816, cloud/sx-evidence-c-i822, cloud/sx-evidence-defect1, cloud/sx-evidence-u1]
   pull_request:
     branches: [main]
 permissions:
@@ -42,6 +42,9 @@ jobs:
       - name: Install Chromium system dependencies (cache hit)
         if: steps.browsers.outputs.cache-hit == 'true'
         run: pnpm exec playwright install-deps chromium
+      - name: Install portal browsers
+        if: matrix.shard == 'history'
+        run: node scripts/install-portal-browsers.mjs
       - run: pnpm exec rer verify
         env:
           RER_VERIFY_WORKERS: '2'
