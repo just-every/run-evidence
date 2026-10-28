@@ -1461,6 +1461,22 @@ Core · target · **partial** · Cites BASE-INSTALL-001, BASE-DATA-004, BASE-DAT
 **Evidence.** `tests/live/own-macos.py`; `tests/live/own-daytona.py`; `tests/live/own-hosted.mjs`; `tests/archive.mjs`; `tests/helpers/portable-journey.mjs`; `README.md`; `RUN-LOCALLY.md`; `deploy.json`
 **Gap.** Ubuntu stop and restart and the complete one-hour outbound capture remain unproved, and the live hosted archive manifest still returned 503 after the native batching changes, so complete live validation, restore and every-record and original-byte reconciliation remain unproved. Fresh checkout and CLI home on an existing macOS do not establish the full clean-machine point. The run receipts are in CHANGELOG.md.
 
+### Honest product boundaries
+
+#### BOUNDARY-001 — US-first scope and independent specialist services
+
+Core · target · **done**
+
+**Requirement.** Evidence is the owned compliance automation and customer-assurance product, replacing the program work bought from Vanta, Drata and Secureframe and advancing beyond the Comp AI, Sprinto and Delve comparison set. US-first means USD commercial/cost disclosures, US business calendars, employee and 1099-contractor populations, and US-first framework applicability. It prepares SOC 2/ISO/HIPAA/PCI evidence; an independent US CPA issues a SOC 2 attestation, an accredited certification body decides ISO 27001, ISO 27701 and ISO 42001 certification, a PCI QSA or the merchant signs the AOC, a C3PAO assesses CMMC Level 2, a FedRAMP 3PAO and agency sponsor decide authorization, an authorized HITRUST assessor submits HITRUST assessments, and qualified assessors/counsel determine regulated obligations, including which US state privacy laws apply. No template, score, agent or portal guarantees certification or authorizes regulated data. Required BAAs/DPAs, regional controls and licensed framework content are explicit prerequisites to appropriate processing, not reasons to omit the program. Each program shows its data-processing prerequisites (the framework's agreements, licensed framework content, and regional controls for every named region outside the US) labelled as not verified by Evidence, names who decides and signs, discloses USD provider costs for hosting, mail and every connected provider, and exports an assessor handoff pack that asserts no certification. The specialist services Evidence integrates with are listed under Boundaries, and the US-region rule follows `docs/rules/boundary.md`.
+
+**Acceptance.** On a US business with a HIPAA/PCI scope:
+1. Onboard a US business, choose a HIPAA/PCI scope, inspect data-processing prerequisites and assessor handoff, review USD module/provider costs, and export an evidence pack for an independent assessor.
+2. Follow linked remediation to Vector and source checks to the named specialist providers.
+3. No UI/report claims certification, legal sufficiency or operation of an external system without source evidence.
+
+**Evidence.** `src/evidence/program/boundary.ts`; `src/evidence/program/http.ts`; `src/evidence/costs.ts`; `src/evidence/library/`; `tests/program.mjs`; `tests/work.mjs`; `tests/cloud.mjs`; `tests/population.mjs`; `tests/followup.mjs`
+**Gap.** None.
+
 ### Agents accountable to the compliance job
 
 #### AGENT-002 — Prove operation across the audit period
@@ -1571,22 +1587,6 @@ Each inventory record cites the source records that surfaced it. Link AI-specifi
 
 **Evidence.** None.
 **Gap.** No implementing path
-
-### Honest product boundaries
-
-#### BOUNDARY-001 — US-first scope and independent specialist services
-
-Core · target · **done**
-
-**Requirement.** Evidence is the owned compliance automation and customer-assurance product, replacing the program work bought from Vanta, Drata and Secureframe and advancing beyond the Comp AI, Sprinto and Delve comparison set. US-first means USD commercial/cost disclosures, US business calendars, employee and 1099-contractor populations, and US-first framework applicability. It prepares SOC 2/ISO/HIPAA/PCI evidence; an independent US CPA issues a SOC 2 attestation, an accredited certification body decides ISO 27001, ISO 27701 and ISO 42001 certification, a PCI QSA or the merchant signs the AOC, a C3PAO assesses CMMC Level 2, a FedRAMP 3PAO and agency sponsor decide authorization, an authorized HITRUST assessor submits HITRUST assessments, and qualified assessors/counsel determine regulated obligations, including which US state privacy laws apply. No template, score, agent or portal guarantees certification or authorizes regulated data. Required BAAs/DPAs, regional controls and licensed framework content are explicit prerequisites to appropriate processing, not reasons to omit the program. Each program shows its data-processing prerequisites (the framework's agreements, licensed framework content, and regional controls for every named region outside the US) labelled as not verified by Evidence, names who decides and signs, discloses USD provider costs for hosting, mail and every connected provider, and exports an assessor handoff pack that asserts no certification. The specialist services Evidence integrates with are listed under Boundaries, and the US-region rule follows `docs/rules/boundary.md`.
-
-**Acceptance.** On a US business with a HIPAA/PCI scope:
-1. Onboard a US business, choose a HIPAA/PCI scope, inspect data-processing prerequisites and assessor handoff, review USD module/provider costs, and export an evidence pack for an independent assessor.
-2. Follow linked remediation to Vector and source checks to the named specialist providers.
-3. No UI/report claims certification, legal sufficiency or operation of an external system without source evidence.
-
-**Evidence.** `src/evidence/program/boundary.ts`; `src/evidence/program/http.ts`; `src/evidence/costs.ts`; `src/evidence/library/`; `tests/program.mjs`; `tests/work.mjs`; `tests/cloud.mjs`; `tests/population.mjs`; `tests/followup.mjs`
-**Gap.** None.
 
 ## Agent surface
 

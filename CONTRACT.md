@@ -1277,96 +1277,6 @@ The cutover boundary is shown explicitly in each report, in population exports (
 2. With every connector off, record every outbound request for an hour of use: none goes to a host run by Evidence's authors.
 3. Deploy to a sandbox Cloudflare account: the D1 database and R2 bucket are in that account, and the deployment serves the restored archive of the local installation with every record and byte reconciled.
 
-### Agents accountable to the compliance job
-
-#### AGENT-002 — Prove operation across the audit period
-
-*Tier:* Core · *Rules:* D-2, D-3
-
-**Requirement.** An agent correlates cloud configuration changes, identity/security events, deployment history and control revisions across a selected audit period. It flags controls that pass now but failed earlier, missing windows, contradictory sources and unobserved assets, and proposes attributable findings rather than a fabricated pass. Changing control meaning or approving an exception stays its own separate act, whoever prepared it, and the auditor decides evidence sufficiency. Original observations, source times and periods remain inspectable. The correlation, window, contradiction and bound rules follow `docs/rules/period-agent.md`.
-
-**Acceptance.** From a control's audit-period report:
-1. From a period report ask the agent to investigate a control that passes its latest snapshot but had a documented mid-period privilege/merge violation and a missing event window.
-2. Follow its citations to original sources; both the failure and unknown interval appear.
-3. Reject its proposed exception and verify no mapping, pass or auditor decision changes.
-
-#### AGENT-003 — Investigate, fix narrowly and re-test the real system
-
-*Tier:* Core · *Rules:* D-3, D-8
-
-**Requirement.** For a failed control, an agent investigates the linked source evidence, affected assets, configuration and repository history; proposes a minimal configuration/IaC change with rationale, risk, diff and rollback; and executes it through a separate constrained writer, never collection credentials. Executing the change alters the buyer's running systems and protective settings, so the call carries the security and live classes, with the exact versioned change and its bounds (account, resources, actions, expiry and spend) as facts; the company's policy decides it, within the bounds of the writer's grant. It independently reads back and re-tests the real system, closes only verified work, and escalates residual failures or exhausted authority. Reject/revoke prevents the next action. Retain the failed observation, decided change, execution outcome, rollback and fresh proof in one chain.
-
-**Acceptance.** Under the held company policy, against a sandbox control:
-1. Fail a real sandbox control, ask the agent to investigate and propose a change, reject one revision and approve the next with one-resource authority.
-2. Attempt an out-of-scope write and revoke an in-flight grant: prevent further unauthorized work.
-3. Execute the permitted fix, read back from the real provider, independently re-test and verify closure without erasing the original failure.
-4. A failed fix stays open with escalation and rollback evidence.
-
-#### AGENT-004 — Maintain collectors without manufacturing evidence
-
-*Tier:* Core · *Rules:* D-2, D-8
-
-**Requirement.** An agent detects expired scopes, schema drift, stale timestamps, dropped assets and missing source coverage; diagnoses the provider/account failure and prepares a reconnect or reviewed read-only connector change. It may implement a missing connector in a sandbox and compare outputs against the authorized actual source. Activating connector code, accounts and scopes carries the security class (accounts where it creates one), broadening a scope carries access that widens, and a production write carries live; the company's policy decides each. No fabricated screenshots, backdating or silent exclusions can repair a gap.
-
-**Acceptance.** Under the held company policy, against a sandbox connector:
-1. Break a sandbox connector scope/schema, remove an asset from a page and stale its source timestamp.
-2. Ask the agent for a diagnosis and connector patch, review the diff and approve read-only scopes, then compare output with the actual source inventory.
-3. Original gaps remain, and no production activation or unsupported pass happens before approval.
-
-#### AGENT-005 — Keep customer promises current
-
-*Tier:* Core · *Rules:* D-4
-
-**Requirement.** An agent tracks dependencies from approved trust statements and questionnaire answers to controls, exhibits, policies, audit periods and customer contract commitments. Changed/failed/stale sources invalidate affected answers for reuse and prepare a cited revision plus a named security/legal-owner decision. Publishing a revised promise or sending it to a customer reaches people outside the business and binds it, so an agent's call that does so carries the external and commitment classes, which the company's policy decides; whoever decides, the decision binds the exact version and recipients. The agent can chase internal review under the follow-up rules, and nothing silently sends a new security promise. Dependencies are exact owner-selected source relationships (`docs/CUSTOMER-PROMISES.md`).
-
-**Acceptance.** Through answers, trust statements and their exports:
-1. Approve an answer and trust statement linked to a passing control and contract obligation, then fail the control and change the source policy.
-2. Inspect invalidation, affected customer commitments and cited revision.
-3. Attempt to reuse/export/send the stale answer; require a fresh authorized decision and retain the prior external version and recipient history.
-
-#### AGENT-006 — Tailor policies, risks and structured obligations
-
-*Tier:* Core · *Rules:* D-3 · *Register:* R-12
-
-**Requirement.** Using authorized architecture/inventory, approved policies, customer contracts and selected regulatory text, an agent proposes tailored policy changes, risk assessments and structured control obligations with source passages, applicability assumptions, deadlines and conflicts. It distinguishes a contract promise from a framework requirement and never presents interpretation as legal advice. A prepared change takes effect only through a decision on its exact revision, and every downstream effect is bound to that revision; assigning work, altering scope and publishing policy carry the commitment class, which the company's policy decides, and model text never grants authority (RL-101). It uses AUTH-001's scoped reviewer authorization and SECURE-001's declared-flow custody, preserves exact-source citations and uncertainty, and inherits CONTROL-002's individual mapping decisions. The preparation, interpretation and decision rules follow `docs/rules/tailoring.md`.
-
-**Acceptance.** Under the held company policy, from selected sources and the asset inventory:
-1. Ask the agent to interpret a US customer security addendum and selected framework material alongside the actual asset inventory.
-2. Inspect clause citations, proposed controls, policy/risk diffs and one ambiguous obligation.
-3. Reject a proposed interpretation and approve another: only the approved exact revision enters the program and downstream work.
-4. Approve two proposed mappings and reject one individually: only the two approved exact revisions become framework mappings, and the rejected proposal changes nothing.
-
-#### AGENT-007 — Check uploaded and captured evidence before the auditor sees it
-
-*Tier:* Core · *Rules:* D-1, D-8
-
-**Requirement.** When an exhibit is uploaded to a requirement (PROOF-001), an agent checks it against the requirement text, its control, the period and earlier accepted exhibits. It reports one of likely meets, missing element, outdated or wrong system, with citations to the exhibit's page or region and to the requirement wording. Through the Evidence browser extension (ANSWER-002), a signed-in owner or control owner can capture a screenshot of a named web-app settings page. The capture records the URL, page title, time and capturing person, and is stored as a manually-asserted exhibit labeled browser-captured, never source-observed; the same check then runs on it. A check never changes an exhibit, receipt or origin and never marks a requirement satisfied. Sharing a finding with an auditor reaches someone outside the business and carries the external class; accepting or dismissing a finding is the company's policy for its class. Open findings appear in readiness before an engagement is shared (AUDIT-003).
-
-**Acceptance.** On a quarterly access-review requirement and a held-out exhibit set:
-1. Upload three exhibits to a quarterly access-review requirement: one dated before the period, one missing the reviewer sign-off and one complete. The agent reports outdated and missing element for the first two and likely meets for the third, and each citation resolves to the cited page and requirement wording.
-2. Dismiss one finding and accept another: the receipt bytes, origin and requirement state are unchanged, and nothing is marked satisfied.
-3. Capture a SaaS admin MFA settings page with the extension: the exhibit is manually-asserted and labeled browser-captured with URL and time, and it is checked.
-4. Against a held-out set of 20 exhibits with an independent reviewer key, the agent's verdicts match at least 90% of the key, and zero exhibits the key marks deficient are reported as likely meets.
-
-#### AI-001 — AI inventory and governance
-
-*Tier:* Core · *Rules:* D-5, D-8
-
-**Requirement.** Inventory AI tools, model providers, internal AI use cases, data classes, business owners, access, evaluation evidence and approved-use restrictions, discovered from these named authorized sources:
-- **OAuth grants to AI apps** in Google Workspace, Microsoft Entra ID and Okta, classified against a shipped, versioned catalog of AI apps, with granted scopes and users;
-- **the OpenAI organization Admin API:** members, projects, API keys and service accounts;
-- **the Anthropic Admin API:** organization members, workspaces and API keys;
-- **AI SDK dependencies** (for example `openai`, `@anthropic-ai/sdk`, `anthropic`, `langchain` and `@google/generative-ai`) found in dependency manifests by CODE-001;
-- **AI vendors** among VENDOR-002 spend sources.
-
-Each inventory record cites the source records that surfaced it. Link AI-specific risks, policies and control tests to the same program; flag shadow tools, unowned API keys and changed data access for triage. An AI provider receives evidence or runs an agent job only after its model/vendor approval and a documented evidence-sharing policy (SECURE-001's declared flow); governance observations never imply certified model safety.
-
-**Acceptance.** Through Connections and the AI inventory:
-1. Exercise every named source. Grant an unapproved AI app in each of Google Workspace, Entra ID and Okta; add a member and an API key in an OpenAI organization and in an Anthropic organization; add an AI SDK to a connected repository; and record an AI vendor charge in a connected spend source. Each produces an inventory record citing its source.
-2. Review one tool's data access and owner, link a risk and acceptable-use policy, and approve only a bounded use case.
-3. Change its permissions and revoke one API key at the provider, rerun governance checks, and inspect the reopened review and the key's revoked state on the next read.
-4. An unapproved provider cannot receive evidence or execute an agent job.
-
 ### Honest product boundaries
 
 #### BOUNDARY-001 — US-first scope and independent specialist services
@@ -1539,6 +1449,98 @@ Inherits BASE-AGENT-001 to BASE-AGENT-013. The company's policy decides every ca
 2. Under the all-autonomous policy, the agent reads the week's gaps, uploads proof, carries two failing tests to obligations and tickets, sends one supplier request, drafts and submits one questionnaire answer set and issues one reviewer folder, with no call waiting and none refused.
 3. Under the held policy, the same week completes with each external and commitment step waiting for the test person's approval and running once approved.
 4. Under the held policy with external blocked, the supplier request, the answer-set submission and the folder issue are refused, and every other step completes.
+
+## Push further
+
+### Agents accountable to the compliance job
+
+#### AGENT-002 — Prove operation across the audit period
+
+*Tier:* Core · *Rules:* D-2, D-3
+
+**Requirement.** An agent correlates cloud configuration changes, identity/security events, deployment history and control revisions across a selected audit period. It flags controls that pass now but failed earlier, missing windows, contradictory sources and unobserved assets, and proposes attributable findings rather than a fabricated pass. Changing control meaning or approving an exception stays its own separate act, whoever prepared it, and the auditor decides evidence sufficiency. Original observations, source times and periods remain inspectable. The correlation, window, contradiction and bound rules follow `docs/rules/period-agent.md`.
+
+**Acceptance.** From a control's audit-period report:
+1. From a period report ask the agent to investigate a control that passes its latest snapshot but had a documented mid-period privilege/merge violation and a missing event window.
+2. Follow its citations to original sources; both the failure and unknown interval appear.
+3. Reject its proposed exception and verify no mapping, pass or auditor decision changes.
+
+#### AGENT-003 — Investigate, fix narrowly and re-test the real system
+
+*Tier:* Core · *Rules:* D-3, D-8
+
+**Requirement.** For a failed control, an agent investigates the linked source evidence, affected assets, configuration and repository history; proposes a minimal configuration/IaC change with rationale, risk, diff and rollback; and executes it through a separate constrained writer, never collection credentials. Executing the change alters the buyer's running systems and protective settings, so the call carries the security and live classes, with the exact versioned change and its bounds (account, resources, actions, expiry and spend) as facts; the company's policy decides it, within the bounds of the writer's grant. It independently reads back and re-tests the real system, closes only verified work, and escalates residual failures or exhausted authority. Reject/revoke prevents the next action. Retain the failed observation, decided change, execution outcome, rollback and fresh proof in one chain.
+
+**Acceptance.** Under the held company policy, against a sandbox control:
+1. Fail a real sandbox control, ask the agent to investigate and propose a change, reject one revision and approve the next with one-resource authority.
+2. Attempt an out-of-scope write and revoke an in-flight grant: prevent further unauthorized work.
+3. Execute the permitted fix, read back from the real provider, independently re-test and verify closure without erasing the original failure.
+4. A failed fix stays open with escalation and rollback evidence.
+
+#### AGENT-004 — Maintain collectors without manufacturing evidence
+
+*Tier:* Core · *Rules:* D-2, D-8
+
+**Requirement.** An agent detects expired scopes, schema drift, stale timestamps, dropped assets and missing source coverage; diagnoses the provider/account failure and prepares a reconnect or reviewed read-only connector change. It may implement a missing connector in a sandbox and compare outputs against the authorized actual source. Activating connector code, accounts and scopes carries the security class (accounts where it creates one), broadening a scope carries access that widens, and a production write carries live; the company's policy decides each. No fabricated screenshots, backdating or silent exclusions can repair a gap.
+
+**Acceptance.** Under the held company policy, against a sandbox connector:
+1. Break a sandbox connector scope/schema, remove an asset from a page and stale its source timestamp.
+2. Ask the agent for a diagnosis and connector patch, review the diff and approve read-only scopes, then compare output with the actual source inventory.
+3. Original gaps remain, and no production activation or unsupported pass happens before approval.
+
+#### AGENT-005 — Keep customer promises current
+
+*Tier:* Core · *Rules:* D-4
+
+**Requirement.** An agent tracks dependencies from approved trust statements and questionnaire answers to controls, exhibits, policies, audit periods and customer contract commitments. Changed/failed/stale sources invalidate affected answers for reuse and prepare a cited revision plus a named security/legal-owner decision. Publishing a revised promise or sending it to a customer reaches people outside the business and binds it, so an agent's call that does so carries the external and commitment classes, which the company's policy decides; whoever decides, the decision binds the exact version and recipients. The agent can chase internal review under the follow-up rules, and nothing silently sends a new security promise. Dependencies are exact owner-selected source relationships (`docs/CUSTOMER-PROMISES.md`).
+
+**Acceptance.** Through answers, trust statements and their exports:
+1. Approve an answer and trust statement linked to a passing control and contract obligation, then fail the control and change the source policy.
+2. Inspect invalidation, affected customer commitments and cited revision.
+3. Attempt to reuse/export/send the stale answer; require a fresh authorized decision and retain the prior external version and recipient history.
+
+#### AGENT-006 — Tailor policies, risks and structured obligations
+
+*Tier:* Core · *Rules:* D-3 · *Register:* R-12
+
+**Requirement.** Using authorized architecture/inventory, approved policies, customer contracts and selected regulatory text, an agent proposes tailored policy changes, risk assessments and structured control obligations with source passages, applicability assumptions, deadlines and conflicts. It distinguishes a contract promise from a framework requirement and never presents interpretation as legal advice. A prepared change takes effect only through a decision on its exact revision, and every downstream effect is bound to that revision; assigning work, altering scope and publishing policy carry the commitment class, which the company's policy decides, and model text never grants authority (RL-101). It uses AUTH-001's scoped reviewer authorization and SECURE-001's declared-flow custody, preserves exact-source citations and uncertainty, and inherits CONTROL-002's individual mapping decisions. The preparation, interpretation and decision rules follow `docs/rules/tailoring.md`.
+
+**Acceptance.** Under the held company policy, from selected sources and the asset inventory:
+1. Ask the agent to interpret a US customer security addendum and selected framework material alongside the actual asset inventory.
+2. Inspect clause citations, proposed controls, policy/risk diffs and one ambiguous obligation.
+3. Reject a proposed interpretation and approve another: only the approved exact revision enters the program and downstream work.
+4. Approve two proposed mappings and reject one individually: only the two approved exact revisions become framework mappings, and the rejected proposal changes nothing.
+
+#### AGENT-007 — Check uploaded and captured evidence before the auditor sees it
+
+*Tier:* Core · *Rules:* D-1, D-8
+
+**Requirement.** When an exhibit is uploaded to a requirement (PROOF-001), an agent checks it against the requirement text, its control, the period and earlier accepted exhibits. It reports one of likely meets, missing element, outdated or wrong system, with citations to the exhibit's page or region and to the requirement wording. Through the Evidence browser extension (ANSWER-002), a signed-in owner or control owner can capture a screenshot of a named web-app settings page. The capture records the URL, page title, time and capturing person, and is stored as a manually-asserted exhibit labeled browser-captured, never source-observed; the same check then runs on it. A check never changes an exhibit, receipt or origin and never marks a requirement satisfied. Sharing a finding with an auditor reaches someone outside the business and carries the external class; accepting or dismissing a finding is the company's policy for its class. Open findings appear in readiness before an engagement is shared (AUDIT-003).
+
+**Acceptance.** On a quarterly access-review requirement and a held-out exhibit set:
+1. Upload three exhibits to a quarterly access-review requirement: one dated before the period, one missing the reviewer sign-off and one complete. The agent reports outdated and missing element for the first two and likely meets for the third, and each citation resolves to the cited page and requirement wording.
+2. Dismiss one finding and accept another: the receipt bytes, origin and requirement state are unchanged, and nothing is marked satisfied.
+3. Capture a SaaS admin MFA settings page with the extension: the exhibit is manually-asserted and labeled browser-captured with URL and time, and it is checked.
+4. Against a held-out set of 20 exhibits with an independent reviewer key, the agent's verdicts match at least 90% of the key, and zero exhibits the key marks deficient are reported as likely meets.
+
+#### AI-001 — AI inventory and governance
+
+*Tier:* Core · *Rules:* D-5, D-8
+
+**Requirement.** Inventory AI tools, model providers, internal AI use cases, data classes, business owners, access, evaluation evidence and approved-use restrictions, discovered from these named authorized sources:
+- **OAuth grants to AI apps** in Google Workspace, Microsoft Entra ID and Okta, classified against a shipped, versioned catalog of AI apps, with granted scopes and users;
+- **the OpenAI organization Admin API:** members, projects, API keys and service accounts;
+- **the Anthropic Admin API:** organization members, workspaces and API keys;
+- **AI SDK dependencies** (for example `openai`, `@anthropic-ai/sdk`, `anthropic`, `langchain` and `@google/generative-ai`) found in dependency manifests by CODE-001;
+- **AI vendors** among VENDOR-002 spend sources.
+
+Each inventory record cites the source records that surfaced it. Link AI-specific risks, policies and control tests to the same program; flag shadow tools, unowned API keys and changed data access for triage. An AI provider receives evidence or runs an agent job only after its model/vendor approval and a documented evidence-sharing policy (SECURE-001's declared flow); governance observations never imply certified model safety.
+
+**Acceptance.** Through Connections and the AI inventory:
+1. Exercise every named source. Grant an unapproved AI app in each of Google Workspace, Entra ID and Okta; add a member and an API key in an OpenAI organization and in an Anthropic organization; add an AI SDK to a connected repository; and record an AI vendor charge in a connected spend source. Each produces an inventory record citing its source.
+2. Review one tool's data access and owner, link a risk and acceptable-use policy, and approve only a bounded use case.
+3. Change its permissions and revoke one API key at the provider, rerun governance checks, and inspect the reopened review and the key's revoked state on the next read.
+4. An unapproved provider cannot receive evidence or execute an agent job.
 
 ## Field proof register
 
