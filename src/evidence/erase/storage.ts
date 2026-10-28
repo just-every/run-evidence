@@ -4,17 +4,18 @@ import { validDate } from '../model'
 import { Refusal } from '../upload'
 import { sha } from '../archive/format'
 import { holdPredicate,holdParameters,overdueHolds } from './holds'
+import { entitySnapshot,executeEntity } from './entity'
 export const kinds = ['exhibit','person','vendor','engagement','business'] as const
 export interface Erasure { id:string;kind:string;subject_id:string;snapshot_json:string;snapshot_hash:string;reason:string;requested_by:string;requested_name:string;requested_at:string;state:string;confirmed_at:string|null;completed_at:string|null;counts_json:string }
 export async function privacy(env:Bindings,now:Date) {
  return {classifications:(await env.DB.prepare('SELECT * FROM privacy_exhibit_scopes ORDER BY classified_at,kind,subject_id').all()).results,overdue_holds:await overdueHolds(env,now),holds:(await env.DB.prepare('SELECT * FROM privacy_holds ORDER BY created_at,rowid').all()).results,requests:(await env.DB.prepare('SELECT * FROM privacy_requests ORDER BY requested_at DESC,rowid DESC').all<Erasure>()).results}
 }
 export async function requestOf(env:Bindings,id:string) { const row=await env.DB.prepare('SELECT * FROM privacy_requests WHERE id=?').bind(id).first<Erasure>();if(!row)throw new Refusal('Erasure request not found.',404);return row }
-async function snapshot(env:Bindings,kind:string,subject:string) {
+async function snapshot(env:Bindings,kind:string,subject:string):Promise<any> {
+ if(kind!=='exhibit')return entitySnapshot(env,kind,subject,snapshot)
  const hold_history=(await env.DB.prepare(`SELECT * FROM privacy_holds WHERE ${holdPredicate} ORDER BY id`).bind(...holdParameters(kind,subject)).all()).results
  const classifications=kind==='exhibit'?(await env.DB.prepare('SELECT * FROM privacy_exhibit_scopes WHERE exhibit_id=? ORDER BY kind,subject_id').bind(subject).all()).results:[]
  const holds=hold_history.filter((h:any)=>!h.released_at)
- if(kind!=='exhibit')return {kind,subject,holds,hold_history,supported:false,remaining:'Entity relationships and provider-copy deletion are not yet classified. No deletion is available for this scope.'}
  const row=await env.DB.prepare('SELECT e.id,e.object_key,e.size,r.id AS receipt_id,r.origin,r.requirement_id,r.sha256 FROM exhibits e JOIN receipts r ON r.exhibit_id=e.id WHERE e.id=?').bind(subject).first<any>()
  if(!row)throw new Refusal('Exhibit not found.',404)
  const imported=!!await env.DB.prepare("SELECT 1 FROM import_additions WHERE kind='receipt' AND id=?").bind(row.receipt_id).first()
@@ -57,9 +58,10 @@ export async function release(env:Bindings,id:string,input:Input,actor:Actor,now
 export async function execute(env:Bindings,id:string,input:Input,actor:Actor,now:Date) {
  let row=await requestOf(env,id)
  if(input.confirm!=='ERASE'||input.snapshot_hash!==row.snapshot_hash)throw new Refusal('Type ERASE and confirm the exact preview fingerprint.',409)
- if(row.state==='complete')return row
+ if(row.state==='complete'||row.state==='partial')return row
  const original=JSON.parse(row.snapshot_json)
  if(!original.supported)throw new Refusal('This scope is not yet supported. No erasure is claimed.',409)
+ if(row.kind!=='exhibit')return executeEntity(env,row,actor,now,snapshot)
  const current=await snapshot(env,row.kind,row.subject_id)
  if(current.promise_linked)throw new Refusal('The exhibit is no longer standalone. Review its customer-promise dependencies; no erasure is claimed.',409)
  if(current.holds.length)throw new Refusal('A legal hold prevents erasure. Inspect its reason, authorizer and review date.',409,current.holds)

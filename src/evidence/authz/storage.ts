@@ -4,6 +4,7 @@ import { Refusal } from '../upload'
 import { delegableByAdministrator, restrictedClasses, roles, scopedRoles, scopeKinds, type Delegate, type Grant } from './roles'
 import { digest } from './scim'
 import { ssoProviders } from './sso'
+import { privacyScope } from '../erase/authority'
 
 export interface AccessSnapshot { grants: (Grant & { revoked_at: string | null; revoke_reason: string | null })[]; teams: { control_id: string; team: string }[]; tokens: { id: string; name: string; provider: string; created_name: string; created_at: string; expires_at: string; revoked_at: string | null; last_used_at: string | null }[]; users: { id: string; provider: string; email: string; display_name: string; active: number }[]; mfa_required: boolean; providers: string[] }
 export async function snapshot(env: Bindings): Promise<AccessSnapshot> {
@@ -27,7 +28,7 @@ export async function grant(env: Bindings, actor: Actor, delegate: Delegate | un
  if (delegate && delegate.email === email) throw new Refusal('You cannot grant a role to yourself.', 403)
  if (kind === 'area') {
   if (delegate) throw new Refusal('Only the owner grants a restricted record area.', 403)
-  if (!(restrictedClasses as readonly string[]).includes(ref) || !['administrator', 'compliance_manager'].includes(role)) throw new Refusal('Name personnel, findings or connector-data for an administrator or compliance manager.')
+  if ((!(restrictedClasses as readonly string[]).includes(ref) && !privacyScope(ref)) || !['administrator', 'compliance_manager'].includes(role)) throw new Refusal('Name a restricted record area or an exact privacy scope for an administrator or compliance manager.')
  } else if (!scopedRoles.includes(role) && kind !== 'business') throw new Refusal('That role applies to the whole business.')
  if (kind === 'control' && !await env.DB.prepare('SELECT 1 FROM controls WHERE id=?').bind(ref).first()) throw new Refusal('Choose an existing control.', 404)
  if (kind === 'team' && !await env.DB.prepare('SELECT 1 FROM control_teams WHERE team=?').bind(ref).first()) throw new Refusal('Name a team that has controls.', 404)

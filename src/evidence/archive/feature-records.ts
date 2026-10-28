@@ -10,7 +10,7 @@ export async function validateFeatureRecords(env:Store,id:string) {
  for(const table of ['privacy_requests','vendor_document_reviews','questionnaire_drafts','tailoring_proposals'])for await(const rows of pages(env,table,t(table)))for(const r of rows){
   if(typeof r.snapshot_json!=='string'||await sha(new TextEncoder().encode(r.snapshot_json))!==r.snapshot_hash)fail('Retained review fingerprint does not match.')
   let value:any;try{value=JSON.parse(r.snapshot_json)}catch{fail('Invalid retained review JSON.')}
-  if(table==='privacy_requests'){if(value.kind!==r.kind||value.subject!==r.subject_id||!['preview','pending','complete'].includes(String(r.state)))fail('Invalid retained erasure scope.')}
+  if(table==='privacy_requests'){if(value.kind!==r.kind||value.subject!==r.subject_id||!['preview','pending','complete','partial'].includes(String(r.state)))fail('Invalid retained erasure scope.')}
   else if(table==='questionnaire_drafts') {
    const q=await env.DB.prepare(`SELECT questions_json,sha256 FROM ${t('questionnaires')} WHERE id=?`).bind(r.questionnaire_id).first<{questions_json:string;sha256:string}>()
    if(!q||JSON.stringify(value.questions)!==q.questions_json||value.template_sha256!==q.sha256||!Array.isArray(value.answers)||value.answers.length!==value.questions.length)fail('Questionnaire draft contradicts its retained template.')
@@ -53,5 +53,8 @@ export async function validateFeatureRecords(env:Store,id:string) {
  }
  for(const [decision,proposal,key]of [['questionnaire_approvals','questionnaire_drafts','draft_id'],['tailoring_decisions','tailoring_proposals','proposal_id']])if(await env.DB.prepare(`SELECT 1 FROM ${t(decision)} d JOIN ${t(proposal)} p ON p.id=d.${key} WHERE d.snapshot_hash<>p.snapshot_hash LIMIT 1`).first())fail('Retained approval does not name its exact proposal.')
  if(await env.DB.prepare(`SELECT 1 FROM ${t('vendor_review_decisions')} d JOIN ${t('vendor_document_reviews')} r ON r.id=d.review_id WHERE d.snapshot_hash<>r.snapshot_hash LIMIT 1`).first())fail('Vendor decision does not approve its exact proposal.')
- if(await env.DB.prepare(`SELECT 1 FROM ${t('privacy_erased_exhibits')} e JOIN ${t('privacy_requests')} r ON r.id=e.request_id WHERE r.kind<>'exhibit' OR r.subject_id<>e.exhibit_id OR r.state NOT IN ('pending','complete') LIMIT 1`).first())fail('Invalid retained erasure tombstone.')
+ if(await env.DB.prepare(`SELECT 1 FROM ${t('privacy_erased_exhibits')} e JOIN ${t('privacy_requests')} r ON r.id=e.request_id WHERE r.state NOT IN ('pending','complete','partial') OR
+  (r.kind='exhibit' AND r.subject_id<>e.exhibit_id) OR
+  (r.kind<>'exhibit' AND NOT EXISTS(SELECT 1 FROM json_each(r.snapshot_json,'$.items') item
+   WHERE json_extract(item.value,'$.subject')=e.exhibit_id AND json_array_length(json_extract(item.value,'$.holds'))=0)) LIMIT 1`).first())fail('Invalid retained erasure tombstone.')
 }

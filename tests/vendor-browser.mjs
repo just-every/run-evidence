@@ -35,6 +35,25 @@ try {
  const privacyUpload=await app.fetch(controlResponse.headers.get('location')+'/uploads',{method:'POST',headers:{origin:app.origin},body:privacyFormData})
  assert.equal(privacyUpload.status,303)
  const privacyReceipt=await (await app.fetch(privacyUpload.headers.get('location').replace('/app/','/api/'))).json()
+ const entityCases={}
+ for(const width of [1440,390]) {
+  const p=await api('/api/people',{name:'synthetic-evidence-privacy-person-'+width,email:'synthetic-evidence-browser-'+width+'@'+'example.test',kind:'employee'})
+  const c=await app.fetch('/app/controls',{method:'POST',headers:{origin:app.origin,'content-type':'application'+'/'+'x-www-form-urlencoded'},body:new URLSearchParams({name:'Entity privacy '+width,group:'Data',proof:'Reviewed erasure set',cadence:'monthly'})})
+  assert.equal(c.status,303)
+  const originals=[]
+  for(const state of ['remove','retain']) {
+   const f=new FormData()
+   f.set('source','synthetic-evidence-'+state);f.set('covered_from','2026-11-02');f.set('covered_to','2026-11-02')
+   f.set('file',new File(['synthetic-evidence-'+state+'-'+width],'synthetic-evidence-'+state+'.txt'))
+   const upload=await app.fetch(c.headers.get('location')+'/uploads',{method:'POST',headers:{origin:app.origin},body:f})
+   assert.equal(upload.status,303)
+   const r=await (await app.fetch(upload.headers.get('location').replace('/app/','/api/'))).json()
+   await api('/api/privacy/classifications',{kind:'person',subject_id:p.id,exhibit_id:r.exhibit_id,reason:'Owner reviewed entity membership'})
+   originals.push(r)
+  }
+  const hold=await api('/api/privacy/holds',{kind:'exhibit',subject_id:originals[1].exhibit_id,reason:'Retain the held original '+width,review_on:'2027-01-01'})
+  entityCases[width]={person:p,originals,hold}
+ }
  app.setCookie('')
  server = createServer(async (req, res) => {
   try {
@@ -51,6 +70,7 @@ try {
  browser = await chromium.launch({ headless: true, executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH, args: ['--no-sandbox', '--use-mock-keychain', '--password-store=basic'] })
  await mkdir(output, { recursive: true })
  for (const width of [1440, 390]) {
+  await app.clock('2026-11-02T15:00:00Z')
   await app.clock('2026-11-02T15:00:00Z')
   const supplierPath = new URL(links[width].url).pathname
   const context = await browser.newContext({ viewport: { width, height: 1000 } })
@@ -212,6 +232,35 @@ try {
   if(width===1440)assert.match(await page.locator('pre').innerText(),/Keep classified exhibit 1440/)
   await capture('privacy-classified-hold')
   await page.goto(origin+'/app/privacy')
+  const entityCase=entityCases[width]
+  const entityForm=page.locator('form[action="/app/privacy/requests"]')
+  await entityForm.getByLabel('Scope').selectOption('person')
+  await entityForm.getByLabel('Subject ID').fill(entityCase.person.id)
+  await entityForm.getByLabel('Reason',{exact:true}).fill('Erase classified originals; disclose legal retention')
+  await entityForm.getByRole('button').click()
+  await page.getByRole('heading',{name:'Erasure review',exact:true}).waitFor()
+  if(width===1440) {
+   const plan=JSON.parse(await page.locator('pre').innerText())
+   assert.deepEqual(plan.held_items.map(item=>item.exhibit_id),[entityCase.originals[1].exhibit_id])
+   assert.equal(plan.held_items[0].holds[0].reason,'Retain the held original 1440')
+   assert.equal(plan.held_items[0].holds[0].authorized_name,'Evidence owner')
+   assert.equal(plan.held_items[0].holds[0].review_on,'2027-01-01')
+  }
+  await capture('privacy-entity-review')
+  await page.getByLabel('Type ERASE').fill('ERASE')
+  await page.getByRole('button',{name:'Confirm erasure',exact:true}).click()
+  await page.getByRole('heading',{name:'Erasure partial',exact:true}).waitFor()
+  await page.getByText('Classified exhibit storage absence verified. Other entity records remain; no completed entity erasure is claimed.',{exact:true}).waitFor()
+  if(width===1440) {
+   assert.equal((await app.fetch('/api/receipts/'+entityCase.originals[0].id+'/download',{headers:{cookie}})).status,410)
+   assert.equal(await (await app.fetch('/api/receipts/'+entityCase.originals[1].id+'/download',{headers:{cookie}})).text(),'synthetic-evidence-retain-1440')
+   assert.equal(await page.getByRole('button',{name:'Confirm erasure',exact:true}).count(),0)
+  }
+  await capture('privacy-entity-partial')
+  await page.goto(origin+'/app/roles')
+  await page.getByRole('heading',{name:'Roles',exact:true}).waitFor()
+  await capture('privacy-role-settings')
+  await page.goto(origin+'/app/privacy')
   const privacyForm=page.locator('form[action="/app/privacy/requests"]')
   await privacyForm.getByLabel('Scope').selectOption('business')
   await privacyForm.getByLabel('Reason').fill('Review all stores before any deletion')
@@ -236,6 +285,9 @@ try {
   await page.getByRole('heading',{name:'Legal hold reviews overdue'}).waitFor()
   await page.getByRole('link',{name:'Review legal holds'}).waitFor()
   await iconOnly(); await capture('privacy-overdue-desk')
+  const businessHold=(await (await app.fetch('/api/privacy',{headers:{cookie}})).json()).holds.find(h=>h.kind==='business'&&!h.released_at)
+  const released=await app.fetch('/api/privacy/holds/'+businessHold.id+'/release',{method:'POST',headers:{cookie,origin:app.origin,'content-type':'application'+'/'+'json'},body:JSON.stringify({reason:'Viewport review finished; retained originals remain under their own holds'})})
+  assert.equal(released.status,200)
   assert.deepEqual(errors, [])
   await context.close()
   console.log(`PASS VENDOR-001: register, diligence page and supplier link screens at ${width}`)

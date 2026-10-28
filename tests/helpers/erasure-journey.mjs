@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import { runtime } from './runtime.mjs'
+import { entityErasureJourney } from './entity-erasure-journey.mjs'
+import { privacyAuthorityJourney } from './privacy-authority-journey.mjs'
 export async function erasureJourney(app) {
  const post=async(path,body,status=200)=>{const r=await app.fetch(path,{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify(body)});assert.equal(r.status,status,path+' '+await r.clone().text());return r.json()}
  const control=await app.fetch('/app/controls',{method:'POST',headers:{origin:app.origin,'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({name:'Erasure review',group:'Data',proof:'Erasure original',cadence:'monthly'})})
@@ -203,5 +205,7 @@ export async function erasureJourney(app) {
   assert.deepEqual(JSON.parse(heldPreview.snapshot_json).holds.map(h=>h.id),[retainedHold.id])
   assert.equal((await restored.fetch('/api/privacy/requests/'+heldPreview.id+'/confirm',{method:'POST',headers:{origin:restored.origin,'content-type':'application'+'/'+'json'},body:JSON.stringify({snapshot_hash:heldPreview.snapshot_hash,confirm:'ERASE'})})).status,409)
  }finally{await restored.close()}
+ const entities=await runtime()
+ try{await entities.signin();await entityErasureJourney(entities);await privacyAuthorityJourney(entities)}finally{await entities.close()}
  console.log('PASS ERASE-001: reviewed exhibit erasure, holds, exact confirmation, tombstone custody, old-archive refusal and populated restore')
 }

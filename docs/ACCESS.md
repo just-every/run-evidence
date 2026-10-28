@@ -22,7 +22,7 @@ A scope is the whole business, a team, one control or a restricted record area. 
 control owner or contributor with the business scope reaches the controls they are
 named on; a team grant reaches the controls the owner placed in that team. Nobody
 approves what they drafted, assessed or prepared. Connections, trackers, collectors,
-API tokens, archives, erasure and trust stay with the owner.
+API tokens, archives and trust stay with the owner. Privacy requires the separate owner-issued area grant below.
 
 ## Single sign-on
 
@@ -61,3 +61,21 @@ While single sign-on is configured, the owner's email link is the break-glass do
 each use is recorded as break-glass in the audit trail. The owner can end all sessions
 of a delegated person in Access, revoke a role, or deactivate the account; the next
 request fails.
+
+
+## Scoped privacy and legal work
+
+The owner may grant an administrator or compliance manager an explicit privacy
+area in Access. A general business grant never opens Privacy. Use
+`privacy:business` for the whole desk, or `privacy:person:<id>`,
+`privacy:vendor:<id>`, `privacy:engagement:<id>` or `privacy:exhibit:<id>`
+for one named subject. An entity scope also reaches its already-classified exhibits;
+a delegate cannot classify an unrelated exhibit to give themselves authority.
+
+Every Privacy list, preview, confirmation, hold authorization and attributed
+release checks this scope. Revoking the area grant ends access on the next request,
+including confirmation of an earlier preview. Restored local authority remains
+inactive, and privacy authority grants no archive, source, agent or role-management
+permission. Entity requests currently erase only their reviewed classified exhibits,
+retain and disclose held originals, and finish with a partial receipt naming the
+other stores still awaiting erasure support.

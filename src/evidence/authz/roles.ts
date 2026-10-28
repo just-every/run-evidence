@@ -27,10 +27,11 @@ const riskAcceptance = /^\/(?:app|api)\/risks\/([a-f0-9-]{36})\/acceptances$/
 export const rolesPath = /^\/(?:app|api)\/roles(?:\/|$)/
 const exportPath = /(?:\/export|\.csv|\.xlsx)(?:$|\?)/
 
-export type Door = 'owner' | 'evidence' | 'read' | 'write' | 'approve-policy' | 'approve-risk' | 'approve-tailoring' | 'roles'
+export type Door = 'privacy' | 'owner' | 'evidence' | 'read' | 'write' | 'approve-policy' | 'approve-risk' | 'approve-tailoring' | 'roles'
 // The proof desk: requirements, receipts and uploads. Scoped roles reach only their controls here.
 const evidencePath = /^\/(?:app|api\/desk|app\/requirements\/[a-f0-9-]{36}(?:\/uploads)?|(?:app|api)\/receipts\/[a-f0-9-]{36}(?:\/download)?)$/
 export function doorOf(method: string, path: string): Door {
+ if (/^\/(?:app|api)\/privacy(?:\/|$)/.test(path)) return 'privacy'
  if (rolesPath.test(path)) return 'roles'
  if (evidencePath.test(path) && (['GET', 'HEAD'].includes(method) || path.endsWith('/uploads'))) return 'evidence'
  if (exportPath.test(path)) return 'owner'
@@ -41,6 +42,7 @@ export function doorOf(method: string, path: string): Door {
  return ['GET', 'HEAD'].includes(method) ? 'read' : 'write'
 }
 const allowed: Record<Door, readonly Role[]> = {
+ privacy: [],
  owner: [],
  evidence: ['administrator', 'compliance_manager', 'control_owner', 'contributor'],
  read: ['administrator', 'compliance_manager'],

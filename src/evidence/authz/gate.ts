@@ -1,5 +1,6 @@
 import type { Bindings } from '../../auth.server'
 import { doorOf, grantsFor, holds, holdsClass, label, readsRisks, restrictedClassOf, selfApproval, type Delegate } from './roles'
+import { privacyGrants } from '../erase/authority'
 export interface SessionOperator { id: string; email: string; displayName: string; role: string }
 export type Verdict = { ok: true; actor: { id: string; name: string }; delegate?: Delegate } | { ok: false; status: number; error: string }
 const deny = (status: number, error: string): Verdict => ({ ok: false, status, error })
@@ -13,6 +14,10 @@ export async function authorize(env: Bindings, operator: SessionOperator, method
  if (!grants.length) return deny(403, 'Owner access required.')
  const delegate: Delegate = { email: operator.email.toLowerCase(), id: operator.id, name: operator.displayName, grants }
  const door = doorOf(method, path)
+ if (door === 'privacy') {
+  if(!privacyGrants(delegate).length)return deny(403,'The owner must grant a named privacy scope.')
+  return {ok:true,actor:{id:operator.id,name:label(delegate)},delegate}
+ }
  if (door === 'owner') return deny(403, 'Owner access required.')
  if (!holds(delegate, door) && !(door === 'read' && readsRisks(delegate, path))) return deny(403, 'Your role does not allow this.')
  // Personnel records, findings and connector data stay private until an area grant names them.
