@@ -2678,6 +2678,402 @@
       }
     },
     {
+      "id": "runeditrun/base-history-d555e78",
+      "role": "module",
+      "source": {
+        "kind": "local",
+        "paths": [
+          "src/foundation/runtime/icon-head.ts",
+          "src/foundation/runtime/theme-frame.ts",
+          "src/modules/agent-door/ADOPTING.md",
+          "src/modules/agent-door/README.md",
+          "src/modules/agent-door/admission.ts",
+          "src/modules/agent-door/approval-execution.ts",
+          "src/modules/agent-door/approvals.ts",
+          "src/modules/agent-door/audit.ts",
+          "src/modules/agent-door/conformance/audit.mjs",
+          "src/modules/agent-door/conformance/crypto.mjs",
+          "src/modules/agent-door/conformance/discovery.mjs",
+          "src/modules/agent-door/conformance/index.mjs",
+          "src/modules/agent-door/conformance/journey.mjs",
+          "src/modules/agent-door/conformance/negative.mjs",
+          "src/modules/agent-door/conformance/network-modules.mjs",
+          "src/modules/agent-door/conformance/network-runtime.mjs",
+          "src/modules/agent-door/conformance/policy-phases.mjs",
+          "src/modules/agent-door/conformance/protocol.mjs",
+          "src/modules/agent-door/conformance/schema.mjs",
+          "src/modules/agent-door/conformance/surface.mjs",
+          "src/modules/agent-door/counting.ts",
+          "src/modules/agent-door/credentials.ts",
+          "src/modules/agent-door/errors.ts",
+          "src/modules/agent-door/events.ts",
+          "src/modules/agent-door/execution.ts",
+          "src/modules/agent-door/index.ts",
+          "src/modules/agent-door/json-schema.ts",
+          "src/modules/agent-door/operator-people.ts",
+          "src/modules/agent-door/page-style.ts",
+          "src/modules/agent-door/pages.ts",
+          "src/modules/agent-door/people.ts",
+          "src/modules/agent-door/person-doors.ts",
+          "src/modules/agent-door/pipeline.ts",
+          "src/modules/agent-door/policy-store.ts",
+          "src/modules/agent-door/policy/PROVENANCE.md",
+          "src/modules/agent-door/policy/SHA256SUMS",
+          "src/modules/agent-door/policy/catalogue.ts",
+          "src/modules/agent-door/policy/decide.ts",
+          "src/modules/agent-door/policy/document.ts",
+          "src/modules/agent-door/policy/vectors.json",
+          "src/modules/agent-door/registry.ts",
+          "src/modules/agent-door/resource-tool.ts",
+          "src/modules/agent-door/reviews.ts",
+          "src/modules/agent-door/schema/agent-door.sql",
+          "src/modules/agent-door/subscriptions.ts",
+          "src/modules/agent-door/transport.ts",
+          "src/modules/agent-door/types.ts",
+          "src/modules/agent-door/wire.ts",
+          "src/modules/business-settings/ADOPTING.md",
+          "src/modules/business-settings/README.md",
+          "src/modules/business-settings/apply.ts",
+          "src/modules/business-settings/index.ts",
+          "src/modules/business-settings/json.ts",
+          "src/modules/business-settings/logo.ts",
+          "src/modules/business-settings/role-domain.d.mts",
+          "src/modules/business-settings/role-domain.mjs",
+          "src/modules/business-settings/schema/0001_business_settings.sql",
+          "src/modules/business-settings/schema/0002_business_people.sql",
+          "src/modules/business-settings/store.ts",
+          "src/modules/business-settings/team.ts",
+          "src/modules/business-settings/types.ts",
+          "src/modules/business-settings/validation.ts",
+          "src/modules/business-settings/verify.ts"
+        ],
+        "origin": {
+          "repository": "https://github.com/runeditrun/base.git",
+          "revision": "d555e789cffb744a9f83d76ebe42a2e3bdd7a055",
+          "path": ".",
+          "paths": [
+            "foundation/runtime/icon-head.ts",
+            "foundation/runtime/theme-frame.ts",
+            "modules/agent-door/ADOPTING.md",
+            "modules/agent-door/README.md",
+            "modules/agent-door/admission.ts",
+            "modules/agent-door/approval-execution.ts",
+            "modules/agent-door/approvals.ts",
+            "modules/agent-door/audit.ts",
+            "modules/agent-door/conformance/audit.mjs",
+            "modules/agent-door/conformance/crypto.mjs",
+            "modules/agent-door/conformance/discovery.mjs",
+            "modules/agent-door/conformance/index.mjs",
+            "modules/agent-door/conformance/journey.mjs",
+            "modules/agent-door/conformance/negative.mjs",
+            "modules/agent-door/conformance/network-modules.mjs",
+            "modules/agent-door/conformance/network-runtime.mjs",
+            "modules/agent-door/conformance/policy-phases.mjs",
+            "modules/agent-door/conformance/protocol.mjs",
+            "modules/agent-door/conformance/schema.mjs",
+            "modules/agent-door/conformance/surface.mjs",
+            "modules/agent-door/counting.ts",
+            "modules/agent-door/credentials.ts",
+            "modules/agent-door/errors.ts",
+            "modules/agent-door/events.ts",
+            "modules/agent-door/execution.ts",
+            "modules/agent-door/index.ts",
+            "modules/agent-door/json-schema.ts",
+            "modules/agent-door/operator-people.ts",
+            "modules/agent-door/page-style.ts",
+            "modules/agent-door/pages.ts",
+            "modules/agent-door/people.ts",
+            "modules/agent-door/person-doors.ts",
+            "modules/agent-door/pipeline.ts",
+            "modules/agent-door/policy-store.ts",
+            "modules/agent-door/policy/PROVENANCE.md",
+            "modules/agent-door/policy/SHA256SUMS",
+            "modules/agent-door/policy/catalogue.ts",
+            "modules/agent-door/policy/decide.ts",
+            "modules/agent-door/policy/document.ts",
+            "modules/agent-door/policy/vectors.json",
+            "modules/agent-door/registry.ts",
+            "modules/agent-door/resource-tool.ts",
+            "modules/agent-door/reviews.ts",
+            "modules/agent-door/schema/agent-door.sql",
+            "modules/agent-door/subscriptions.ts",
+            "modules/agent-door/transport.ts",
+            "modules/agent-door/types.ts",
+            "modules/agent-door/wire.ts",
+            "modules/business-settings/ADOPTING.md",
+            "modules/business-settings/README.md",
+            "modules/business-settings/apply.ts",
+            "modules/business-settings/index.ts",
+            "modules/business-settings/json.ts",
+            "modules/business-settings/logo.ts",
+            "modules/business-settings/role-domain.d.mts",
+            "modules/business-settings/role-domain.mjs",
+            "modules/business-settings/schema/0001_business_settings.sql",
+            "modules/business-settings/schema/0002_business_people.sql",
+            "modules/business-settings/store.ts",
+            "modules/business-settings/team.ts",
+            "modules/business-settings/types.ts",
+            "modules/business-settings/validation.ts",
+            "modules/business-settings/verify.ts"
+          ]
+        },
+        "mappings": [
+          {
+            "path": "src/foundation/runtime/icon-head.ts",
+            "originPath": "foundation/runtime/icon-head.ts"
+          },
+          {
+            "path": "src/foundation/runtime/theme-frame.ts",
+            "originPath": "foundation/runtime/theme-frame.ts"
+          },
+          {
+            "path": "src/modules/agent-door/admission.ts",
+            "originPath": "modules/agent-door/admission.ts"
+          },
+          {
+            "path": "src/modules/agent-door/ADOPTING.md",
+            "originPath": "modules/agent-door/ADOPTING.md"
+          },
+          {
+            "path": "src/modules/agent-door/approval-execution.ts",
+            "originPath": "modules/agent-door/approval-execution.ts"
+          },
+          {
+            "path": "src/modules/agent-door/approvals.ts",
+            "originPath": "modules/agent-door/approvals.ts"
+          },
+          {
+            "path": "src/modules/agent-door/audit.ts",
+            "originPath": "modules/agent-door/audit.ts"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/audit.mjs",
+            "originPath": "modules/agent-door/conformance/audit.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/crypto.mjs",
+            "originPath": "modules/agent-door/conformance/crypto.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/discovery.mjs",
+            "originPath": "modules/agent-door/conformance/discovery.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/index.mjs",
+            "originPath": "modules/agent-door/conformance/index.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/journey.mjs",
+            "originPath": "modules/agent-door/conformance/journey.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/negative.mjs",
+            "originPath": "modules/agent-door/conformance/negative.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/network-modules.mjs",
+            "originPath": "modules/agent-door/conformance/network-modules.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/network-runtime.mjs",
+            "originPath": "modules/agent-door/conformance/network-runtime.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/policy-phases.mjs",
+            "originPath": "modules/agent-door/conformance/policy-phases.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/protocol.mjs",
+            "originPath": "modules/agent-door/conformance/protocol.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/schema.mjs",
+            "originPath": "modules/agent-door/conformance/schema.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/surface.mjs",
+            "originPath": "modules/agent-door/conformance/surface.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/counting.ts",
+            "originPath": "modules/agent-door/counting.ts"
+          },
+          {
+            "path": "src/modules/agent-door/credentials.ts",
+            "originPath": "modules/agent-door/credentials.ts"
+          },
+          {
+            "path": "src/modules/agent-door/errors.ts",
+            "originPath": "modules/agent-door/errors.ts"
+          },
+          {
+            "path": "src/modules/agent-door/events.ts",
+            "originPath": "modules/agent-door/events.ts"
+          },
+          {
+            "path": "src/modules/agent-door/execution.ts",
+            "originPath": "modules/agent-door/execution.ts"
+          },
+          {
+            "path": "src/modules/agent-door/index.ts",
+            "originPath": "modules/agent-door/index.ts"
+          },
+          {
+            "path": "src/modules/agent-door/json-schema.ts",
+            "originPath": "modules/agent-door/json-schema.ts"
+          },
+          {
+            "path": "src/modules/agent-door/operator-people.ts",
+            "originPath": "modules/agent-door/operator-people.ts"
+          },
+          {
+            "path": "src/modules/agent-door/page-style.ts",
+            "originPath": "modules/agent-door/page-style.ts"
+          },
+          {
+            "path": "src/modules/agent-door/pages.ts",
+            "originPath": "modules/agent-door/pages.ts"
+          },
+          {
+            "path": "src/modules/agent-door/people.ts",
+            "originPath": "modules/agent-door/people.ts"
+          },
+          {
+            "path": "src/modules/agent-door/person-doors.ts",
+            "originPath": "modules/agent-door/person-doors.ts"
+          },
+          {
+            "path": "src/modules/agent-door/pipeline.ts",
+            "originPath": "modules/agent-door/pipeline.ts"
+          },
+          {
+            "path": "src/modules/agent-door/policy-store.ts",
+            "originPath": "modules/agent-door/policy-store.ts"
+          },
+          {
+            "path": "src/modules/agent-door/policy/catalogue.ts",
+            "originPath": "modules/agent-door/policy/catalogue.ts"
+          },
+          {
+            "path": "src/modules/agent-door/policy/decide.ts",
+            "originPath": "modules/agent-door/policy/decide.ts"
+          },
+          {
+            "path": "src/modules/agent-door/policy/document.ts",
+            "originPath": "modules/agent-door/policy/document.ts"
+          },
+          {
+            "path": "src/modules/agent-door/policy/PROVENANCE.md",
+            "originPath": "modules/agent-door/policy/PROVENANCE.md"
+          },
+          {
+            "path": "src/modules/agent-door/policy/SHA256SUMS",
+            "originPath": "modules/agent-door/policy/SHA256SUMS"
+          },
+          {
+            "path": "src/modules/agent-door/policy/vectors.json",
+            "originPath": "modules/agent-door/policy/vectors.json"
+          },
+          {
+            "path": "src/modules/agent-door/README.md",
+            "originPath": "modules/agent-door/README.md"
+          },
+          {
+            "path": "src/modules/agent-door/registry.ts",
+            "originPath": "modules/agent-door/registry.ts"
+          },
+          {
+            "path": "src/modules/agent-door/resource-tool.ts",
+            "originPath": "modules/agent-door/resource-tool.ts"
+          },
+          {
+            "path": "src/modules/agent-door/reviews.ts",
+            "originPath": "modules/agent-door/reviews.ts"
+          },
+          {
+            "path": "src/modules/agent-door/schema/agent-door.sql",
+            "originPath": "modules/agent-door/schema/agent-door.sql"
+          },
+          {
+            "path": "src/modules/agent-door/subscriptions.ts",
+            "originPath": "modules/agent-door/subscriptions.ts"
+          },
+          {
+            "path": "src/modules/agent-door/transport.ts",
+            "originPath": "modules/agent-door/transport.ts"
+          },
+          {
+            "path": "src/modules/agent-door/types.ts",
+            "originPath": "modules/agent-door/types.ts"
+          },
+          {
+            "path": "src/modules/agent-door/wire.ts",
+            "originPath": "modules/agent-door/wire.ts"
+          },
+          {
+            "path": "src/modules/business-settings/ADOPTING.md",
+            "originPath": "modules/business-settings/ADOPTING.md"
+          },
+          {
+            "path": "src/modules/business-settings/apply.ts",
+            "originPath": "modules/business-settings/apply.ts"
+          },
+          {
+            "path": "src/modules/business-settings/index.ts",
+            "originPath": "modules/business-settings/index.ts"
+          },
+          {
+            "path": "src/modules/business-settings/json.ts",
+            "originPath": "modules/business-settings/json.ts"
+          },
+          {
+            "path": "src/modules/business-settings/logo.ts",
+            "originPath": "modules/business-settings/logo.ts"
+          },
+          {
+            "path": "src/modules/business-settings/README.md",
+            "originPath": "modules/business-settings/README.md"
+          },
+          {
+            "path": "src/modules/business-settings/role-domain.d.mts",
+            "originPath": "modules/business-settings/role-domain.d.mts"
+          },
+          {
+            "path": "src/modules/business-settings/role-domain.mjs",
+            "originPath": "modules/business-settings/role-domain.mjs"
+          },
+          {
+            "path": "src/modules/business-settings/schema/0001_business_settings.sql",
+            "originPath": "modules/business-settings/schema/0001_business_settings.sql"
+          },
+          {
+            "path": "src/modules/business-settings/schema/0002_business_people.sql",
+            "originPath": "modules/business-settings/schema/0002_business_people.sql"
+          },
+          {
+            "path": "src/modules/business-settings/store.ts",
+            "originPath": "modules/business-settings/store.ts"
+          },
+          {
+            "path": "src/modules/business-settings/team.ts",
+            "originPath": "modules/business-settings/team.ts"
+          },
+          {
+            "path": "src/modules/business-settings/types.ts",
+            "originPath": "modules/business-settings/types.ts"
+          },
+          {
+            "path": "src/modules/business-settings/validation.ts",
+            "originPath": "modules/business-settings/validation.ts"
+          },
+          {
+            "path": "src/modules/business-settings/verify.ts",
+            "originPath": "modules/business-settings/verify.ts"
+          }
+        ]
+      }
+    },
+    {
       "id": "runeditrun/base-history-4a78339",
       "role": "module",
       "source": {
