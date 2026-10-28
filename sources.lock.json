@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "587a3c34372ef4831fa32c86486f3a35d46a0837c6bc4df6c4438ea2d1eeab7a",
+  "manifest": "595303aa104a0c71380709ebee77c9d8931aa3e2e8327adc4135943704d64ab0",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -3230,9 +3230,6 @@
           "migrations/core/0071_privacy_classifications.sql",
           "migrations/core/0072_submission_erasure_fence.sql",
           "migrations/core/0073_entity_exhibit_erasure.sql",
-          "migrations/core/0074_business_settings.sql",
-          "migrations/core/0075_business_people.sql",
-          "migrations/core/0076_agent_door.sql",
           "package.json",
           "packaging.json",
           "pnpm-lock.yaml",
@@ -3987,7 +3984,7 @@
       "executable": false
     },
     "base-copies.json": {
-      "sha256": "0b0e219c0f0227c15056650f6f3da7d1f460376b9371b9256afa5d5625f7be57",
+      "sha256": "70cc97f397c130940bbc47affb65c1d5b3fdc2942f9d73759c75d78358c5e449",
       "executable": false
     },
     "CHANGELOG.md": {
@@ -4103,7 +4100,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "587a3c34372ef4831fa32c86486f3a35d46a0837c6bc4df6c4438ea2d1eeab7a",
+      "sha256": "595303aa104a0c71380709ebee77c9d8931aa3e2e8327adc4135943704d64ab0",
       "executable": false
     },
     "LICENSE": {
@@ -4408,18 +4405,6 @@
     },
     "migrations/core/0073_entity_exhibit_erasure.sql": {
       "sha256": "7341758213742408a77fc58da0037f960980717fe155e68494ec9c6164cef81b",
-      "executable": false
-    },
-    "migrations/core/0074_business_settings.sql": {
-      "sha256": "a16f736a781aa3fe02a2e090c993f8c360c904f9fb6d86126acdab6e1f24e773",
-      "executable": false
-    },
-    "migrations/core/0075_business_people.sql": {
-      "sha256": "51aa39622d866b987d71b6e37c9a8300e7f24c54a55611edaab669ed051b01cd",
-      "executable": false
-    },
-    "migrations/core/0076_agent_door.sql": {
-      "sha256": "016d8a98b964385f5c4a13447361c3c783910a76aaf4606b0e0081482bc819cc",
       "executable": false
     },
     "ONBOARDING.md": {
