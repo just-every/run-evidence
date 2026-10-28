@@ -13,7 +13,7 @@ Inherits BASE-AGENT-001 to BASE-AGENT-013. The company's policy decides every ca
 - *standard:* local reads, retained drafts, prospective definitions, reversible assignments and internal messages or record shares. Facts: affected item count. Appending a revision preserves its predecessor; undoing a business change keeps custody and history.
 - *external:* a call contacts an outside provider, sends outside the business, or exposes records to an outside audience. Facts: actual recipients or destination accounts, recipient count and counterparty: known for an existing vendor/customer or a company-trusted domain, new otherwise, public for an open publication. Connecting an existing provider account is not creating one. Replacing content already shared outside carries external too.
 - *commitment:* an exact-version sign-off, accepted exception, residual-risk acceptance, auditor disposition, vendor decision or customer security promise that others rely on. Facts: exact revision, counterparty and stated value, or explicitly unstated value. A draft, correction request or dismissal carrying no sign-off is standard.
-- *access:* creating, changing or ending staff membership, roles, sessions, collector/API/agent grants, engagement identities or standing customer authority; source repairs add access when the native target changes privileges. Facts: affected people or identities and widens/narrows, calculated against the current effective rights. Item-only sharing is standard or external instead.
+- *access:* creating, changing or ending staff membership, roles, sessions, collector/API/agent grants, engagement identities or standing customer authority; ownership/handover, privacy classification and source repairs add access when their native targets change effective privileges. Facts: affected people or identities and widens/narrows, calculated against the current effective rights. Item-only sharing is standard or external instead.
 - *security:* handling provider credentials or changing encryption custody, MFA, protected-record publication, outbound-flow declarations, callback verification or protective source configuration. Facts: setting, provider/account and scope; secret values are excluded from results and facts.
 - *destructive:* executing erasure that cannot be undone in Evidence. Facts: item count and stores affected, with retained holds and unfinished deletion separately identified. Retiring a resource or unlinking a reversible association is standard.
 - *sensitive:* the actual returned, stored, deleted or transmitted content includes health, government ID, bank, card or payroll numbers. Facts: record count and protected kind. General personnel names, private code, cost figures and a sensitive label alone do not establish this class; classification uses protected fields and content, conservatively retaining the class when protected contents cannot be determined. Masked projections without protected content do not carry it.
@@ -35,7 +35,7 @@ Evidence uses no money, accounts or gated class: this registry neither charges n
 | `evidence.controls.revise` | Append a control definition | CONTROL-001 | standard | `POST /api/controls/{id}/revisions` |
 | `evidence.controls.map` | Add an exact framework mapping | CONTROL-001, PROGRAM-002 | standard | `POST /api/controls/{id}/mappings` |
 | `evidence.controls.unmap` | Unlink a mapping with retained history | PROGRAM-002 | standard | `POST /api/controls/{id}/mappings/{mapping}/remove` |
-| `evidence.controls.assign` | Assign owner or contributor without conferring a role | PROGRAM-002, LIFECYCLE-002 | standard | `POST /api/controls/{id}/owners` |
+| `evidence.controls.assign` | Assign ownership/contribution with effective scope computed | PROGRAM-002, LIFECYCLE-002 | standard (+ access) | `POST /api/controls/{id}/owners` |
 | `evidence.controls.scope` | Record a prospective asset-scope revision | PROGRAM-002, INVENTORY-001 | standard | `POST /api/controls/{id}/scope` |
 | `evidence.requirements.create` | Add an evidence requirement | CONTROL-001 | standard | `POST /api/controls/{id}/requirements` |
 | `evidence.requirements.revise` | Append requirement wording or testing intent | CONTROL-001 | standard | `POST /api/requirements/{id}/revisions` |
@@ -148,7 +148,7 @@ Evidence uses no money, accounts or gated class: this registry neither charges n
 | `evidence.checklists.get` | Read joiner, mover and leaver verification work | LIFECYCLE-001 | standard (+ sensitive) | none |
 | `evidence.checklists.verify` | Read back required accounts, devices and background-check completion | LIFECYCLE-001 | external (+ sensitive) | none |
 | `evidence.handover.list` | Read every responsibility flagged after departure | LIFECYCLE-002 | standard | `GET /api/handover` |
-| `evidence.handover.reassign` | Reassign selected responsibilities with an item-by-item reason | LIFECYCLE-002 | standard | `POST /api/handover/reassign`; person `/handover` action |
+| `evidence.handover.reassign` | Reassign responsibilities with reasons and effective scope computed | LIFECYCLE-002 | standard (+ access) | `POST /api/handover/reassign`; person `/handover` action |
 | `evidence.roles.list` | Read current scoped roles and authority | AUTH-001 | standard | `GET /api/roles` |
 | `evidence.roles.grant` | Grant a named role or record-area authority | AUTH-001, ERASE-001 | access | `POST /api/roles/grants` |
 | `evidence.roles.revoke` | End an exact role grant | AUTH-001 | access | Native role grant `/revoke` action |
@@ -222,7 +222,7 @@ Evidence uses no money, accounts or gated class: this registry neither charges n
 | `evidence.record_grants.issue` | Grant need-to-know access to an exact protected record | SECURE-001 | access | Native receipt `/grants` action |
 | `evidence.record_grants.revoke` | End a protected-record need-to-know grant | SECURE-001 | access | Native receipt grant `/revoke` action |
 | `evidence.record_publications.set` | Change protected-record publication to an exact audience | SECURE-001 | security (+ external) (+ sensitive) | Native receipt `/publication` and `/publication/revoke` actions |
-| `evidence.privacy.classify` | Append entity membership without widening privacy authority | ERASE-001 | standard | `POST /api/privacy/classifications` |
+| `evidence.privacy.classify` | Append entity membership with native scope checks | ERASE-001 | standard (+ access) | `POST /api/privacy/classifications` |
 | `evidence.erasure.prepare` | Preview stores, exact originals, holds and unfinished scope | ERASE-001 | standard (+ sensitive) | `POST /api/privacy/requests` |
 | `evidence.erasure.execute` | Erase the exact eligible set and retain partial or pending outcomes | ERASE-001 | destructive (+ access) (+ external) (+ sensitive) | Native privacy request `/confirm` action; current classified-exhibit subset only |
 | `evidence.holds.create` | Record a preservation instruction with authorizer, reason and date | ERASE-001 | commitment | `POST /api/privacy/holds` |
@@ -344,14 +344,14 @@ For mapped jobs, archive restores and file-based framework, risk, finding, licen
 
 *Tier:* Agent surface · *From:* new · *Cites:* BASE-AGENT-002, BASE-AGENT-005, BASE-AGENT-006, BASE-AGENT-008
 
-**Requirement.** People, campaign, role, credential and engagement administration uses native identities and scope. Ownership confers no authentication. Departure preserves historical actors and creates handover work.
+**Requirement.** Administration uses native identities and effective scope, including assignment-derived rights. Departure preserves actors and creates handover work.
 
 **Acceptance.**
-1. Roster creation and handover declare standard without conferring roles; departure, roles, sessions and invitations declare access with identities and direction.
-2. On one invitation fixture, a colleague invitation declares access alone; an outside invitation adds external with counterparty and recipient count. Auditor and customer grants use the same audience computation.
+1. On one assignment/handover fixture, choosing an unprivileged roster person declares standard; choosing an existing scoped role holder adds access with direction from changed effective reach. Departures, roles and sessions declare access.
+2. On one invitation fixture, a colleague declares access alone; an outside identity adds external with counterparty and recipient count. Auditor and customer grants use the same computation.
 3. API, agent, SCIM and provider credentials and MFA changes declare access and security; flow declarations, enablement/disablement and custody re-sealing declare security with named settings.
-4. For connections, collectors, trackers/callbacks, channels, tokens, flow keys, MFA, roles, sessions and people, widening the sponsor's or agent's own authority is refused under every policy, including indirect role effects and credential replacement.
-5. Auditors, customer grants, CRM rules, record grants, record publications and collector activation refuse the same own-authority expansion under every policy before effects.
+4. Connections, collectors, trackers/callbacks, channels, tokens, flow keys, MFA, roles, sessions, people and assignment/handover refuse sponsor/agent own-authority expansion under every policy, including indirect role effects and credential replacement.
+5. Auditors, customer grants, CRM rules, record grants, record publications and collector activation refuse the same expansion under every policy before effects.
 6. On one publication fixture, changing protected-record publication declares security; an outside audience adds external and protected contents add sensitive. Withdrawing to an internal masked projection adds neither.
 7. Training preserves personal attempts; external completion records declare commitment with their source, without claiming agent study or employee assent.
 8. Departed responsibilities remain unowned until reassigned with reasons and notices; historical attribution survives, and revocation affects the next disclosure.
@@ -404,16 +404,16 @@ For mapped jobs, archive restores and file-based framework, risk, finding, licen
 
 *Tier:* Agent surface · *From:* new · *Cites:* BASE-AGENT-002, BASE-AGENT-005, BASE-AGENT-006, BASE-AGENT-009, BASE-AGENT-012
 
-**Requirement.** Erasure tools use Evidence's exact preview, entity classification, retention instructions, deletion journal and restore fences. They distinguish reversible preparation from irreversible deletion and disclose partial completion at every affected store.
+**Requirement.** Erasure uses exact previews, classification, retention instructions, deletion journals and restore fences, distinguishing preparation from deletion and disclosing partial stores.
 
 **Acceptance.**
-1. Preparing a preview or classifying a record declares standard and deletes nothing; executing the exact eligible preview declares destructive with actual item and store counts.
-2. On one preview fixture, erasing an ordinary unshared exhibit adds no sensitive, access or external; erasing its protected-content variant adds sensitive, removing an entity's standing identity grants adds access, narrows, and deleting a controlled provider copy adds external with that provider. Local-only erasure sends nothing outside.
-3. Any erasure or classification attempt widening the sponsor's or agent's own privacy authority is refused under every company policy before a membership or storage change.
-4. A held original remains available with authorizer, reason and date; an overdue hold remains active, and an accepted hold or release declares commitment.
-5. Changed preview membership or retention yields a conflict and no newly unauthorized deletion; repeating the same confirmed request continues pending storage work without duplicating a deletion receipt.
-6. Unsupported entity stores and provider deletion uncertainty remain explicitly partial or pending; the tool never reports whole-entity completion from exhibit-only erasure.
-7. A later erasure journal fences older custody restoration, while a fresh installation lacking that history retains the native unverified-history disclosure.
+1. Preparing a preview declares standard and deletes nothing; executing it declares destructive with item/store counts.
+2. On one erasure fixture, an ordinary unshared exhibit adds no sensitive, access or external; its protected variant adds sensitive, removing standing identity grants adds access, narrows, and deleting a controlled provider copy adds external with provider facts. Local-only erasure sends nothing outside.
+3. On one classification fixture, unchanged effective privacy reach declares standard alone; bringing an exhibit into another holder's scoped reach adds access, widens. Erasure or classification widening the sponsor's or agent's own authority is refused under every policy before effects.
+4. A held original remains available with authorizer, reason and date; overdue holds remain active, and accepted hold/release decisions declare commitment.
+5. Changed membership or retention conflicts without newly unauthorized deletion; retrying the same confirmed request continues pending storage work without duplicating receipts.
+6. Unsupported entity stores and provider deletion uncertainty remain partial or pending; exhibit-only erasure never reports whole-entity completion.
+7. A later erasure journal fences older custody restoration; a fresh installation lacking that history retains its unverified-history disclosure.
 
 #### SURFACE-012 — Keep custody and operational outcomes complete
 
