@@ -22,7 +22,7 @@ export interface DocumentRow { id: string; program_id: string; kind: string; own
 export interface RevisionRow { id: string; document_id: string; revision: number; origin: 'generated' | 'edited' | 'reconciled'; reason: string; inputs_json: string; owner_text_json: string; content_json: string; facts_json: string; facts_hash: string; actor_name: string; at: string }
 export interface ApprovalRow { revision_id: string; document_id: string; approver_person_id: string; approved_by: string; approved_at: string; effective_date: string; review_due: string; note: string; approver_name: string | null }
 const hash = async (value: unknown) => sha256(new TextEncoder().encode(JSON.stringify(value)).buffer as ArrayBuffer)
-export const kindOf = (id: string) => { const k = kinds[id]; if (!k) throw new Refusal('Unknown document kind.', 404); return k }
+export const kindOf = (id: string) => { const k = Object.hasOwn(kinds, id) ? kinds[id] : undefined; if (!k) throw new Refusal('Unknown document kind.', 404); return k }
 export async function requireDocument(env: Bindings, program: string, kind: string) {
  const row = await env.DB.prepare('SELECT * FROM program_documents WHERE program_id=? AND kind=?').bind(program, kind).first<DocumentRow>()
  if (!row) throw new Refusal('That document has not been generated for this program.', 404)

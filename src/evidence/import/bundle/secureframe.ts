@@ -27,7 +27,7 @@ export function parseSecureframe(rows: Rows) {
  const pages = new Map<string, { path: string; data: Row[] }[]>()
  for (const [path, bytes] of rows.files) {
   const m = FILES.exec(path); if (!m) continue
-  if (!(m[1] in specs)) { rows.warnings.push(path + ' is not a Secureframe resource Evidence reads; retained in the ZIP only.'); continue }
+  if (!Object.hasOwn(specs, m[1])) { rows.warnings.push(path + ' is not a Secureframe resource Evidence reads; retained in the ZIP only.'); continue }
   const list = pages.get(m[1]) ?? []; list.push({ path, data: page(path, bytes) }); pages.set(m[1], list)
  }
  const each = (dir: string, cls: ClassId, type: string, fields: string[], fn?: (row: Row, ref: string) => void) => {

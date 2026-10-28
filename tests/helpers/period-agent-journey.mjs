@@ -92,6 +92,42 @@ export async function periodAgentJourney(app) {
   assert.ok(observed.some(o=>o.result==='pass'))
   assert.ok(snapshot.findings.some(f=>f.test_id===id&&f.proposed_exception))
  }
+ // The public citation door must reject inherited names before preparing SQL.
+ {
+  const door='/api/controls/'+control+'/investigation-source'
+  const unknown=await app.fetch(door+'?kind=unknown-source&id=x')
+  assert.equal(unknown.status,404,'Unknown citation kind is refused')
+  const expected=await unknown.text(),results=[]
+  for(const kind of ['constructor','__proto__']) {
+   const response=await app.fetch(door+'?'+new URLSearchParams({kind,id:'x'}))
+   results.push({kind,status:response.status,body:await response.text()})
+  }
+  const post=kind=>app.fetch(door+'?'+new URLSearchParams({kind,id:'x'}),{method:'POST',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify({kind,id:'x'})})
+  const unknownPost=await post('unknown-source')
+  assert.equal(unknownPost.status,405,'Citation door retains its GET-only method contract')
+  const expectedPost=await unknownPost.text(),postStatuses=[]
+  for(const kind of ['constructor','__proto__']) {
+   const response=await post(kind),body=await response.text()
+   postStatuses.push(kind+'='+response.status)
+   assert.equal(response.status,405,'Inherited names cannot enter the GET-only door via POST')
+   assert.ok(body===expectedPost,'POST refusal contains only the unknown-name method answer')
+  }
+  console.log('Citation inherited-name POST statuses: '+postStatuses.join(', '))
+  console.log('Citation inherited-name GET statuses: '+results.map(r=>r.kind+'='+r.status).join(', '))
+  for(const result of results) {
+   assert.equal(result.status,404,'Inherited citation kind is refused like an unknown kind')
+   assert.ok(result.body===expected,'Refusal contains only the unknown-kind answer')
+   for(const key of ['SESSION_SECRET','SETUP_TOKEN','MAIL_API_KEY','RER_DEV_KEY'])assert.ok(!result.body.includes(app.harnessState().settings[key]),'Refusal contains no binding value')
+   assert.ok(!/SESSION_SECRET|SETUP_TOKEN|MAIL_API_KEY|RER_DEV_KEY|EXHIBITS|DB/.test(result.body),'Refusal contains no environment content')
+  }
+  const citation=snapshot.findings.flatMap(f=>f.citations)[0]
+  assert.ok(citation,'A registered source is available')
+  const response=await app.fetch(citation.href)
+  assert.equal(response.status,200,'Registered citation still works')
+  const source=await response.json()
+  assert.ok(source.id===citation.id||source.run_id===citation.id,'Registered citation returns the cited source')
+  console.log('Citation registered-name GET status: '+response.status)
+ }
  let followed=0
  for(const finding of snapshot.findings)for(const citation of finding.citations) {
   const source=await get(citation.href)

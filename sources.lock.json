@@ -3564,7 +3564,7 @@
       "executable": false
     },
     ".github/workflows/verify.yml": {
-      "sha256": "0fa828a6bf0a8f43a3042db2efeb0a96bbf0945c43ca74ff12ab8be53e25f19d",
+      "sha256": "31d790ab9c060df7ec96dccf342b2f1c91f1f187158a9f7e9f1f3b4efcec7b92",
       "executable": false
     },
     ".gitignore": {
@@ -4792,7 +4792,7 @@
       "executable": false
     },
     "src/evidence/agent/period-http.ts": {
-      "sha256": "7d6404e9ed66bc014d9d2e9ddcbcc221cf912ee0afdc50f45c7c285ee96ffb6f",
+      "sha256": "571caf9ba5c1fca0f71705621bf0460351148ed3cf68d57e41bf8e84d44ab355",
       "executable": false
     },
     "src/evidence/agent/period-storage.ts": {
@@ -6096,7 +6096,7 @@
       "executable": false
     },
     "src/evidence/import/bundle/secureframe.ts": {
-      "sha256": "68e23202573476ca14ee0f9a5fe8c789c1caade7a9612ef14468101f7af92bfa",
+      "sha256": "32835309633eaf1f780d5988f5b60a12d6282eea5335bd1e0ec88dea7e567e62",
       "executable": false
     },
     "src/evidence/import/bundle/vanta.ts": {
@@ -6440,7 +6440,7 @@
       "executable": false
     },
     "src/evidence/program/documents/storage.ts": {
-      "sha256": "cad97c7b2b0d080075295ed291f794b89152aea031a73d0222f41d8b64db7c78",
+      "sha256": "69fa5a42f89c446221b112ef43b702366e8bb24bbe7f891ace9ab23e35cfe5c6",
       "executable": false
     },
     "src/evidence/program/documents/view.ts": {
@@ -6864,7 +6864,7 @@
       "executable": false
     },
     "src/evidence/vendor/workbook.ts": {
-      "sha256": "9e0a38f0940ce2402e56558c67e17e561ce1d4185bf2431f9f9c11e577e3d950",
+      "sha256": "4f25d1eb8f02bdc3aa9e928dac37178359ba05f15239728ee9244bb15ba59e31",
       "executable": false
     },
     "src/evidence/view.ts": {
@@ -8324,7 +8324,7 @@
       "executable": false
     },
     "tests/helpers/period-agent-journey.mjs": {
-      "sha256": "121acd056cbdd913da84d5a8ac20993534ec1bdf7cf78e0f63a636f042ca32c6",
+      "sha256": "9698a574bd4a2cfb0c0857561b3de13d5a086577e8c2f6235429c7fc2c42c201",
       "executable": false
     },
     "tests/helpers/policy-reading-browser.mjs": {

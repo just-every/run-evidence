@@ -31,7 +31,7 @@ export function periodAgentHandler(clock:()=>Date) {
     'test-revision':'SELECT tr.* FROM test_revisions tr JOIN test_controls tc ON tc.test_id=tr.test_id WHERE tc.control_id=? AND tr.id=?',
     scope:'SELECT * FROM control_scope WHERE control_id=? AND id=?',
    }
-   if(!kind||!source||!queries[kind])throw new Refusal('Choose a cited source.',404)
+   if(!kind||!source||!Object.hasOwn(queries,kind))throw new Refusal('Choose a cited source.',404)
    const row=await c.env.DB.prepare(queries[kind]).bind(m[1],source).first()
    if(!row)throw new Refusal('Cited source not found.',404)
    return c.isApi?json(row):page('Original investigation source',`<p>${escape(kind)} · ${escape(source)}</p><pre>${escape(JSON.stringify(row,null,2))}</pre><p><a href="/app/controls/${m[1]}">Return to control</a></p>`,200,{owner:c.actor.name,active:'programs'})

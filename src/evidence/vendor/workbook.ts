@@ -55,9 +55,10 @@ export function completedWorkbook(file: File, bytes: Uint8Array, input: Input, q
  const parsed = readWorkbook(file, bytes, { ...Object.fromEntries(Object.entries(expected.columns).map(([k, v]) => ['column_' + k, v])), sheet: expected.sheet, header_row: String(expected.header_row) })
  const actual = workbookQuestions(parsed.rows, parsed.columns, expected.type, expected.edition), known = new Map(questions.map(q => [q.id, q]))
  if (actual.length !== questions.length || actual.some(q => { const old = known.get(q.id); return !old || old.domain !== q.domain || old.text !== q.text || old.scope_rule !== q.scope_rule || old.in_scope !== q.in_scope })) throw new Refusal('The completed workbook must keep the requested ids, wording, domains and scope unchanged.')
+ const choices: Record<string, SupplierAnswer['answer']> = { yes: 'yes', no: 'no', 'n/a': 'na', na: 'na', 'not applicable': 'na' }
  const answers = new Map<string, SupplierAnswer>()
  for (const q of actual.filter(q => q.in_scope !== false)) {
-  const r = q.source_row!, value = (r[parsed.columns.answer] ?? '').toLowerCase(), answer = ({ yes: 'yes', no: 'no', 'n/a': 'na', na: 'na', 'not applicable': 'na' } as Record<string, string>)[value]
+  const r = q.source_row!, value = (r[parsed.columns.answer] ?? '').toLowerCase(), answer = Object.hasOwn(choices, value) ? choices[value] : undefined
   if (!answer) throw new Refusal(`Complete the yes/no/not applicable answer for ${q.id}.`)
   answers.set(q.id, { answer, comment: r[parsed.columns.comment] ?? '', ownership: r[parsed.columns.ownership] ?? '', implementation: r[parsed.columns.implementation] ?? '' })
  }
