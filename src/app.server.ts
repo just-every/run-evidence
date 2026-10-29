@@ -1,4 +1,5 @@
 import { auditAgentOwnerRefusal } from './evidence/door'
+import { sharedAgentResponse } from './evidence/agent-door/index'
 import {trustHandler} from './evidence/trust/http'
 import {trustPublicHandler} from './evidence/trust/public-http'
 import { engagementHandler } from './evidence/review/engagement/http'
@@ -73,6 +74,8 @@ export function createAppResponse(clock: () => Date = () => new Date()) {
  return (request: Request, env: Bindings) => withCollectionClock(clock,()=>withShellScope(request, env, () => respond(request, env)))
  async function respond(request: Request, env: Bindings) {
   const path = new URL(request.url).pathname
+  const agentResponse = await sharedAgentResponse(request, env, clock)
+  if (agentResponse) return agentResponse
   if (/^\/(?:app(?:\/|$)|api(?:\/|$)|auth(?:\/|$)|v1(?:\/|$)|collectors\/|hooks\/|signin$|setup$)/.test(path)) {
    const missing = configurationFailures(runtimeBindings(env))
    if (missing.length) return configurationRefusal(missing)

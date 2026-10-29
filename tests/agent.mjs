@@ -41,6 +41,10 @@ try {
   assert.equal((await app.fetch('/app/agent')).status,401)
   assert.equal((await owner('/api/agent/tokens',{label:'Build agent',expires_at:'2026-10-20T00:00:00Z'})).status,401)
   ownerCookie=await app.signin()
+  // Existing native prepare credentials now enter the shared door. The real
+  // owner explicitly chooses autonomous preparation for this standalone install.
+  const policy=await app.fetch('/agents/api/policy',{method:'PUT',headers:{origin:app.origin,'content-type':'application/json'},body:JSON.stringify({document:{schema:'rer-agent-policy/1',catalogue:'rer-agent-classes/1',rules:[{id:'prepare',class:'*',do:'autonomous'}],spend:{none:true}}})})
+  assert.equal(policy.status,200)
   const created=await owner('/api/agent/tokens',{label:'Build agent',expires_at:'2026-10-20T00:00:00Z'});assert.equal(created.status,201);credential=await created.json()
   const stored=await app.db.prepare('SELECT * FROM agent_tokens WHERE id=?').bind(credential.grant.id).first()
   assert.equal(stored.token_hash,createHash('sha256').update(credential.token).digest('hex'))

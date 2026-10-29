@@ -2,12 +2,12 @@ import { auditDoorRefusal, type Actor as AuditActor } from '../door'
 import { problem } from '../problem'
 import { showOnce, takeOnce } from '../credential-display'
 import { operatorAuth, runtimeBindings, type Bindings } from '../../auth.server'
-import { day, validDate } from '../model'
 import { issuedPage } from '../review/view'
 import { safeHeaders } from '../review/frame'
 import { Refusal } from '../upload'
 import { inputBody, folderInput, future } from './input'
-import { active, agentDesk, decide, grant, issueToken, prepare, proposal, proposals, revoke, tokens } from './storage'
+import { active, decide, grant, issueToken, proposal, proposals, revoke, tokens } from './storage'
+import { invokeLegacy } from '../agent-door/legacy'
 import { agentPage, proposalPage, tokenPage } from './view'
 const redirect=()=>new Response(null,{status:303,headers:{...safeHeaders,location:'/app/agent'}})
 export function agentHandler(clock:()=>Date=()=>new Date()) {
@@ -31,17 +31,17 @@ export function agentHandler(clock:()=>Date=()=>new Date()) {
     if(token) auditActor={id:token.id,name:token.label,kind:'token'}
     if(!active(token,clock())) return refused('Agent credential expired, revoked or invalid.',401)
     if(!api) return refused('Native owner session required.',403)
-    let response:Response|Promise<Response>
-    if(path==='/api/agent/desk' && request.method==='GET') {
-     const selected=url.searchParams.get('date')||day(clock());if(!validDate(selected)) throw new Refusal('Select a real UTC date.')
-     response=json(await agentDesk(env,selected,clock()))
-    } else if(path==='/api/agent/prepare-folder' && request.method==='POST') {
-     const input=await folderInput(env,await inputBody(request),clock())
-     response=json({proposal:await prepare(env,input,token,clock)},201)
-    } else if(path==='/api/agent/proposals' && request.method==='GET') response=json({proposals:await proposals(env,token.id)})
+    let name:string,args:Record<string,unknown>={},status=200
+    if(path==='/api/agent/desk' && request.method==='GET') { name='evidence.desk.get';if(url.searchParams.has('date'))args.date=url.searchParams.get('date') }
+    else if(path==='/api/agent/prepare-folder' && request.method==='POST') {
+     name='evidence.folders.prepare';const input=await inputBody(request)
+     args={...input,idempotency_key:request.headers.get('idempotency-key')??input.idempotency_key??crypto.randomUUID()};status=201
+    } else if(path==='/api/agent/proposals' && request.method==='GET')name='evidence.proposals.list'
     else return refused('This credential permits inspection and preparation only.',403)
+    const result=await invokeLegacy(env,token,name,args,clock)
     if(!active(await grant(env,secret!),clock())) return refused('Agent credential expired or revoked.',401)
-    return response
+    if(result.outcome!=='done')return json({code:result.code??'approval_required',...result.fields,...(result.approval?{approval:result.approval}:{}),error:result.code??'approval_required'},result.code==='unauthenticated'?401:result.code==='invalid_arguments'?400:409)
+    return json(result.result,status)
    }
    if(!['GET','HEAD'].includes(request.method) && request.headers.get('origin')!==env.AUTH_ORIGIN) return json({error:'Same-origin request required.'},403)
    const session=await operatorAuth(env).getSession(request)

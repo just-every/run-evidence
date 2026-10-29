@@ -1,5 +1,7 @@
 # Agent folder preparation
 
+These commands enter the shared company-agent door described in [AGENT-DOOR.md](AGENT-DOOR.md). Before they can act, adopt the signed company policy or, on a standalone installation, use the native owner session at `/agents` to choose a complete preparation policy. Unanswered policy and Pause refuse effects. MCP offers the same three jobs. Set an `Idempotency-Key` header on HTTP preparation to replay a retained result; changed arguments conflict.
+
 Sign in with the owner's native session and open `/app/agent` (the local owner
 persona also works). Give the
 agent a labelled, expiring **prepare-only** credential. Copy it once into a

@@ -78,8 +78,6 @@
           "src/base/page-style.ts",
           "src/base/rejected-response.ts",
           "src/base/run-site.ts",
-          "src/base/seed-contract.d.mts",
-          "src/base/seed-contract.mjs",
           "src/base/select-style.ts",
           "src/base/setup-state.ts",
           "src/base/setup.ts",
@@ -500,8 +498,6 @@
             "foundation/runtime/page-style.ts",
             "foundation/runtime/rejected-response.ts",
             "foundation/runtime/run-site.ts",
-            "foundation/runtime/seed-contract.d.mts",
-            "foundation/runtime/seed-contract.mjs",
             "foundation/runtime/select-style.ts",
             "foundation/runtime/setup-state.ts",
             "foundation/runtime/setup.ts",
@@ -1161,14 +1157,6 @@
           {
             "path": "src/base/run-site.ts",
             "originPath": "foundation/runtime/run-site.ts"
-          },
-          {
-            "path": "src/base/seed-contract.d.mts",
-            "originPath": "foundation/runtime/seed-contract.d.mts"
-          },
-          {
-            "path": "src/base/seed-contract.mjs",
-            "originPath": "foundation/runtime/seed-contract.mjs"
           },
           {
             "path": "src/base/select-style.ts",
@@ -2678,31 +2666,58 @@
       }
     },
     {
-      "id": "runeditrun/base-history-d555e78",
+      "id": "runeditrun/base-history-114ef7a",
       "role": "module",
       "source": {
         "kind": "local",
         "paths": [
+          "src/base/contract-docs.mjs",
+          "src/base/contract-prose-patterns.mjs",
+          "src/base/contract-prose.mjs",
+          "src/base/seed-contract.d.mts",
+          "src/base/seed-contract.mjs",
           "src/foundation/runtime/icon-head.ts",
           "src/foundation/runtime/theme-frame.ts",
           "src/modules/agent-door/ADOPTING.md",
+          "src/modules/agent-door/CLAUSES.md",
           "src/modules/agent-door/README.md",
           "src/modules/agent-door/admission.ts",
           "src/modules/agent-door/approval-execution.ts",
           "src/modules/agent-door/approvals.ts",
           "src/modules/agent-door/audit.ts",
+          "src/modules/agent-door/capabilities.d.mts",
+          "src/modules/agent-door/capabilities.mjs",
+          "src/modules/agent-door/conformance/audit-pages.mjs",
+          "src/modules/agent-door/conformance/audit-rows.mjs",
           "src/modules/agent-door/conformance/audit.mjs",
+          "src/modules/agent-door/conformance/authority.d.mts",
+          "src/modules/agent-door/conformance/authority.mjs",
           "src/modules/agent-door/conformance/crypto.mjs",
           "src/modules/agent-door/conformance/discovery.mjs",
+          "src/modules/agent-door/conformance/fixtures.mjs",
           "src/modules/agent-door/conformance/index.mjs",
+          "src/modules/agent-door/conformance/injection.mjs",
+          "src/modules/agent-door/conformance/invocation.mjs",
           "src/modules/agent-door/conformance/journey.mjs",
+          "src/modules/agent-door/conformance/narrowing.d.mts",
+          "src/modules/agent-door/conformance/narrowing.mjs",
           "src/modules/agent-door/conformance/negative.mjs",
           "src/modules/agent-door/conformance/network-modules.mjs",
           "src/modules/agent-door/conformance/network-runtime.mjs",
           "src/modules/agent-door/conformance/policy-phases.mjs",
           "src/modules/agent-door/conformance/protocol.mjs",
+          "src/modules/agent-door/conformance/replay.mjs",
           "src/modules/agent-door/conformance/schema.mjs",
+          "src/modules/agent-door/conformance/security.mjs",
+          "src/modules/agent-door/conformance/sponsors.mjs",
+          "src/modules/agent-door/conformance/step-hooks.mjs",
+          "src/modules/agent-door/conformance/subscription.mjs",
+          "src/modules/agent-door/conformance/subset.mjs",
           "src/modules/agent-door/conformance/surface.mjs",
+          "src/modules/agent-door/conformance/target.mjs",
+          "src/modules/agent-door/conformance/tool-name.d.mts",
+          "src/modules/agent-door/conformance/tool-name.mjs",
+          "src/modules/agent-door/conformance/webhooks.mjs",
           "src/modules/agent-door/counting.ts",
           "src/modules/agent-door/credentials.ts",
           "src/modules/agent-door/errors.ts",
@@ -2710,6 +2725,8 @@
           "src/modules/agent-door/execution.ts",
           "src/modules/agent-door/index.ts",
           "src/modules/agent-door/json-schema.ts",
+          "src/modules/agent-door/native-proof.ts",
+          "src/modules/agent-door/operation.ts",
           "src/modules/agent-door/operator-people.ts",
           "src/modules/agent-door/page-style.ts",
           "src/modules/agent-door/pages.ts",
@@ -2723,11 +2740,13 @@
           "src/modules/agent-door/policy/decide.ts",
           "src/modules/agent-door/policy/document.ts",
           "src/modules/agent-door/policy/vectors.json",
+          "src/modules/agent-door/principal.ts",
           "src/modules/agent-door/registry.ts",
           "src/modules/agent-door/resource-tool.ts",
           "src/modules/agent-door/reviews.ts",
           "src/modules/agent-door/schema/agent-door.sql",
           "src/modules/agent-door/subscriptions.ts",
+          "src/modules/agent-door/target.ts",
           "src/modules/agent-door/transport.ts",
           "src/modules/agent-door/types.ts",
           "src/modules/agent-door/wire.ts",
@@ -2749,29 +2768,56 @@
         ],
         "origin": {
           "repository": "https://github.com/runeditrun/base.git",
-          "revision": "d555e789cffb744a9f83d76ebe42a2e3bdd7a055",
+          "revision": "114ef7a61f080da053af783c5fbe06f625d692cc",
           "path": ".",
           "paths": [
+            "foundation/runtime/contract-docs.mjs",
+            "foundation/runtime/contract-prose-patterns.mjs",
+            "foundation/runtime/contract-prose.mjs",
             "foundation/runtime/icon-head.ts",
+            "foundation/runtime/seed-contract.d.mts",
+            "foundation/runtime/seed-contract.mjs",
             "foundation/runtime/theme-frame.ts",
             "modules/agent-door/ADOPTING.md",
+            "modules/agent-door/CLAUSES.md",
             "modules/agent-door/README.md",
             "modules/agent-door/admission.ts",
             "modules/agent-door/approval-execution.ts",
             "modules/agent-door/approvals.ts",
             "modules/agent-door/audit.ts",
+            "modules/agent-door/capabilities.d.mts",
+            "modules/agent-door/capabilities.mjs",
+            "modules/agent-door/conformance/audit-pages.mjs",
+            "modules/agent-door/conformance/audit-rows.mjs",
             "modules/agent-door/conformance/audit.mjs",
+            "modules/agent-door/conformance/authority.d.mts",
+            "modules/agent-door/conformance/authority.mjs",
             "modules/agent-door/conformance/crypto.mjs",
             "modules/agent-door/conformance/discovery.mjs",
+            "modules/agent-door/conformance/fixtures.mjs",
             "modules/agent-door/conformance/index.mjs",
+            "modules/agent-door/conformance/injection.mjs",
+            "modules/agent-door/conformance/invocation.mjs",
             "modules/agent-door/conformance/journey.mjs",
+            "modules/agent-door/conformance/narrowing.d.mts",
+            "modules/agent-door/conformance/narrowing.mjs",
             "modules/agent-door/conformance/negative.mjs",
             "modules/agent-door/conformance/network-modules.mjs",
             "modules/agent-door/conformance/network-runtime.mjs",
             "modules/agent-door/conformance/policy-phases.mjs",
             "modules/agent-door/conformance/protocol.mjs",
+            "modules/agent-door/conformance/replay.mjs",
             "modules/agent-door/conformance/schema.mjs",
+            "modules/agent-door/conformance/security.mjs",
+            "modules/agent-door/conformance/sponsors.mjs",
+            "modules/agent-door/conformance/step-hooks.mjs",
+            "modules/agent-door/conformance/subscription.mjs",
+            "modules/agent-door/conformance/subset.mjs",
             "modules/agent-door/conformance/surface.mjs",
+            "modules/agent-door/conformance/target.mjs",
+            "modules/agent-door/conformance/tool-name.d.mts",
+            "modules/agent-door/conformance/tool-name.mjs",
+            "modules/agent-door/conformance/webhooks.mjs",
             "modules/agent-door/counting.ts",
             "modules/agent-door/credentials.ts",
             "modules/agent-door/errors.ts",
@@ -2779,6 +2825,8 @@
             "modules/agent-door/execution.ts",
             "modules/agent-door/index.ts",
             "modules/agent-door/json-schema.ts",
+            "modules/agent-door/native-proof.ts",
+            "modules/agent-door/operation.ts",
             "modules/agent-door/operator-people.ts",
             "modules/agent-door/page-style.ts",
             "modules/agent-door/pages.ts",
@@ -2792,11 +2840,13 @@
             "modules/agent-door/policy/decide.ts",
             "modules/agent-door/policy/document.ts",
             "modules/agent-door/policy/vectors.json",
+            "modules/agent-door/principal.ts",
             "modules/agent-door/registry.ts",
             "modules/agent-door/resource-tool.ts",
             "modules/agent-door/reviews.ts",
             "modules/agent-door/schema/agent-door.sql",
             "modules/agent-door/subscriptions.ts",
+            "modules/agent-door/target.ts",
             "modules/agent-door/transport.ts",
             "modules/agent-door/types.ts",
             "modules/agent-door/wire.ts",
@@ -2818,6 +2868,26 @@
           ]
         },
         "mappings": [
+          {
+            "path": "src/base/contract-docs.mjs",
+            "originPath": "foundation/runtime/contract-docs.mjs"
+          },
+          {
+            "path": "src/base/contract-prose-patterns.mjs",
+            "originPath": "foundation/runtime/contract-prose-patterns.mjs"
+          },
+          {
+            "path": "src/base/contract-prose.mjs",
+            "originPath": "foundation/runtime/contract-prose.mjs"
+          },
+          {
+            "path": "src/base/seed-contract.d.mts",
+            "originPath": "foundation/runtime/seed-contract.d.mts"
+          },
+          {
+            "path": "src/base/seed-contract.mjs",
+            "originPath": "foundation/runtime/seed-contract.mjs"
+          },
           {
             "path": "src/foundation/runtime/icon-head.ts",
             "originPath": "foundation/runtime/icon-head.ts"
@@ -2847,8 +2917,36 @@
             "originPath": "modules/agent-door/audit.ts"
           },
           {
+            "path": "src/modules/agent-door/capabilities.d.mts",
+            "originPath": "modules/agent-door/capabilities.d.mts"
+          },
+          {
+            "path": "src/modules/agent-door/capabilities.mjs",
+            "originPath": "modules/agent-door/capabilities.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/CLAUSES.md",
+            "originPath": "modules/agent-door/CLAUSES.md"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/audit-pages.mjs",
+            "originPath": "modules/agent-door/conformance/audit-pages.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/audit-rows.mjs",
+            "originPath": "modules/agent-door/conformance/audit-rows.mjs"
+          },
+          {
             "path": "src/modules/agent-door/conformance/audit.mjs",
             "originPath": "modules/agent-door/conformance/audit.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/authority.d.mts",
+            "originPath": "modules/agent-door/conformance/authority.d.mts"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/authority.mjs",
+            "originPath": "modules/agent-door/conformance/authority.mjs"
           },
           {
             "path": "src/modules/agent-door/conformance/crypto.mjs",
@@ -2859,12 +2957,32 @@
             "originPath": "modules/agent-door/conformance/discovery.mjs"
           },
           {
+            "path": "src/modules/agent-door/conformance/fixtures.mjs",
+            "originPath": "modules/agent-door/conformance/fixtures.mjs"
+          },
+          {
             "path": "src/modules/agent-door/conformance/index.mjs",
             "originPath": "modules/agent-door/conformance/index.mjs"
           },
           {
+            "path": "src/modules/agent-door/conformance/injection.mjs",
+            "originPath": "modules/agent-door/conformance/injection.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/invocation.mjs",
+            "originPath": "modules/agent-door/conformance/invocation.mjs"
+          },
+          {
             "path": "src/modules/agent-door/conformance/journey.mjs",
             "originPath": "modules/agent-door/conformance/journey.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/narrowing.d.mts",
+            "originPath": "modules/agent-door/conformance/narrowing.d.mts"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/narrowing.mjs",
+            "originPath": "modules/agent-door/conformance/narrowing.mjs"
           },
           {
             "path": "src/modules/agent-door/conformance/negative.mjs",
@@ -2887,12 +3005,52 @@
             "originPath": "modules/agent-door/conformance/protocol.mjs"
           },
           {
+            "path": "src/modules/agent-door/conformance/replay.mjs",
+            "originPath": "modules/agent-door/conformance/replay.mjs"
+          },
+          {
             "path": "src/modules/agent-door/conformance/schema.mjs",
             "originPath": "modules/agent-door/conformance/schema.mjs"
           },
           {
+            "path": "src/modules/agent-door/conformance/security.mjs",
+            "originPath": "modules/agent-door/conformance/security.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/sponsors.mjs",
+            "originPath": "modules/agent-door/conformance/sponsors.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/step-hooks.mjs",
+            "originPath": "modules/agent-door/conformance/step-hooks.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/subscription.mjs",
+            "originPath": "modules/agent-door/conformance/subscription.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/subset.mjs",
+            "originPath": "modules/agent-door/conformance/subset.mjs"
+          },
+          {
             "path": "src/modules/agent-door/conformance/surface.mjs",
             "originPath": "modules/agent-door/conformance/surface.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/target.mjs",
+            "originPath": "modules/agent-door/conformance/target.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/tool-name.d.mts",
+            "originPath": "modules/agent-door/conformance/tool-name.d.mts"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/tool-name.mjs",
+            "originPath": "modules/agent-door/conformance/tool-name.mjs"
+          },
+          {
+            "path": "src/modules/agent-door/conformance/webhooks.mjs",
+            "originPath": "modules/agent-door/conformance/webhooks.mjs"
           },
           {
             "path": "src/modules/agent-door/counting.ts",
@@ -2921,6 +3079,14 @@
           {
             "path": "src/modules/agent-door/json-schema.ts",
             "originPath": "modules/agent-door/json-schema.ts"
+          },
+          {
+            "path": "src/modules/agent-door/native-proof.ts",
+            "originPath": "modules/agent-door/native-proof.ts"
+          },
+          {
+            "path": "src/modules/agent-door/operation.ts",
+            "originPath": "modules/agent-door/operation.ts"
           },
           {
             "path": "src/modules/agent-door/operator-people.ts",
@@ -2975,6 +3141,10 @@
             "originPath": "modules/agent-door/policy/vectors.json"
           },
           {
+            "path": "src/modules/agent-door/principal.ts",
+            "originPath": "modules/agent-door/principal.ts"
+          },
+          {
             "path": "src/modules/agent-door/README.md",
             "originPath": "modules/agent-door/README.md"
           },
@@ -2997,6 +3167,10 @@
           {
             "path": "src/modules/agent-door/subscriptions.ts",
             "originPath": "modules/agent-door/subscriptions.ts"
+          },
+          {
+            "path": "src/modules/agent-door/target.ts",
+            "originPath": "modules/agent-door/target.ts"
           },
           {
             "path": "src/modules/agent-door/transport.ts",
@@ -3117,15 +3291,18 @@
           "OPERATIONS.md",
           "README.md",
           "RELEASE.json",
+          "agent-surface.json",
           "base-copies.json",
           "deploy-demo.json",
           "deploy-site.json",
           "deploy.json",
           "docs/ACCESS.md",
           "docs/AGENT-COMMANDS.md",
+          "docs/AGENT-DOOR.md",
           "docs/API.md",
           "docs/AUDITOR-API.md",
           "docs/BACKUP-RESTORE.md",
+          "docs/CLAIMS.md",
           "docs/CODE-MANIFESTS.md",
           "docs/CUSTOMER-PROMISES.md",
           "docs/DRATA-IMPORT.md",
@@ -3143,6 +3320,9 @@
           "docs/TRACKERS.md",
           "docs/TRUST-UPDATES.md",
           "docs/USDP-CITATIONS.md",
+          "docs/contract/COVERAGE.json",
+          "docs/contract/ID-MAP.json",
+          "docs/verify.md",
           "management/integration/deployment-spec.json",
           "migrations/core/0001_owner.sql",
           "migrations/core/0002_outbox.sql",
@@ -3218,6 +3398,10 @@
           "migrations/core/0071_privacy_classifications.sql",
           "migrations/core/0072_submission_erasure_fence.sql",
           "migrations/core/0073_entity_exhibit_erasure.sql",
+          "migrations/core/0074_business_settings.sql",
+          "migrations/core/0075_business_people.sql",
+          "migrations/core/0076_agent_door.sql",
+          "migrations/core/0077_agent_door_custody_fence.sql",
           "package.json",
           "packaging.json",
           "pnpm-lock.yaml",
@@ -3334,6 +3518,12 @@
           "src/evidence/access/exhibit.ts",
           "src/evidence/access/http.ts",
           "src/evidence/access/storage.ts",
+          "src/evidence/agent-door/business.ts",
+          "src/evidence/agent-door/index.ts",
+          "src/evidence/agent-door/legacy.ts",
+          "src/evidence/agent-door/native.ts",
+          "src/evidence/agent-door/people.ts",
+          "src/evidence/agent-door/tools.ts",
           "src/evidence/agent/archive.ts",
           "src/evidence/agent/http.ts",
           "src/evidence/agent/input.ts",
@@ -3364,6 +3554,8 @@
           "src/evidence/api/tokens.ts",
           "src/evidence/archive/blob-stage.ts",
           "src/evidence/archive/capabilities.ts",
+          "src/evidence/archive/door-records.ts",
+          "src/evidence/archive/door.ts",
           "src/evidence/archive/export.ts",
           "src/evidence/archive/extensions.ts",
           "src/evidence/archive/feature-records.ts",
@@ -3782,6 +3974,8 @@
           "src/site/styles/timeline.css",
           "src/site/styles/trust.css",
           "tests/access.mjs",
+          "tests/agent-fixtures.mjs",
+          "tests/agent-owner.mjs",
           "tests/agent.mjs",
           "tests/api.mjs",
           "tests/archive.mjs",

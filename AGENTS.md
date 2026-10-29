@@ -7,3 +7,5 @@ Preserve project, edition, package, Worker and D1 identities. Enforce owner sess
 Keep tests small and through public doors, below 200. Run only touched tests locally; CI runs Verify. No tests during build or deploy. Keep secrets, local state, exports and research out of git. Scan the exact candidate with Base publication scan before every public push, without exclusions. Never print credentials.
 
 Maintain source provenance with scripts/generate-edition.mjs and the edition-authoring lock command after staging intentional changes. The approved style specification governs the run site and application.
+
+Lander-Regenerate: `node src/base/contract-docs.mjs write` then `node src/base/contract-docs.mjs check`.
