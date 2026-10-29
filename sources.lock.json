@@ -4179,7 +4179,7 @@
       "executable": false
     },
     "AGENTS.md": {
-      "sha256": "8bea6c1c5fbead9a2ab8cf61931e1e4430995a3e2c2b51517d32a1373874ee94",
+      "sha256": "da6d7be95c47849c169b6ff9984041bfba6d9022dea4a3641b84ac79c17fd13d",
       "executable": false
     },
     "base-copies.json": {
@@ -4219,7 +4219,7 @@
       "executable": false
     },
     "docs/AGENT-DOOR.md": {
-      "sha256": "953bc718a6cce186bb5e01cde484a99d685dabf43eca2550e2da49c364173a52",
+      "sha256": "2ebba20d8a9f08f96158f6b701a4353405efdab78eb8de0647b0fdbc45601b63",
       "executable": false
     },
     "docs/API.md": {

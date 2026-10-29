@@ -8,4 +8,4 @@ Keep tests small and through public doors, below 200. Run only touched tests loc
 
 Maintain source provenance with scripts/generate-edition.mjs and the edition-authoring lock command after staging intentional changes. The approved style specification governs the run site and application.
 
-Lander-Regenerate: `node src/base/contract-docs.mjs write` then `node src/base/contract-docs.mjs check`.
+Lander-Regenerate: node src/base/contract-docs.mjs write
