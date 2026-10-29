@@ -5422,7 +5422,7 @@
       "executable": false
     },
     "src/evidence/agent-door/index.ts": {
-      "sha256": "642c6544ce2aeacb24c9303ded4c14d7b74b3c731cfed9151d11af7399a5d714",
+      "sha256": "c6bf87e912c8f9929f661d0e79f5250b73741b4e8e7215f786835b7490c35cf6",
       "executable": false
     },
     "src/evidence/agent-door/legacy.ts": {
@@ -5434,7 +5434,7 @@
       "executable": false
     },
     "src/evidence/agent-door/people.ts": {
-      "sha256": "7c504842bd1cb44df592a86efde3c5a02b0088d1b32d3ff004514f047fe81c67",
+      "sha256": "f60cbdbf0b75f37a18c33c0e64f693184f0861398054dc820bc24477dae8e0d2",
       "executable": false
     },
     "src/evidence/agent-door/tools.ts": {

@@ -36,7 +36,7 @@ export function nativePeople(original: Bindings): PeopleAdapter {
     return owner ? read(owner.id) : null
    }
    if (!settings) return null
-   const row = await env.DB.prepare("SELECT operator_id FROM bs_team WHERE business_id=? AND state<>'conflict'").bind(sub).first<{ operator_id: string | null }>()
+   const row = await env.DB.prepare("SELECT operator_id FROM bs_team WHERE business_id=? AND state IN ('active','invited')").bind(sub).first<{ operator_id: string | null }>()
    return row?.operator_id ? read(row.operator_id) : null
   },
   businessRole: person => person.role === 'owner' ? 'owner' : null,
@@ -44,7 +44,7 @@ export function nativePeople(original: Bindings): PeopleAdapter {
    const settings = await env.DB.prepare('SELECT owner_id FROM bs_settings WHERE singleton=1 AND stopped=0').first<{ owner_id: string | null }>()
    if (!settings) return null
    if (settings.owner_id && (await installationOwner(env.DB))?.id === person.id) return { id: settings.owner_id, role: 'owner' }
-   const row = await env.DB.prepare("SELECT business_id,business_role FROM bs_team WHERE operator_id=? AND business_id IS NOT NULL AND state<>'conflict'").bind(person.id).first<{ business_id: string; business_role: string }>()
+   const row = await env.DB.prepare("SELECT business_id,business_role FROM bs_team WHERE operator_id=? AND business_id IS NOT NULL AND state IN ('active','invited')").bind(person.id).first<{ business_id: string; business_role: string }>()
    return row ? { id: row.business_id, role: row.business_role === 'admin' ? 'editor' : null } : null
   },
  }

@@ -30,6 +30,10 @@ export async function sharedAgentResponse(request: Request, original: Bindings, 
  if (!['/mcp', '/agents', '/api/rer/agent-policy', '/api/rer/business-settings', '/rer-business-logo', '/rer-business.css', '/.well-known/oauth-protected-resource', '/.well-known/oauth-protected-resource/mcp'].includes(path) && !path.startsWith('/agents/')) return null
  const env = runtimeBindings(original)
  if (new URL(request.url).origin !== env.AUTH_ORIGIN || request.headers.has('host') && request.headers.get('host')?.toLowerCase() !== new URL(env.AUTH_ORIGIN).host.toLowerCase() || request.headers.get('sec-fetch-site') === 'cross-site' || request.headers.has('origin') && request.headers.get('origin') !== env.AUTH_ORIGIN) return Response.json({ code: 'origin_refused' }, { status: 403 })
- const settings = await businessSettings(env).handle(request)
- return settings ?? evidenceDoor(env, clock).handle(request)
+ try {
+  const settings = await businessSettings(env).handle(request)
+  return settings ?? await evidenceDoor(env, clock).handle(request)
+ } catch {
+  return Response.json({ code: 'agent_door_unavailable' }, { status: 503, headers: { 'cache-control': 'no-store' } })
+ }
 }
