@@ -34,6 +34,8 @@ export default async function ({ request, origin, cookie, tool }) {
  check((await owner('/agents/api/pause', { paused: false })).ok, 'Native resume failed')
  const audit = await (await owner('/api/audit?action=agent.proposal-prepared')).json()
  check(audit.entries.some(row => row.subject === 'proposal:' + original.proposal.id && row.actor_name.startsWith('Morgan Compliance Agent for ')), 'Native activity lost agent/sponsor attribution')
+ const doorAudit = await (await owner('/agents/api/audit?agent=' + credential.grant.id)).json()
+ check(doorAudit.differs_from_policy === 0 && doorAudit.rows.some(row => row.idempotency_key === args.idempotency_key && row.client_id === credential.grant.id && row.label.startsWith('Morgan Compliance Agent for ')), 'Door and native preparation attribution or policy evidence differ')
  check((await owner('/api/agent/tokens/' + credential.grant.id + '/revoke', {})).ok, 'Native revocation failed')
  check((await prepare(args)).status === 401 && (await list()).length === count, 'Revoked credential returned a retained effect')
  console.log('Evidence specialist journey: scoped Business read; native-grant refusal; typed unknown tool; real local preparation, replay/conflict, Pause, attribution and revocation passed.')
