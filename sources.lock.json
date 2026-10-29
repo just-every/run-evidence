@@ -9404,7 +9404,7 @@
       "executable": false
     },
     "tests/helpers/portable-journey.mjs": {
-      "sha256": "c47bd73e7ed8628a43fa8a6e896301be87ce012dbe29f754e0a2587ee63be28f",
+      "sha256": "5be529c4c856aa30f2a3944aa8e3f576c15788d232ce77855537196869cc4d42",
       "executable": false
     },
     "tests/helpers/privacy-authority-journey.mjs": {
