@@ -3975,6 +3975,7 @@
           "src/site/styles/trust.css",
           "tests/access.mjs",
           "tests/agent-fixtures.mjs",
+          "tests/agent-native-journey.mjs",
           "tests/agent-owner.mjs",
           "tests/agent.mjs",
           "tests/api.mjs",

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "a0293c36a6948d781b1663f787006057ea0f64827ce8132b47de750c5c3c18f2",
+  "manifest": "9d60aeadfd1f94280a046281a86ee60e42ba6fc69fe9b5b625becc1692f43666",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -3987,6 +3987,7 @@
           "src/site/styles/trust.css",
           "tests/access.mjs",
           "tests/agent-fixtures.mjs",
+          "tests/agent-native-journey.mjs",
           "tests/agent-owner.mjs",
           "tests/agent.mjs",
           "tests/api.mjs",
@@ -4174,7 +4175,7 @@
       "executable": false
     },
     "agent-surface.json": {
-      "sha256": "dff3ffe11cefb0a8fb5d3d4f4fc71807ceb7c622b2e800cf37d1b6d0ea7fa539",
+      "sha256": "0809869e9e4c7e387818365d837bbc775c451c6c736df00422a6e98fe9f489f2",
       "executable": false
     },
     "AGENTS.md": {
@@ -4318,7 +4319,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "a0293c36a6948d781b1663f787006057ea0f64827ce8132b47de750c5c3c18f2",
+      "sha256": "9d60aeadfd1f94280a046281a86ee60e42ba6fc69fe9b5b625becc1692f43666",
       "executable": false
     },
     "LICENSE": {
@@ -9079,6 +9080,10 @@
     },
     "tests/agent-fixtures.mjs": {
       "sha256": "5297aca96991d87d709c635894883085f2c439464946f7e687aa756c763803ec",
+      "executable": false
+    },
+    "tests/agent-native-journey.mjs": {
+      "sha256": "87a301a09dadaa8a092246caa39533cbf1f6e2839b6693c78be580825697c1b1",
       "executable": false
     },
     "tests/agent-owner.mjs": {

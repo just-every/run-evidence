@@ -26,6 +26,7 @@
   "verification": {
     "owner":{"initializer":"tests/agent-owner.mjs","bindings":{"SESSION_SECRET":"sessionSecret","AUTH_ORIGIN":"appOrigin"}},
     "fixtures":{"module":"tests/agent-fixtures.mjs"},
+    "journey":"tests/agent-native-journey.mjs",
     "replayAdmission":{"prepare":["prepare"]}
   }
 }
