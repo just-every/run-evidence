@@ -2677,7 +2677,60 @@
           "src/base/seed-contract.d.mts",
           "src/base/seed-contract.mjs",
           "src/foundation/runtime/icon-head.ts",
-          "src/foundation/runtime/theme-frame.ts",
+          "src/foundation/runtime/theme-frame.ts"
+        ],
+        "origin": {
+          "repository": "https://github.com/runeditrun/base.git",
+          "revision": "114ef7a61f080da053af783c5fbe06f625d692cc",
+          "path": ".",
+          "paths": [
+            "foundation/runtime/contract-docs.mjs",
+            "foundation/runtime/contract-prose-patterns.mjs",
+            "foundation/runtime/contract-prose.mjs",
+            "foundation/runtime/icon-head.ts",
+            "foundation/runtime/seed-contract.d.mts",
+            "foundation/runtime/seed-contract.mjs",
+            "foundation/runtime/theme-frame.ts"
+          ]
+        },
+        "mappings": [
+          {
+            "path": "src/base/contract-docs.mjs",
+            "originPath": "foundation/runtime/contract-docs.mjs"
+          },
+          {
+            "path": "src/base/contract-prose-patterns.mjs",
+            "originPath": "foundation/runtime/contract-prose-patterns.mjs"
+          },
+          {
+            "path": "src/base/contract-prose.mjs",
+            "originPath": "foundation/runtime/contract-prose.mjs"
+          },
+          {
+            "path": "src/base/seed-contract.d.mts",
+            "originPath": "foundation/runtime/seed-contract.d.mts"
+          },
+          {
+            "path": "src/base/seed-contract.mjs",
+            "originPath": "foundation/runtime/seed-contract.mjs"
+          },
+          {
+            "path": "src/foundation/runtime/icon-head.ts",
+            "originPath": "foundation/runtime/icon-head.ts"
+          },
+          {
+            "path": "src/foundation/runtime/theme-frame.ts",
+            "originPath": "foundation/runtime/theme-frame.ts"
+          }
+        ]
+      }
+    },
+    {
+      "id": "runeditrun/base-history-2135c39",
+      "role": "module",
+      "source": {
+        "kind": "local",
+        "paths": [
           "src/modules/agent-door/ADOPTING.md",
           "src/modules/agent-door/CLAUSES.md",
           "src/modules/agent-door/README.md",
@@ -2729,6 +2782,7 @@
           "src/modules/agent-door/operation.ts",
           "src/modules/agent-door/operator-people.ts",
           "src/modules/agent-door/page-style.ts",
+          "src/modules/agent-door/page-words.ts",
           "src/modules/agent-door/pages.ts",
           "src/modules/agent-door/people.ts",
           "src/modules/agent-door/person-doors.ts",
@@ -2768,16 +2822,9 @@
         ],
         "origin": {
           "repository": "https://github.com/runeditrun/base.git",
-          "revision": "114ef7a61f080da053af783c5fbe06f625d692cc",
+          "revision": "2135c394939f4a737adabdc8003b0e667b31ac5a",
           "path": ".",
           "paths": [
-            "foundation/runtime/contract-docs.mjs",
-            "foundation/runtime/contract-prose-patterns.mjs",
-            "foundation/runtime/contract-prose.mjs",
-            "foundation/runtime/icon-head.ts",
-            "foundation/runtime/seed-contract.d.mts",
-            "foundation/runtime/seed-contract.mjs",
-            "foundation/runtime/theme-frame.ts",
             "modules/agent-door/ADOPTING.md",
             "modules/agent-door/CLAUSES.md",
             "modules/agent-door/README.md",
@@ -2829,6 +2876,7 @@
             "modules/agent-door/operation.ts",
             "modules/agent-door/operator-people.ts",
             "modules/agent-door/page-style.ts",
+            "modules/agent-door/page-words.ts",
             "modules/agent-door/pages.ts",
             "modules/agent-door/people.ts",
             "modules/agent-door/person-doors.ts",
@@ -2868,34 +2916,6 @@
           ]
         },
         "mappings": [
-          {
-            "path": "src/base/contract-docs.mjs",
-            "originPath": "foundation/runtime/contract-docs.mjs"
-          },
-          {
-            "path": "src/base/contract-prose-patterns.mjs",
-            "originPath": "foundation/runtime/contract-prose-patterns.mjs"
-          },
-          {
-            "path": "src/base/contract-prose.mjs",
-            "originPath": "foundation/runtime/contract-prose.mjs"
-          },
-          {
-            "path": "src/base/seed-contract.d.mts",
-            "originPath": "foundation/runtime/seed-contract.d.mts"
-          },
-          {
-            "path": "src/base/seed-contract.mjs",
-            "originPath": "foundation/runtime/seed-contract.mjs"
-          },
-          {
-            "path": "src/foundation/runtime/icon-head.ts",
-            "originPath": "foundation/runtime/icon-head.ts"
-          },
-          {
-            "path": "src/foundation/runtime/theme-frame.ts",
-            "originPath": "foundation/runtime/theme-frame.ts"
-          },
           {
             "path": "src/modules/agent-door/admission.ts",
             "originPath": "modules/agent-door/admission.ts"
@@ -3095,6 +3115,10 @@
           {
             "path": "src/modules/agent-door/page-style.ts",
             "originPath": "modules/agent-door/page-style.ts"
+          },
+          {
+            "path": "src/modules/agent-door/page-words.ts",
+            "originPath": "modules/agent-door/page-words.ts"
           },
           {
             "path": "src/modules/agent-door/pages.ts",
