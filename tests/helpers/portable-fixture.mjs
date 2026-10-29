@@ -141,6 +141,9 @@ export async function portableFixture(app, { large = true } = {}) {
  representative.import = await get(`/api/import/${ids.importReview}`)
 
  const agentCredential = await post('/api/agent/tokens', { label: 'Portable prepare-only agent', expires_at: '2026-11-01T00:00:00Z' })
+ // The native owner now explicitly sets preparation policy before using a
+ // standalone agent credential; the custody assertions remain unchanged.
+ await request('/agents/api/policy', { method: 'PUT', body: { document: { schema: 'rer-agent-policy/1', catalogue: 'rer-agent-classes/1', rules: [{ id: 'prepare', class: '*', do: 'autonomous' }], spend: { none: true } } } })
  ids.agentToken = agentCredential.grant.id
  const folderInput = { reviewer_label: 'Portable audit reviewer', period_from: '2026-10-01', period_to: '2026-12-31', expires_at: '2026-11-01T00:00:00Z', control_ids: [ids.control] }
  const prepared = await (await request('/api/agent/prepare-folder', { method: 'POST', token: agentCredential.token, body: folderInput, status: 201 })).json()

@@ -9391,7 +9391,7 @@
       "executable": false
     },
     "tests/helpers/portable-fixture.mjs": {
-      "sha256": "32b0432620864c7ff96ee2656b7bde026887902b1a936c59f680689aee26aa7a",
+      "sha256": "557f00d8c96532ba98ad1caf58a11e3b645c4ac6642b558638692435a448f4d1",
       "executable": false
     },
     "tests/helpers/portable-format.mjs": {
