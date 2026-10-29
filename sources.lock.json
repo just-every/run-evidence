@@ -5430,7 +5430,7 @@
       "executable": false
     },
     "src/evidence/agent-door/native.ts": {
-      "sha256": "89752da672f504b0e4005396d8f5ed7735e8b664d02298733491987eba88e03a",
+      "sha256": "7f4e908822309672248ea473309490e449e4fbb46a27a3e33d82c3c5ede4cb9a",
       "executable": false
     },
     "src/evidence/agent-door/people.ts": {

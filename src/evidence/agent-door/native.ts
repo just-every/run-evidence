@@ -25,6 +25,7 @@ export async function owner(env: Bindings, ctx: ToolContext) {
 // Business subject or token email cannot select or manufacture a native grant.
 export async function preparationGrant(env: Bindings, ctx: ToolContext) {
  await owner(env, ctx)
+ if (ctx.consent !== undefined) throw new ToolRefusal('native_credential_required')
  const token = ctx.clientId && ctx.agent.id === ctx.clientId
   ? await env.DB.prepare('SELECT * FROM agent_tokens WHERE id=? AND created_by=?').bind(ctx.clientId, ctx.person.id).first<import('../agent/types').TokenGrant>() : null
  if (!active(token, new Date(ctx.now()))) throw new ToolRefusal('native_credential_required')
