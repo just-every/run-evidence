@@ -4008,7 +4008,7 @@
       "executable": false
     },
     "deploy.json": {
-      "sha256": "f75b3d9a78941f2e7073829f908536ebc6cbeab83d16836a488fdcf97097eb54",
+      "sha256": "c9ad43fc449cf119d82d03104e392859cc463be225c5a03bdbf33ac50c61d04e",
       "executable": false
     },
     "docs/ACCESS.md": {
@@ -4772,7 +4772,7 @@
       "executable": false
     },
     "README.md": {
-      "sha256": "05527fd4980983295a43fcd638fa11ac322f14b69a9a4bc6754392489ecbd86b",
+      "sha256": "6eb0c9aaefb5bbb7ae729b6d95d0eb432d8f6b6b7e9bd9a405a28f94315fcef1",
       "executable": false
     },
     "RELEASE.json": {
@@ -9296,7 +9296,7 @@
       "executable": false
     },
     "wrangler.jsonc": {
-      "sha256": "d74b46276a231f38e5124fdd426e4cfae0555d03d8f8ec7b4d0584a401ebc08f",
+      "sha256": "c123f7fbd9587145ee7fe47f5e71ea7145e674170b9abfb1df3dfbde49368080",
       "executable": false
     }
   }
