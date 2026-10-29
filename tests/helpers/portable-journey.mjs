@@ -9,7 +9,7 @@ import { portableFixture } from './portable-fixture.mjs'
 const MAGIC_BYTES=Buffer.byteLength('EVIDENCE-ARCHIVE\n')
 const hash=()=>createHash('sha256')
 const digest=b=>hash().update(b).digest('hex')
-const normal=(table,row)=>Object.fromEntries(Object.entries(row).map(([k,v])=>[k,table==='review_folders'&&k==='closed_at'?'closed':['connections','tracker_destinations','followup_channels'].includes(table)&&k==='status'?'inactive after restore':table==='connections'&&k==='next_attempt_at'?null:v]))
+const normal=(table,row)=>Object.fromEntries(Object.entries(row).map(([k,v])=>[k,table==='review_folders'&&k==='closed_at'?'closed':['connections','tracker_destinations','followup_channels'].includes(table)&&k==='status'?'inactive after restore':table==='connections'&&k==='next_attempt_at'?null:table==='agent_door_agents'&&k==='revoked'?'revoked after restore':v]))
 // skip: audit entry ids of the destination's own sign-in (LOG-001), which a
 // restored installation records before the source history it receives.
 async function readArchive(path,skip=new Set()){
@@ -53,6 +53,12 @@ export async function portableJourney({runtime,cli,dir}){
   const dry=await json(target,`/api/archive/uploads/${upload.id}/validate`,{});assert.equal(dry.erasure_history,'unverified');assert.equal(dry.requires_latest_journal,true);await empty(target)
   const missingHistory=await json(target,`/api/archive/uploads/${upload.id}/restore`,{},400,{'x-evidence-confirm':'restore'});assert.match(missingHistory.error,/history unverified/);await empty(target)
   const restored=await json(target,`/api/archive/uploads/${upload.id}/restore`,{journal},200,{'x-evidence-confirm':'restore'});assert.equal(restored.bytes,expected.bytes);assert.deepEqual(restored.counts,expected.counts);assert.equal(await authFingerprint(target),receiving)
+  // Retain exact agent history while deliberately revoking restored authority.
+  const agents=(await json(target,'/agents/api/agents')).agents
+  assert.equal(agents.find(agent=>agent.id===fixture.ids.agentToken)?.revoked,true)
+  assert.ok(agents.every(agent=>agent.revoked))
+  const agentState=await json(target,'/agents/api/state')
+  assert.equal(agentState.paused.local,true);assert.equal(agentState.policy.complete,false)
   const actualPath=join(dir,'portable-http-roundtrip.evidence');await download(target,actualPath);assert.ok(destinationAudit.size>0);const actual=await readArchive(actualPath,destinationAudit);assert.deepEqual(actual.rows,expected.rows);assert.deepEqual(actual.files,expected.files)
   for(const file of fixture.files){
    const r=await target.fetch(file.url)

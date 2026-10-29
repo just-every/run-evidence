@@ -1,4 +1,5 @@
 import {promiseColumns} from '../agent/promise-archive'
+import { doorColumns, doorLocal } from './door'
 import {trustColumns,trustLocal} from '../trust/archive'
 import { auditColumns } from '../review/engagement/archive'
 import { codeManifestColumns } from '../connect/manifest-schema'
@@ -17,7 +18,7 @@ import type { Bindings } from '../../auth.server'
 export type Store = Pick<Bindings,'DB'|'EXHIBITS'> & {ARCHIVE_COPY?:(source:string,key:string,size:number,session:string)=>Promise<boolean>}
 type Definition = {columns:{name:string;type:string;pk:number}[];foreignKeys:{id:number;seq:number;table:string;from:string;to:string}[];sql:string}
 export const schema = schemaData as Record<string,Definition>
-export const registry:Record<string,readonly string[]> = {...columns,...promiseColumns,...agentColumns,...importTableColumns,...programColumns,...libraryColumns,period_investigations:['id','control_id','period_from','period_to','snapshot_json','snapshot_hash','created_by','created_name','created_at'],period_investigation_decisions:['investigation_id','action','snapshot_hash','reason','actor_id','actor_name','decided_at'],...vendorColumns,...documentColumns,...privacyColumns,...vendorReviewColumns,...answerColumns,...tailoringColumns,...codeManifestColumns,...auditColumns,...trustColumns,tests:[...programColumns.tests,'remediation'],product_audit:[...programColumns.product_audit,'reason','revision'],operation_steps:['id','step','scheduled_at','lease_until','finished_at','outcome','processed_count','detail']}
+export const registry:Record<string,readonly string[]> = {...columns,...promiseColumns,...agentColumns,...importTableColumns,...programColumns,...libraryColumns,period_investigations:['id','control_id','period_from','period_to','snapshot_json','snapshot_hash','created_by','created_name','created_at'],period_investigation_decisions:['investigation_id','action','snapshot_hash','reason','actor_id','actor_name','decided_at'],...vendorColumns,...documentColumns,...privacyColumns,...vendorReviewColumns,...answerColumns,...tailoringColumns,...codeManifestColumns,...auditColumns,...trustColumns,tests:[...programColumns.tests,'remediation'],product_audit:[...programColumns.product_audit,'reason','revision'],operation_steps:['id','step','scheduled_at','lease_until','finished_at','outcome','processed_count','detail'],...doorColumns}
 // LOG-001: v10 archives written before audit reasons and revisions list
 // product_audit without them; their entries restore with both empty.
 export const auditColumnsBefore:readonly string[] = programColumns.product_audit
@@ -27,6 +28,7 @@ export const businessRows=(t:string,table=quote(t))=>t==='product_audit'?`(SELEC
 export const portableTables = Object.keys(registry)
 export const localTables = Object.keys(schema).filter(t=>!Object.hasOwn(registry,t))
 export const portableLocal:Record<string,readonly string[]> = {
+ ...doorLocal,
  ...trustLocal,
  credential_displays:['id','session_id','operator_id','destination','ciphertext','iv','expires_at'],
  tailoring_guard:['singleton','allowed'],
