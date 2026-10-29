@@ -33,13 +33,14 @@ export async function proposals(env:Bindings,tokenId?:string) {
  const rows=(await (tokenId?stmt.bind(tokenId):stmt).all<{id:string}>()).results
  return Promise.all(rows.map(row=>proposal(env,row.id)))
 }
-export async function prepare(env:Bindings,input:FolderInput,token:TokenGrant,clock:()=>Date) {
+export async function prepare(env:Bindings,input:FolderInput,token:TokenGrant,clock:()=>Date,preparer?:{id:string;name:string;kind:'token'}) {
  const now=clock(), id=crypto.randomUUID()
  const snapshot=await currentSnapshot(env,input,now)
  const snapshotJSON=JSON.stringify(snapshot), inputJSON=JSON.stringify(input)
  if(new TextEncoder().encode(snapshotJSON).length>512*1024) throw new Refusal('The selected folder is too large for a proposal; select fewer controls.')
  const hash=await tokenDigest(JSON.stringify({input,snapshot})), at=clock().toISOString()
- const result=await env.DB.prepare('INSERT INTO agent_proposals(id,token_id,created_at,input_json,snapshot_json,snapshot_hash) SELECT ?,?,?,?,?,? FROM agent_tokens WHERE id=? AND token_hash IS NOT NULL AND revoked_at IS NULL AND expires_at>?').bind(id,token.id,at,inputJSON,snapshotJSON,hash,token.id,at).run()
+ const insert=env.DB.prepare('INSERT INTO agent_proposals(id,token_id,created_at,input_json,snapshot_json,snapshot_hash) SELECT ?,?,?,?,?,? FROM agent_tokens WHERE id=? AND token_hash IS NOT NULL AND revoked_at IS NULL AND expires_at>?').bind(id,token.id,at,inputJSON,snapshotJSON,hash,token.id,at)
+ const result=preparer ? (await env.DB.batch([insert,env.DB.prepare("INSERT INTO product_audit(id,actor_kind,actor_id,actor_name,action,subject,outcome,detail,at,reason,revision) SELECT ?,'token',?,?,'agent.proposal-prepared',?,'succeeded','Prepare only; no folder or link issued',?,'',? FROM agent_proposals WHERE id=?").bind(crypto.randomUUID(),preparer.id,preparer.name,'proposal:'+id,at,hash,id)]))[0] : await insert.run()
  if(!result.meta.changes) throw new Refusal('Agent credential expired or revoked.',401)
  return (await proposal(env,id))!
 }

@@ -60,6 +60,10 @@ export async function moveInAndPrepare(page, origin, width, capture, scratch, no
   await capture(page,`${width}-${key}-undone`)
  }
 
+ // The owner chooses preparation policy through the same production person
+ // door before the standalone credential can use the shared agent pipeline.
+ const policy=await page.request.put(origin+'/agents/api/policy',{headers:{origin},data:{document:{schema:'rer-agent-policy/1',catalogue:'rer-agent-classes/1',rules:[{id:'prepare',class:'standard',do:'autonomous'}],spend:{none:true}}}})
+ assert.equal(policy.status(),200,'owner sets native preparation policy')
  await page.goto(origin+'/app/agent')
  await page.getByLabel('Agent label').fill('Audit preparation assistant')
  const expires=new Date(now().getTime()+86400000).toISOString().slice(0,16)

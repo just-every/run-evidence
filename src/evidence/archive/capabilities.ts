@@ -1,6 +1,7 @@
 import type { Bindings } from '../../auth.server'
 import { Refusal } from '../upload'
 import { fail } from './format'
+import { doorRestoreBarriers } from './door'
 export const capabilities=['schedules','mail','collections','writes','shares'] as const
 export type Capability=typeof capabilities[number]
 export async function capabilityAllowed(env:Pick<Bindings,'DB'>,capability:Capability,subject='*') {
@@ -8,7 +9,7 @@ export async function capabilityAllowed(env:Pick<Bindings,'DB'>,capability:Capab
  return !row||row.authorized_at!==null
 }
 export async function requireCapability(env:Pick<Bindings,'DB'>,capability:Capability,subject='*') {if(!await capabilityAllowed(env,capability,subject))throw new Refusal('This restored capability is inactive. Reauthorize it in Evidence archive.',409)}
-export const barrierStatements=(env:Pick<Bindings,'DB'>)=>capabilities.map(c=>env.DB.prepare('INSERT INTO portable_capabilities(capability,subject,authorized_by,authorized_at) VALUES(?,\'*\',NULL,NULL) ON CONFLICT(capability,subject) DO UPDATE SET authorized_by=NULL,authorized_at=NULL').bind(c))
+export const barrierStatements=(env:Pick<Bindings,'DB'>)=>[...capabilities.map(c=>env.DB.prepare('INSERT INTO portable_capabilities(capability,subject,authorized_by,authorized_at) VALUES(?,\'*\',NULL,NULL) ON CONFLICT(capability,subject) DO UPDATE SET authorized_by=NULL,authorized_at=NULL').bind(c)),...doorRestoreBarriers(env)]
 export async function reauthorize(env:Pick<Bindings,'DB'>,actor:string,input:any,now:Date) {
  if(!input||!capabilities.includes(input.capability)||typeof input.subject!=='string'||! /^(\*|[a-zA-Z0-9_-]{1,128})$/.test(input.subject))fail('Choose a known capability and subject.')
  if(input.subject!=='*' && !['collections','writes'].includes(input.capability))fail('This capability applies to the whole installation.')

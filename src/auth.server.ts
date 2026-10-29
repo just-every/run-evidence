@@ -38,6 +38,7 @@ export interface Bindings {
  RER_OWNER_CLAIM_ISSUER?: string
  RER_OWNER_CLAIM_INSTALLATION_ID?: string
  RER_OWNER_CLAIM_PUBLIC_KEYS?: string
+ RER_BUSINESS_TRUST?: string
  RER_DEMO?: string
  /** AUTH-001 single sign-on: each provider is offered only when all of its bindings exist. */
  OIDC_TRANSACTION_SECRET?: string
