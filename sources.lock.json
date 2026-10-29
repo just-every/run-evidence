@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/evidence",
-  "manifest": "9d60aeadfd1f94280a046281a86ee60e42ba6fc69fe9b5b625becc1692f43666",
+  "manifest": "a7857f2683b6d19ae8de588c55d6231b67ebeb6a13ee67510f423b2d19fc002d",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -3987,6 +3987,7 @@
           "src/site/styles/trust.css",
           "tests/access.mjs",
           "tests/agent-fixtures.mjs",
+          "tests/agent-mail-from.mjs",
           "tests/agent-native-journey.mjs",
           "tests/agent-owner.mjs",
           "tests/agent.mjs",
@@ -4175,7 +4176,7 @@
       "executable": false
     },
     "agent-surface.json": {
-      "sha256": "0809869e9e4c7e387818365d837bbc775c451c6c736df00422a6e98fe9f489f2",
+      "sha256": "fa8d5c6653375e68f37f5eb31dcc1fa9f981362bb95b4ddd667c409b3891f5a9",
       "executable": false
     },
     "AGENTS.md": {
@@ -4319,7 +4320,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "9d60aeadfd1f94280a046281a86ee60e42ba6fc69fe9b5b625becc1692f43666",
+      "sha256": "a7857f2683b6d19ae8de588c55d6231b67ebeb6a13ee67510f423b2d19fc002d",
       "executable": false
     },
     "LICENSE": {
@@ -9082,12 +9083,16 @@
       "sha256": "5297aca96991d87d709c635894883085f2c439464946f7e687aa756c763803ec",
       "executable": false
     },
+    "tests/agent-mail-from.mjs": {
+      "sha256": "44f4dbb13ba5f656f48e535703c757b16d2a1d32e5cbc6c8461689b4a95c9758",
+      "executable": false
+    },
     "tests/agent-native-journey.mjs": {
       "sha256": "87a301a09dadaa8a092246caa39533cbf1f6e2839b6693c78be580825697c1b1",
       "executable": false
     },
     "tests/agent-owner.mjs": {
-      "sha256": "dd457368af08143d1545ee8895b0e3970bb84e9d5e20ff72c59121b7f5e18afb",
+      "sha256": "8dc637bcd3f4f9362fbd0b5e9909c8e6e57429bdc2cb63e7490af8cd15aa5a48",
       "executable": false
     },
     "tests/agent.mjs": {

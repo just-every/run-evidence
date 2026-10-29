@@ -24,7 +24,7 @@
     {"id":"proposals","tool":"evidence.proposals.list","args":{},"expect":[{"class":"standard","facts":{"measure":1}}]}
   ],
   "verification": {
-    "owner":{"initializer":"tests/agent-owner.mjs","bindings":{"SESSION_SECRET":"sessionSecret","AUTH_ORIGIN":"appOrigin"}},
+    "owner":{"initializer":"tests/agent-owner.mjs","bindings":{"SESSION_SECRET":"sessionSecret","AUTH_ORIGIN":"appOrigin","MAIL_FROM":{"module":"tests/agent-mail-from.mjs"}}},
     "fixtures":{"module":"tests/agent-fixtures.mjs"},
     "journey":"tests/agent-native-journey.mjs",
     "replayAdmission":{"prepare":["prepare"]}
