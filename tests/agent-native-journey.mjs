@@ -1,3 +1,4 @@
+import { errorCode } from '../src/modules/agent-door/conformance/protocol.mjs'
 // Part of agent-surface.json's disposable production journey, not an auth fake.
 export default async function ({ request, origin, cookie, tool }) {
  const check = (value, reason) => { if (!value) throw new Error(reason) }
@@ -10,15 +11,17 @@ export default async function ({ request, origin, cookie, tool }) {
  const now = new Date(), date = now.toISOString().slice(0, 10)
  const args = { reviewer_label: 'Morgan Lee quarterly audit', period_from: date, period_to: date, expires_at: new Date(now.getTime() + 86400000).toISOString(), control_ids: [control.id], idempotency_key: crypto.randomUUID() }
  const beforeBusiness = await list(), refused = await tool('evidence.folders.prepare', args)
- check(refused.result?._meta?.['com.runeditrun/error']?.code === 'native_credential_required' && JSON.stringify(await list()) === JSON.stringify(beforeBusiness), 'Business credential selected a native preparation grant')
+ check(errorCode(refused) === 'native_credential_required' && JSON.stringify(await list()) === JSON.stringify(beforeBusiness), 'Business credential selected a native preparation grant')
  const missing = await tool('evidence.unsupported.execute', {})
- check(missing.result?._meta?.['com.runeditrun/error']?.code === 'tool_not_found', 'Unknown tool lacked its typed refusal')
+ check(errorCode(missing) === 'tool_not_found', 'Unknown tool lacked its typed refusal')
+ console.log('Evidence specialist journey: Business read, native-grant boundary and typed unknown-tool refusal passed.')
  const issued = await owner('/api/agent/tokens', { label: 'Morgan Compliance Agent', expires_at: args.expires_at })
  check(issued.status === 201, 'Native preparation credential was not granted')
  const credential = await issued.json()
  const prepare = (value, key = args.idempotency_key) => request(new URL('/api/agent/prepare-folder', origin).href, { method: 'POST', headers: { authorization: 'Bearer ' + credential.token, 'content-type': 'application/json', 'idempotency-key': key }, body: JSON.stringify(value) })
  const first = await prepare(args)
  check(first.status === 201, 'Native credential could not prepare')
+ console.log('Evidence specialist journey: native preparation passed.')
  const original = await first.json(), count = (await list()).length
  const replay = await prepare(args)
  check(replay.status === 201 && (await replay.json()).proposal.id === original.proposal.id && (await list()).length === count, 'Native replay made another proposal')

@@ -9088,7 +9088,7 @@
       "executable": false
     },
     "tests/agent-native-journey.mjs": {
-      "sha256": "87a301a09dadaa8a092246caa39533cbf1f6e2839b6693c78be580825697c1b1",
+      "sha256": "5607bf7afd90b88b6f1529c1c7f9ed519fcf171745c6f9f65c3ef74bc85c8792",
       "executable": false
     },
     "tests/agent-owner.mjs": {
