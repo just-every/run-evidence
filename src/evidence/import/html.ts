@@ -2,12 +2,16 @@ import { Refusal } from '../upload'
 import { safePath } from './zip'
 const fail=():never=>{throw new Refusal('Unsupported Drata HTML table. Expected Requirement, Control, Original Path and Abbreviated Filename (/Evidence) columns with relative Evidence/ file links.')}
 export function entities(text:string):string{return text.replace(/&(#(?:x[0-9a-f]+|[0-9]+)|amp|lt|gt|quot|apos|nbsp);/gi,(_,key:string)=>{if(key[0]==='#'){const n=key[1]?.toLowerCase()==='x'?parseInt(key.slice(2),16):parseInt(key.slice(1),10);if(!Number.isSafeInteger(n)||n<1||n>0x10ffff||(n>=0xd800&&n<=0xdfff))fail();return String.fromCodePoint(n)}return({amp:'&',lt:'<',gt:'>',quot:'"',apos:"'",nbsp:' '} as Record<string,string>)[key.toLowerCase()]})}
-const plain=(html:string)=>entities(html.replace(/<!--[\s\S]*?-->/g,'').replace(/<[^>]*>/g,' ')).replace(/\s+/g,' ').trim()
+// Removal repeats until stable so that stripping one span cannot join its neighbours into a new comment, script or style.
+const settle=(text:string,strip:(text:string)=>string):string=>{for(let next=strip(text);next!==text;next=strip(text))text=next;return text}
+const dropComments=(text:string):string=>settle(text,t=>{let out='',at=0;for(let open=t.indexOf('<!--');open>=0;open=t.indexOf('<!--',at)){const close=t.indexOf('-->',open+4);if(close<0)break;out+=t.slice(at,open);at=close+3}return out+t.slice(at)})
+const dropScriptsAndStyles=(text:string):string=>settle(text,t=>{let out='',at=0;const open=/<(script|style)\b[^>]*>/gi;for(let m;(m=open.exec(t));){const close=new RegExp('<\\/'+m[1]+'\\s*>','gi');close.lastIndex=open.lastIndex;const end=close.exec(t);if(!end)continue;out+=t.slice(at,m.index);at=open.lastIndex=close.lastIndex}return out+t.slice(at)})
+const plain=(html:string)=>entities(dropComments(html).replace(/<[^>]*>/g,' ')).replace(/\s+/g,' ').trim()
 export interface HtmlRow { requirement:string;control:string;original_path:string;path:string }
 export function manifestRows(html:string):HtmlRow[]{
  // Parse an inert, statically rendered table only. Scripts, styles and comments
  // cannot inject apparent rows, and no HTML or JS is executed or shown inline.
- const inert=html.replace(/<!--[\s\S]*?-->/g,'').replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi,'')
+ const inert=settle(html,t=>dropScriptsAndStyles(dropComments(t)))
  const wanted=['requirement','control','original path','abbreviated filename (/evidence)'],matches:HtmlRow[][]=[]
  for(const table of inert.matchAll(/<table\b[^>]*>([\s\S]*?)<\/table\s*>/gi)){
   const rows=[...table[1].matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr\s*>/gi)],first=rows[0]
