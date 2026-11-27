@@ -2,7 +2,7 @@ import { parseAddress } from '../../modules/mail/src/core/validation.mjs'
 // Use the mail module's own mailbox grammar, including display names.
 export function mailConfigurationFailures(env) {
  const failures=[]
- if(!env.MAIL_PROVIDER)return failures
+ if(!env.MAIL_PROVIDER||env.MAIL_PROVIDER==='none')return failures
  if(!['development','rer','resend','sendgrid','cloudflare'].includes(env.MAIL_PROVIDER))failures.push('MAIL_PROVIDER')
  if(env.MAIL_PROVIDER!=='development') {
   const key=env.MAIL_API_KEY

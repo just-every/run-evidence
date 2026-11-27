@@ -31,6 +31,6 @@
   "verifyWorkflow": "verify.yml",
   "setup": {
     "path": "rer-setup.json",
-    "sha256": "12a9e8927e5277e6b9e203de61b786d5d0cd3cb7622ea3db8c9e38fda3f78ccc"
+    "sha256": "28bfebf4e54f161ddf83829a4a5724b489a3fde3c14db9e7aa01a1f6056e0173"
   }
 }

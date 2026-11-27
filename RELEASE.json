@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "publicReleaseNotes": "Evidence supports hosted installation with a verified deployment specification, explicit mail provider setup, retained Base source provenance and rer 0.2.80.",
+  "publicReleaseNotes": "First public release of Evidence, with the audit-evidence workspace for collecting, reviewing and sharing proof, optional outbound mail and a hosted demo that follows the release tag.",
   "migrations": [
     "0001_owner.sql",
     "0002_outbox.sql",
@@ -63,7 +63,19 @@
     "0058_extended_programs.sql",
     "0059_code_manifests.sql",
     "0060_audit_engagements.sql",
-    "0061_audit_sharing.sql"
+    "0061_audit_sharing.sql",
+    "0062_audit_evidence_decisions.sql",
+    "0063_trust_updates.sql",
+    "0064_trust_grant_scope.sql",
+    "0065_promise_dependencies.sql",
+    "0066_promise_erasure_fence.sql",
+    "0067_access_roles.sql",
+    "0068_secure_records_flows.sql",
+    "0069_credential_displays.sql",
+    "0070_engagement_holds.sql",
+    "0071_privacy_classifications.sql",
+    "0072_submission_erasure_fence.sql",
+    "0073_entity_exhibit_erasure.sql"
   ],
   "breaking": false,
   "agentUpdateInstructions": "Install locked dependencies, preserve applied migration bytes, build, regenerate the deployment specification and run the source checks before upgrading an installation."

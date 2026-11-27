@@ -1,6 +1,3 @@
-import { fileURLToPath as __rerTestEntryPath } from 'node:url';
-const __rerTestEntry = __rerTestEntryPath(import.meta.resolve('@runeditrun/rer/internal/global/rer.mjs'));
-const __rerTestEntryArgs = args => args[1] === 'dev' && !args.some(arg => ['--foreground', '--detach', '--stop', '--help'].includes(arg)) ? [...args, '--foreground'] : args;
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { cp, mkdtemp, rm } from 'node:fs/promises'
@@ -20,7 +17,7 @@ export async function installation(root) {
  delete env.RER_LOCAL_OPERATION
  const queue=process.env.EVIDENCE_NO_QUEUE==='1'?['--no-queue']:[]
  const run=async args=>{
-  const child=spawn(process.execPath,[__rerTestEntry,...args,...(args.includes('--stop')?[]:queue)],{cwd:dir,env,stdio:['ignore','pipe','pipe']})
+  const child=spawn('pnpm',['exec','rer',...args,...(args.includes('--stop')?[]:queue)],{cwd:dir,env,stdio:['ignore','pipe','pipe']})
   let output='';for(const stream of [child.stdout,child.stderr])stream.on('data',chunk=>{output+=chunk})
   const code=await new Promise((done,fail)=>{child.once('error',fail);child.once('close',done)})
   assert.equal(code,0,`rer ${args[0]} failed (${code}): ${sanitize(output)}`)
@@ -47,7 +44,7 @@ export async function installation(root) {
   const origin=`http://127.0.0.1:${port}`
   return {dir,origin,run,stop,async start(){
    await run(['setup','--owner-email','owner@example.test','--port',String(port),'--non-interactive'])
-   log='';server=spawn(process.execPath,__rerTestEntryArgs([__rerTestEntry,'dev','--port',String(port),...queue]),{cwd:dir,env,detached:true,stdio:['ignore','pipe','pipe']})
+   log='';server=spawn('pnpm',['exec','rer','dev','--foreground','--port',String(port),...queue],{cwd:dir,env,detached:true,stdio:['ignore','pipe','pipe']})
    for(const stream of [server.stdout,server.stderr])stream.on('data',chunk=>{log+=chunk})
    for(let n=0;n<720&&!/^RER_OPEN /m.test(log);n++){if(server.exitCode!==null||server.signalCode!==null)throw Error('rer dev failed: '+sanitize(log));await wait(250)}
    const open=log.match(/^RER_OPEN (\S+)/m)?.[1];assert.ok(open,'dev supplied owner sign-in');return open

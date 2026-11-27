@@ -1,6 +1,3 @@
-import { fileURLToPath as __rerTestEntryPath } from 'node:url';
-const __rerTestEntry = __rerTestEntryPath(import.meta.resolve('@runeditrun/rer/internal/global/rer.mjs'));
-const __rerTestEntryArgs = args => args[1] === 'dev' && !args.some(arg => ['--foreground', '--detach', '--stop', '--help'].includes(arg)) ? [...args, '--foreground'] : args;
 // Core owner journey through rer dev. All settings, D1/R2 and identity live in a
 // disposable checkout. RER_OPEN and dev keys remain in memory, never evidence.
 process.env.RER_SERVER_JOURNEY = '1'
@@ -37,7 +34,7 @@ async function safeLog(text) {
  return text.replace(/^.*RER_OPEN.*$/gm,'[private sign-in URL withheld]').replace(/https?:\/\/\S+/g,'[URL]').slice(-8000)
 }
 const run = async(args) => {
- const child=spawn(process.execPath,[__rerTestEntry,...args,...(args.includes('--stop') ? [] : queueArgs)],{cwd:scratch,env,stdio:['ignore','pipe','pipe']});let log=''
+ const child=spawn('pnpm',['exec','rer',...args,...(args.includes('--stop') ? [] : queueArgs)],{cwd:scratch,env,stdio:['ignore','pipe','pipe']});let log=''
  for(const stream of [child.stdout,child.stderr])stream.on('data',chunk=>{log+=chunk})
  const exit=await new Promise((done,fail)=>{child.once('error',fail);child.once('close',done)})
  // Setup/dev output can contain credentials; report phase and status only.
@@ -57,7 +54,7 @@ try {
  const origin=`http://127.0.0.1:${port}`
  console.log('OPS-001: documented rer setup/dev lifecycle in disposable checkout')
  await run(['setup','--owner-email','owner@example.test','--port',String(port),'--non-interactive'])
- server=spawn(process.execPath,__rerTestEntryArgs([__rerTestEntry,'dev','--port',String(port),...queueArgs]),{cwd:scratch,env,stdio:['ignore','pipe','pipe']})
+ server=spawn('pnpm',['exec','rer','dev','--foreground','--port',String(port),...queueArgs],{cwd:scratch,env,stdio:['ignore','pipe','pipe']})
  for(const stream of [server.stdout,server.stderr])stream.on('data',chunk=>{serverOutput+=chunk})
  for(let attempt=0;attempt<720 && !serverOutput.includes('RER_READY');attempt++){if(server.exitCode!==null)throw Error('rer dev exited before ready: '+await safeLog(serverOutput));await wait(250)}
  assert.ok(serverOutput.includes('RER_READY'),'rer dev became ready')

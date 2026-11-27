@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0
+
+- First public release of Evidence, with the audit-evidence workspace for collecting, reviewing and sharing proof.
+- Hosted installs can run without outbound email. The owner can sign in with `rer signin`.
+- The hosted demo deploys from the published release tag.
+
 ## 2026-10-20
 
 - Rebuilt the homepage on the owner-approved page-s1 structure: after the unchanged hero, the buyer's first SOC 2 Type II from March to December (a true-scale year timeline, the first scan, fixes re-tested, policies signed, the 183-day record, the agent's Jul 14 investigation, the Exhibit D interlude, fieldwork requests, the trust center and ISO 27001), the switcher's note, the honest limit and the unchanged closing. Every drawing is HTML and CSS with phone forms at 390; the old twelve-section skeleton and its styles are removed.

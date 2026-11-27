@@ -12,6 +12,7 @@ import { inBusinessWindow, settings } from './settings'
 export interface Followup { kind: string; subject: string; cycle: string; recipient: string; title: string; text: string; link?: string; scheduled?: boolean }
 export type SendResult = 'duplicate' | 'deferred' | 'paused' | Outcome['state']
 async function email(env: Bindings, id: string, message: Followup): Promise<Outcome> {
+ if (env.MAIL_PROVIDER === 'none' && env.RER_DEMO !== '1') return { state: 'failed', detail: 'mail_off' }
  const sender = operatorMail(env)
  if (!sender || !env.MAIL_FROM) return { state: 'failed', detail: 'Mail is not configured; set MAIL_PROVIDER and MAIL_FROM.' }
  try {
